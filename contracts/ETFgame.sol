@@ -35,8 +35,11 @@ abstract contract ETFGame is XaverToken {
         // first period when this Basket started allocating
         uint32 firstAllocationPeriod;
 
-        // average performance until latest adjustment period
-        uint256 averagePastPerformance;
+        // average performance per token from firstAllocationPeriod until latest adjustment period
+        uint256 averagePastPerformancePerToken;
+
+        // average number of tokens allocated by basket from firstAllocationPeriod until latest adjustment period
+        uint256 averageNrOfTokensAllocated;
 
         // nr of total allocated tokens 
         uint256 totalAllocatedTokens;
@@ -47,6 +50,11 @@ abstract contract ETFGame is XaverToken {
 
     // baskets 
     mapping(uint256 => Basket) private _baskets;
+
+    // baskets latest performance per token
+    function basketsLatestPerformancePerToken() public view returns(uint256) {
+
+    }
 
     // add a new ETF
     function addETF() public {
@@ -59,7 +67,12 @@ abstract contract ETFGame is XaverToken {
     }
 
     // rebalances an existing Basket
-    function rebalanceExistingBasket(uint32 ETFnumber) public {
+    function rebalanceExistingBasket(uint256 basketId) public {
+
+    }
+
+    // redeem funds from basket
+    function redeemFromBasket(uint256 basketId) public {
 
     }
 

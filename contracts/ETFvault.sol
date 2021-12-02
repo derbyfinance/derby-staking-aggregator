@@ -15,9 +15,6 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // ETF number
     uint32 public ETFnumber;
 
-    // latest protocol id
-    uint32 public latestProtocolId;
-
     // router address
     address public router;
 
@@ -27,7 +24,6 @@ abstract contract ETFVault is VaultToken, IETFVault {
     constructor(
         bytes32 ETFname_, 
         uint32 ETFnumber_, 
-        uint32 latestProtocolId_,  
         address router_,
         address vaultToken_,
         string memory name_,
@@ -35,10 +31,12 @@ abstract contract ETFVault is VaultToken, IETFVault {
     ) VaultToken (name_, symbol_) {
         ETFname = ETFname_;
         ETFnumber = ETFnumber_;
-        latestProtocolId = latestProtocolId_;
         router = router_;
         vaultToken = vaultToken_;
     }
+
+    // latest protocol id
+    uint32 public latestProtocolId;
 
     // names of all the different protocols in the ETF
     mapping(uint32 => bytes32) public protocolNames;

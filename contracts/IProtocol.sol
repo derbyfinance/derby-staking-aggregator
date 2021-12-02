@@ -7,4 +7,8 @@ interface IProtocol {
     function withdraw(uint256 balance) external;
 
     function exchangeRate() external view returns(uint256);
+
+    function addPricePoint() external;
+
+    function getHistoricalPrice(uint32 period) external view returns(uint256);
 }

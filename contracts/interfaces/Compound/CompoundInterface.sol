@@ -8,6 +8,7 @@ import "./ICERC20.sol";
 contract CompoundInterface {
     ICERC20 public CToken;
     IERC20 public vaultToken;
+    mapping(uint32 => uint256) public historicalPrices;
 
     constructor(address CToken_, address vaultToken_){
         CToken = ICERC20(CToken_);
@@ -25,6 +26,14 @@ contract CompoundInterface {
     }
 
     function exchangeRate() external view returns(uint256){
+
+    }
+
+    function addPricePoint() external {
+
+    }
+
+    function getHistoricalPrice(uint32 period) external view returns(uint256) {
 
     }
 }
