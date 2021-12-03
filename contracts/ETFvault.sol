@@ -5,8 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./IETFVault.sol";
 import "./IRouter.sol";
+import "./IGoverned.sol";
 
 import "./VaultToken.sol";
+
+// ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
+// ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
 abstract contract ETFVault is VaultToken, IETFVault {
     // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
@@ -18,21 +22,41 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // router address
     address public router;
 
-    // vault token address (i.e. dai address)
-    address public vaultToken;
+    // vault currency token address (i.e. dai address)
+    address public vaultCurrency;
+
+    // address of ETFgame
+    address public ETFgame;
+
+    // address of DAO governed
+    address public governed;
+
+    modifier onlyETFgame {
+        require(msg.sender == ETFgame, "ETFvault: only ETFgame");
+        _;
+    }
+
+    modifier onlyDao {
+        require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+        _;
+    }
 
     constructor(
         bytes32 ETFname_, 
         uint32 ETFnumber_, 
         address router_,
-        address vaultToken_,
+        address vaultCurrency_,
+        address ETFgame_,
+        address governed_,
         string memory name_,
         string memory symbol_
     ) VaultToken (name_, symbol_) {
         ETFname = ETFname_;
         ETFnumber = ETFnumber_;
         router = router_;
-        vaultToken = vaultToken_;
+        vaultCurrency = vaultCurrency_;
+        ETFgame = ETFgame_;
+        governed = governed_;
     }
 
     // latest protocol id
@@ -59,11 +83,19 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // delta of the portfolio on next rebalancing
     mapping(uint32 => uint256) private _deltaAllocations;
 
-    function addProtocol(bytes32 name, address addr) public override {
+    function addProtocol(bytes32 name, address addr) public override onlyDao {
 
     }
 
     function _rebalanceETF() private {
+
+    }
+
+    function adjustDeltaAllocations() public onlyETFgame {
+
+    }
+
+    function adjustAllocatedTokens() public onlyETFgame {
 
     }
 }

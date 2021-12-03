@@ -12,10 +12,17 @@ import "./XaverToken.sol";
  * A player can create a Basket where he can allocate his xaver tokens to different protocols
  * Allocations are tracked per period, a period is n nr of blocks.
  * If a user rebalances his allocations then the performance over the last x active periods is measured
- * and stored on a per token basis in averagePastPerformance.
+ * and stored on a per token basis in averagePastPerformancePerToken.
  * Redeeming (part) of the xaver tokens is the same as rebalancing and then taking out the xaver tokens plus earnings. 
  */
-abstract contract ETFGame is XaverToken {
+abstract contract ETFGame {
+    // xaver token address
+    address public xaverTokenAddress;
+
+    constructor(address xaverTokenAddress_){
+        xaverTokenAddress = xaverTokenAddress_;
+    }
+
     // latest basket id
     uint256 private _latestBasketId;
 
@@ -34,6 +41,9 @@ abstract contract ETFGame is XaverToken {
 
         // first period when this Basket started allocating
         uint32 firstAllocationPeriod;
+
+        // flag if it's the first period
+        bool isFirst;
 
         // average performance per token from firstAllocationPeriod until latest adjustment period
         uint256 averagePastPerformancePerToken;
