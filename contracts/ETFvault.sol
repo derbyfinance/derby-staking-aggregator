@@ -8,6 +8,9 @@ import "./IRouter.sol";
 
 import "./VaultToken.sol";
 
+// ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
+// ToDo: how to do automatic yield farming? --> Swap in uniswap.
+
 abstract contract ETFVault is VaultToken, IETFVault {
     // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
     bytes32 public ETFname;
@@ -18,21 +21,21 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // router address
     address public router;
 
-    // vault token address (i.e. dai address)
-    address public vaultToken;
+    // vault currency token address (i.e. dai address)
+    address public vaultCurrency;
 
     constructor(
         bytes32 ETFname_, 
         uint32 ETFnumber_, 
         address router_,
-        address vaultToken_,
+        address vaultCurrency_,
         string memory name_,
         string memory symbol_
     ) VaultToken (name_, symbol_) {
         ETFname = ETFname_;
         ETFnumber = ETFnumber_;
         router = router_;
-        vaultToken = vaultToken_;
+        vaultCurrency = vaultCurrency_;
     }
 
     // latest protocol id

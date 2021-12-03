@@ -7,16 +7,18 @@ import "./ICERC20.sol";
 
 contract CompoundInterface {
     ICERC20 public CToken;
-    IERC20 public vaultToken;
+    IERC20 public vaultCurrency;
+    address public protocolToken;
     mapping(uint32 => uint256) public historicalPrices;
 
-    constructor(address CToken_, address vaultToken_){
+    constructor(address CToken_, address vaultCurrency_, address protocolToken_){
         CToken = ICERC20(CToken_);
-        vaultToken = IERC20(vaultToken_);
+        vaultCurrency = IERC20(vaultCurrency_);
+        protocolToken = protocolToken_;
     }
 
     function deposit(uint256 amount) external returns(uint256){
-        vaultToken.approve(address(CToken), amount);
+        vaultCurrency.approve(address(CToken), amount);
         uint mintResult =  CToken.mint(amount);
         return mintResult;
     }
