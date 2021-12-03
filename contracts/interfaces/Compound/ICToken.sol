@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-interface ICERC20 {
+interface ICToken {
     function balanceOf(address owner) external view returns (uint);
 
     function mint(uint256) external returns (uint256);

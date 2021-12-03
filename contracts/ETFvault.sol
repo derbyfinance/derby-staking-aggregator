@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./IETFVault.sol";
 import "./IRouter.sol";
+import "./IGoverned.sol";
 
 import "./VaultToken.sol";
 
@@ -24,11 +25,29 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // vault currency token address (i.e. dai address)
     address public vaultCurrency;
 
+    // address of ETFgame
+    address public ETFgame;
+
+    // address of DAO governed
+    address public governed;
+
+    modifier onlyETFgame {
+        require(msg.sender == ETFgame, "ETFvault: only ETFgame");
+        _;
+    }
+
+    modifier onlyDao {
+        require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+        _;
+    }
+
     constructor(
         bytes32 ETFname_, 
         uint32 ETFnumber_, 
         address router_,
         address vaultCurrency_,
+        address ETFgame_,
+        address governed_,
         string memory name_,
         string memory symbol_
     ) VaultToken (name_, symbol_) {
@@ -36,6 +55,8 @@ abstract contract ETFVault is VaultToken, IETFVault {
         ETFnumber = ETFnumber_;
         router = router_;
         vaultCurrency = vaultCurrency_;
+        ETFgame = ETFgame_;
+        governed = governed_;
     }
 
     // latest protocol id
@@ -62,11 +83,19 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // delta of the portfolio on next rebalancing
     mapping(uint32 => uint256) private _deltaAllocations;
 
-    function addProtocol(bytes32 name, address addr) public override {
+    function addProtocol(bytes32 name, address addr) public override onlyDao {
 
     }
 
     function _rebalanceETF() private {
+
+    }
+
+    function adjustDeltaAllocations() public onlyETFgame {
+
+    }
+
+    function adjustAllocatedTokens() public onlyETFgame {
 
     }
 }

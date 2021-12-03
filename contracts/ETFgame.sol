@@ -19,6 +19,10 @@ abstract contract ETFGame {
     // xaver token address
     address public xaverTokenAddress;
 
+    constructor(address xaverTokenAddress_){
+        xaverTokenAddress = xaverTokenAddress_;
+    }
+
     // latest basket id
     uint256 private _latestBasketId;
 

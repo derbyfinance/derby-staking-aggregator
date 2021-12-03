@@ -3,18 +3,28 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./ICERC20.sol";
+import "./ICToken.sol";
 
 contract CompoundInterface {
-    ICERC20 public CToken;
+    ICToken public CToken;
     IERC20 public vaultCurrency;
     address public protocolToken;
     mapping(uint32 => uint256) public historicalPrices;
 
-    constructor(address CToken_, address vaultCurrency_, address protocolToken_){
-        CToken = ICERC20(CToken_);
-        vaultCurrency = IERC20(vaultCurrency_);
-        protocolToken = protocolToken_;
+    function setCToken(address CTokenAddress) public {
+        CToken = ICToken(CTokenAddress);
+    }
+
+    function setVaultCurrency(address vaultCurrencyAddress) public {
+        vaultCurrency = IERC20(vaultCurrencyAddress);
+    }
+
+    function setProtocolToken(address protocolTokenAddress) public {
+        protocolToken = protocolTokenAddress;
+    }
+
+    function addPricePoint() external {
+
     }
 
     function deposit(uint256 amount) external returns(uint256){
@@ -23,15 +33,11 @@ contract CompoundInterface {
         return mintResult;
     }
 
-    function withdraw(uint256 balance) external{
+    function withdraw(uint256 balance) external {
 
     }
 
-    function exchangeRate() external view returns(uint256){
-
-    }
-
-    function addPricePoint() external {
+    function exchangeRate() external view returns(uint256) {
 
     }
 
