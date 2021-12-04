@@ -9,7 +9,7 @@ contract CompoundInterface {
     ICToken public CToken;
     IERC20 public vaultCurrency;
     address public protocolToken;
-    mapping(uint32 => uint256) public historicalPrices;
+    mapping(uint256 => uint256) public historicalPrices;
 
     function setCToken(address CTokenAddress) public {
         CToken = ICToken(CTokenAddress);
@@ -41,7 +41,7 @@ contract CompoundInterface {
 
     }
 
-    function getHistoricalPrice(uint32 period) external view returns(uint256) {
+    function getHistoricalPrice(uint256 period) external view returns(uint256) {
 
     }
 }

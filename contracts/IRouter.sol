@@ -2,9 +2,9 @@
 pragma solidity ^0.8.3;
 
 interface IRouter {
-    function deposit(uint32 ETFnumber, uint32 protocolNumber, uint256 amount) external returns(uint256);
+    function deposit(uint256 ETFnumber, uint256 protocolNumber, uint256 amount) external returns(uint256);
 
-    function withdraw(uint32 ETFnumber, uint32 protocolNumber, uint256 balance) external;
+    function withdraw(uint256 ETFnumber, uint256 protocolNumber, uint256 balance) external;
 
-    function exchangeRate(uint32 ETFnumber, uint32 protocolNumber) external view returns(uint256);
+    function exchangeRate(uint256 ETFnumber, uint256 protocolNumber) external view returns(uint256);
 }

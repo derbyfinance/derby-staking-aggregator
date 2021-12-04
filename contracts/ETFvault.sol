@@ -17,7 +17,7 @@ abstract contract ETFVault is VaultToken, IETFVault {
     bytes32 public ETFname;
 
     // ETF number
-    uint32 public ETFnumber;
+    uint256 public ETFnumber;
 
     // router address
     address public router;
@@ -43,7 +43,7 @@ abstract contract ETFVault is VaultToken, IETFVault {
 
     constructor(
         bytes32 ETFname_, 
-        uint32 ETFnumber_, 
+        uint256 ETFnumber_, 
         address router_,
         address vaultCurrency_,
         address ETFgame_,
@@ -60,28 +60,28 @@ abstract contract ETFVault is VaultToken, IETFVault {
     }
 
     // latest protocol id
-    uint32 public latestProtocolId;
+    uint256 public latestProtocolId;
 
     // names of all the different protocols in the ETF
-    mapping(uint32 => bytes32) public protocolNames;
+    mapping(uint256 => bytes32) public protocolNames;
 
     // period number of the latest rebalance
-    uint32 public latestRebalancingPeriod;
+    uint256 public latestRebalancingPeriod;
 
     // from the rebalancing period to block number;
-    mapping(uint32 => uint256) public rebalancingPeriodToBlock;
+    mapping(uint256 => uint256) public rebalancingPeriodToBlock;
 
     // total number of allocated xaver tokens currently
     uint256 public totalAllocatedTokens;
 
     // current allocations over the protocols
-    mapping(uint32 => uint256) private _currentAllocations;
+    mapping(uint256 => uint256) private _currentAllocations;
 
     // delta of the total number of xaver tokens allocated on next rebalancing
     uint256 private _deltaAllocatedTokens;
 
     // delta of the portfolio on next rebalancing
-    mapping(uint32 => uint256) private _deltaAllocations;
+    mapping(uint256 => uint256) private _deltaAllocations;
 
     function addProtocol(bytes32 name, address addr) public override onlyDao {
 

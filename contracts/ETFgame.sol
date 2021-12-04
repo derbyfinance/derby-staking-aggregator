@@ -27,20 +27,20 @@ abstract contract ETFGame {
     uint256 private _latestBasketId;
 
     // latest ETFnumber
-    uint32 public latestETFNumber;
+    uint256 public latestETFNumber;
 
     // maps the ETF number to the vault address of the ETF
-    mapping(uint32 => address) public ETFvaults;
+    mapping(uint256 => address) public ETFvaults;
 
     struct Basket {
         // the ETF number for which this Basket was created
-        uint32 ETFnumber;
+        uint256 ETFnumber;
 
         // last period when this Basket got rebalanced
-        uint32 latestAdjustmentPeriod;
+        uint256 latestAdjustmentPeriod;
 
         // first period when this Basket started allocating
-        uint32 firstAllocationPeriod;
+        uint256 firstAllocationPeriod;
 
         // flag if it's the first period
         bool isFirst;
@@ -55,7 +55,7 @@ abstract contract ETFGame {
         uint256 totalAllocatedTokens;
 
         // allocations per period
-        mapping(uint32 => uint256) allocations;
+        mapping(uint256 => uint256) allocations;
     }
 
     // baskets 
@@ -72,7 +72,7 @@ abstract contract ETFGame {
     }
 
     // mints a new NFT with a Basket of allocations
-    function mintNewBasket(uint32 ETFnumber) public {
+    function mintNewBasket(uint256 ETFnumber) public {
 
     }
 
@@ -87,7 +87,7 @@ abstract contract ETFGame {
     }
 
     // adjusts the deltaAllocations in the ETF vault
-    function _adjustDeltaAllocations(uint32 ETFnumber) private {
+    function _adjustDeltaAllocations(uint256 ETFnumber) private {
 
     }
 
