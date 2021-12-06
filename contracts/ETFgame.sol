@@ -4,6 +4,7 @@ pragma solidity ^0.8.3;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./IETFGame.sol";
+import "./IBasketToken.sol";
 
 import "./XaverToken.sol";
 
@@ -19,8 +20,12 @@ abstract contract ETFGame {
     // xaver token address
     address public xaverTokenAddress;
 
-    constructor(address xaverTokenAddress_){
+    // basket token address
+    address public basketTokenAddress;
+
+    constructor(address xaverTokenAddress_, address basketTokenAddress_){
         xaverTokenAddress = xaverTokenAddress_;
+        basketTokenAddress = basketTokenAddress_;
     }
 
     // latest basket id
@@ -60,6 +65,20 @@ abstract contract ETFGame {
 
     // baskets 
     mapping(uint256 => Basket) private _baskets;
+
+    // function to see the total number of allocated tokens. Only the owner of the basket can view this. 
+    function basketTotalAllocatedTokens(uint256 basketId) public view returns(uint256){
+        require(IBasketToken(basketTokenAddress).ownerOf(basketId) == msg.sender, "Not the owner of the Basket.");
+
+        return _baskets[basketId].totalAllocatedTokens;
+    }
+
+    // function to see the allocation of a specific protocol in a basket. Only the owner of the basket can view this. 
+    function basketAllocationInProtocol(uint256 basketId, uint256 protocolId) public view returns(uint256){
+        require(IBasketToken(basketTokenAddress).ownerOf(basketId) == msg.sender, "Not the owner of the Basket.");
+
+        return _baskets[basketId].allocations[protocolId];
+    }
 
     // baskets latest performance per token
     function basketsLatestPerformancePerToken() public view returns(uint256) {
