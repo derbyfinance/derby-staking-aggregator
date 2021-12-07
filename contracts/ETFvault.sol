@@ -28,7 +28,7 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // address of ETFgame
     address public ETFgame;
 
-    // address of DAO governed
+    // address of DAO governance contract
     address public governed;
 
     modifier onlyETFgame {
