@@ -29,7 +29,8 @@
     "./scripts",
     "./test",
     "./test-mainnet",
-    "index.d.ts"
+    "index.d.ts",
+    "./typechain"
   ],
   "files": [
     "./hardhat.config.ts",

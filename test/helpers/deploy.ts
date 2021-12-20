@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { deployContract } from "ethereum-waffle";
 import { Signer, BigNumberish, Wallet } from "ethers";
 
@@ -12,6 +13,13 @@ import { ETFGame } from '@typechain/ETFGame';
 
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import { BasketToken } from '@typechain/BasketToken';
+
+import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
+import { YearnProvider } from '../../typechain/YearnProvider';
+
+export const deployYearnProvider = (deployerSign: Signer, yTokenAddress: string , uTokenAddress: string): Promise<YearnProvider> => {
+  return (deployContract(deployerSign, YearnProviderArtifact, [yTokenAddress, uTokenAddress])) as Promise<YearnProvider>;
+};
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {
     return (deployContract(deployerSign, IGovernedArtifact, [daoAddress, guardianAddress])) as Promise<IGoverned>;
