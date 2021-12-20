@@ -4,6 +4,7 @@ import { HardhatUserConfig, task } from "hardhat/config";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "@typechain/hardhat";
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
 
@@ -29,6 +30,12 @@ const config: HardhatUserConfig = {
       url: process.env.ROPSTEN_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
+    hardhat: {
+      forking: {
+        url: `${process.env.PROVIDER_FORKING}`,
+        blockNumber: 12526794,
+      },
     },
   },
   gasReporter: {

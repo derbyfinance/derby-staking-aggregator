@@ -6,8 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/Yearn/IYearnProvider.sol";
 
+import "hardhat/console.sol";
+
 // No modifiers yet
-abstract contract YearnProvider is IYearn {
+contract YearnProvider {
   using SafeERC20 for IERC20;
 
   IYearn public yToken;  //yusdc
@@ -39,12 +41,29 @@ abstract contract YearnProvider is IYearn {
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     yToken.deposit(_amount);
+
+    // send LP tokens to?
   }
 
-  function withdrawEtf(uint256 _balance) external {
+  function withdrawEtf(uint256 _amount) external {
+    // require(burn of LP tokens?)
+
+    uint256 _price = yToken.pricePerShare();
+    uint256 numberOfSharesWithdraw = (_amount / _price) * 1e6;
+
+    uint256 _uAmount = yToken.withdraw(numberOfSharesWithdraw);
+
+    uToken.safeTransfer(_msgSender(), _uAmount);
   }
 
-   function exchangeRate() external view returns(uint256) {
+  function balance() external view returns (uint256) {
+    uint256 price = yToken.pricePerShare();
+    uint256 balanceShares = yToken.balanceOf(address(this));
+
+    return (balanceShares * price) ;
+    }
+
+  function exchangeRate() external view returns(uint256) {
 
   }
 
