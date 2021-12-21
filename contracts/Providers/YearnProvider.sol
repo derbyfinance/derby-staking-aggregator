@@ -28,39 +28,46 @@ contract YearnProvider {
   }
 
   // Beslissen of we voor en na balance checks willen doen
+  // waar token minten
   // fee structure?
   function depositEtf(uint256 _amount) external returns(uint256) {
      // require(balance before and after?)
     uToken.safeTransferFrom(_msgSender(), address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
-    yToken.deposit(_amount);
-
+    uint256 _yTokenReceived = yToken.deposit(_amount);
     // send LP tokens to?
+
+    return _yTokenReceived;
   }
 
-  function withdrawEtf(uint256 _amount) external {
+  function withdrawEtf(uint256 _amount) external returns(uint256) {
     // require(burn of LP tokens?)
     // require(balance before and after?)
+    // in welke currency withdrawen?
 
     uint256 _price = yToken.pricePerShare();
     uint256 numberOfSharesWithdraw = (_amount / _price) * 1e6;
 
-    uint256 _uAmount = yToken.withdraw(numberOfSharesWithdraw);
+    uint256 _uAmountReceived = yToken.withdraw(numberOfSharesWithdraw);
 
-    uToken.safeTransfer(_msgSender(), _uAmount);
+    uToken.safeTransfer(_msgSender(), _uAmountReceived);
+
+    return _uAmountReceived;
   }
 
   function balance() external view returns (uint256) {
     uint256 price = yToken.pricePerShare();
     uint256 balanceShares = yToken.balanceOf(address(this));
+
     console.log("price per share %s", price);
     console.log("balanceShares %s", balanceShares);
+
     return (balanceShares * price) / SCALE ;
     }
 
   function exchangeRate() external view returns(uint256) {
-
+    // yearn price?
   }
 
   function getHistoricalPrice(uint256 _period) external view returns(uint256) {

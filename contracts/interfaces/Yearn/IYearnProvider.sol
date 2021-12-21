@@ -2,7 +2,7 @@ pragma solidity ^0.8.3;
 
 interface IYearn {
 
-  function deposit(uint _amount) external;
+  function deposit(uint _amount) external returns(uint);
 
   function withdraw(uint _amount) external returns(uint);
 
