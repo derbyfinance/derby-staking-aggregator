@@ -56,7 +56,7 @@ contract YearnProvider {
     return _uAmountReceived;
   }
 
-  function balance() external view returns (uint256) {
+  function balance() public view returns (uint256) {
     uint256 price = yToken.pricePerShare();
     uint256 balanceShares = yToken.balanceOf(address(this));
 
