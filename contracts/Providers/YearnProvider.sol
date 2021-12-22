@@ -14,13 +14,20 @@ contract YearnProvider {
 
   IYearn public yToken;  //yusdc
   IERC20 public uToken; // usdc
-
+  
+  address public router; 
   uint256 public constant SCALE = 1e6; // checken
   mapping(uint256 => uint256) public historicalPrices;
 
-  constructor(address _yToken, address _uToken) {
+  modifier onlyRouter {
+    require(msg.sender == router, "ETFvault: only Router");
+    _;
+  }
+
+  constructor(address _yToken, address _uToken, address _router) {
     yToken = IYearn(_yToken);
     uToken = IERC20(_uToken);
+    router = _router;
   }
 
   function addPricePoint() external {
@@ -30,9 +37,9 @@ contract YearnProvider {
   // Beslissen of we voor en na balance checks willen doen
   // waar token minten
   // fee structure?
-  function depositEtf(uint256 _amount) external returns(uint256) {
+  function depositEtf(address _buyer, uint256 _amount) external onlyRouter returns(uint256) {
      // require(balance before and after?)
-    uToken.safeTransferFrom(_msgSender(), address(this), _amount);
+    uToken.safeTransferFrom(_buyer, address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     uint256 _yTokenReceived = yToken.deposit(_amount);
@@ -41,7 +48,7 @@ contract YearnProvider {
     return _yTokenReceived;
   }
 
-  function withdrawEtf(uint256 _amount) external returns(uint256) {
+  function withdrawEtf(address _seller, uint256 _amount) external onlyRouter returns(uint256) {
     // require(burn of LP tokens?)
     // require(balance before and after?)
     // in welke currency withdrawen?
@@ -51,7 +58,7 @@ contract YearnProvider {
 
     uint256 _uAmountReceived = yToken.withdraw(numberOfSharesWithdraw);
 
-    uToken.safeTransfer(_msgSender(), _uAmountReceived);
+    uToken.safeTransfer(_seller, _uAmountReceived);
 
     return _uAmountReceived;
   }
@@ -75,6 +82,5 @@ contract YearnProvider {
   }
 
   function _msgSender() internal view virtual returns (address payable) {
-    return payable(msg.sender); // added payable
-  }
+    return payable(msg.sender); 
 }

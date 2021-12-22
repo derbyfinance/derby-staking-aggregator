@@ -16,8 +16,8 @@ import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/Baske
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
 
 
-export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken: string): Promise<YearnProvider> => {
-  return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken])) as Promise<YearnProvider>;
+export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken: string, router: string): Promise<YearnProvider> => {
+  return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {
