@@ -9,4 +9,6 @@ interface IYearn {
   function balanceOf(address _address) external view returns(uint);
 
   function pricePerShare() external view returns(uint);
+
+  function transfer(address _receiver, uint _amount) external returns(bool);
 }

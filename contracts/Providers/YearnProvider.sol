@@ -2,79 +2,78 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// SafeErc20 docs geen approve gebruiken https://docs.openzeppelin.com/contracts/3.x/api/token/erc20#SafeERC20
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interfaces/Yearn/IYearnProvider.sol";
+import "../IProvider.sol";
 
 import "hardhat/console.sol";
 
-// No modifiers yet
 contract YearnProvider {
   using SafeERC20 for IERC20;
+  using SafeERC20 for IYearn;
 
-  IYearn public yToken;  //yusdc
+  IYearn public yToken; // yusdc
   IERC20 public uToken; // usdc
   
-  address public router; 
-  uint256 public constant SCALE = 1e6; // checken
+  address public vault; 
   mapping(uint256 => uint256) public historicalPrices;
 
-  modifier onlyRouter {
-    require(msg.sender == router, "ETFvault: only Router");
+  modifier onlyVault {
+    require(msg.sender == vault, "ETFvault: only Vault");
     _;
   }
 
-  constructor(address _yToken, address _uToken, address _router) {
+  constructor(address _yToken, address _uToken, address _vault) {
     yToken = IYearn(_yToken);
     uToken = IERC20(_uToken);
-    router = _router;
+    vault = _vault;
   }
 
   function addPricePoint() external {
 
   }
 
-  // Beslissen of we voor en na balance checks willen doen
-  // waar token minten
-  // fee structure?
-  function depositEtf(address _buyer, uint256 _amount) external onlyRouter returns(uint256) {
-     // require(balance before and after?)
+  function deposit(address _buyer, uint256 _amount) external onlyVault returns(uint256) {
+    uint256 balanceBefore = uToken.balanceOf(address(this));
+
     uToken.safeTransferFrom(_buyer, address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
-    uint256 _yTokenReceived = yToken.deposit(_amount);
-    // send LP tokens to?
+    uint256 balanceAfter = uToken.balanceOf(address(this));
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    return _yTokenReceived;
+    uint256 yTokenReceived = yToken.deposit(_amount);
+
+    // yToken.transfer(vault, yTokenReceived);
+
+    return yTokenReceived;
   }
 
-  function withdrawEtf(address _seller, uint256 _amount) external onlyRouter returns(uint256) {
-    // require(burn of LP tokens?)
-    // require(balance before and after?)
-    // in welke currency withdrawen?
+  // Tokens nog ergens vandaan pullen
+  function withdraw(address _seller, uint256 _amount) external onlyVault returns(uint256) {
+    uint256 balanceBefore = uToken.balanceOf(_seller); 
 
-    uint256 _price = yToken.pricePerShare();
-    uint256 numberOfSharesWithdraw = (_amount / _price) * 1e6;
+    uint256 uAmountReceived = yToken.withdraw(_amount); 
+    uToken.safeTransfer(_seller, uAmountReceived);
 
-    uint256 _uAmountReceived = yToken.withdraw(numberOfSharesWithdraw);
+    uint256 balanceAfter = uToken.balanceOf(_seller); 
+    require((balanceAfter - balanceBefore - uAmountReceived) == 0, "Error");
 
-    uToken.safeTransfer(_seller, _uAmountReceived);
-
-    return _uAmountReceived;
+    return uAmountReceived;
   }
 
   function balance() public view returns (uint256) {
-    uint256 price = yToken.pricePerShare();
-    uint256 balanceShares = yToken.balanceOf(address(this));
+    uint256 _balanceShares = yToken.balanceOf(address(this));
 
-    console.log("price per share %s", price);
-    console.log("balanceShares %s", balanceShares);
+    console.log("balanceShares %s", _balanceShares);
 
-    return (balanceShares * price) / SCALE ;
+    return _balanceShares;
     }
 
   function exchangeRate() external view returns(uint256) {
-    // yearn price?
+    uint256 _price = yToken.pricePerShare();
+
+    return _price;
   }
 
   function getHistoricalPrice(uint256 _period) external view returns(uint256) {
@@ -83,4 +82,5 @@ contract YearnProvider {
 
   function _msgSender() internal view virtual returns (address payable) {
     return payable(msg.sender); 
+  }
 }
