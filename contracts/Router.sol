@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.3;
 
-import "./IProvider.sol";
+import "./Interfaces/IProvider.sol";
 
 contract Router {
     mapping(uint256 => mapping(uint256 => address)) public protocols; 

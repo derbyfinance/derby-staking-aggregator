@@ -3,8 +3,9 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./IETFGame.sol";
-import "./IBasketToken.sol";
+import "./Interfaces/IETFGame.sol";
+import "./Interfaces/IBasketToken.sol";
+import "./Interfaces/IGoverned.sol";
 
 import "./XaverToken.sol";
 
@@ -23,9 +24,17 @@ abstract contract ETFGame {
     // basket token address
     address public basketTokenAddress;
 
-    constructor(address xaverTokenAddress_, address basketTokenAddress_){
+    // address of DAO governance contract
+    address public governed;
+
+    constructor(address xaverTokenAddress_, address governed_){
         xaverTokenAddress = xaverTokenAddress_;
-        basketTokenAddress = basketTokenAddress_;
+        governed = governed_;
+    }
+
+    modifier onlyDao {
+        require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+        _;
     }
 
     // latest basket id
@@ -61,6 +70,11 @@ abstract contract ETFGame {
 
         // allocations per period
         mapping(uint256 => uint256) allocations;
+    }
+
+    // setup the basket contract address
+    function setupBasketContractAddress(address basketTokenAddress_) public onlyDao {
+        basketTokenAddress = basketTokenAddress_;
     }
 
     // baskets 

@@ -3,7 +3,7 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import "./IBasketToken.sol";
+import "./Interfaces/IBasketToken.sol";
 
 contract BasketToken is IBasketToken, ERC721 {
     address public ETFgame;

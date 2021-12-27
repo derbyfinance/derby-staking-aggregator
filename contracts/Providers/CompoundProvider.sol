@@ -3,7 +3,7 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./ICToken.sol";
+import "../Interfaces/ExternalInterfaces/ICToken.sol";
 
 contract CompoundInterface {
     ICToken public CToken;

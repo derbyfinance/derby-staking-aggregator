@@ -3,9 +3,9 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./IETFVault.sol";
-import "./IRouter.sol";
-import "./IGoverned.sol";
+import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IRouter.sol";
+import "./Interfaces/IGoverned.sol";
 
 import "./VaultToken.sol";
 
@@ -28,7 +28,7 @@ abstract contract ETFVault is VaultToken, IETFVault {
     // address of ETFgame
     address public ETFgame;
 
-    // address of DAO governed
+    // address of DAO governance contract
     address public governed;
 
     modifier onlyETFgame {
