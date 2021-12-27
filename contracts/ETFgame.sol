@@ -3,9 +3,9 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./IETFGame.sol";
-import "./IBasketToken.sol";
-import "./IGoverned.sol";
+import "./Interfaces/IETFGame.sol";
+import "./Interfaces/IBasketToken.sol";
+import "./Interfaces/IGoverned.sol";
 
 import "./XaverToken.sol";
 

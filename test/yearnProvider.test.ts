@@ -15,13 +15,14 @@ describe("Deploy Contract and interact with Yearn", async () => {
 
   beforeEach(async function() {
     [owner, vault] = await ethers.getSigners();
-    ownerAddr = await owner.getAddress();
     vaultAddr = await vault.getAddress();
 
-    yearnProvider = await deployYearnProvider(owner, yusdc, usdc, vaultAddr);
-
-    USDCSigner = await getUSDCSigner();
-    IUSDc = await erc20(usdc);
+    [ownerAddr, yearnProvider, USDCSigner, IUSDc] = await Promise.all([
+      owner.getAddress(),
+      deployYearnProvider(owner, yusdc, usdc, vaultAddr),
+      getUSDCSigner(),
+      erc20(usdc)
+    ]);
   });
 
   it("Should deposit and withdraw tokens to Yearn", async function() {
@@ -32,16 +33,19 @@ describe("Deploy Contract and interact with Yearn", async () => {
 
     console.log(`-------------------------Deposit-------------------------`);  
     await yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC);
-    const balance = await yearnProvider.balance();
+    const balanceShares = Number(await yearnProvider.balance());
+    const price = Number(await yearnProvider.exchangeRate());
+    const amount = (balanceShares * price) / 1E12
 
-    console.log(`token balance contract ${formatUSDC(String(balance))}`)
-    console.log(formatUSDC(amountUSDC));
+    console.log(`token balance contract ${balanceShares}`)
+    expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
 
     console.log(`-------------------------Withdraw-------------------------`); 
-    await yearnProvider.connect(vault).withdraw(vaultAddr, balance);
-    const balanceAfter = await yearnProvider.balance();
+    await yearnProvider.connect(vault).withdraw(vaultAddr, balanceShares);
 
     const USDCBalance = await IUSDc.balanceOf(vaultAddr);
     console.log(`USDC balance vault ${formatUSDC(String(USDCBalance))}`);
+
+    expect(Number(formatUSDC(String(USDCBalance)))).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
   });
 });

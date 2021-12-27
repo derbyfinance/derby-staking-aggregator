@@ -9,7 +9,7 @@ import type {
   IGoverned
  } from '../../typechain-types';
 
-import IGovernedArtifact from '../../artifacts/contracts/IGoverned.sol/IGoverned.json';
+import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
 import ETFGameArtifact from '../../artifacts/contracts/ETFgame.sol/ETFGame.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
