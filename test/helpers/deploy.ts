@@ -3,10 +3,11 @@ import { deployContract } from "ethereum-waffle";
 import { Signer, BigNumberish, Wallet } from "ethers";
 import type { 
   YearnProvider, 
+  Router,
   BasketToken, 
   ETFGame, 
   XaverToken, 
-  IGoverned
+  IGoverned,
  } from '../../typechain-types';
 
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
@@ -14,10 +15,15 @@ import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverTo
 import ETFGameArtifact from '../../artifacts/contracts/ETFgame.sol/ETFGame.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
+import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
 
 
 export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken: string, router: string): Promise<YearnProvider> => {
   return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
+};
+
+export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {
+  return (deployContract(deployerSign, RouterArtifact,  [daoAddress]) as Promise<Router>);
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {
