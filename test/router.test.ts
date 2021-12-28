@@ -8,16 +8,17 @@ import { deployRouter } from './helpers/deploy';
 
 
 describe("Deploy router contract", async () => {
-  let router: Router, owner: Signer, addr1: Signer, ownerAddr: string, addr1Addr: string;
+  let router: Router, dao: Signer, addr1: Signer, vault: Signer, daoAddr: string, addr1Addr: string, vaultAddr: string;
 
   beforeEach(async function() {
-    [owner, addr1] = await ethers.getSigners();
+    [dao, addr1, vault] = await ethers.getSigners();
 
-    [ownerAddr, addr1Addr, router] = await Promise.all([
-      owner.getAddress(),
+    [daoAddr, addr1Addr, vaultAddr] = await Promise.all([
+      dao.getAddress(),
       addr1.getAddress(),
-      deployRouter(owner),
+      vault.getAddress(),
     ]);
+    router = await deployRouter(dao, daoAddr)
   });
 
   it("Should add a protocol", async function() {
@@ -25,7 +26,7 @@ describe("Deploy router contract", async () => {
     const protocolNumber = 1;
     const providerAddress = addr1Addr;
 
-    await router.addProtocol(ETFNumber, protocolNumber, providerAddress);
+    await router.addProtocol(ETFNumber, protocolNumber, providerAddress, vaultAddr);
     const protocol = await router.protocol(ETFNumber, protocolNumber);
 
     expect(protocol).to.be.equal(providerAddress);

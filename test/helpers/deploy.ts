@@ -22,8 +22,8 @@ export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken
   return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
 };
 
-export const deployRouter = (deployerSign: Signer): Promise<Router> => {
-  return (deployContract(deployerSign, RouterArtifact) as Promise<Router>);
+export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {
+  return (deployContract(deployerSign, RouterArtifact,  [daoAddress]) as Promise<Router>);
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {

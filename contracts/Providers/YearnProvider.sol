@@ -18,7 +18,7 @@ contract YearnProvider is IProvider{
   mapping(uint256 => uint256) public historicalPrices;
 
   modifier onlyRouter {
-    require(msg.sender == router, "ETFrouter: only router");
+    require(msg.sender == router, "ETFProvider: only router");
     _;
   }
 
