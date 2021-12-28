@@ -8,7 +8,7 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract YearnProvider {
+contract YearnProvider is IProvider{
   using SafeERC20 for IERC20;
 
   IYearn public yToken; // yusdc
@@ -28,11 +28,7 @@ contract YearnProvider {
     router = _router;
   }
 
-  function addPricePoint() external {
-
-  }
-
-  function deposit(address _buyer, uint256 _amount) external onlyRouter returns(uint256) {
+  function deposit(address _buyer, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
     uToken.safeTransferFrom(_buyer, address(this), _amount);
@@ -49,7 +45,7 @@ contract YearnProvider {
   }
 
   // Tokens nog ergens vandaan pullen
-  function withdraw(address _seller, uint256 _amount) external onlyRouter returns(uint256) {
+  function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_seller); 
 
     uint256 uAmountReceived = yToken.withdraw(_amount); 
@@ -69,17 +65,21 @@ contract YearnProvider {
     return _balanceShares;
     }
 
-  function exchangeRate() external view returns(uint256) {
+  function exchangeRate() external override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
     console.log("_price %s", _price);
     return _price;
   }
 
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
 
   }
 
-  function _msgSender() internal view virtual returns (address payable) {
-    return payable(msg.sender); 
+  function addPricePoint() external override {
+
   }
+
+  // function _msgSender() internal view virtual returns (address payable) {
+  //   return payable(msg.sender); 
+  // }
 }

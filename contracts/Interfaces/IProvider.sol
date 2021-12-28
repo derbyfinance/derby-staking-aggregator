@@ -2,9 +2,9 @@
 pragma solidity ^0.8.3;
 
 interface IProvider {
-    function deposit(uint256 amount) external returns(uint256);
+    function deposit(address _buyer, uint256 _amount) external returns(uint256);
 
-    function withdraw(uint256 balance) external;
+    function withdraw(address _seller, uint256 _amount) external returns(uint256);
 
     function exchangeRate() external view returns(uint256);
 

@@ -17,4 +17,6 @@ contract Router {
     function exchangeRate(uint256 ETFnumber, uint256 protocolNumber) external view returns(uint256){
         return IProvider(protocols[ETFnumber][protocolNumber]).exchangeRate();
     }
+
+    function addProtocol
 }
