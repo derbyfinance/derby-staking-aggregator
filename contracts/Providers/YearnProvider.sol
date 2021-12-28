@@ -35,6 +35,7 @@ contract YearnProvider is IProvider{
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
+    console.log("Balance after from contract %s", balanceAfter);
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
     uint256 yTokenReceived = yToken.deposit(_amount);
@@ -60,14 +61,12 @@ contract YearnProvider is IProvider{
   function balance() public view returns (uint256) {
     uint256 _balanceShares = yToken.balanceOf(address(this));
 
-    console.log("balanceShares %s", _balanceShares);
-
     return _balanceShares;
-    }
+  }
 
   function exchangeRate() external override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
-    console.log("_price %s", _price);
+
     return _price;
   }
 

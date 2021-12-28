@@ -4,19 +4,44 @@ pragma solidity ^0.8.3;
 import "./Interfaces/IProvider.sol";
 
 contract Router {
-    mapping(uint256 => mapping(uint256 => address)) public protocols; 
+  mapping(uint256 => mapping(uint256 => address)) public protocol; 
 
-    function deposit(uint256 ETFnumber, uint256 protocolNumber, uint256 amount) external returns(uint256){
-        return IProvider(protocols[ETFnumber][protocolNumber]).deposit(amount);
-    }
+  // Modifier for only vault?
 
-    function withdraw(uint256 ETFnumber, uint256 protocolNumber, uint256 balance) external{
-        return IProvider(protocols[ETFnumber][protocolNumber]).withdraw(balance);
-    }
+  function deposit(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber, 
+    address _buyer, 
+    uint256 _amount
+    ) 
+    external returns(uint256) {
+    return IProvider(protocol[_ETFnumber][_protocolNumber]).deposit(_buyer, _amount);
+  }
 
-    function exchangeRate(uint256 ETFnumber, uint256 protocolNumber) external view returns(uint256){
-        return IProvider(protocols[ETFnumber][protocolNumber]).exchangeRate();
-    }
+  function withdraw(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber, 
+    address _seller, 
+    uint256 _balance
+    ) 
+    external returns(uint256) {
+    return IProvider(protocol[_ETFnumber][_protocolNumber]).withdraw(_seller, _balance);
+  }
 
-    function addProtocol
+  function exchangeRate(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber
+    ) 
+    external view returns(uint256) {
+    return IProvider(protocol[_ETFnumber][_protocolNumber]).exchangeRate();
+  }
+
+  function addProtocol(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber, 
+    address _provider
+    ) 
+    external { 
+    protocol[_ETFnumber][_protocolNumber] = _provider;
+  }
 }
