@@ -4,9 +4,9 @@ pragma solidity ^0.8.3;
 interface ICToken {
     function balanceOf(address owner) external view returns (uint);
 
-    function mint(uint256) external returns (uint256);
+    function mint(uint) external returns (uint);
 
-    function exchangeRateCurrent() external returns (uint256);
+    function exchangeRateStored() external view returns (uint);
 
-    function redeem(uint) external returns (uint);
+    function redeem(uint _amount) external returns (uint);
 }
