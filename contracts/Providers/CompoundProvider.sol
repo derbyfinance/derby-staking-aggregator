@@ -35,12 +35,11 @@ contract CompoundProvider is IProvider{
     uToken.safeIncreaseAllowance(address(cToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
-    console.log("Balance after from contract %s", balanceAfter);
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
     uint256 cTokenReceived = cToken.mint(_amount);
 
-    // cToken.transfer(router, cTokenReceived);
+    // cToken.transfer(vault, cTokenReceived);
 
     return cTokenReceived;
   }
@@ -52,7 +51,7 @@ contract CompoundProvider is IProvider{
     uint256 balanceBeforeRedeem = uToken.balanceOf(address(this)); 
     // Compound redeem: 0 on success, otherwise an Error code
     require(cToken.redeem(_amount) == 0, "something went wrong"); 
-
+    
     uint256 balanceAfterRedeem = uToken.balanceOf(address(this)); 
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
@@ -66,7 +65,6 @@ contract CompoundProvider is IProvider{
 
   function balance() public view returns (uint256) {
     uint256 _balanceShares = cToken.balanceOf(address(this));
-    console.log("_balanceShares %s", _balanceShares);
     return _balanceShares;
   }
 
@@ -74,7 +72,6 @@ contract CompoundProvider is IProvider{
   // returned price from compound is scaled by 1e18
   function exchangeRate() external view override returns(uint256) {
     uint256 _price = cToken.exchangeRateStored();
-    console.log("exchangeRateCurrent %s", _price);
     return _price;
   }
 

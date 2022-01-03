@@ -38,6 +38,8 @@ describe("Deploy Contract and interact with Yearn", async () => {
 
   it("Should deposit and withdraw to Yearn through Router", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
+    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = Number(await yearnProvider.balance());
     const price = Number(await yearnProvider.exchangeRate());
@@ -48,15 +50,13 @@ describe("Deploy Contract and interact with Yearn", async () => {
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(vaultBalance)).to.be.equal(0)
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    console.log(`USDC balance vault ${formatUSDC(String(vaultBalanceEnd))}`);
-
-    expect(Number(formatUSDC(String(vaultBalanceEnd)))).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
+    expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
   });
 
   it("Should fail when !Router is calling the Provider", async function() {

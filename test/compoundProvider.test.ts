@@ -13,7 +13,7 @@ const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolNumber = 2;
 
-describe("Deploy Contract and interact with Yearn", async () => {
+describe("Deploy Contract and interact with Compound", async () => {
   let compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
@@ -36,7 +36,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     ])
   });
 
-  it("Should deposit and withdraw to Yearn through Router", async function() {
+  it("Should deposit and withdraw to Compound through Router", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = Number(await compoundProvider.balance());
@@ -57,6 +57,21 @@ describe("Deploy Contract and interact with Yearn", async () => {
     console.log(`USDC balance vault ${formatUSDC(String(vaultBalanceEnd))}`);
 
     expect(Number(formatUSDC(String(vaultBalanceEnd)))).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
+  });
+
+  it("Should fail when !Router is calling the Provider", async function() {
+    await expect(compoundProvider.connect(vault).deposit(vaultAddr, amountUSDC))
+    .to.be.revertedWith('ETFProvider: only router');
+  });
+
+  it("Should fail when !Vault is calling the Router", async function() {
+    await expect(router.deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Router: only Vault');
+  });
+
+  it("Should get Compound exchangeRate through Router", async function() {
+    const exchangeRate = await router.connect(vault).exchangeRate(ETFNumber, protocolNumber)
+    console.log(`Exchange rate ${exchangeRate}`)
   });
 
 });

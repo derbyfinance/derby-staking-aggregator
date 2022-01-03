@@ -35,11 +35,8 @@ contract YearnProvider is IProvider{
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
-    console.log("Balance after from contract %s", balanceAfter);
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
-
     uint256 yTokenReceived = yToken.deposit(_amount);
-
     // yToken.transfer(router, yTokenReceived);
 
     return yTokenReceived;
