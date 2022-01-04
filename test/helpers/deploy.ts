@@ -4,6 +4,7 @@ import { Signer, BigNumberish, Wallet } from "ethers";
 import type { 
   YearnProvider,
   CompoundProvider, 
+  AaveProvider,
   Router,
   BasketToken, 
   ETFGame, 
@@ -13,6 +14,7 @@ import type {
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
+import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
 import ETFGameArtifact from '../../artifacts/contracts/ETFgame.sol/ETFGame.json';
@@ -26,6 +28,10 @@ export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken
 
 export const deployCompoundProvider = (deployerSign: Signer, ctoken: string, utoken: string, router: string): Promise<CompoundProvider> => {
   return (deployContract(deployerSign, CompoundProviderArtifact, [ctoken, utoken, router])) as Promise<CompoundProvider>;
+};
+
+export const deployAaveProvider = (deployerSign: Signer, atoken: string, router: string): Promise<AaveProvider> => {
+  return (deployContract(deployerSign, AaveProviderArtifact, [atoken, router])) as Promise<AaveProvider>;
 };
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {
