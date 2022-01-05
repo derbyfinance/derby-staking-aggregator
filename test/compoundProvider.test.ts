@@ -38,25 +38,27 @@ describe("Deploy Contract and interact with Compound", async () => {
 
   it("Should deposit and withdraw to Compound through Router", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
+    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+    
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = Number(await compoundProvider.balance());
     const price = Number(await compoundProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E18
-    console.log(`token balance contract ${balanceShares}`);
     
     expect(amount).to.be.closeTo(Number(amountUSDC), 2);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(vaultBalance)).to.be.equal(0);
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    console.log(`USDC balance vault ${formatUSDC(String(vaultBalanceEnd))}`);
 
-    expect(Number(formatUSDC(String(vaultBalanceEnd)))).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
+    expect(
+      Number(vaultBalanceStart) - Number(vaultBalance))
+      .to.be.closeTo(Number(amountUSDC), 2);
   });
 
   it("Should fail when !Router is calling the Provider", async function() {

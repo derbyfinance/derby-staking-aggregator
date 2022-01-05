@@ -44,13 +44,12 @@ describe("Deploy Contract and interact with Yearn", async () => {
     const balanceShares = Number(await yearnProvider.balance());
     const price = Number(await yearnProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E12
-    console.log(`token balance contract ${balanceShares}`)
     
     expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);

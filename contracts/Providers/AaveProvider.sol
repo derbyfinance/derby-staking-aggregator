@@ -11,6 +11,7 @@ import "hardhat/console.sol";
 
 contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
+  using SafeERC20 for IAToken;
 
   IAToken public aToken; // yusdc
   IERC20 public uToken; // usdc
@@ -50,17 +51,18 @@ contract AaveProvider is IProvider{
     uint256 balanceAfter = uToken.balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    IALendingPool(aToken.POOL()).deposit(uTokenAddr, _amount, _buyer, aaveReferral);
+    // address(this) to vault
+    IALendingPool(aToken.POOL()).deposit(uTokenAddr, _amount, address(this), aaveReferral);
 
     return _amount;
   }
 
+  // aTokens should be pulled from vault
   function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_seller); 
 
     uint256 uTokensReceived = IALendingPool(aToken.POOL()).withdraw(uTokenAddr, _amount, _seller);
 
-    console.log("uTokensReceived %s", uTokensReceived);
     uint256 balanceAfter = uToken.balanceOf(_seller); 
 
     require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");

@@ -42,11 +42,11 @@ describe("Deploy Contract and interact with Aave", async () => {
 
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
 
-    const aTokenbalance = await aaveProvider.balance(vaultAddr);
+    const aTokenbalance = await aaveProvider.balance(aaveProvider.address);
     expect(formatUSDC(aTokenbalance)).to.be.equal(formatUSDC(amountUSDC));
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(aTokenbalance);
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, aTokenbalance);
@@ -55,19 +55,19 @@ describe("Deploy Contract and interact with Aave", async () => {
     expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
   });
 
-  // it("Should fail when !Router is calling the Provider", async function() {
-  //   await expect(aaveProvider.connect(vault).deposit(vaultAddr, amountUSDC))
-  //   .to.be.revertedWith('ETFProvider: only router');
-  // });
+  it("Should fail when !Router is calling the Provider", async function() {
+    await expect(aaveProvider.connect(vault).deposit(vaultAddr, amountUSDC))
+    .to.be.revertedWith('ETFProvider: only router');
+  });
 
-  // it("Should fail when !Vault is calling the Router", async function() {
-  //   await expect(router.deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC))
-  //   .to.be.revertedWith('Router: only Vault');
-  // });
+  it("Should fail when !Vault is calling the Router", async function() {
+    await expect(router.deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Router: only Vault');
+  });
 
-  // it("Should get exchangeRate through Router", async function() {
-  //   const exchangeRate = await router.connect(vault).exchangeRate(ETFNumber, protocolNumber)
-  //   console.log(`Exchange rate ${exchangeRate}`)
-  // });
+  it("Should get exchangeRate through Router", async function() {
+    const exchangeRate = await router.connect(vault).exchangeRate(ETFNumber, protocolNumber)
+    console.log(`Exchange rate ${exchangeRate}`)
+  });
   
 });
