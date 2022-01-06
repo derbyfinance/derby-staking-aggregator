@@ -11,10 +11,9 @@ import "hardhat/console.sol";
 
 contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
-  using SafeERC20 for IAToken;
 
-  IAToken public aToken; // yusdc
-  IERC20 public uToken; // usdc
+  IAToken public aToken; 
+  IERC20 public uToken; 
 
   uint16 private aaveReferral;
   address public router; 
@@ -51,16 +50,15 @@ contract AaveProvider is IProvider{
     uint256 balanceAfter = uToken.balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    // address(this) to vault
-    IALendingPool(aToken.POOL()).deposit(uTokenAddr, _amount, address(this), aaveReferral);
+    IALendingPool(aToken.POOL()).deposit(uTokenAddr, _amount, _buyer, aaveReferral);
 
     return _amount;
   }
 
-  // aTokens should be pulled from vault
   function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_seller); 
 
+    require(aToken.transferFrom(_seller, address(this), _amount) == true, "Error");
     uint256 uTokensReceived = IALendingPool(aToken.POOL()).withdraw(uTokenAddr, _amount, _seller);
 
     uint256 balanceAfter = uToken.balanceOf(_seller); 
@@ -75,11 +73,8 @@ contract AaveProvider is IProvider{
     return _balanceShares;
   }
 
-  // ExchangeRateStored || ExchangerateCurrent? Current is write
-  // returned price from compound is scaled by 1e18
   function exchangeRate() external view override returns(uint256) {
-    // uint256 _price = cToken.exchangeRateStored();
-    // return _price;
+
   }
 
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
@@ -90,7 +85,4 @@ contract AaveProvider is IProvider{
 
   }
 
-  // function _msgSender() internal view virtual returns (address payable) {
-  //   return payable(msg.sender); 
-  // }
 }

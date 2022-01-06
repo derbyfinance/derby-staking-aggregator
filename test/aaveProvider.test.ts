@@ -14,18 +14,19 @@ const ETFNumber = 1;
 const protocolNumber = 3;
 
 describe("Deploy Contract and interact with Aave", async () => {
-  let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, vaultAddr: string;
+  let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, aToken: ERC20, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
     router = await deployRouter(dao, daoAddr);
 
-    [vaultAddr, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
+    [vaultAddr, aaveProvider, USDCSigner, IUSDc, aToken] = await Promise.all([
       vault.getAddress(),
       deployAaveProvider(dao, ausdc, router.address),
       getUSDCSigner(),
       erc20(usdc),
+      erc20(ausdc),
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to router contract
@@ -42,13 +43,14 @@ describe("Deploy Contract and interact with Aave", async () => {
 
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
 
-    const aTokenbalance = await aaveProvider.balance(aaveProvider.address);
+    const aTokenbalance = await aaveProvider.balance(vaultAddr);
     expect(formatUSDC(aTokenbalance)).to.be.equal(formatUSDC(amountUSDC));
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(aTokenbalance);
 
     console.log(`-------------------------Withdraw-------------------------`); 
+    await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, aTokenbalance);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
