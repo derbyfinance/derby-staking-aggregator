@@ -1,3 +1,5 @@
+import { BigNumber } from "ethers";
+
 /* eslint-disable prettier/prettier */
 require('@ethereum-waffle/compiler');
 const { ethers, network, waffle } = require("hardhat");
@@ -39,5 +41,5 @@ export const formatEther = (amount: string) => ethers.utils.formatEther(amount)
 export const parseUnits = (amount: string, number: number) => ethers.utils.parseUnits(amount, number)
 export const formatUnits = (amount: string, number: number) => ethers.utils.formatUnits(amount, number)
 export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6)
-export const formatUSDC = (amount: string) => ethers.utils.formatUnits(amount, 6)
+export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6)
 
