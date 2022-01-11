@@ -32,7 +32,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
       erc20(usdc),
     ]);
     
-    // Transfer and approve USDC to vault AND add protocol to router contract
     await Promise.all([
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
       IUSDc.connect(user).approve(vault.address, amountUSDC),
@@ -42,7 +41,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should deposit to both providers", async function() {
-    console.log('test')
+    const tx = await vault.depositETF(userAddr, amountUSDC);
+
+    console.log(`GasLimit: ${ethers.utils.formatUnits(tx.gasLimit, 0)}`);
+
     expect(2).to.be.equal(2)
   });
 

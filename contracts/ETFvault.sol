@@ -10,6 +10,8 @@ import "./Interfaces/IGoverned.sol";
 
 import "./VaultToken.sol";
 
+import "hardhat/console.sol";
+
 // ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
 // ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
@@ -22,6 +24,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
   IERC20 public vaultCurrency;
   IRouter public router;
+  address public routerAddr;
 
   address public ETFgame;
 
@@ -62,6 +65,7 @@ contract ETFVault is IETFVault { // is VaultToken
   constructor(uint256 _ETFnumber, address _router, address _vaultCurrency) {
     ETFnumber = _ETFnumber;
     router = IRouter(_router);
+    routerAddr = _router;
     vaultCurrency = IERC20(_vaultCurrency);
   }
 
@@ -91,6 +95,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
+    console.log("Transfered funds to contract");
 
     // deposit directly in providers for now
     depositInProtocols(_amount);   
@@ -101,7 +106,11 @@ contract ETFVault is IETFVault { // is VaultToken
   function depositInProtocols(uint256 _amount) internal {
     for (uint i = 0; i < protocolsInETF.length; i++) {
       uint256 amountToDeposit = _amount / 2;
-      router.deposit(ETFnumber, i, address(this), amountToDeposit);
+
+      address provider = router.protocol(ETFnumber, protocolsInETF[i]);
+      vaultCurrency.safeIncreaseAllowance(provider, amountToDeposit);
+      
+      router.deposit(ETFnumber, protocolsInETF[i], address(this), amountToDeposit);
     }
   }
 
