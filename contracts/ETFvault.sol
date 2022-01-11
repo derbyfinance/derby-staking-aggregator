@@ -2,6 +2,7 @@
 pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IRouter.sol";
@@ -12,90 +13,123 @@ import "./VaultToken.sol";
 // ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
 // ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
-abstract contract ETFVault is VaultToken, IETFVault {
+contract ETFVault is IETFVault { // is VaultToken
+  using SafeERC20 for IERC20;
     // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
-    bytes32 public ETFname;
+  bytes32 public ETFname;
 
-    // ETF number
-    uint256 public ETFnumber;
+  uint256 public ETFnumber;
 
-    // router address
-    address public router;
+  IERC20 public vaultCurrency;
+  IRouter public router;
 
-    // vault currency token address (i.e. dai address)
-    address public vaultCurrency;
-
-    // address of ETFgame
-    address public ETFgame;
+  address public ETFgame;
 
     // address of DAO governance contract
-    address public governed;
+  address public governed;
 
-    modifier onlyETFgame {
-        require(msg.sender == ETFgame, "ETFvault: only ETFgame");
-        _;
-    }
+  // not great yet
+  uint256[] public protocolsInETF = [1, 2];
 
-    modifier onlyDao {
-        require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
-        _;
-    }
+  modifier onlyETFgame {
+    require(msg.sender == ETFgame, "ETFvault: only ETFgame");
+    _;
+  }
 
-    constructor(
-        bytes32 ETFname_, 
-        uint256 ETFnumber_, 
-        address router_,
-        address vaultCurrency_,
-        address ETFgame_,
-        address governed_,
-        string memory name_,
-        string memory symbol_
-    ) VaultToken (name_, symbol_) {
-        ETFname = ETFname_;
-        ETFnumber = ETFnumber_;
-        router = router_;
-        vaultCurrency = vaultCurrency_;
-        ETFgame = ETFgame_;
-        governed = governed_;
-    }
+  modifier onlyDao {
+    require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+    _;
+  }
+
+  // constructor(
+  //   bytes32 ETFname_, 
+  //   uint256 ETFnumber_, 
+  //   address _router,
+  //   address _vaultCurrency,
+  //   address ETFgame_,
+  //   address governed_,
+  //   string memory name_,
+  //   string memory symbol_
+  // ) VaultToken (name_, symbol_) {
+  //   ETFname = ETFname_;
+  //   ETFnumber = ETFnumber_;
+  //   router = IRouter(_router);
+  //   vaultCurrency = IERC20(_vaultCurrency);
+  //   ETFgame = ETFgame_;
+  //   governed = governed_;
+  // }
+
+  constructor(uint256 _ETFnumber, address _router, address _vaultCurrency) {
+    ETFnumber = _ETFnumber;
+    router = IRouter(_router);
+    vaultCurrency = IERC20(_vaultCurrency);
+  }
 
     // latest protocol id
-    uint256 public latestProtocolId;
+  uint256 public latestProtocolId;
 
     // names of all the different protocols in the ETF
-    mapping(uint256 => bytes32) public protocolNames;
+  mapping(uint256 => bytes32) public protocolNames;
 
     // period number of the latest rebalance
-    uint256 public latestRebalancingPeriod;
+  uint256 public latestRebalancingPeriod;
 
     // from the rebalancing period to block number;
-    mapping(uint256 => uint256) public rebalancingPeriodToBlock;
+  mapping(uint256 => uint256) public rebalancingPeriodToBlock;
 
     // total number of allocated xaver tokens currently
-    uint256 public totalAllocatedTokens;
+  uint256 public totalAllocatedTokens;
 
     // current allocations over the protocols
-    mapping(uint256 => uint256) private _currentAllocations;
+  mapping(uint256 => uint256) private _currentAllocations;
 
     // delta of the total number of xaver tokens allocated on next rebalancing
-    uint256 private _deltaAllocatedTokens;
+  uint256 private _deltaAllocatedTokens;
 
     // delta of the portfolio on next rebalancing
-    mapping(uint256 => uint256) private _deltaAllocations;
+  mapping(uint256 => uint256) private _deltaAllocations;
 
-    function addProtocol(bytes32 name, address addr) public override onlyDao {
+  function depositETF(address _buyer, uint256 _amount) external {
+    vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
 
+    // deposit directly in providers for now
+    depositInProtocols(_amount);   
+    
+    // mint LP tokens and send to user 
+  }
+
+  function depositInProtocols(uint256 _amount) internal {
+    for (uint i = 0; i < protocolsInETF.length; i++) {
+      uint256 amountToDeposit = _amount / 2;
+      router.deposit(ETFnumber, i, address(this), amountToDeposit);
     }
+  }
 
-    function _rebalanceETF() private {
+  function withdrawETF(address _seller, uint256 _amount) external {
 
-    }
+  }
 
-    function adjustDeltaAllocations() public onlyETFgame {
+  function withdrawFromProtocols(uint256 _amount) internal {
 
-    }
+  }
 
-    function adjustAllocatedTokens() public onlyETFgame {
+  function addProtocol(bytes32 name, address addr) public override onlyDao {
 
-    }
+  }
+
+  function price() public {
+
+  }
+
+  function _rebalanceETF() private {
+
+  }
+
+  function adjustDeltaAllocations() public onlyETFgame {
+
+  }
+
+  function adjustAllocatedTokens() public onlyETFgame {
+
+  }
 }
