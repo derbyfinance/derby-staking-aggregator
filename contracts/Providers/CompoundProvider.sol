@@ -28,20 +28,23 @@ contract CompoundProvider is IProvider{
     router = _router;
   }
 
-  function deposit(address _buyer, uint256 _amount) external override onlyRouter returns(uint256) {
+  function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
-    uToken.safeTransferFrom(_buyer, address(this), _amount);
+    uToken.safeTransferFrom(_vault, address(this), _amount);
     uToken.safeIncreaseAllowance(address(cToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    uint256 cTokenReceived = cToken.mint(_amount);
+    uint256 cTokenBefore = cToken.balanceOf(address(this));
+    require(cToken.mint(_amount) == 0, "Error minting Compound");
+    uint256 cTokenAfter = cToken.balanceOf(address(this));
 
-    // cToken.transfer(vault, cTokenReceived);
+    uint cTokensReceived = cTokenAfter - cTokenBefore;
+    cToken.transfer(_vault, cTokensReceived);
 
-    return cTokenReceived;
+    return cTokensReceived;
   }
 
   // Tokens nog ergens vandaan pullen
@@ -63,8 +66,8 @@ contract CompoundProvider is IProvider{
     return uTokensReceived;
   }
 
-  function balance() public view returns (uint256) {
-    uint256 _balanceShares = cToken.balanceOf(address(this));
+  function balance(address _address) public view override returns (uint256) {
+    uint256 _balanceShares = cToken.balanceOf(_address);
     return _balanceShares;
   }
 

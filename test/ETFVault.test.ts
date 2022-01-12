@@ -42,11 +42,13 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
   it("Should deposit to both providers", async function() {
     const tx = await vault.depositETF(userAddr, amountUSDC);
+    console.log(`Gas Used: ${ethers.utils.formatUnits(tx.gasLimit, 0)}`);
 
-    console.log(`GasLimit: ${ethers.utils.formatUnits(tx.gasLimit, 0)}`);
+    const compoundBalance = await vault.balance(protocolCompound);
+    console.log(`Compound balance vault ${compoundBalance}`);
 
-    expect(2).to.be.equal(2)
+    const yearnBalance = await vault.balance(protocolYearn);
+    console.log(`Yearn balance vault ${yearnBalance}`);
+
   });
-
-  
 });

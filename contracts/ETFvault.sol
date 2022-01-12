@@ -105,6 +105,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
   function depositInProtocols(uint256 _amount) internal {
     for (uint i = 0; i < protocolsInETF.length; i++) {
+      // will be allocation formula
       uint256 amountToDeposit = _amount / 2;
 
       address provider = router.protocol(ETFnumber, protocolsInETF[i]);
@@ -126,8 +127,16 @@ contract ETFVault is IETFVault { // is VaultToken
 
   }
 
-  function price() public {
+  function balance(uint256 _protocolNumber) external view returns(uint256) {
+    uint256 tokenBalance = router.balance(ETFnumber, _protocolNumber, address(this));
 
+    return tokenBalance;
+  }
+
+  function price(uint256 _protocolNumber) public view returns(uint256) {
+    uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNumber);
+
+    return protocolPrice;
   }
 
   function _rebalanceETF() private {

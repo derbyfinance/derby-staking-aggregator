@@ -68,7 +68,7 @@ contract AaveProvider is IProvider{
     return uTokensReceived;
   }
 
-  function balance(address _address) public view returns (uint256) {
+  function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = aToken.balanceOf(_address);
     return _balanceShares;
   }

@@ -7,7 +7,7 @@ interface IRouter {
     uint256 protocolNumber, 
     address buyer, 
     uint256 amount
-    ) 
+  ) 
     external returns(uint256);
 
   function withdraw(
@@ -15,13 +15,27 @@ interface IRouter {
     uint256 protocolNumber,
     address seller,
     uint256 balance
-    ) 
+  ) 
     external;
 
   function exchangeRate(
     uint256 ETFnumber, 
     uint256 protocolNumber
-    ) 
+  ) 
+    external view returns(uint256);
+
+  function exchangeRate(
+    uint256 ETFnumber, 
+    uint256 protocolNumber,
+    address _address
+  ) 
+    external view returns(uint256);
+
+  function balance(
+    uint256 ETFnumber, 
+    uint256 protocolNumber,
+    address _address
+  ) 
     external view returns(uint256);
 
   function addProtocol(
@@ -30,11 +44,11 @@ interface IRouter {
     address provider,
     address vault
   )
-  external;
+    external;
 
   function protocol(
     uint256 ETFNumber,
     uint256 protocolNumber
   )
-  external view returns(address);
+    external view returns(address);
 }

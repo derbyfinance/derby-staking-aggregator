@@ -28,16 +28,16 @@ contract YearnProvider is IProvider{
     router = _router;
   }
 
-  function deposit(address _buyer, uint256 _amount) external override onlyRouter returns(uint256) {
+  function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
-    uToken.safeTransferFrom(_buyer, address(this), _amount);
+    uToken.safeTransferFrom(_vault, address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
     uint256 yTokenReceived = yToken.deposit(_amount);
-    // yToken.transfer(router, yTokenReceived);
+    yToken.transfer(_vault, yTokenReceived);
 
     return yTokenReceived;
   }
@@ -55,8 +55,8 @@ contract YearnProvider is IProvider{
     return uAmountReceived;
   }
 
-  function balance() public view returns (uint256) {
-    uint256 _balanceShares = yToken.balanceOf(address(this));
+  function balance(address _address) public view override returns (uint256) {
+    uint256 _balanceShares = yToken.balanceOf(_address);
 
     return _balanceShares;
   }
