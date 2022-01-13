@@ -12,6 +12,8 @@ contract CompoundProvider is IProvider{
   using SafeERC20 for IERC20;
 
   ICToken public cToken; // yusdc
+  address override public protocolToken;
+
   IERC20 public uToken; // usdc
   
   address public router; 
@@ -25,6 +27,7 @@ contract CompoundProvider is IProvider{
   constructor(address _cToken, address _uToken, address _router) {
     cToken = ICToken(_cToken);
     uToken = IERC20(_uToken);
+    protocolToken = _cToken;
     router = _router;
   }
 

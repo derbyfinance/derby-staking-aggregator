@@ -58,4 +58,10 @@ interface IRouter {
     uint256 protocolNumber
   )
     external view returns(address);
+
+  function getProtocolTokenAddress(
+    uint256 ETFNumber,
+    uint256 protocolNumber
+  )
+    external view returns(address);
 }

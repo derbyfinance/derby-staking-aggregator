@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
@@ -13,9 +14,9 @@ const cusdc = '0x39AA39c021dfbaE8faC545936693aC917d5E7563';
 const ausdc = '0xBcca60bB61934080951369a648Fb03DF4F96263C';
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
-const protocolYearn = [1, 20];
-const protocolCompound = [2, 40];
-const protocolAave = [5, 60];
+let protocolYearn = [1, 20];
+let protocolCompound = [2, 40];
+let protocolAave = [5, 60];
 
 describe("Deploy Contracts and interact with Vault", async () => {
   let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, vault: ETFVault, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, user: Signer, userAddr: string;
@@ -36,8 +37,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
     
     await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
-      IUSDc.connect(user).approve(vault.address, amountUSDC),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
+      IUSDc.connect(user).approve(vault.address, amountUSDC.mul(2)),
       router.addProtocol(ETFNumber, protocolYearn[0], yearnProvider.address, vault.address),
       router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vault.address),
       router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vault.address)
@@ -45,7 +46,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should set allocations", async function() {
-    await vault.setAllocatedTokens([
+    await vault.setAllocations([
       protocolYearn,
       protocolCompound,
       protocolAave
@@ -64,7 +65,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(aave).to.be.equal(protocolAave[1]);
 
     console.log('--------------depositing----------------')
-
     const tx = await vault.depositETF(userAddr, amountUSDC);
     console.log(`Gas Used: ${utils.formatUnits(tx.gasLimit, 0)}`);
 
@@ -78,6 +78,29 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     const aaveBalance = await vault.balanceUnderlying(protocolAave[0]);
     console.log(`Aave balance vault ${aaveBalance}`);
+
+    console.log('--------------rebalancing----------------')
+    protocolYearn = [1, 40];
+    protocolAave = [5, 40];
+
+    await vault.depositETF(userAddr, amountUSDC);
+
+    await vault.setAllocations([
+      protocolYearn,
+      protocolCompound,
+      protocolAave
+    ]);
+
+    await vault.rebalanceETF(amountUSDC);
+
+    const yearnBalance2 = await vault.balanceUnderlying(protocolYearn[0]);
+    console.log(`Yearn balance vault ${yearnBalance2}`);
+
+    const compoundBalance2 = await vault.balanceUnderlying(protocolCompound[0]);
+    console.log(`Compound balance vault ${compoundBalance2}`);
+
+    const aaveBalance2 = await vault.balanceUnderlying(protocolAave[0]);
+    console.log(`Aave balance vault ${aaveBalance2}`);
   });
 
   // it("Should deposit to both providers", async function() {
@@ -91,5 +114,4 @@ describe("Deploy Contracts and interact with Vault", async () => {
   //   console.log(`Yearn balance vault ${yearnBalance}`);
 
   // });
-
 });

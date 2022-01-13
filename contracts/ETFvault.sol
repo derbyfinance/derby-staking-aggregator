@@ -96,7 +96,6 @@ contract ETFVault is IETFVault { // is VaultToken
 
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
-    console.log("Transfered funds to contract");
     
     // mint LP tokens and send to user 
   }
@@ -112,23 +111,26 @@ contract ETFVault is IETFVault { // is VaultToken
 
       uint256 currentBalance = balanceUnderlying(protocolsInETF[i]);
 
-      // create margin? 
-      if (amountToDeposit == currentBalance) break;
-
-      if (amountToDeposit > currentBalance) {
-        depositInProtocol(amountToDeposit, protocolsInETF[i]);
-      }
-
-      if (amountToDeposit < currentBalance) {
-        // withdrawFromProtocol(amountToDeposit, protocolsInETF[i]);
-        console.log("withdrawing");
-      }
-
       console.log("ProtocolNum: %s, Allocation: %s, amountToDeposit: %s", 
       protocolsInETF[i],
       allocation, 
       amountToDeposit
       );
+
+      // create margin logic instead of 1E6 
+      if (amountToDeposit / 1E6 == currentBalance / 1E6) break;
+
+      if (amountToDeposit / 1E6 > currentBalance / 1E6) {
+        uint256 amount = amountToDeposit - currentBalance;
+        depositInProtocol(amount, protocolsInETF[i]);
+        console.log("deposited %s", amount);
+      }
+
+      if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
+        uint256 amount = currentBalance - amountToDeposit;
+        withdrawFromProtocol(amount, protocolsInETF[i]);
+        console.log("withdrawed %s", amount);
+      }
     }
   }
 
@@ -140,6 +142,10 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   function withdrawFromProtocol(uint256 _amount, uint256 _protocol) internal {
+    address provider = router.protocol(ETFnumber, _protocol);
+    address protocolToken = router.getProtocolTokenAddress(ETFnumber, _protocol);
+
+    IERC20(protocolToken).safeIncreaseAllowance(provider, _amount);
     router.withdraw(ETFnumber, _protocol, address(this), _amount);
   }
 
@@ -165,7 +171,7 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   // onlyETFGame modifier
-  function setAllocatedTokens(uint256[][] memory _allocations) public {
+  function setAllocations(uint256[][] memory _allocations) public {
     totalAllocatedTokens = 0;
     delete protocolsInETF;
 

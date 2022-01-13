@@ -15,4 +15,6 @@ interface IProvider {
     function addPricePoint() external;
 
     function getHistoricalPrice(uint256 period) external view returns(uint256);
+
+    function protocolToken() external view returns(address);
 }

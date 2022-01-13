@@ -13,11 +13,13 @@ contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
 
   IAToken public aToken; 
+  address override public protocolToken;
+
   IERC20 public uToken; 
+  address public uTokenAddr;
 
   uint16 private aaveReferral;
   address public router; 
-  address public uTokenAddr;
 
   mapping(uint256 => uint256) public historicalPrices;
 
@@ -28,6 +30,7 @@ contract AaveProvider is IProvider{
 
   constructor(address _aToken, address _router) {
     aToken = IAToken(_aToken);
+    protocolToken = _aToken;
 
     uTokenAddr = aToken.UNDERLYING_ASSET_ADDRESS();
     uToken = IERC20(uTokenAddr);
