@@ -36,8 +36,8 @@ export const deployAaveProvider = (deployerSign: Signer, atoken: string, router:
   return (deployContract(deployerSign, AaveProviderArtifact, [atoken, router])) as Promise<AaveProvider>;
 };
 
-export const deployETFVault = (deployerSign: Signer, ETFNumber: number, router: string, vaultCurrency: string): Promise<ETFVault> => {
-  return (deployContract(deployerSign, ETFVaultArtifact, [ETFNumber, router, vaultCurrency])) as Promise<ETFVault>;
+export const deployETFVault = (deployerSign: Signer, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string): Promise<ETFVault> => {
+  return (deployContract(deployerSign, ETFVaultArtifact, [daoAddress, ETFNumber, router, vaultCurrency])) as Promise<ETFVault>;
 };
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

@@ -31,8 +31,7 @@ contract ETFVault is IETFVault { // is VaultToken
     // address of DAO governance contract
   address public governed;
 
-  // not great yet
-  uint256[] public protocolsInETF = [1, 2];
+  uint256[] public protocolsInETF;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -40,7 +39,8 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   modifier onlyDao {
-    require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+    // require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
+    require(msg.sender == governed, "ETFvault: only DAO");
     _;
   }
 
@@ -62,7 +62,8 @@ contract ETFVault is IETFVault { // is VaultToken
   //   governed = governed_;
   // }
 
-  constructor(uint256 _ETFnumber, address _router, address _vaultCurrency) {
+  constructor(address _governed, uint256 _ETFnumber, address _router, address _vaultCurrency) {
+    governed = _governed;
     ETFnumber = _ETFnumber;
     router = IRouter(_router);
     routerAddr = _router;
@@ -84,14 +85,14 @@ contract ETFVault is IETFVault { // is VaultToken
     // total number of allocated xaver tokens currently
   uint256 public totalAllocatedTokens;
 
-    // current allocations over the protocols
-  mapping(uint256 => uint256) private _currentAllocations;
+    // current allocations over the protocols 
+  mapping(uint256 => uint256) private currentAllocations;
 
     // delta of the total number of xaver tokens allocated on next rebalancing
-  uint256 private _deltaAllocatedTokens;
+  uint256 private deltaAllocatedTokens;
 
     // delta of the portfolio on next rebalancing
-  mapping(uint256 => uint256) private _deltaAllocations;
+  mapping(uint256 => uint256) private deltaAllocations;
 
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
@@ -105,8 +106,14 @@ contract ETFVault is IETFVault { // is VaultToken
 
   function depositInProtocols(uint256 _amount) internal {
     for (uint i = 0; i < protocolsInETF.length; i++) {
-      // will be allocation formula
-      uint256 amountToDeposit = _amount / 2;
+      uint256 allocation = currentAllocations[protocolsInETF[i]];
+      uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
+
+      console.log("ProtocolNum: %s Allocation: %s amountToDeposit: %s", 
+      protocolsInETF[i],
+      allocation, 
+      amountToDeposit
+      );
 
       address provider = router.protocol(ETFnumber, protocolsInETF[i]);
       vaultCurrency.safeIncreaseAllowance(provider, amountToDeposit);
@@ -143,11 +150,31 @@ contract ETFVault is IETFVault { // is VaultToken
 
   }
 
-  function adjustDeltaAllocations() public onlyETFgame {
+  // onlyETFGame modifier
+  function setDeltaAllocations() public {
 
   }
 
-  function adjustAllocatedTokens() public onlyETFgame {
+  // onlyETFGame modifier
+  function setAllocatedTokens(uint256[][] memory _allocations) public {
+    totalAllocatedTokens = 0;
+    delete protocolsInETF;
 
+    for (uint i = 0; i < _allocations.length; i++) {
+      currentAllocations[_allocations[i][0]] = _allocations[i][1];
+      totalAllocatedTokens += _allocations[i][1];
+
+      protocolsInETF.push(_allocations[i][0]);
+    }
+    console.log("TotalAllocatedTokens %s", totalAllocatedTokens);
+  }
+
+  // For Testing
+  function getAllocationTEST(uint256 _protocolNum) public view returns(uint256) {
+    return currentAllocations[_protocolNum];
+  }
+
+  function getProtocolsInETF() public view returns(uint256[] memory) {
+    return protocolsInETF;
   }
 }
