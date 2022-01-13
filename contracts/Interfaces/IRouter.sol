@@ -38,6 +38,13 @@ interface IRouter {
   ) 
     external view returns(uint256);
 
+  function balanceUnderlying(
+    uint256 ETFnumber, 
+    uint256 protocolNumber,
+    address _address
+  ) 
+    external view returns(uint256);
+
   function addProtocol(
     uint256 ETFNumber,
     uint256 protocolNumber,

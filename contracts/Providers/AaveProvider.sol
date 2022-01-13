@@ -68,13 +68,18 @@ contract AaveProvider is IProvider{
     return uTokensReceived;
   }
 
+  function balanceUnderlying(address _address) public override view returns (uint256) {
+    uint256 balanceShares = this.balance(_address);
+    return balanceShares;
+  }
+
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = aToken.balanceOf(_address);
     return _balanceShares;
   }
 
-  function exchangeRate() external view override returns(uint256) {
-
+  function exchangeRate() external pure override returns(uint256) {
+    return 1;
   }
 
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {

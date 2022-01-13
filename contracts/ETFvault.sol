@@ -97,57 +97,66 @@ contract ETFVault is IETFVault { // is VaultToken
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     console.log("Transfered funds to contract");
-
-    // deposit directly in providers for now
-    depositInProtocols(_amount);   
     
     // mint LP tokens and send to user 
-  }
-
-  function depositInProtocols(uint256 _amount) internal {
-    for (uint i = 0; i < protocolsInETF.length; i++) {
-      uint256 allocation = currentAllocations[protocolsInETF[i]];
-      uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
-
-      console.log("ProtocolNum: %s Allocation: %s amountToDeposit: %s", 
-      protocolsInETF[i],
-      allocation, 
-      amountToDeposit
-      );
-
-      address provider = router.protocol(ETFnumber, protocolsInETF[i]);
-      vaultCurrency.safeIncreaseAllowance(provider, amountToDeposit);
-      
-      router.deposit(ETFnumber, protocolsInETF[i], address(this), amountToDeposit);
-    }
   }
 
   function withdrawETF(address _seller, uint256 _amount) external {
 
   }
 
-  function withdrawFromProtocols(uint256 _amount) internal {
+  function rebalanceETF(uint256 _amount) public {
+    for (uint i = 0; i < protocolsInETF.length; i++) {
+      uint256 allocation = currentAllocations[protocolsInETF[i]];
+      uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
 
+      uint256 currentBalance = balanceUnderlying(protocolsInETF[i]);
+
+      // create margin? 
+      if (amountToDeposit == currentBalance) break;
+
+      if (amountToDeposit > currentBalance) {
+        depositInProtocol(amountToDeposit, protocolsInETF[i]);
+      }
+
+      if (amountToDeposit < currentBalance) {
+        // withdrawFromProtocol(amountToDeposit, protocolsInETF[i]);
+        console.log("withdrawing");
+      }
+
+      console.log("ProtocolNum: %s, Allocation: %s, amountToDeposit: %s", 
+      protocolsInETF[i],
+      allocation, 
+      amountToDeposit
+      );
+    }
+  }
+
+  function depositInProtocol(uint256 _amount, uint256 _protocol) internal {
+    address provider = router.protocol(ETFnumber, _protocol);
+
+    vaultCurrency.safeIncreaseAllowance(provider, _amount);
+    router.deposit(ETFnumber, _protocol, address(this), _amount);
+  }
+
+  function withdrawFromProtocol(uint256 _amount, uint256 _protocol) internal {
+    router.withdraw(ETFnumber, _protocol, address(this), _amount);
   }
 
   function addProtocol(bytes32 name, address addr) public override onlyDao {
 
   }
 
-  function balance(uint256 _protocolNumber) external view returns(uint256) {
-    uint256 tokenBalance = router.balance(ETFnumber, _protocolNumber, address(this));
-
-    return tokenBalance;
+  function balanceUnderlying(uint256 _protocolNumber) public view returns(uint256) {
+    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNumber, address(this));
+  
+    return underlyingBalance;
   }
 
   function price(uint256 _protocolNumber) public view returns(uint256) {
     uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNumber);
 
     return protocolPrice;
-  }
-
-  function _rebalanceETF() private {
-
   }
 
   // onlyETFGame modifier

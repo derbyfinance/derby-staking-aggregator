@@ -66,6 +66,12 @@ contract CompoundProvider is IProvider{
     return uTokensReceived;
   }
 
+  function balanceUnderlying(address _address) public override view returns (uint256) {
+    uint256 balanceShares = this.balance(_address);
+    uint256 price = this.exchangeRate();
+    return balanceShares * price / 1E18;
+  }
+
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = cToken.balanceOf(_address);
     return _balanceShares;

@@ -4,12 +4,13 @@ import chai, { expect } from "chai";
 import { Signer, Wallet, utils } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, ETFVault, ERC20, Router } from '../typechain-types';
-import { deployYearnProvider, deployCompoundProvider, deployETFVault, deployRouter } from './helpers/deploy';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVault, ERC20, Router } from '../typechain-types';
+import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deployETFVault, deployRouter } from './helpers/deploy';
 
 const usdc = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 const yusdc = '0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9';
 const cusdc = '0x39AA39c021dfbaE8faC545936693aC917d5E7563';
+const ausdc = '0xBcca60bB61934080951369a648Fb03DF4F96263C';
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolYearn = [1, 20];
@@ -17,7 +18,7 @@ const protocolCompound = [2, 40];
 const protocolAave = [5, 60];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: ETFVault, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, user: Signer, userAddr: string;
+  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, vault: ETFVault, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, user: Signer, userAddr: string;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -25,10 +26,11 @@ describe("Deploy Contracts and interact with Vault", async () => {
     userAddr = await user.getAddress();
     router = await deployRouter(dao, daoAddr);
 
-    [vault, yearnProvider, compoundProvider, USDCSigner, IUSDc] = await Promise.all([
+    [vault, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
       deployETFVault(dao, daoAddr, ETFNumber, router.address, usdc),
       deployYearnProvider(dao, yusdc, usdc, router.address),
       deployCompoundProvider(dao, cusdc, usdc, router.address),
+      deployAaveProvider(dao, ausdc, router.address),
       getUSDCSigner(),
       erc20(usdc),
     ]);
@@ -38,7 +40,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       IUSDc.connect(user).approve(vault.address, amountUSDC),
       router.addProtocol(ETFNumber, protocolYearn[0], yearnProvider.address, vault.address),
       router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vault.address),
-      router.addProtocol(ETFNumber, protocolAave[0], compoundProvider.address, vault.address)
+      router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vault.address)
     ])
   });
 
@@ -66,13 +68,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const tx = await vault.depositETF(userAddr, amountUSDC);
     console.log(`Gas Used: ${utils.formatUnits(tx.gasLimit, 0)}`);
 
-    const compoundBalance = await vault.balance(protocolCompound[0]);
+    await vault.rebalanceETF(amountUSDC);
+
+    const yearnBalance = await vault.balanceUnderlying(protocolYearn[0]);
+    console.log(`Yearn balance vault ${yearnBalance}`);
+
+    const compoundBalance = await vault.balanceUnderlying(protocolCompound[0]);
     console.log(`Compound balance vault ${compoundBalance}`);
 
-    const yearnBalance = await vault.balance(protocolYearn[0]);
-    console.log(`Yearn balance vault ${yearnBalance}`);
-    
-    const aaveBalance = await vault.balance(protocolAave[0]);
+    const aaveBalance = await vault.balanceUnderlying(protocolAave[0]);
     console.log(`Aave balance vault ${aaveBalance}`);
   });
 
@@ -87,4 +91,5 @@ describe("Deploy Contracts and interact with Vault", async () => {
   //   console.log(`Yearn balance vault ${yearnBalance}`);
 
   // });
+
 });
