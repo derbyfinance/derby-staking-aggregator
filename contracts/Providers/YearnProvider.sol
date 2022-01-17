@@ -59,8 +59,8 @@ contract YearnProvider is IProvider{
   }
 
   function balanceUnderlying(address _address) public override view returns (uint256) {
-    uint256 balanceShares = this.balance(_address);
-    uint256 price = this.exchangeRate();
+    uint256 balanceShares = balance(_address);
+    uint256 price = exchangeRate();
     return balanceShares * price / 1E6;
   }
 
@@ -70,7 +70,7 @@ contract YearnProvider is IProvider{
     return _balanceShares;
   }
 
-  function exchangeRate() external override view returns(uint256) {
+  function exchangeRate() public override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
 
     return _price;

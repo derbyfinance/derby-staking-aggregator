@@ -72,7 +72,7 @@ contract AaveProvider is IProvider{
   }
 
   function balanceUnderlying(address _address) public override view returns (uint256) {
-    uint256 balanceShares = this.balance(_address);
+    uint256 balanceShares = balance(_address);
     return balanceShares;
   }
 

@@ -70,8 +70,8 @@ contract CompoundProvider is IProvider{
   }
 
   function balanceUnderlying(address _address) public override view returns (uint256) {
-    uint256 balanceShares = this.balance(_address);
-    uint256 price = this.exchangeRate();
+    uint256 balanceShares = balance(_address);
+    uint256 price = exchangeRate();
     return balanceShares * price / 1E18;
   }
 
@@ -82,7 +82,7 @@ contract CompoundProvider is IProvider{
 
   // ExchangeRateStored || ExchangerateCurrent? Current is write
   // returned price from compound is scaled by 1e18
-  function exchangeRate() external view override returns(uint256) {
+  function exchangeRate() public view override returns(uint256) {
     uint256 _price = cToken.exchangeRateStored();
     return _price;
   }
