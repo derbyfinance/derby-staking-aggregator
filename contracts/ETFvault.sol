@@ -105,6 +105,7 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   function rebalanceETF(uint256 _amount) public {
+    // TO DO: withdraw from protcols before depositing
     for (uint i = 0; i < protocolsInETF.length; i++) {
       uint256 allocation = currentAllocations[protocolsInETF[i]];
       uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
@@ -172,9 +173,15 @@ contract ETFVault is IETFVault { // is VaultToken
 
   // onlyETFGame modifier
   function setAllocations(uint256[][] memory _allocations) public {
+    // Reset current allocations to 0
+    for (uint i = 0; i < protocolsInETF.length; i++) {
+      currentAllocations[protocolsInETF[i]] = 0;
+    }
+
     totalAllocatedTokens = 0;
     delete protocolsInETF;
 
+    // Set new allocations
     for (uint i = 0; i < _allocations.length; i++) {
       currentAllocations[_allocations[i][0]] = _allocations[i][1];
       totalAllocatedTokens += _allocations[i][1];
