@@ -41,7 +41,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
-    const balanceShares = Number(await yearnProvider.balance());
+    const balanceShares = Number(await yearnProvider.balance(vaultAddr));
     const price = Number(await yearnProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E12
     

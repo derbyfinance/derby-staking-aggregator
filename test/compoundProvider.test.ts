@@ -41,7 +41,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
     
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
-    const balanceShares = Number(await compoundProvider.balance());
+    const balanceShares = Number(await compoundProvider.balance(vaultAddr));
     const price = Number(await compoundProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E18
     

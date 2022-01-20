@@ -65,23 +65,24 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(aave).to.be.equal(protocolAave[1]);
 
     console.log('--------------depositing----------------')
-    const tx = await vault.depositETF(userAddr, amountUSDC);
-    console.log(`Gas Used: ${utils.formatUnits(tx.gasLimit, 0)}`);
+    await vault.depositETF(userAddr, amountUSDC);
+    
+    const tx = await vault.rebalanceETF(amountUSDC);
+    console.log(`Gas Used: ${utils.formatUnits(tx.gasLimit, 0)}`); // 1092938
 
-    await vault.rebalanceETF(amountUSDC);
+    const [yearnBalance, compoundBalance, aaveBalance] = await Promise.all([
+      vault.balanceUnderlying(protocolYearn[0]),
+      vault.balanceUnderlying(protocolCompound[0]),
+      vault.balanceUnderlying(protocolAave[0])
+    ])
 
-    const yearnBalance = await vault.balanceUnderlying(protocolYearn[0]);
     console.log(`Yearn balance vault ${yearnBalance}`);
-
-    const compoundBalance = await vault.balanceUnderlying(protocolCompound[0]);
     console.log(`Compound balance vault ${compoundBalance}`);
-
-    const aaveBalance = await vault.balanceUnderlying(protocolAave[0]);
     console.log(`Aave balance vault ${aaveBalance}`);
 
     console.log('--------------rebalancing----------------')
-    protocolYearn = [1, 40];
-    protocolAave = [5, 40];
+    protocolYearn = [1, 50];
+    protocolAave = [5, 30];
 
     await vault.depositETF(userAddr, amountUSDC);
 
@@ -91,15 +92,21 @@ describe("Deploy Contracts and interact with Vault", async () => {
       protocolAave
     ]);
 
-    await vault.rebalanceETF(amountUSDC);
+    const protocolsInETFRebalance = await vault.getProtocolsInETF();
+    console.log(`protocolsInETFRebalance ${protocolsInETFRebalance}`);
 
-    const yearnBalance2 = await vault.balanceUnderlying(protocolYearn[0]);
+    const tx2 = await vault.rebalanceETF(amountUSDC);
+    console.log(`Gas Used 2: ${utils.formatUnits(tx2.gasLimit, 0)}`); // 314613
+
+
+    const [yearnBalance2, compoundBalance2, aaveBalance2] = await Promise.all([
+      vault.balanceUnderlying(protocolYearn[0]),
+      vault.balanceUnderlying(protocolCompound[0]),
+      vault.balanceUnderlying(protocolAave[0])
+    ])
+
     console.log(`Yearn balance vault ${yearnBalance2}`);
-
-    const compoundBalance2 = await vault.balanceUnderlying(protocolCompound[0]);
     console.log(`Compound balance vault ${compoundBalance2}`);
-
-    const aaveBalance2 = await vault.balanceUnderlying(protocolAave[0]);
     console.log(`Aave balance vault ${aaveBalance2}`);
   });
 

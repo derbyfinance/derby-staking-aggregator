@@ -88,6 +88,9 @@ contract ETFVault is IETFVault { // is VaultToken
     // delta of the portfolio on next rebalancing
   mapping(uint256 => uint256) private deltaAllocations;
 
+  mapping(uint256 => uint256) private protocolToDeposit;
+  mapping(uint256 => uint256) private protocolToWithdraw;
+
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     
@@ -99,33 +102,44 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   function rebalanceETF(uint256 _amount) public {
-    // TO DO: withdraw from protcols before depositing
+    // IMPORTANT: What if protocol goes to 0 and is not in protocolsETF anymore
     for (uint i = 0; i < protocolsInETF.length; i++) {
       uint256 allocation = currentAllocations[protocolsInETF[i]];
       uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
 
       uint256 currentBalance = balanceUnderlying(protocolsInETF[i]);
 
-      console.log("ProtocolNum: %s, Allocation: %s, amountToDeposit: %s", 
-      protocolsInETF[i],
-      allocation, 
-      amountToDeposit
-      );
-
       // create margin logic instead of 1E6 
-      if (amountToDeposit / 1E6 == currentBalance / 1E6) break;
-
-      if (amountToDeposit / 1E6 > currentBalance / 1E6) {
-        uint256 amount = amountToDeposit - currentBalance;
-        depositInProtocol(amount, protocolsInETF[i]);
-        console.log("deposited %s", amount);
-      }
+      if (amountToDeposit / 1E6 == currentBalance / 1E6) continue;
 
       if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
         uint256 amount = currentBalance - amountToDeposit;
-        withdrawFromProtocol(amount, protocolsInETF[i]);
-        console.log("withdrawed %s", amount);
+        protocolToWithdraw[protocolsInETF[i]] = amount;
       }
+
+      if (amountToDeposit / 1E6 > currentBalance / 1E6) {
+        uint256 amount = amountToDeposit - currentBalance;
+        protocolToDeposit[protocolsInETF[i]] = amount;
+      }
+    }
+
+    // Execute withdrawals first
+    for (uint i = 0; i < protocolsInETF.length; i++) {
+      uint256 amount = protocolToWithdraw[protocolsInETF[i]];
+      if (amount == 0) continue;
+
+      withdrawFromProtocol(amount, protocolsInETF[i]);
+      protocolToWithdraw[protocolsInETF[i]] = 0;
+      console.log("withdrawed: %s, to Protocol: %s", amount, protocolsInETF[i]);
+    }
+
+    for (uint i = 0; i < protocolsInETF.length; i++) {
+      uint256 amount = protocolToDeposit[protocolsInETF[i]];
+      if (amount == 0) continue;
+
+      depositInProtocol(amount, protocolsInETF[i]);
+      protocolToDeposit[protocolsInETF[i]] = 0;
+      console.log("deposited: %s, to Protocol: %s", amount, protocolsInETF[i]);
     }
   }
   
@@ -195,3 +209,36 @@ contract ETFVault is IETFVault { // is VaultToken
     return protocolsInETF;
   }
 }
+
+
+  // function rebalanceETF(uint256 _amount) public {
+  //   // TO DO: withdraw from protcols before depositing
+  //   for (uint i = 0; i < protocolsInETF.length; i++) {
+  //     uint256 allocation = currentAllocations[protocolsInETF[i]];
+  //     uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
+
+  //     uint256 currentBalance = balanceUnderlying(protocolsInETF[i]);
+
+  //     // For testing
+  //     console.log("ProtocolNum: %s, Allocation: %s, amountToDeposit: %s", 
+  //     protocolsInETF[i],
+  //     allocation, 
+  //     amountToDeposit
+  //     );
+
+  //     // create margin logic instead of 1E6 
+  //     if (amountToDeposit / 1E6 == currentBalance / 1E6) break;
+
+  //     if (amountToDeposit / 1E6 > currentBalance / 1E6) {
+  //       uint256 amount = amountToDeposit - currentBalance;
+  //       depositInProtocol(amount, protocolsInETF[i]);
+  //       console.log("deposited %s", amount);
+  //     }
+
+  //     if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
+  //       uint256 amount = currentBalance - amountToDeposit;
+  //       withdrawFromProtocol(amount, protocolsInETF[i]);
+  //       console.log("withdrawed %s", amount);
+  //     }
+  //   }
+  // }
