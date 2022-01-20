@@ -49,6 +49,8 @@ contract YearnProvider is IProvider{
   function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_seller); 
 
+    require(yToken.transferFrom(_seller, address(this), _amount) == true, "Error transferFrom");
+
     uint256 uAmountReceived = yToken.withdraw(_amount); 
     uToken.safeTransfer(_seller, uAmountReceived);
 
