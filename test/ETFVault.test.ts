@@ -45,7 +45,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ])
   });
 
-  it("Should set allocations", async function() {
+  it("Should set allocations, deposit and rebalance", async function() {
     await vault.setAllocations([
       protocolYearn,
       protocolCompound,

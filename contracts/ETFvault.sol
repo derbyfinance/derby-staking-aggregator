@@ -70,12 +70,6 @@ contract ETFVault is IETFVault { // is VaultToken
     vaultCurrency = IERC20(_vaultCurrency);
   }
 
-    // latest protocol id
-  uint256 public latestProtocolId;
-
-    // names of all the different protocols in the ETF
-  mapping(uint256 => bytes32) public protocolNames;
-
     // period number of the latest rebalance
   uint256 public latestRebalancingPeriod;
 

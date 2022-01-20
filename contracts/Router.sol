@@ -8,6 +8,9 @@ contract Router {
   mapping(uint256 => mapping(uint256 => address)) public protocol;
   mapping(address => bool) public vaultWhitelist;
 
+  mapping(uint256 => bytes32) public protocolNames;
+  uint256 public latestProtocolId;
+
   address public dao;
 
   constructor(address _dao) {
