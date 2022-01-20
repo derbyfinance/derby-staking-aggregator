@@ -52,6 +52,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
 
     console.log(`-------------------------Withdraw-------------------------`); 
+    console.log(`balance shares ${balanceShares}`)
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);

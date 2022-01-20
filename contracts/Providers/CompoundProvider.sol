@@ -56,7 +56,7 @@ contract CompoundProvider is IProvider{
 
     uint256 balanceBeforeRedeem = uToken.balanceOf(address(this)); 
     // Compound redeem: 0 on success, otherwise an Error code
-    require(cToken.redeem(_amount) == 0, "something went wrong"); 
+    require(cToken.redeem(_amount) == 0, "Error: compound redeem"); 
     
     uint256 balanceAfterRedeem = uToken.balanceOf(address(this)); 
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;

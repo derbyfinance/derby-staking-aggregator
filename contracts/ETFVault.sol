@@ -142,7 +142,6 @@ contract ETFVault is IETFVault { // is VaultToken
       console.log("deposited: %s, to Protocol: %s", amount, protocolsInETF[i]);
     }
   }
-  
 
   function depositInProtocol(uint256 _amount, uint256 _protocol) internal {
     address provider = router.protocol(ETFnumber, _protocol);

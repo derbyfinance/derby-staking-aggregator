@@ -19,7 +19,7 @@ import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvid
 import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
-import ETFGameArtifact from '../../artifacts/contracts/ETFgame.sol/ETFGame.json';
+import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
 
