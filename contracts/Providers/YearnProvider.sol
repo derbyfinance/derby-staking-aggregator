@@ -12,6 +12,8 @@ contract YearnProvider is IProvider{
   using SafeERC20 for IERC20;
 
   IYearn public yToken; // yusdc
+  address override public protocolToken;
+
   IERC20 public uToken; // usdc
   
   address public router; 
@@ -25,19 +27,20 @@ contract YearnProvider is IProvider{
   constructor(address _yToken, address _uToken, address _router) {
     yToken = IYearn(_yToken);
     uToken = IERC20(_uToken);
+    protocolToken = _yToken;
     router = _router;
   }
 
-  function deposit(address _buyer, uint256 _amount) external override onlyRouter returns(uint256) {
+  function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
-    uToken.safeTransferFrom(_buyer, address(this), _amount);
+    uToken.safeTransferFrom(_vault, address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 
     uint256 balanceAfter = uToken.balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
     uint256 yTokenReceived = yToken.deposit(_amount);
-    // yToken.transfer(router, yTokenReceived);
+    yToken.transfer(_vault, yTokenReceived);
 
     return yTokenReceived;
   }
@@ -45,6 +48,8 @@ contract YearnProvider is IProvider{
   // Tokens nog ergens vandaan pullen
   function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_seller); 
+
+    require(yToken.transferFrom(_seller, address(this), _amount) == true, "Error transferFrom");
 
     uint256 uAmountReceived = yToken.withdraw(_amount); 
     uToken.safeTransfer(_seller, uAmountReceived);
@@ -55,13 +60,19 @@ contract YearnProvider is IProvider{
     return uAmountReceived;
   }
 
-  function balance() public view returns (uint256) {
-    uint256 _balanceShares = yToken.balanceOf(address(this));
+  function balanceUnderlying(address _address) public override view returns (uint256) {
+    uint256 balanceShares = balance(_address);
+    uint256 price = exchangeRate();
+    return balanceShares * price / 1E6;
+  }
+
+  function balance(address _address) public view override returns (uint256) {
+    uint256 _balanceShares = yToken.balanceOf(_address);
 
     return _balanceShares;
   }
 
-  function exchangeRate() external override view returns(uint256) {
+  function exchangeRate() public override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
 
     return _price;

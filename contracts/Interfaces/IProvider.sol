@@ -8,7 +8,13 @@ interface IProvider {
 
     function exchangeRate() external view returns(uint256);
 
+    function balanceUnderlying(address _address) external view returns(uint256);
+
+    function balance(address _address) external view returns(uint256);
+
     function addPricePoint() external;
 
     function getHistoricalPrice(uint256 period) external view returns(uint256);
+
+    function protocolToken() external view returns(address);
 }

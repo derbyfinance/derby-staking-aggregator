@@ -13,11 +13,13 @@ contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
 
   IAToken public aToken; 
+  address override public protocolToken;
+
   IERC20 public uToken; 
+  address public uTokenAddr;
 
   uint16 private aaveReferral;
   address public router; 
-  address public uTokenAddr;
 
   mapping(uint256 => uint256) public historicalPrices;
 
@@ -28,6 +30,7 @@ contract AaveProvider is IProvider{
 
   constructor(address _aToken, address _router) {
     aToken = IAToken(_aToken);
+    protocolToken = _aToken;
 
     uTokenAddr = aToken.UNDERLYING_ASSET_ADDRESS();
     uToken = IERC20(uTokenAddr);
@@ -68,13 +71,18 @@ contract AaveProvider is IProvider{
     return uTokensReceived;
   }
 
-  function balance(address _address) public view returns (uint256) {
+  function balanceUnderlying(address _address) public override view returns (uint256) {
+    uint256 balanceShares = balance(_address);
+    return balanceShares;
+  }
+
+  function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = aToken.balanceOf(_address);
     return _balanceShares;
   }
 
-  function exchangeRate() external view override returns(uint256) {
-
+  function exchangeRate() external pure override returns(uint256) {
+    return 1;
   }
 
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {

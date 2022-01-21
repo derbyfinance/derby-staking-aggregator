@@ -14,18 +14,19 @@ const ETFNumber = 1;
 const protocolNumber = 2;
 
 describe("Deploy Contract and interact with Compound", async () => {
-  let compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, vaultAddr: string;
+  let compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, cToken: ERC20, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
     router = await deployRouter(dao, daoAddr);
 
-    [vaultAddr, compoundProvider, USDCSigner, IUSDc] = await Promise.all([
+    [vaultAddr, compoundProvider, USDCSigner, IUSDc, cToken] = await Promise.all([
       vault.getAddress(),
       deployCompoundProvider(dao, cusdc, usdc, router.address),
       getUSDCSigner(),
       erc20(usdc),
+      erc20(cusdc),
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to router contract
@@ -41,7 +42,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
     
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
-    const balanceShares = Number(await compoundProvider.balance());
+    const balanceShares = Number(await compoundProvider.balance(vaultAddr));
     const price = Number(await compoundProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E18
     
@@ -52,6 +53,9 @@ describe("Deploy Contract and interact with Compound", async () => {
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
 
     console.log(`-------------------------Withdraw-------------------------`); 
+    console.log(`balance shares ${balanceShares}`)
+
+    await cToken.connect(vault).approve(compoundProvider.address, balanceShares);
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);

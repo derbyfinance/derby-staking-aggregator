@@ -14,18 +14,19 @@ const ETFNumber = 1;
 const protocolNumber = 1;
 
 describe("Deploy Contract and interact with Yearn", async () => {
-  let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, vaultAddr: string;
+  let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, yToken: ERC20, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
     router = await deployRouter(dao, daoAddr);
 
-    [vaultAddr, yearnProvider, USDCSigner, IUSDc] = await Promise.all([
+    [vaultAddr, yearnProvider, USDCSigner, IUSDc, yToken] = await Promise.all([
       vault.getAddress(),
       deployYearnProvider(dao, yusdc, usdc, router.address),
       getUSDCSigner(),
       erc20(usdc),
+      erc20(yusdc),
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to router contract
@@ -41,7 +42,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await router.connect(vault).deposit(ETFNumber, protocolNumber, vaultAddr, amountUSDC);
-    const balanceShares = Number(await yearnProvider.balance());
+    const balanceShares = Number(await yearnProvider.balance(vaultAddr));
     const price = Number(await yearnProvider.exchangeRate());
     const amount = (balanceShares * price) / 1E12
     
@@ -52,6 +53,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
+    await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
     await router.connect(vault).withdraw(ETFNumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);

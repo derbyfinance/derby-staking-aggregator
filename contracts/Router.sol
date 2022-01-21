@@ -8,6 +8,9 @@ contract Router {
   mapping(uint256 => mapping(uint256 => address)) public protocol;
   mapping(address => bool) public vaultWhitelist;
 
+  mapping(uint256 => bytes32) public protocolNames;
+  uint256 public latestProtocolId;
+
   address public dao;
 
   constructor(address _dao) {
@@ -51,6 +54,32 @@ contract Router {
     ) 
     external onlyVault view returns(uint256) {
       return IProvider(protocol[_ETFnumber][_protocolNumber]).exchangeRate();
+  }
+
+  function balance(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber,
+    address _address
+    ) 
+    external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber]).balance(_address);
+  }
+
+  function balanceUnderlying(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber,
+    address _address
+    ) 
+    external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber]).balanceUnderlying(_address);
+  }
+
+  function getProtocolTokenAddress(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber
+    ) 
+    external onlyVault view returns(address) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber]).protocolToken();
   }
 
   function addProtocol(
