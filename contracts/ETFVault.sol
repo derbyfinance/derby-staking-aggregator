@@ -117,34 +117,28 @@ contract ETFVault is IETFVault { // is VaultToken
 
       int256 amountToDeposit = (totalUnderlying + _amount) * currentAllocations[i] / totalAllocatedTokens;
 
-      int256 currentBalance = int(balanceUnderlying(i));
+      int256 currentBalance = int256(balanceUnderlying(i));
 
       // create margin logic instead of 1E6 
       if (amountToDeposit / 1E6 == currentBalance / 1E6) continue;
 
-      if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
-        int256 amount = currentBalance - amountToDeposit;
-        protocolToWithdraw[i] = uint(amount);
-      }
-
+      // Deposit
       if (amountToDeposit / 1E6 > currentBalance / 1E6) {
         int256 amount = amountToDeposit - currentBalance;
-        protocolToDeposit[i] = uint(amount);
+        protocolToDeposit[i] = uint256(amount);
       }
+
+      // Withdraw
+      if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
+        int256 amount = currentBalance - amountToDeposit;
+        withdrawFromProtocol(uint256(amount), i);
+        protocolToWithdraw[i] = 0;
+        console.log("withdrawed: %s, from Protocol: %s", uint(amount), i);
+      }
+
     }
-    executeWithdrawals(latestProtocolId);
+
     executeDeposits(latestProtocolId);
-  }
-
-  function executeWithdrawals(uint256 _latestProtocolId) internal  {
-    for (uint i = 0; i <= _latestProtocolId; i++) {
-      uint256 amount = protocolToWithdraw[i];
-      if (amount == 0) continue;
-
-      withdrawFromProtocol(amount, i);
-      protocolToWithdraw[i] = 0;
-      console.log("withdrawed: %s, from Protocol: %s", amount, i);
-    }
   }
 
   function executeDeposits(uint256 _latestProtocolId) internal  {

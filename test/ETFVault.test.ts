@@ -70,7 +70,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vault.setDeltaAllocations(protocolAave[0], protocolAave[1]),
     ]);
 
-    console.log('--------------depositing----------------')
+    console.log('--------------depositing and rebalance with 100k ----------------')
     await vault.depositETF(userAddr, amountUSDC);
     
     const tx = await vault.rebalanceETF(amountUSDC);
@@ -102,7 +102,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const tx2 = await vault.rebalanceETF(0);
     console.log(`Gas Used 2: ${utils.formatUnits(tx2.gasLimit, 0)}`); // 314613
 
-
     const [yearnBalance2, compoundBalance2, aaveBalance2] = await Promise.all([
       vault.balanceUnderlying(protocolYearn[0]),
       vault.balanceUnderlying(protocolCompound[0]),
@@ -113,7 +112,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log(`Compound balance vault ${compoundBalance2}`);
     console.log(`Aave balance vault ${aaveBalance2}`);
 
-    console.log('--------------rebalancing with amount 50000 ----------------')
+    console.log('--------------rebalancing with amount 50k ----------------')
     protocolYearn = [1, -30];
     protocolCompound = [2, 80];
     protocolAave = [5, 40];
@@ -126,7 +125,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     const tx3 = await vault.rebalanceETF(parseUSDC('50000'));
     console.log(`Gas Used 3: ${utils.formatUnits(tx3.gasLimit, 0)}`); // 314613
-
 
     const [yearnBalance3, compoundBalance3, aaveBalance3] = await Promise.all([
       vault.balanceUnderlying(protocolYearn[0]),
