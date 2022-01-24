@@ -77,19 +77,20 @@ contract ETFVault is IETFVault { // is VaultToken
   mapping(uint256 => uint256) public rebalancingPeriodToBlock;
 
     // total number of allocated xaver tokens currently
-  uint256 public totalAllocatedTokens;
+  int256 public totalAllocatedTokens;
 
     // current allocations over the protocols 
-  mapping(uint256 => uint256) private currentAllocations;
+  mapping(uint256 => int256) private currentAllocations;
 
     // delta of the total number of xaver tokens allocated on next rebalancing
-  uint256 private deltaAllocatedTokens;
+  int256 private deltaAllocatedTokens;
 
     // delta of the portfolio on next rebalancing
-  mapping(uint256 => uint256) private deltaAllocations;
+  mapping(uint256 => int256) private deltaAllocations;
 
   mapping(uint256 => uint256) private protocolToDeposit;
   mapping(uint256 => uint256) private protocolToWithdraw;
+
 
   function depositETF(address _buyer, uint256 _amount) external {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
@@ -101,45 +102,59 @@ contract ETFVault is IETFVault { // is VaultToken
 
   }
 
-  function rebalanceETF(uint256 _amount) public {
-    // IMPORTANT: What if protocol goes to 0 and is not in protocolsETF anymore
-    for (uint i = 0; i < protocolsInETF.length; i++) {
-      uint256 allocation = currentAllocations[protocolsInETF[i]];
-      uint256 amountToDeposit = _amount * allocation / totalAllocatedTokens;
+  function rebalanceETF(int256 _amount) public {
+    uint256 latestProtocolId = router.latestProtocolId();
+    int256 totalUnderlying = int(getTotalUnderlying(latestProtocolId));
 
-      uint256 currentBalance = balanceUnderlying(protocolsInETF[i]);
+    totalAllocatedTokens += deltaAllocatedTokens;
+    deltaAllocatedTokens = 0;
+    console.log("latestProtocolId %s", latestProtocolId);
+    
+    for (uint i = 0; i <= latestProtocolId; i++) {
+      if (deltaAllocations[i] == 0) continue;
+      currentAllocations[i] += deltaAllocations[i];
+      deltaAllocations[i] = 0;
+
+      int256 amountToDeposit = (totalUnderlying + _amount) * currentAllocations[i] / totalAllocatedTokens;
+
+      int256 currentBalance = int(balanceUnderlying(i));
 
       // create margin logic instead of 1E6 
       if (amountToDeposit / 1E6 == currentBalance / 1E6) continue;
 
       if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
-        uint256 amount = currentBalance - amountToDeposit;
-        protocolToWithdraw[protocolsInETF[i]] = amount;
+        int256 amount = currentBalance - amountToDeposit;
+        protocolToWithdraw[i] = uint(amount);
       }
 
       if (amountToDeposit / 1E6 > currentBalance / 1E6) {
-        uint256 amount = amountToDeposit - currentBalance;
-        protocolToDeposit[protocolsInETF[i]] = amount;
+        int256 amount = amountToDeposit - currentBalance;
+        protocolToDeposit[i] = uint(amount);
       }
     }
+    executeWithdrawals(latestProtocolId);
+    executeDeposits(latestProtocolId);
+  }
 
-    // Execute withdrawals first
-    for (uint i = 0; i < protocolsInETF.length; i++) {
-      uint256 amount = protocolToWithdraw[protocolsInETF[i]];
+  function executeWithdrawals(uint256 _latestProtocolId) internal  {
+    for (uint i = 0; i <= _latestProtocolId; i++) {
+      uint256 amount = protocolToWithdraw[i];
       if (amount == 0) continue;
 
-      withdrawFromProtocol(amount, protocolsInETF[i]);
-      protocolToWithdraw[protocolsInETF[i]] = 0;
-      console.log("withdrawed: %s, to Protocol: %s", amount, protocolsInETF[i]);
+      withdrawFromProtocol(amount, i);
+      protocolToWithdraw[i] = 0;
+      console.log("withdrawed: %s, from Protocol: %s", amount, i);
     }
+  }
 
-    for (uint i = 0; i < protocolsInETF.length; i++) {
-      uint256 amount = protocolToDeposit[protocolsInETF[i]];
+  function executeDeposits(uint256 _latestProtocolId) internal  {
+    for (uint i = 0; i <= _latestProtocolId; i++) {
+      uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
-      depositInProtocol(amount, protocolsInETF[i]);
-      protocolToDeposit[protocolsInETF[i]] = 0;
-      console.log("deposited: %s, to Protocol: %s", amount, protocolsInETF[i]);
+      depositInProtocol(amount, i);
+      protocolToDeposit[i] = 0;
+      console.log("deposited: %s, to Protocol: %s", amount, i);
     }
   }
 
@@ -156,6 +171,17 @@ contract ETFVault is IETFVault { // is VaultToken
 
     IERC20(protocolToken).safeIncreaseAllowance(provider, _amount);
     router.withdraw(ETFnumber, _protocol, address(this), _amount);
+  }
+
+  function getTotalUnderlying(uint256 _latestProtocolId) public view returns(uint256) {
+    uint256 balance;
+    for (uint i = 0; i <= _latestProtocolId; i++) {
+      if (currentAllocations[i] == 0) continue;
+      uint256 balanceProtocol = balanceUnderlying(i);
+      balance += balanceProtocol;
+    }
+
+    return balance;
   }
 
   function addProtocol(bytes32 name, address addr) public override onlyDao {
@@ -175,33 +201,20 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   // onlyETFGame modifier
-  function setDeltaAllocations() public {
-
-  }
-
-  // onlyETFGame modifier
-  function setAllocations(uint256[][] memory _allocations) public {
-    // Reset current allocations to 0
-    for (uint i = 0; i < protocolsInETF.length; i++) {
-      currentAllocations[protocolsInETF[i]] = 0;
-    }
-
-    totalAllocatedTokens = 0;
-    delete protocolsInETF;
-
-    // Set new allocations
-    for (uint i = 0; i < _allocations.length; i++) {
-      currentAllocations[_allocations[i][0]] = _allocations[i][1];
-      totalAllocatedTokens += _allocations[i][1];
-
-      protocolsInETF.push(_allocations[i][0]);
-    }
-    console.log("TotalAllocatedTokens %s", totalAllocatedTokens);
+  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public {
+    int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
+    deltaAllocations[_protocolNum] = deltaAllocation;
+    
+    deltaAllocatedTokens += _allocation; 
   }
 
   // For Testing
-  function getAllocationTEST(uint256 _protocolNum) public view returns(uint256) {
+  function getAllocationTEST(uint256 _protocolNum) public view returns(int256) {
     return currentAllocations[_protocolNum];
+  }
+
+  function getDeltaAllocationTEST(uint256 _protocolNum) public view returns(int256) {
+    return deltaAllocations[_protocolNum];
   }
 
   function getProtocolsInETF() public view returns(uint256[] memory) {

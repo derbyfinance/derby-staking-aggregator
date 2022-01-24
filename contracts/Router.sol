@@ -90,6 +90,7 @@ contract Router {
     ) 
     external onlyDao { 
       protocol[_ETFnumber][_protocolNumber] = _provider;
+      latestProtocolId = _protocolNumber;
       vaultWhitelist[_vault] = true;
   }
 }

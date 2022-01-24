@@ -59,6 +59,8 @@ interface IRouter {
   )
     external view returns(address);
 
+  function latestProtocolId() external view returns(uint256);
+
   function getProtocolTokenAddress(
     uint256 ETFNumber,
     uint256 protocolNumber

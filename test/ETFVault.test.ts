@@ -45,24 +45,30 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ])
   });
 
-  it("Should set allocations, deposit and rebalance", async function() {
-    await vault.setAllocations([
-      protocolYearn,
-      protocolCompound,
-      protocolAave
-    ]);
-    const [yearn, compound, aave] = await Promise.all([
-      vault.getAllocationTEST(protocolYearn[0]),
-      vault.getAllocationTEST(protocolCompound[0]),
-      vault.getAllocationTEST(protocolAave[0])
-    ]);
+  // it("Should set delta allocations", async function() {
+  //   await Promise.all([
+  //     vault.setDeltaAllocation(protocolYearn[0], protocolYearn[1]),
+  //     vault.setDeltaAllocation(protocolCompound[0], protocolCompound[1]),
+  //     vault.setDeltaAllocation(protocolAave[0], protocolAave[1]),
+  //   ]);
 
-    const protocolsInETF = await vault.getProtocolsInETF();
-    console.log(`protocolsInEtf ${protocolsInETF}`);
+  //   const [yearn, compound, aave] = await Promise.all([
+  //     vault.getDeltaAllocationTEST(protocolYearn[0]),
+  //     vault.getDeltaAllocationTEST(protocolCompound[0]),
+  //     vault.getDeltaAllocationTEST(protocolAave[0])
+  //   ]);
 
-    expect(yearn).to.be.equal(protocolYearn[1]);
-    expect(compound).to.be.equal(protocolCompound[1]);
-    expect(aave).to.be.equal(protocolAave[1]);
+  //   expect(yearn).to.be.equal(protocolYearn[1]);
+  //   expect(compound).to.be.equal(protocolCompound[1]);
+  //   expect(aave).to.be.equal(protocolAave[1]);
+  // });
+
+  it("Should deposit and rebalance", async function() {
+    await Promise.all([
+      vault.setDeltaAllocations(protocolYearn[0], protocolYearn[1]),
+      vault.setDeltaAllocations(protocolCompound[0], protocolCompound[1]),
+      vault.setDeltaAllocations(protocolAave[0], protocolAave[1]),
+    ]);
 
     console.log('--------------depositing----------------')
     await vault.depositETF(userAddr, amountUSDC);
@@ -80,22 +86,20 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log(`Compound balance vault ${compoundBalance}`);
     console.log(`Aave balance vault ${aaveBalance}`);
 
-    console.log('--------------rebalancing----------------')
-    protocolYearn = [1, 50];
-    protocolAave = [5, 30];
+    console.log('--------------rebalancing with amount 0----------------')
+    protocolYearn = [1, 20];
+    protocolCompound = [2, 0];
+    protocolAave = [5, -20];
 
     await vault.depositETF(userAddr, amountUSDC);
 
-    await vault.setAllocations([
-      protocolYearn,
-      protocolCompound,
-      protocolAave
+    await Promise.all([
+      vault.setDeltaAllocations(protocolYearn[0], protocolYearn[1]),
+      vault.setDeltaAllocations(protocolCompound[0], protocolCompound[1]),
+      vault.setDeltaAllocations(protocolAave[0], protocolAave[1]),
     ]);
 
-    const protocolsInETFRebalance = await vault.getProtocolsInETF();
-    console.log(`protocolsInETFRebalance ${protocolsInETFRebalance}`);
-
-    const tx2 = await vault.rebalanceETF(amountUSDC);
+    const tx2 = await vault.rebalanceETF(0);
     console.log(`Gas Used 2: ${utils.formatUnits(tx2.gasLimit, 0)}`); // 314613
 
 
@@ -108,6 +112,31 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log(`Yearn balance vault ${yearnBalance2}`);
     console.log(`Compound balance vault ${compoundBalance2}`);
     console.log(`Aave balance vault ${aaveBalance2}`);
+
+    console.log('--------------rebalancing with amount 50000 ----------------')
+    protocolYearn = [1, -30];
+    protocolCompound = [2, 80];
+    protocolAave = [5, 40];
+
+    await Promise.all([
+      vault.setDeltaAllocations(protocolYearn[0], protocolYearn[1]),
+      vault.setDeltaAllocations(protocolCompound[0], protocolCompound[1]),
+      vault.setDeltaAllocations(protocolAave[0], protocolAave[1]),
+    ]);
+
+    const tx3 = await vault.rebalanceETF(parseUSDC('50000'));
+    console.log(`Gas Used 3: ${utils.formatUnits(tx3.gasLimit, 0)}`); // 314613
+
+
+    const [yearnBalance3, compoundBalance3, aaveBalance3] = await Promise.all([
+      vault.balanceUnderlying(protocolYearn[0]),
+      vault.balanceUnderlying(protocolCompound[0]),
+      vault.balanceUnderlying(protocolAave[0])
+    ])
+
+    console.log(`Yearn balance vault ${yearnBalance3}`);
+    console.log(`Compound balance vault ${compoundBalance3}`);
+    console.log(`Aave balance vault ${aaveBalance3}`);
   });
 
   // it("Should deposit to both providers", async function() {
