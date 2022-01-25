@@ -76,12 +76,18 @@ contract AaveProvider is IProvider{
     return balanceShares;
   }
 
+  function calcShares(uint256 _amount) external view override returns (uint256) {
+    uint256 shares = _amount / exchangeRate();
+
+    return shares;
+  }
+
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = aToken.balanceOf(_address);
     return _balanceShares;
   }
 
-  function exchangeRate() external pure override returns(uint256) {
+  function exchangeRate() public pure override returns(uint256) {
     return 1;
   }
 

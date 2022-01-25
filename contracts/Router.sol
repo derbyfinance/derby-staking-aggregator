@@ -74,6 +74,15 @@ contract Router {
       return IProvider(protocol[_ETFnumber][_protocolNumber]).balanceUnderlying(_address);
   }
 
+  function calcShares(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber,
+    uint256 _amount
+    ) 
+    external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber]).calcShares(_amount);
+  }
+
   function getProtocolTokenAddress(
     uint256 _ETFnumber, 
     uint256 _protocolNumber

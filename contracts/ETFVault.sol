@@ -31,7 +31,8 @@ contract ETFVault is IETFVault { // is VaultToken
     // address of DAO governance contract
   address public governed;
 
-  uint256[] public protocolsInETF;
+  int256 public marginScale = 1E7;
+  uint256 public uScale = 1E6;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -111,31 +112,31 @@ contract ETFVault is IETFVault { // is VaultToken
     console.log("latestProtocolId %s", latestProtocolId);
     
     for (uint i = 0; i <= latestProtocolId; i++) {
+      // CHECK: CurrentAllocations can go below 0
       if (deltaAllocations[i] == 0) continue;
       currentAllocations[i] += deltaAllocations[i];
       deltaAllocations[i] = 0;
 
       int256 amountToDeposit = (totalUnderlying + _amount) * currentAllocations[i] / totalAllocatedTokens;
-
       int256 currentBalance = int256(balanceUnderlying(i));
 
       // create margin logic instead of 1E6 
-      if (amountToDeposit / 1E6 == currentBalance / 1E6) continue;
+      if (amountToDeposit / marginScale == currentBalance / marginScale) continue;
 
       // Deposit
-      if (amountToDeposit / 1E6 > currentBalance / 1E6) {
+      if (amountToDeposit / marginScale > currentBalance / marginScale) {
         int256 amount = amountToDeposit - currentBalance;
+  	    console.log("deposit: %s, from Protocol: %s", uint(amount), i);
         protocolToDeposit[i] = uint256(amount);
       }
 
-      // Withdraw
-      if (amountToDeposit / 1E6 < currentBalance / 1E6)  {
+      //  Execute withdraw
+      if (amountToDeposit / marginScale < currentBalance / marginScale)  {
         int256 amount = currentBalance - amountToDeposit;
+        console.log("withdraw: %s, from Protocol: %s", uint(amount), i);
         withdrawFromProtocol(uint256(amount), i);
         protocolToWithdraw[i] = 0;
-        console.log("withdrawed: %s, from Protocol: %s", uint(amount), i);
       }
-
     }
 
     executeDeposits(latestProtocolId);
@@ -148,7 +149,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
       depositInProtocol(amount, i);
       protocolToDeposit[i] = 0;
-      console.log("deposited: %s, to Protocol: %s", amount, i);
+      // console.log("deposited: %s, to Protocol: %s", amount, i);
     }
   }
 
@@ -162,9 +163,10 @@ contract ETFVault is IETFVault { // is VaultToken
   function withdrawFromProtocol(uint256 _amount, uint256 _protocol) internal {
     address provider = router.protocol(ETFnumber, _protocol);
     address protocolToken = router.getProtocolTokenAddress(ETFnumber, _protocol);
+    uint256 shares = router.calcShares(ETFnumber, _protocol, _amount);
 
-    IERC20(protocolToken).safeIncreaseAllowance(provider, _amount);
-    router.withdraw(ETFnumber, _protocol, address(this), _amount);
+    IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
+    router.withdraw(ETFnumber, _protocol, address(this), shares);
   }
 
   function getTotalUnderlying(uint256 _latestProtocolId) public view returns(uint256) {
@@ -212,7 +214,7 @@ contract ETFVault is IETFVault { // is VaultToken
   }
 
   function getProtocolsInETF() public view returns(uint256[] memory) {
-    return protocolsInETF;
+
   }
 }
 

@@ -82,8 +82,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vault.balanceUnderlying(protocolAave[0])
     ])
 
-    console.log(`Yearn balance vault ${yearnBalance}`);
-    console.log(`Compound balance vault ${compoundBalance}`);
+    console.log(`Year balance vault ${yearnBalance}`);
+    console.log(`Comp balance vault ${compoundBalance}`);
     console.log(`Aave balance vault ${aaveBalance}`);
 
     console.log('--------------rebalancing with amount 0----------------')
@@ -108,12 +108,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vault.balanceUnderlying(protocolAave[0])
     ])
 
-    console.log(`Yearn balance vault ${yearnBalance2}`);
-    console.log(`Compound balance vault ${compoundBalance2}`);
+    console.log(`Year balance vault ${yearnBalance2}`);
+    console.log(`Comp balance vault ${compoundBalance2}`);
     console.log(`Aave balance vault ${aaveBalance2}`);
 
-    console.log('--------------rebalancing with amount 50k ----------------')
-    protocolYearn = [1, -30];
+    console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
+    protocolYearn = [1, -40];
     protocolCompound = [2, 80];
     protocolAave = [5, 40];
 
@@ -132,8 +132,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vault.balanceUnderlying(protocolAave[0])
     ])
 
-    console.log(`Yearn balance vault ${yearnBalance3}`);
-    console.log(`Compound balance vault ${compoundBalance3}`);
+    console.log(`Year balance vault ${yearnBalance3}`);
+    console.log(`Comp balance vault ${compoundBalance3}`);
     console.log(`Aave balance vault ${aaveBalance3}`);
   });
 
@@ -148,4 +148,5 @@ describe("Deploy Contracts and interact with Vault", async () => {
   //   console.log(`Yearn balance vault ${yearnBalance}`);
 
   // });
+
 });

@@ -45,16 +45,15 @@ contract YearnProvider is IProvider{
     return yTokenReceived;
   }
 
-  // Tokens nog ergens vandaan pullen
-  function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(_seller); 
+  function withdraw(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = uToken.balanceOf(_vault); 
 
-    require(yToken.transferFrom(_seller, address(this), _amount) == true, "Error transferFrom");
+    require(yToken.transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
 
     uint256 uAmountReceived = yToken.withdraw(_amount); 
-    uToken.safeTransfer(_seller, uAmountReceived);
+    uToken.safeTransfer(_vault, uAmountReceived);
 
-    uint256 balanceAfter = uToken.balanceOf(_seller); 
+    uint256 balanceAfter = uToken.balanceOf(_vault); 
     require((balanceAfter - balanceBefore - uAmountReceived) == 0, "Error");
 
     return uAmountReceived;
@@ -64,6 +63,12 @@ contract YearnProvider is IProvider{
     uint256 balanceShares = balance(_address);
     uint256 price = exchangeRate();
     return balanceShares * price / 1E6;
+  }
+
+  function calcShares(uint256 _amount) external view override returns (uint256) {
+    uint256 shares = _amount  * 1E6 / exchangeRate();
+
+    return shares;
   }
 
   function balance(address _address) public view override returns (uint256) {
