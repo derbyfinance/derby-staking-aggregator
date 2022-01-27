@@ -59,10 +59,5 @@ describe("Test gas", async () => {
     const latestProtocol = await feeTestContract.latestProtocol();
     console.log(`latest ${latestProtocol}`);
   });
-
-  it("should test private variable", async function() {
-    const testVar = await feeTestContract.testmooi();
-    console.log(`testVar ${testVar}`);
-  });
   
 });
