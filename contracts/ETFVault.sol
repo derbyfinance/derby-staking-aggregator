@@ -31,8 +31,9 @@ contract ETFVault is IETFVault { // is VaultToken
     // address of DAO governance contract
   address public governed;
 
-  int256 public marginScale = 1E7;
+  int256 public marginScale = 1E9; // 100 USDC
   uint256 public uScale = 1E6;
+  uint256 public threshold;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -63,12 +64,20 @@ contract ETFVault is IETFVault { // is VaultToken
   //   governed = governed_;
   // }
 
-  constructor(address _governed, uint256 _ETFnumber, address _router, address _vaultCurrency) {
+  constructor(
+    address _governed, 
+    uint256 _ETFnumber, 
+    address _router, 
+    address _vaultCurrency, 
+    uint256 _threshold
+    ) {
+    vaultCurrency = IERC20(_vaultCurrency);
+    router = IRouter(_router);
+
     governed = _governed;
     ETFnumber = _ETFnumber;
-    router = IRouter(_router);
     routerAddr = _router;
-    vaultCurrency = IERC20(_vaultCurrency);
+    threshold = _threshold;
   }
 
     // period number of the latest rebalance
@@ -81,16 +90,15 @@ contract ETFVault is IETFVault { // is VaultToken
   int256 public totalAllocatedTokens;
 
     // current allocations over the protocols 
-  mapping(uint256 => int256) private currentAllocations;
+  mapping(uint256 => int256) internal currentAllocations;
 
     // delta of the total number of xaver tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
     // delta of the portfolio on next rebalancing
-  mapping(uint256 => int256) private deltaAllocations;
+  mapping(uint256 => int256) internal deltaAllocations;
 
   mapping(uint256 => uint256) private protocolToDeposit;
-  mapping(uint256 => uint256) private protocolToWithdraw;
 
 
   function depositETF(address _buyer, uint256 _amount) external {
@@ -103,40 +111,34 @@ contract ETFVault is IETFVault { // is VaultToken
 
   }
 
-  function rebalanceETF(int256 _amount) public {
+  function rebalanceETF() public {
+    uint256 amount = vaultCurrency.balanceOf(address(this));
+
     uint256 latestProtocolId = router.latestProtocolId();
-    int256 totalUnderlying = int(getTotalUnderlying());
+    uint256 totalUnderlying = getTotalUnderlying();
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
-    console.log("latestProtocolId %s", latestProtocolId);
     
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (deltaAllocations[i] == 0) continue;
-      int256 newAllocation = currentAllocations[i] += deltaAllocations[i];
-      // Check so currentAlocation cant be below 0
-      currentAllocations[i] = newAllocation < 0 ? int(0) : newAllocation;
+
+      currentAllocations[i] += deltaAllocations[i];
       deltaAllocations[i] = 0;
+      require(currentAllocations[i] >= 0, "Current Allocation underflow");
 
-      int256 amountToDeposit = (totalUnderlying + _amount) * currentAllocations[i] / totalAllocatedTokens;
-      int256 currentBalance = int256(balanceUnderlying(i));
+      int256 amountToProtocol = (int(totalUnderlying) + int(amount)) * currentAllocations[i] / totalAllocatedTokens;
+      uint256 currentBalance = balanceUnderlying(i);
 
-      // create margin logic instead of 1E6 
-      if (amountToDeposit / marginScale == currentBalance / marginScale) continue;
+      int256 amountToDeposit = amountToProtocol - int(currentBalance);
+      uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
-      // Deposit
-      if (amountToDeposit / marginScale > currentBalance / marginScale) {
-        int256 amount = amountToDeposit - currentBalance;
-  	    console.log("deposit: %s, to Protocol: %s", uint(amount), i);
-        protocolToDeposit[i] = uint256(amount);
-      }
+      if (amountToDeposit > marginScale) {
+        protocolToDeposit[i] = uint256(amountToDeposit);
+      } 
 
-      //  Execute withdraw
-      if (amountToDeposit / marginScale < currentBalance / marginScale)  {
-        int256 amount = currentBalance - amountToDeposit;
-        console.log("withdraw: %s, from Protocol: %s", uint(amount), i);
-        withdrawFromProtocol(uint256(amount), i);
-        protocolToWithdraw[i] = 0;
+      if (amountToWithdraw > uint(marginScale)) {
+        withdrawFromProtocol(amountToWithdraw, i);
       }
     }
 
@@ -150,7 +152,6 @@ contract ETFVault is IETFVault { // is VaultToken
 
       depositInProtocol(amount, i);
       protocolToDeposit[i] = 0;
-      // console.log("deposited: %s, to Protocol: %s", amount, i);
     }
   }
 
@@ -159,6 +160,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
     router.deposit(ETFnumber, _protocol, address(this), _amount);
+    console.log("deposited: %s, to Protocol: %s", uint(_amount), _protocol);
   }
 
   function withdrawFromProtocol(uint256 _amount, uint256 _protocol) internal {
@@ -168,6 +170,7 @@ contract ETFVault is IETFVault { // is VaultToken
 
     IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
     router.withdraw(ETFnumber, _protocol, address(this), shares);
+    console.log("withdrawed: %s, to Protocol: %s", uint(_amount), _protocol);
   }
 
   function getTotalUnderlying() public view returns(uint256) {
@@ -206,16 +209,7 @@ contract ETFVault is IETFVault { // is VaultToken
     deltaAllocatedTokens += _allocation; 
   }
 
-  // For Testing -----------------------
-  function getAllocationTEST(uint256 _protocolNum) public view returns(int256) {
-    return currentAllocations[_protocolNum];
-  }
-
-  function getDeltaAllocationTEST(uint256 _protocolNum) public view returns(int256) {
-    return deltaAllocations[_protocolNum];
-  }
-
-  function getProtocolsInETF() public view returns(uint256[] memory) {
-
+  function setThreshold(uint256 _amount) external onlyDao {
+    threshold = _amount;
   }
 }

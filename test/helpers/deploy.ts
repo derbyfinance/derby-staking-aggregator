@@ -11,12 +11,14 @@ import type {
   ETFGame, 
   XaverToken, 
   IGoverned,
+  ETFVaultMock
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
+import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.sol/ETFVaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
 import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
@@ -36,8 +38,12 @@ export const deployAaveProvider = (deployerSign: Signer, atoken: string, router:
   return (deployContract(deployerSign, AaveProviderArtifact, [atoken, router])) as Promise<AaveProvider>;
 };
 
-export const deployETFVault = (deployerSign: Signer, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string): Promise<ETFVault> => {
-  return (deployContract(deployerSign, ETFVaultArtifact, [daoAddress, ETFNumber, router, vaultCurrency])) as Promise<ETFVault>;
+export const deployETFVault = (deployerSign: Signer, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: number): Promise<ETFVault> => {
+  return (deployContract(deployerSign, ETFVaultArtifact, [daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVault>;
+};
+
+export const deployETFVaultMock = (deployerSign: Signer, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: number): Promise<ETFVaultMock> => {
+  return (deployContract(deployerSign, ETFVaultArtifactMock, [daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVaultMock>;
 };
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

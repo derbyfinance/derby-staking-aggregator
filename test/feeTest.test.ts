@@ -4,7 +4,7 @@ import chai, { expect } from "chai";
 import { Signer, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import type { FeeTestContract} from '../typechain-types';
-import FeeTestContractArtifact from '../artifacts/contracts/FeeTestContract.sol/FeeTestContract.json';
+import FeeTestContractArtifact from '../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 
 const deployFeeTestContract = (deployerSign: Signer, ): Promise<FeeTestContract> => {
@@ -58,6 +58,11 @@ describe("Test gas", async () => {
   it("set protocolsInETF array", async function() {
     const latestProtocol = await feeTestContract.latestProtocol();
     console.log(`latest ${latestProtocol}`);
+  });
+
+  it("should test private variable", async function() {
+    const testVar = await feeTestContract.testmooi();
+    console.log(`testVar ${testVar}`);
   });
   
 });

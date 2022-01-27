@@ -7,6 +7,8 @@ contract FeeTestContract {
   uint256 public totalAllocatedTokens;
   uint256 public latestProtocol;
 
+  uint256 private testmooi = 12;
+
   uint256[] public protocolsInETF;
 
   mapping(uint256 => uint256) private currentAllocations;

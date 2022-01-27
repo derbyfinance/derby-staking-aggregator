@@ -1,8 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber } from 'ethers';
-import type { ETFVault } from '../../typechain-types';
+import type { ETFVaultMock } from '../../typechain-types';
 
-export const getAndLogBalances = async function(vault: ETFVault, protocols: number[][]) {
+export const getAndLogBalances = async function(vault: ETFVaultMock, protocols: number[][]) {
   const promises = protocols.map((protocol: number[]) => {
     return vault.balanceUnderlying(protocol[0])
   });
@@ -15,7 +15,7 @@ export const getAndLogBalances = async function(vault: ETFVault, protocols: numb
   return balances;
 }
 
-export const setDeltaAllocations = async function(vault: ETFVault, protocols: number[][]) {
+export const setDeltaAllocations = async function(vault: ETFVaultMock, protocols: number[][]) {
   const promises = protocols.map((protocol: number[]) => {
     return vault.setDeltaAllocations(protocol[0], protocol[1])
   })
@@ -23,7 +23,7 @@ export const setDeltaAllocations = async function(vault: ETFVault, protocols: nu
   await Promise.all(promises);
 }
 
-export const getAllocations = async function(vault: ETFVault, protocols: number[][]) {
+export const getAllocations = async function(vault: ETFVaultMock, protocols: number[][]) {
   const promises = protocols.map((protocol: number[]) => {
     return vault.getAllocationTEST(protocol[0])
   })
