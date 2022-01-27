@@ -10,6 +10,8 @@ interface IProvider {
 
     function balanceUnderlying(address _address) external view returns(uint256);
 
+    function calcShares(uint256 _amount) external view returns(uint256);
+
     function balance(address _address) external view returns(uint256);
 
     function addPricePoint() external;

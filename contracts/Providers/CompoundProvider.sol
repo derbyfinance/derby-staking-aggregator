@@ -77,6 +77,12 @@ contract CompoundProvider is IProvider{
     return balanceShares * price / 1E18;
   }
 
+  function calcShares(uint256 _amount) external view override returns (uint256) {
+    uint256 shares = _amount  * 1E18 / exchangeRate();
+
+    return shares;
+  }
+
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = cToken.balanceOf(_address);
     return _balanceShares;
