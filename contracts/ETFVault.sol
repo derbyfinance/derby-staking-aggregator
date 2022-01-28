@@ -17,7 +17,7 @@ import "hardhat/console.sol";
 
 contract ETFVault is IETFVault { // is VaultToken
   using SafeERC20 for IERC20;
-    // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
+  // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   bytes32 public ETFname;
 
   uint256 public ETFnumber;
@@ -28,10 +28,10 @@ contract ETFVault is IETFVault { // is VaultToken
 
   address public ETFgame;
 
-    // address of DAO governance contract
+  // address of DAO governance contract
   address public governed;
 
-  int256 public marginScale = 1E9; // 100 USDC
+  int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale = 1E6;
   uint256 public threshold;
 
@@ -80,37 +80,53 @@ contract ETFVault is IETFVault { // is VaultToken
     threshold = _threshold;
   }
 
-    // period number of the latest rebalance
+  // period number of the latest rebalance
   uint256 public latestRebalancingPeriod;
 
-    // from the rebalancing period to block number;
+  // from the rebalancing period to block number;
   mapping(uint256 => uint256) public rebalancingPeriodToBlock;
 
-    // total number of allocated xaver tokens currently
+  // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
-    // current allocations over the protocols 
+  // current allocations over the protocols 
   mapping(uint256 => int256) internal currentAllocations;
 
-    // delta of the total number of xaver tokens allocated on next rebalancing
+  // delta of the total number of xaver tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
-    // delta of the portfolio on next rebalancing
+  // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
+  // protocols to deposit in after withdrawals are executed
   mapping(uint256 => uint256) private protocolToDeposit;
 
-
-  function depositETF(address _buyer, uint256 _amount) external {
+  /// @notice Deposit in ETFVault
+  /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
+  /// @param _buyer Address from buyer of the tokens
+  /// @param _amount Amount to deposit
+  /// @return Tokens received by buyer
+  function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     
     // mint LP tokens and send to user 
   }
 
-  function withdrawETF(address _seller, uint256 _amount) external {
+  /// @notice Withdraw from ETFVault
+  /// @dev Withdraw VaultCurrency from ETFVault and burn LP tokens
+  /// @param _seller Address from seller of the tokens
+  /// @param _amount Amount to withdraw
+  /// @return Amount received by seller
+  function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
 
   }
 
+  /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
+  /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
+  /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
+  /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
+  /// @dev if amountToDeposit < 0 => withdraw
+  /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
     uint256 amount = vaultCurrency.balanceOf(address(this));
 
@@ -145,6 +161,9 @@ contract ETFVault is IETFVault { // is VaultToken
     executeDeposits(latestProtocolId);
   }
 
+  /// @notice Helper function so the rebalance will execute all withdrawals first
+  /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
+  /// @param _latestProtocolId Latest protocolNumber to stop the loop
   function executeDeposits(uint256 _latestProtocolId) internal  {
     for (uint i = 0; i <= _latestProtocolId; i++) {
       uint256 amount = protocolToDeposit[i];
@@ -155,24 +174,34 @@ contract ETFVault is IETFVault { // is VaultToken
     }
   }
 
-  function depositInProtocol(uint256 _amount, uint256 _protocol) internal {
-    address provider = router.protocol(ETFnumber, _protocol);
+  /// @notice Deposit amount to underlying protocol
+  /// @dev Deposits VaultCurrency in Protocol e.g USDC
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _amount in VaultCurrency to deposit
+  function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
+    address provider = router.protocol(ETFnumber, _protocolNum);
 
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
-    router.deposit(ETFnumber, _protocol, address(this), _amount);
-    console.log("deposited: %s, to Protocol: %s", uint(_amount), _protocol);
+    router.deposit(ETFnumber, _protocolNum, address(this), _amount);
+    console.log("deposited: %s, to Protocol: %s", uint(_amount), _protocolNum);
   }
 
-  function withdrawFromProtocol(uint256 _amount, uint256 _protocol) internal {
-    address provider = router.protocol(ETFnumber, _protocol);
-    address protocolToken = router.getProtocolTokenAddress(ETFnumber, _protocol);
-    uint256 shares = router.calcShares(ETFnumber, _protocol, _amount);
+  /// @notice Withdraw amount from underlying protocol
+  /// @dev shares = amount / PricePerShare
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _amount in VaultCurrency to withdraw
+  function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
+    address provider = router.protocol(ETFnumber, _protocolNum);
+    address protocolToken = router.getProtocolTokenAddress(ETFnumber, _protocolNum);
+    uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
 
     IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
-    router.withdraw(ETFnumber, _protocol, address(this), shares);
-    console.log("withdrawed: %s, to Protocol: %s", uint(_amount), _protocol);
+    router.withdraw(ETFnumber, _protocolNum, address(this), shares);
+    console.log("withdrawed: %s, to Protocol: %s", uint(_amount), _protocolNum);
   }
 
+  /// @notice Get total balance in VaultCurrency in all underlying protocols
+  /// @return Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256) {
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 balance;
@@ -189,19 +218,29 @@ contract ETFVault is IETFVault { // is VaultToken
 
   }
 
-  function balanceUnderlying(uint256 _protocolNumber) public view returns(uint256) {
-    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNumber, address(this));
+  /// @notice Get balance in VaultCurrency in underlying protocol
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @return Balance in VaultCurrency e.g USDC
+  function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
+    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
   
     return underlyingBalance;
   }
 
-  function price(uint256 _protocolNumber) public view returns(uint256) {
-    uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNumber);
+  /// @notice Get price for underlying protocol
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @return Price per share
+  function price(uint256 _protocolNum) public view returns(uint256) {
+    uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNum);
 
     return protocolPrice;
   }
 
   // onlyETFGame modifier
+  /// @notice Set the delta allocated tokens by game contract
+  /// @dev Allocation can be negative
+  /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
+  /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
@@ -209,6 +248,7 @@ contract ETFVault is IETFVault { // is VaultToken
     deltaAllocatedTokens += _allocation; 
   }
 
+  /// @notice Set threshold by DAO i.e above which amount the rebalance will trigger
   function setThreshold(uint256 _amount) external onlyDao {
     threshold = _amount;
   }
