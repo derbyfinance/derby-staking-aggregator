@@ -38,7 +38,6 @@ contract YearnProvider is IProvider{
   /// @return Tokens received and sent to vault
   function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
-
     uToken.safeTransferFrom(_vault, address(this), _amount);
     uToken.safeIncreaseAllowance(address(yToken), _amount);
 

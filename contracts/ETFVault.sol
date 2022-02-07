@@ -154,7 +154,7 @@ contract ETFVault is IETFVault { // is VaultToken
       } 
 
       if (amountToWithdraw > uint(marginScale)) {
-        withdrawFromProtocol(amountToWithdraw, i);
+        withdrawFromProtocol(i, amountToWithdraw);
       }
     }
 
@@ -169,7 +169,7 @@ contract ETFVault is IETFVault { // is VaultToken
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
-      depositInProtocol(amount, i);
+      depositInProtocol(i, amount);
       protocolToDeposit[i] = 0;
     }
   }
