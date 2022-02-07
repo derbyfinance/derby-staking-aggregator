@@ -31,6 +31,11 @@ contract YearnProvider is IProvider{
     router = _router;
   }
 
+  /// @notice Deposit the underlying asset in Yearn
+  /// @dev Pulls underlying asset from ETFVault, deposit them in Yearn, send yTokens back.
+  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _amount Amount to deposit
+  /// @return Tokens received and sent to vault
   function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
@@ -45,6 +50,11 @@ contract YearnProvider is IProvider{
     return yTokenReceived;
   }
 
+  /// @notice Withdraw the underlying asset from Yearn
+  /// @dev Pulls cTokens from ETFVault, redeem them from Yearn, send underlying back.
+  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _amount Amount to withdraw
+  /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(_vault); 
 
@@ -59,24 +69,36 @@ contract YearnProvider is IProvider{
     return uAmountReceived;
   }
 
+  /// @notice Get balance from address in shares i.e LP tokens
+  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @return number of shares i.e LP tokens
   function balanceUnderlying(address _address) public override view returns (uint256) {
     uint256 balanceShares = balance(_address);
     uint256 price = exchangeRate();
     return balanceShares * price / 1E6;
   }
 
+  /// @notice Calculates how many shares are equal to the amount
+  /// @dev Yearn scales price by 1E6
+  /// @param _amount Amount in underyling token e.g USDC
+  /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount) external view override returns (uint256) {
     uint256 shares = _amount  * 1E6 / exchangeRate();
 
     return shares;
   }
 
+  /// @notice Get balance of yToken from address
+  /// @param _address Address to request balance from
+  /// @return number of shares i.e LP tokens
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = yToken.balanceOf(_address);
 
     return _balanceShares;
   }
 
+  /// @notice Exchange rate of underyling protocol token
+  /// @return price of LP token
   function exchangeRate() public override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
 

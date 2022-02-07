@@ -31,6 +31,11 @@ contract CompoundProvider is IProvider{
     router = _router;
   }
 
+  /// @notice Deposit the underlying asset in Compound
+  /// @dev Pulls underlying asset from ETFVault, deposit them in Compound, send cTokens back.
+  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _amount Amount to deposit
+  /// @return Tokens received and sent to vault
   function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = uToken.balanceOf(address(this));
 
@@ -50,46 +55,60 @@ contract CompoundProvider is IProvider{
     return cTokensReceived;
   }
 
-  // Tokens nog ergens vandaan pullen
-  function withdraw(address _seller, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(_seller); 
+  /// @notice Withdraw the underlying asset from Compound
+  /// @dev Pulls cTokens from ETFVault, redeem them from Compound, send underlying back.
+  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _amount Amount to withdraw
+  /// @return Underlying tokens received and sent to vault e.g USDC
+  function withdraw(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = uToken.balanceOf(_vault); 
 
     uint256 balanceBeforeRedeem = uToken.balanceOf(address(this)); 
 
-    require(cToken.transferFrom(_seller, address(this), _amount) == true, "Error transferFrom");
+    require(cToken.transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
     // Compound redeem: 0 on success, otherwise an Error code
     require(cToken.redeem(_amount) == 0, "Error: compound redeem"); 
     
     uint256 balanceAfterRedeem = uToken.balanceOf(address(this)); 
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    uToken.safeTransfer(_seller, uTokensReceived);
+    uToken.safeTransfer(_vault, uTokensReceived);
 
-    uint256 balanceAfter = uToken.balanceOf(_seller); 
+    uint256 balanceAfter = uToken.balanceOf(_vault); 
     require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");
 
     return uTokensReceived;
   }
 
+  /// @notice Get balance from address in shares i.e LP tokens
+  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @return number of shares i.e LP tokens
   function balanceUnderlying(address _address) public override view returns (uint256) {
     uint256 balanceShares = balance(_address);
     uint256 price = exchangeRate();
     return balanceShares * price / 1E18;
   }
 
+  /// @notice Calculates how many shares are equal to the amount
+  /// @dev returned price from compound is scaled by 1e18
+  /// @param _amount Amount in underyling token e.g USDC
+  /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount) external view override returns (uint256) {
     uint256 shares = _amount  * 1E18 / exchangeRate();
-
     return shares;
   }
 
+  /// @notice Get balance of cToken from address
+  /// @param _address Address to request balance from
+  /// @return number of shares i.e LP tokens
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = cToken.balanceOf(_address);
     return _balanceShares;
   }
 
-  // ExchangeRateStored || ExchangerateCurrent? Current is write
-  // returned price from compound is scaled by 1e18
+  /// @notice Exchange rate of underyling protocol token
+  /// @dev returned price from compound is scaled by 1e18
+  /// @return price of LP token
   function exchangeRate() public view override returns(uint256) {
     uint256 _price = cToken.exchangeRateStored();
     return _price;
@@ -103,7 +122,4 @@ contract CompoundProvider is IProvider{
 
   }
 
-  // function _msgSender() internal view virtual returns (address payable) {
-  //   return payable(msg.sender); 
-  // }
 }
