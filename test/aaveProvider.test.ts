@@ -7,8 +7,8 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers'
 import type { AaveProvider, ERC20, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
 
-const usdc = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-const ausdc = '0xBcca60bB61934080951369a648Fb03DF4F96263C';
+const usdc = process.env.USDC as string;
+const ausdc = process.env.aaveUSDC as string;
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolNumber = 3;

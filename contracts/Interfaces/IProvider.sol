@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.3;
+pragma solidity ^0.8.11;
 
 interface IProvider {
     function deposit(address _buyer, uint256 _amount) external returns(uint256);
