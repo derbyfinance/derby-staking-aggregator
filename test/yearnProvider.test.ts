@@ -6,9 +6,8 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, ERC20, Router } from '../typechain-types';
 import { deployYearnProvider, deployRouter } from './helpers/deploy';
+import { usdc, yearnUSDC as yusdc} from "./helpers/addresses";
 
-const usdc = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-const yusdc = '0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9';
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolNumber = 1;
