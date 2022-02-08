@@ -6,9 +6,8 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { AaveProvider, ERC20, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
+import { usdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
-const usdc = process.env.USDC as string;
-const ausdc = process.env.aaveUSDC as string;
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolNumber = 3;

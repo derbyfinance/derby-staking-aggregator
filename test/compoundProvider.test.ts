@@ -6,9 +6,8 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { CompoundProvider, ERC20, Router } from '../typechain-types';
 import { deployCompoundProvider, deployRouter } from './helpers/deploy';
+import { usdc, compoundUSDC as cusdc} from "./helpers/addresses";
 
-const usdc = process.env.USDC as string;
-const cusdc = process.env.compoundUSDC as string;
 const amountUSDC = parseUSDC('100000');
 const ETFNumber = 1;
 const protocolNumber = 2;

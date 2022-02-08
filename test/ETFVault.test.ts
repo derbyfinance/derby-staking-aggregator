@@ -8,11 +8,8 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers'
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
-const usdc = process.env.USDC as string;
-const yusdc = process.env.yearnUSDC as string;
-const cusdc = process.env.compoundUSDC as string;
-const ausdc = process.env.aaveUSDC as string;
 const amountUSDC = parseUSDC('100000');
 const threshold = parseUSDC('0')
 const ETFNumber = 1;
