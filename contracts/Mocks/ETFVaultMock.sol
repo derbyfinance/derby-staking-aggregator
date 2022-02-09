@@ -7,12 +7,16 @@ import "hardhat/console.sol";
 contract ETFVaultMock is ETFVault { // is VaultToken
 
   constructor(
+    string memory _name,
+    string memory _symbol,
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency, 
     uint256 _threshold
   ) ETFVault(
+    _name,
+    _symbol,
     _governed,
     _ETFnumber,
     _router,

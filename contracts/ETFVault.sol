@@ -15,7 +15,7 @@ import "hardhat/console.sol";
 // ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
 // ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
-contract ETFVault is IETFVault { // is VaultToken
+contract ETFVault is IETFVault, VaultToken {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   bytes32 public ETFname;
@@ -65,12 +65,14 @@ contract ETFVault is IETFVault { // is VaultToken
   // }
 
   constructor(
+    string memory _name,
+    string memory _symbol,
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency, 
     uint256 _threshold
-    ) {
+    ) VaultToken (_name, _symbol) {
     vaultCurrency = IERC20(_vaultCurrency);
     router = IRouter(_router);
 
