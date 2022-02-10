@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { deployContract } from "ethereum-waffle";
-import { Signer, BigNumberish, Wallet } from "ethers";
+import { Signer, BigNumberish, Wallet, BigNumber } from "ethers";
 import type { 
   YearnProvider,
   CompoundProvider, 
@@ -42,7 +42,7 @@ export const deployETFVault = (deployerSign: Signer, name: string, symbol: strin
   return (deployContract(deployerSign, ETFVaultArtifact, [name, symbol, daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVault>;
 };
 
-export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: number): Promise<ETFVaultMock> => {
+export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: BigNumber): Promise<ETFVaultMock> => {
   return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVaultMock>;
 };
 

@@ -110,15 +110,22 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Tokens received by buyer
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
+
+    uint256 totalSupply = totalSupply();
+    console.log("total supply %s", totalSupply);
+    uint256 shares = 0;
+
+    if (totalSupply > 0) {
+      console.log("getTotalUnderlying %s", getTotalUnderlying());
+      shares = _amount * totalSupply / getTotalUnderlying();
+    } else {
+      shares = _amount; 
+    }
     
-    _mint(address(this), 100);
+    console.log("shares %s", shares);
+    _mint(_buyer, shares);
 
-    uint256 balance = balanceOf(address(this));
-
-    console.log("balance %s", balance);
-
-    
-    // mint LP tokens and send to user 
+    return shares;
   }
 
   /// @notice Withdraw from ETFVault
@@ -130,8 +137,8 @@ contract ETFVault is IETFVault, VaultToken {
 
   }
 
-  function pricePerShare() public returns(uint256) {
-
+  function exchangeRate() public view returns(uint256) {
+    return getTotalUnderlying() / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -216,17 +223,17 @@ contract ETFVault is IETFVault, VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256) {
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     uint256 latestProtocolId = router.latestProtocolId();
-    console.log("latestProtocolId %s", latestProtocolId);
     uint256 balance;
+    
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);
-      console.log("balanceProtocol %s", balanceProtocol);
       balance += balanceProtocol;
     }
 
-    return balance;
+    return balance + balanceSelf;
   }
 
   function addProtocol(bytes32 name, address addr) public override onlyDao {

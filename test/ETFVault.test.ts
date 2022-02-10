@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
-import { Signer, Wallet, utils } from "ethers";
+import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
@@ -21,7 +21,7 @@ let protocolAave = [5, 60];
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
+  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();

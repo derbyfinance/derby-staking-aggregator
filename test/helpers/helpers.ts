@@ -1,10 +1,8 @@
-import { BigNumber } from "ethers";
-
 /* eslint-disable prettier/prettier */
-require('@ethereum-waffle/compiler');
-const { ethers, network, waffle } = require("hardhat");
-const erc20ABI = require('../../abis/erc20.json');
-const cTokenABI = require('../../abis/cToken.json');
+import { BigNumber } from "ethers";
+import { ethers, network, waffle } from "hardhat";
+import erc20ABI from '../../abis/erc20.json';
+import cTokenABI from '../../abis/cToken.json';
 const provider = waffle.provider;
 
 const DAIWhale = "0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0";

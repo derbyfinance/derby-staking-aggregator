@@ -30,3 +30,11 @@ export const getAllocations = async function(vault: ETFVaultMock, protocols: num
 
   return await Promise.all(promises);
 }
+
+export const setCurrentAllocations = async function(vault: ETFVaultMock, protocols: number[][]) {
+  const promises = protocols.map((protocol: number[]) => {
+    return vault.setCurrentAllocation(protocol[0], protocol[1])
+  })
+
+  await Promise.all(promises);
+}
