@@ -74,6 +74,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, parseUSDC('10000'));
     console.log(Number(await vaultMock.exchangeRate()));
 
+    console.log(`Mocking a profit of 1k in each protocol`);
     const profit = parseUSDC('1000');
 
     await Promise.all([
