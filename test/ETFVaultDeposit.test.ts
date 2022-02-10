@@ -72,8 +72,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
     
     // Depositing 10k after rebalance
     await vaultMock.depositETF(userAddr, parseUSDC('10000'));
+    console.log(Number(await vaultMock.exchangeRate()));
 
-    console.log(Number(await vaultMock.exchangeRate()))
+    const profit = parseUSDC('1000');
+
+    await Promise.all([
+      vaultMock.clearCurrencyBalance(),
+      yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      compoundProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+    ])
   });
 
 });
