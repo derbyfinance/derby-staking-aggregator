@@ -80,9 +80,9 @@ contract CompoundProvider is IProvider{
     return uTokensReceived;
   }
 
-  /// @notice Get balance from address in shares i.e LP tokens
+  /// @notice Get balance from address in underlying token
   /// @param _address Address to request balance from, most likely an ETFVault
-  /// @return number of shares i.e LP tokens
+  /// @return balance in underlying token
   function balanceUnderlying(address _address) public override view returns (uint256) {
     uint256 balanceShares = balance(_address);
     uint256 price = exchangeRate();

@@ -111,6 +111,13 @@ contract ETFVault is IETFVault, VaultToken {
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     
+    _mint(address(this), 100);
+
+    uint256 balance = balanceOf(address(this));
+
+    console.log("balance %s", balance);
+
+    
     // mint LP tokens and send to user 
   }
 
@@ -120,6 +127,10 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _amount Amount to withdraw
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
+
+  }
+
+  function pricePerShare() public returns(uint256) {
 
   }
 
@@ -206,10 +217,12 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256) {
     uint256 latestProtocolId = router.latestProtocolId();
+    console.log("latestProtocolId %s", latestProtocolId);
     uint256 balance;
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);
+      console.log("balanceProtocol %s", balanceProtocol);
       balance += balanceProtocol;
     }
 
