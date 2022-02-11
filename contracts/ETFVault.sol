@@ -67,12 +67,13 @@ contract ETFVault is IETFVault, VaultToken {
   constructor(
     string memory _name,
     string memory _symbol,
+    uint8 _decimals,
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency, 
     uint256 _threshold
-    ) VaultToken (_name, _symbol) {
+    ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     router = IRouter(_router);
 
@@ -111,18 +112,16 @@ contract ETFVault is IETFVault, VaultToken {
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
 
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     uint256 totalSupply = totalSupply();
-    console.log("total supply %s", totalSupply);
     uint256 shares = 0;
 
     if (totalSupply > 0) {
-      console.log("getTotalUnderlying %s", getTotalUnderlying());
-      shares = _amount * totalSupply / getTotalUnderlying();
+      shares = _amount * totalSupply / (getTotalUnderlying() + balanceSelf - _amount);
     } else {
       shares = _amount; 
     }
     
-    console.log("shares %s", shares);
     _mint(_buyer, shares);
 
     return shares;
@@ -137,8 +136,12 @@ contract ETFVault is IETFVault, VaultToken {
 
   }
 
+  // TotalUnderlying = Underlying balance protocols + balance vault
   function exchangeRate() public view returns(uint256) {
-    return getTotalUnderlying() / totalSupply();
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
+    // console.log("total supply %s", totalSupply());
+    // console.log("getTotalUnderlying %s", getTotalUnderlying());
+    return ( getTotalUnderlying() + balanceSelf )  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -223,7 +226,6 @@ contract ETFVault is IETFVault, VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256) {
-    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 balance;
     
@@ -233,7 +235,7 @@ contract ETFVault is IETFVault, VaultToken {
       balance += balanceProtocol;
     }
 
-    return balance + balanceSelf;
+    return balance;
   }
 
   function addProtocol(bytes32 name, address addr) public override onlyDao {

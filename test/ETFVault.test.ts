@@ -11,7 +11,8 @@ import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helper
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
 const name = 'XaverUSDC';
-const symbol = 'xUSDC'
+const symbol = 'xUSDC';
+const decimals = 6;
 const amountUSDC = parseUSDC('100000');
 const threshold = parseUSDC('0');
 const ETFNumber = 1;
@@ -31,7 +32,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, daoAddr, ETFNumber, router.address, usdc, threshold),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc, threshold),
       deployYearnProvider(dao, yusdc, usdc, router.address),
       deployCompoundProvider(dao, cusdc, usdc, router.address),
       deployAaveProvider(dao, ausdc, router.address),
@@ -50,86 +51,85 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should have a name and symbol", async function() {
-    const nameC = await vaultMock.name();
-    const symbolC = await vaultMock.symbol();
-    expect(nameC).to.be.equal(name);
-    expect(symbolC).to.be.equal(symbol)
+    expect(await vaultMock.name()).to.be.equal(name);
+    expect(await vaultMock.symbol()).to.be.equal(symbol);
+    expect(await vaultMock.decimals()).to.be.equal(decimals);
   });
 
-  // it("Should set delta allocations", async function() {
-  //   await setDeltaAllocations(vaultMock, allProtocols);
+  it("Should set delta allocations", async function() {
+    await setDeltaAllocations(vaultMock, allProtocols);
 
-  //   const [yearn, compound, aave] = await Promise.all([
-  //     vaultMock.getDeltaAllocationTEST(protocolYearn[0]),
-  //     vaultMock.getDeltaAllocationTEST(protocolCompound[0]),
-  //     vaultMock.getDeltaAllocationTEST(protocolAave[0])
-  //   ]);
+    const [yearn, compound, aave] = await Promise.all([
+      vaultMock.getDeltaAllocationTEST(protocolYearn[0]),
+      vaultMock.getDeltaAllocationTEST(protocolCompound[0]),
+      vaultMock.getDeltaAllocationTEST(protocolAave[0])
+    ]);
 
-  //   expect(yearn).to.be.equal(protocolYearn[1]);
-  //   expect(compound).to.be.equal(protocolCompound[1]);
-  //   expect(aave).to.be.equal(protocolAave[1]);
-  // });
+    expect(yearn).to.be.equal(protocolYearn[1]);
+    expect(compound).to.be.equal(protocolCompound[1]);
+    expect(aave).to.be.equal(protocolAave[1]);
+  });
 
-  // it("Should deposit and rebalance", async function() {
-  //   console.log('--------------depositing and rebalance with 100k ----------------')
-  //   await setDeltaAllocations(vaultMock, allProtocols);
+  it("Should deposit and rebalance", async function() {
+    console.log('--------------depositing and rebalance with 100k ----------------')
+    await setDeltaAllocations(vaultMock, allProtocols);
 
-  //   await vaultMock.depositETF(userAddr, amountUSDC);
-  //   await vaultMock.rebalanceETF();
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    await vaultMock.rebalanceETF();
 
-  //   const balances = await getAndLogBalances(vaultMock, allProtocols);
-  //   const allocations = await getAllocations(vaultMock, allProtocols);
-  //   const totalAllocatedTokens = await vaultMock.totalAllocatedTokens();
+    const balances = await getAndLogBalances(vaultMock, allProtocols);
+    const allocations = await getAllocations(vaultMock, allProtocols);
+    const totalAllocatedTokens = await vaultMock.totalAllocatedTokens();
 
-  //   // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
-  //   allProtocols.forEach((protocol, i) => {
-  //     expect(balances[i].div(1E6))
-  //     .to.be.closeTo(allocations[i].mul(amountUSDC).div(totalAllocatedTokens).div(1E6), 5)
-  //   })
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((protocol, i) => {
+      expect(balances[i].div(1E6))
+      .to.be.closeTo(allocations[i].mul(amountUSDC).div(totalAllocatedTokens).div(1E6), 5)
+    })
 
-  //   console.log('--------------rebalancing with amount 0----------------')
-  //   protocolYearn = [1, 40];
-  //   protocolCompound = [2, -20];
-  //   protocolAave = [5, -20];
-  //   allProtocols = [protocolYearn, protocolCompound, protocolAave];
+    console.log('--------------rebalancing with amount 0----------------')
+    protocolYearn = [1, 40];
+    protocolCompound = [2, -20];
+    protocolAave = [5, -20];
+    allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
-  //   await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(vaultMock, allProtocols);
 
-  //   await vaultMock.rebalanceETF();
+    await vaultMock.rebalanceETF();
 
-  //   const balances2 = await getAndLogBalances(vaultMock, allProtocols);
-  //   const allocations2 = await getAllocations(vaultMock, allProtocols);
-  //   const totalAllocatedTokens2 = await vaultMock.totalAllocatedTokens();
+    const balances2 = await getAndLogBalances(vaultMock, allProtocols);
+    const allocations2 = await getAllocations(vaultMock, allProtocols);
+    const totalAllocatedTokens2 = await vaultMock.totalAllocatedTokens();
 
-  //   // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
-  //   allProtocols.forEach((protocol, i) => {
-  //     expect(balances2[i].div(1E6))
-  //     .to.be.closeTo(allocations2[i].mul(amountUSDC).div(totalAllocatedTokens2).div(1E6), 5)
-  //   })
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((protocol, i) => {
+      expect(balances2[i].div(1E6))
+      .to.be.closeTo(allocations2[i].mul(amountUSDC).div(totalAllocatedTokens2).div(1E6), 5)
+    })
 
-  //   console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
-  //   protocolYearn = [1, -60]; // to 0
-  //   protocolCompound = [2, 80];
-  //   protocolAave = [5, 40];
-  //   allProtocols = [protocolYearn, protocolCompound, protocolAave];
-  //   const amountToDeposit = parseUSDC('50000');
-  //   const totalAmountDeposited = amountUSDC.add(amountToDeposit)
+    console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
+    protocolYearn = [1, -60]; // to 0
+    protocolCompound = [2, 80];
+    protocolAave = [5, 40];
+    allProtocols = [protocolYearn, protocolCompound, protocolAave];
+    const amountToDeposit = parseUSDC('50000');
+    const totalAmountDeposited = amountUSDC.add(amountToDeposit)
 
-  //   await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(vaultMock, allProtocols);
 
-  //   await vaultMock.depositETF(userAddr, amountToDeposit);
-  //   await vaultMock.rebalanceETF();
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await vaultMock.rebalanceETF();
 
-  //   const balances3 = await getAndLogBalances(vaultMock, allProtocols);
-  //   const allocations3 = await getAllocations(vaultMock, allProtocols);
-  //   const totalAllocatedTokens3 = await vaultMock.totalAllocatedTokens();
+    const balances3 = await getAndLogBalances(vaultMock, allProtocols);
+    const allocations3 = await getAllocations(vaultMock, allProtocols);
+    const totalAllocatedTokens3 = await vaultMock.totalAllocatedTokens();
 
-  //   // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
-  //   allProtocols.forEach((protocol, i) => {
-  //     expect(balances3[i].div(1E6))
-  //     .to.be.closeTo(allocations3[i].mul(totalAmountDeposited).div(totalAllocatedTokens3).div(1E6), 5)
-  //   })
-  // });
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
+    allProtocols.forEach((protocol, i) => {
+      expect(balances3[i].div(1E6))
+      .to.be.closeTo(allocations3[i].mul(totalAmountDeposited).div(totalAllocatedTokens3).div(1E6), 5)
+    })
+  });
 
 });
 

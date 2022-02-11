@@ -72,7 +72,6 @@ contract YearnProvider is IProvider{
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @return number of shares i.e LP tokens
   function balanceUnderlying(address _address) public override view returns (uint256) {
-    console.log("mnooi");
     uint256 balanceShares = balance(_address);
     uint256 price = exchangeRate();
     return balanceShares * price / 1E6;

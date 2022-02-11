@@ -9,6 +9,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   constructor(
     string memory _name,
     string memory _symbol,
+    uint8 _decimals,
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
@@ -17,6 +18,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   ) ETFVault(
     _name,
     _symbol,
+    _decimals,
     _governed,
     _ETFnumber,
     _router,
