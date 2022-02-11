@@ -117,7 +117,7 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 shares = 0;
 
     if (totalSupply > 0) {
-      shares = _amount * totalSupply / (getTotalUnderlying() + balanceSelf - _amount);
+      shares = ( _amount * totalSupply ) / (getTotalUnderlying() + balanceSelf - _amount);
     } else {
       shares = _amount; 
     }
