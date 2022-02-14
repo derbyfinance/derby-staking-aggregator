@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
-import { Signer, Wallet } from "ethers";
+import { Contract, Signer, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, ERC20, Router } from '../typechain-types';
@@ -13,7 +13,7 @@ const ETFNumber = 1;
 const protocolNumber = 1;
 
 describe("Deploy Contract and interact with Yearn", async () => {
-  let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, yToken: ERC20, daoAddr: string, vaultAddr: string;
+  let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();

@@ -15,7 +15,7 @@ import "hardhat/console.sol";
 // ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
 // ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
-contract ETFVault is IETFVault { // is VaultToken
+contract ETFVault is IETFVault, VaultToken {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   bytes32 public ETFname;
@@ -65,12 +65,15 @@ contract ETFVault is IETFVault { // is VaultToken
   // }
 
   constructor(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals,
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency, 
     uint256 _threshold
-    ) {
+    ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     router = IRouter(_router);
 
@@ -108,8 +111,20 @@ contract ETFVault is IETFVault { // is VaultToken
   /// @return Tokens received by buyer
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
+
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
+    uint256 totalSupply = totalSupply();
+    uint256 shares = 0;
+
+    if (totalSupply > 0) {
+      shares = ( _amount * totalSupply ) / (getTotalUnderlying() + balanceSelf - _amount);
+    } else {
+      shares = _amount; 
+    }
     
-    // mint LP tokens and send to user 
+    _mint(_buyer, shares);
+
+    return shares;
   }
 
   /// @notice Withdraw from ETFVault
@@ -119,6 +134,14 @@ contract ETFVault is IETFVault { // is VaultToken
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
 
+  }
+
+  // TotalUnderlying = Underlying balance protocols + balance vault
+  function exchangeRate() public view returns(uint256) {
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
+    // console.log("total supply %s", totalSupply());
+    // console.log("getTotalUnderlying %s", getTotalUnderlying());
+    return ( getTotalUnderlying() + balanceSelf )  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -205,6 +228,7 @@ contract ETFVault is IETFVault { // is VaultToken
   function getTotalUnderlying() public view returns(uint256) {
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 balance;
+    
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);

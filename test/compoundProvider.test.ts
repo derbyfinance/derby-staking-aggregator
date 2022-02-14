@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
-import { Signer, Wallet } from "ethers";
+import { Contract, Signer, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { CompoundProvider, ERC20, Router } from '../typechain-types';
@@ -13,7 +13,7 @@ const ETFNumber = 1;
 const protocolNumber = 2;
 
 describe("Deploy Contract and interact with Compound", async () => {
-  let compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: ERC20, cToken: ERC20, daoAddr: string, vaultAddr: string;
+  let compoundProvider: CompoundProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, cToken: Contract, daoAddr: string, vaultAddr: string;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();

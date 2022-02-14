@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
-import { Signer, Wallet, utils } from "ethers";
+import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
@@ -10,6 +10,9 @@ import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deploy
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
+const name = 'XaverUSDC';
+const symbol = 'xUSDC';
+const decimals = 6;
 const amountUSDC = parseUSDC('100000');
 const threshold = parseUSDC('0');
 const ETFNumber = 1;
@@ -19,7 +22,7 @@ let protocolAave = [5, 60];
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: ERC20, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
+  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -29,7 +32,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, daoAddr, ETFNumber, router.address, usdc, threshold),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc, threshold),
       deployYearnProvider(dao, yusdc, usdc, router.address),
       deployCompoundProvider(dao, cusdc, usdc, router.address),
       deployAaveProvider(dao, ausdc, router.address),
@@ -45,6 +48,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
       router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vaultMock.address),
       router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vaultMock.address)
     ])
+  });
+
+  it("Should have a name and symbol", async function() {
+    expect(await vaultMock.name()).to.be.equal(name);
+    expect(await vaultMock.symbol()).to.be.equal(symbol);
+    expect(await vaultMock.decimals()).to.be.equal(decimals);
   });
 
   it("Should set delta allocations", async function() {
@@ -123,3 +132,4 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
 });
+
