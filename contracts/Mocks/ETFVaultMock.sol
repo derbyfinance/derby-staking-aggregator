@@ -38,8 +38,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     currentAllocations[_protocolNum] = _allocation;
   }
 
-  function clearCurrencyBalance() external {
-    uint256 balance = vaultCurrency.balanceOf(address(this));
-    vaultCurrency.transfer(governed, balance);
+  function clearCurrencyBalance(uint256 _balance) external {
+    vaultCurrency.transfer(governed, _balance);
   }
 }

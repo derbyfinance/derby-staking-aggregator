@@ -65,7 +65,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const mockedBalance = parseUSDC('3000'); // 3k in each protocol
 
     await Promise.all([
-      vaultMock.clearCurrencyBalance(),
+      vaultMock.clearCurrencyBalance(parseUSDC('9000')),
       yearnProvider.mock.balanceUnderlying.returns(mockedBalance),
       compoundProvider.mock.balanceUnderlying.returns(mockedBalance),
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance),
