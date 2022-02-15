@@ -49,7 +49,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       router.addProtocol(ETFNumber, protocolYearn[0], yearnProvider.address, vaultMock.address),
       router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vaultMock.address),
       router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vaultMock.address)
-    ])
+    ]);
   });
 
   it("Deposit, withdraw and burn Xaver LP Tokens", async function() {
@@ -80,7 +80,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     console.log(`Mocking 15k balance in protocols, with 300 Profit each and 5k in Vault =>`);
     const mocked2Balance = parseUSDC('5000');
-    const profit = parseUSDC('300')
+    const profit = parseUSDC('300');
     await vaultMock.depositETF(userAddr, parseUSDC('20000'));
 
     await Promise.all([
@@ -93,10 +93,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.withdrawETF(userAddr, parseUSDC('2000'));
 
     expect(await vaultMock.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k
-    expect(await vaultMock.balanceOf(userAddr)).to.be.equal(parseUSDC('18000')); // LP balance == 20k - 8k
+    expect(await vaultMock.balanceOf(userAddr)).to.be.equal(parseUSDC('18000')); // LP balance == 20k - 2k
     expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1.045')) // 900 profit == 900 / 20k = 4,5% 
     // withdraw 2000 LP = 2000 x 1.045 => 2090 usdc
-    // EndBalance =StartingBalance - 20k + 2090
+    // EndBalance = StartingBalance - 20k + 2000 + 90 profit 
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')).add(parseUSDC('2090')));
   });
 
