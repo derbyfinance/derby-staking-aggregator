@@ -47,7 +47,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       router.addProtocol(ETFNumber, protocolYearn[0], yearnProvider.address, vaultMock.address),
       router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vaultMock.address),
       router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vaultMock.address)
-    ])
+    ]);
   });
 
   it("Should have a name and symbol", async function() {
@@ -113,7 +113,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolAave = [5, 40];
     allProtocols = [protocolYearn, protocolCompound, protocolAave];
     const amountToDeposit = parseUSDC('50000');
-    const totalAmountDeposited = amountUSDC.add(amountToDeposit)
+    const totalAmountDeposited = amountUSDC.add(amountToDeposit);
 
     await setDeltaAllocations(vaultMock, allProtocols);
 
