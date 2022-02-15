@@ -134,11 +134,7 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
     uint256 value = _amount * exchangeRate() / uScale;
-    console.log("exchangeRate %s", exchangeRate());
-    console.log("_amount %s", _amount);
-    console.log("value.. %s", value);
-    console.log("balance %s", vaultCurrency.balanceOf(address(this)));
-
+    
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
 

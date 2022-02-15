@@ -93,8 +93,11 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.withdrawETF(userAddr, parseUSDC('2000'));
 
     expect(await vaultMock.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k
-    // expect(await vaultMock.balanceOf(userAddr)).to.be.equal(0);
-    // expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance);
+    expect(await vaultMock.balanceOf(userAddr)).to.be.equal(parseUSDC('18000')); // LP balance == 20k - 8k
+    expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1.045')) // 900 profit == 900 / 20k = 4,5% 
+    // withdraw 2000 LP = 2000 x 1.045 => 2090 usdc
+    // EndBalance =StartingBalance - 20k + 2090
+    expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')).add(parseUSDC('2090')));
   });
 
 });
