@@ -134,7 +134,8 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
     uint256 value = _amount * exchangeRate() / uScale;
-    
+    require(value > 0, "no value");
+
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
 
@@ -148,7 +149,7 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     // console.log("total supply %s", totalSupply());
     // console.log("getTotalUnderlying %s", getTotalUnderlying());
-    return ( getTotalUnderlying() + balanceSelf )  * uScale / totalSupply();
+    return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
