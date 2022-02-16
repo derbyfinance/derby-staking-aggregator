@@ -34,6 +34,7 @@ contract ETFVault is IETFVault, VaultToken {
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale = 1E6;
   uint256 public threshold;
+  uint256 public liquidityPerc = 10;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -134,12 +135,27 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
     uint256 value = _amount * exchangeRate() / uScale;
+    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     require(value > 0, "no value");
 
+    if (value > balanceSelf) {
+      uint256 shortage = value - balanceSelf; 
+      getFunds(shortage);
+    }
+      
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
 
     return value;
+  }
+
+  function getFunds(uint256 _amount) internal {
+    uint256 latestProtocolId = router.latestProtocolId();
+
+    for (uint i = 0; i <= latestProtocolId; i++) {
+      if (deltaAllocations[i] == 0) continue;
+      withdrawFromProtocol(i, _amount);
+    }
   }
 
   // TotalUnderlying = Underlying balance protocols + balance vault
@@ -159,7 +175,8 @@ contract ETFVault is IETFVault, VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
-    uint256 amount = vaultCurrency.balanceOf(address(this));
+    uint256 balanceVault = vaultCurrency.balanceOf(address(this));
+    uint256 amount = balanceVault - (balanceVault * liquidityPerc / 100);
 
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 totalUnderlying = getTotalUnderlying();
