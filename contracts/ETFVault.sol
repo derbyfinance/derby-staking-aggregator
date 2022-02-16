@@ -135,13 +135,9 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Amount received by seller
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
     uint256 value = _amount * exchangeRate() / uScale;
-    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
     require(value > 0, "no value");
 
-    if (value > balanceSelf) {
-      uint256 shortage = value - balanceSelf; 
-      getFunds(shortage);
-    }
+    if (value > vaultCurrency.balanceOf(address(this))) pullFunds(value);
       
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
@@ -149,12 +145,19 @@ contract ETFVault is IETFVault, VaultToken {
     return value;
   }
 
-  function getFunds(uint256 _amount) internal {
+  function pullFunds(uint256 _value) internal {
     uint256 latestProtocolId = router.latestProtocolId();
+    uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
 
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (deltaAllocations[i] == 0) continue;
-      withdrawFromProtocol(i, _amount);
+
+      uint256 balanceProtocol = balanceUnderlying(i);
+      uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
+
+      withdrawFromProtocol(i, amountToWithdraw);
+
+      if (_value < vaultCurrency.balanceOf(address(this))) break;
     }
   }
 
