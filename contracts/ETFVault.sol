@@ -150,7 +150,7 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
 
     for (uint i = 0; i <= latestProtocolId; i++) {
-      if (deltaAllocations[i] == 0) continue;
+      if (currentAllocations[i] == 0) continue;
 
       uint256 balanceProtocol = balanceUnderlying(i);
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
@@ -180,6 +180,8 @@ contract ETFVault is IETFVault, VaultToken {
   function rebalanceETF() public {
     uint256 balanceVault = vaultCurrency.balanceOf(address(this));
     uint256 amount = balanceVault - (balanceVault * liquidityPerc / 100);
+    console.log("amount %s", amount);
+    // uint256 amount = vaultCurrency.balanceOf(address(this));
 
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 totalUnderlying = getTotalUnderlying();
@@ -195,9 +197,11 @@ contract ETFVault is IETFVault, VaultToken {
       require(currentAllocations[i] >= 0, "Current Allocation underflow");
 
       int256 amountToProtocol = (int(totalUnderlying) + int(amount)) * currentAllocations[i] / totalAllocatedTokens;
+      
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
+      console.log("amount to deposit %s", uint(amountToDeposit));
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
       if (amountToDeposit > marginScale) {
@@ -275,7 +279,6 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
-  
     return underlyingBalance;
   }
 
@@ -296,7 +299,6 @@ contract ETFVault is IETFVault, VaultToken {
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
-    
     deltaAllocatedTokens += _allocation; 
   }
 
