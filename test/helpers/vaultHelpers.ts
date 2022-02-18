@@ -23,20 +23,20 @@ export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol
   return balances;
 }
 
-export async function setDeltaAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
-  return protocols.map((protocol: Protocol) => 
+export function setDeltaAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
+  return Promise.all(protocols.map((protocol: Protocol) => 
     vault.setDeltaAllocations(protocol.number, protocol.allocation))
-}
+)}
 
 export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
-  return protocols.map((protocol: Protocol) =>
+  return Promise.all(protocols.map((protocol: Protocol) =>
     vault.getAllocationTEST(protocol.address))
-}
+)}
 
-export async function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
-  return protocols.map((protocol: Protocol) => 
+export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
+  return Promise.all(protocols.map((protocol: Protocol) => 
     vault.setCurrentAllocation(protocol.address, protocol.allocation))
-}
+)}
 
 export function deployAllProviders(dao: Signer, router: Router, protocols: Protocol[]) {
   return Promise.all([

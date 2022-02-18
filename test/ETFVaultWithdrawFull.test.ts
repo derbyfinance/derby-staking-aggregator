@@ -46,7 +46,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
   });
 
-  it("Should deposit and rebalance", async function() {
+  it("Should deposit and withdraw in order from protocols", async function() {
     await setDeltaAllocations(vaultMock, allProtocols);
 
     await vaultMock.depositETF(userAddr, amountUSDC);
@@ -63,7 +63,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // const balances = await getAndLogBalances(vaultMock, allProtocols);
     // const allocations = await getAllocations(vaultMock, allProtocols);
     // const totalAllocatedTokens = await vaultMock.totalAllocatedTokens();
-
 
   });
 

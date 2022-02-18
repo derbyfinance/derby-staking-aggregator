@@ -145,6 +145,9 @@ contract ETFVault is IETFVault, VaultToken {
     return value;
   }
 
+  /// @notice Withdraw from protocols on shortage in Vault
+  /// @dev Keeps on withdrawing until the Vault balance > _value
+  /// @param _value The value of underlying an user is trying to withdraw
   function pullFunds(uint256 _value) internal {
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
@@ -161,7 +164,8 @@ contract ETFVault is IETFVault, VaultToken {
     }
   }
 
-  // TotalUnderlying = Underlying balance protocols + balance vault
+  /// @notice Exchange rate of Vault LP Tokens
+  /// @return Price per share of LP Token
   function exchangeRate() public view returns(uint256) {
     if (totalSupply() == 0) return 1;
     
@@ -181,7 +185,6 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 balanceVault = vaultCurrency.balanceOf(address(this));
     uint256 amount = balanceVault - (balanceVault * liquidityPerc / 100);
     console.log("amount %s", amount);
-    // uint256 amount = vaultCurrency.balanceOf(address(this));
 
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 totalUnderlying = getTotalUnderlying();

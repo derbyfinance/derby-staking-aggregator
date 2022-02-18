@@ -7,7 +7,7 @@ import { ethers, waffle } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deployRouter, deployETFVaultMock } from './helpers/deploy';
-import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { addProtocolsToRouter, deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
 const name = 'XaverUSDC';
@@ -16,9 +16,9 @@ const decimals = 6;
 const amountUSDC = parseUSDC('100000');
 const threshold = parseUSDC('0');
 const ETFNumber = 1;
-let protocolYearn = [1, 20];
-let protocolCompound = [2, 40];
-let protocolAave = [5, 60];
+let protocolYearn = { number: 1, allocation: 20, address: yusdc };
+let protocolCompound = { number: 2, allocation: 40, address: cusdc };
+let protocolAave = { number: 5, allocation: 60, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
@@ -31,11 +31,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     router = await deployRouter(dao, daoAddr);
 
     // Deploy vault and all providers
-    [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
+    [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
       deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc, threshold),
-      deployYearnProvider(dao, yusdc, usdc, router.address),
-      deployCompoundProvider(dao, cusdc, usdc, router.address),
-      deployAaveProvider(dao, ausdc, router.address),
+      deployAllProviders(dao, router, allProtocols),
       getUSDCSigner(),
       erc20(usdc),
     ]);
@@ -44,9 +42,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await Promise.all([
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
       IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
-      router.addProtocol(ETFNumber, protocolYearn[0], yearnProvider.address, vaultMock.address),
-      router.addProtocol(ETFNumber, protocolCompound[0], compoundProvider.address, vaultMock.address),
-      router.addProtocol(ETFNumber, protocolAave[0], aaveProvider.address, vaultMock.address)
+      addProtocolsToRouter(ETFNumber, router, vaultMock.address, allProtocols, [yearnProvider, compoundProvider, aaveProvider])
     ]);
   });
 
@@ -60,14 +56,14 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await setDeltaAllocations(vaultMock, allProtocols);
 
     const [yearn, compound, aave] = await Promise.all([
-      vaultMock.getDeltaAllocationTEST(protocolYearn[0]),
-      vaultMock.getDeltaAllocationTEST(protocolCompound[0]),
-      vaultMock.getDeltaAllocationTEST(protocolAave[0])
+      vaultMock.getDeltaAllocationTEST(protocolYearn.number),
+      vaultMock.getDeltaAllocationTEST(protocolCompound.number),
+      vaultMock.getDeltaAllocationTEST(protocolAave.number)
     ]);
 
-    expect(yearn).to.be.equal(protocolYearn[1]);
-    expect(compound).to.be.equal(protocolCompound[1]);
-    expect(aave).to.be.equal(protocolAave[1]);
+    expect(yearn).to.be.equal(protocolYearn.allocation);
+    expect(compound).to.be.equal(protocolCompound.allocation);
+    expect(aave).to.be.equal(protocolAave.allocation);
   });
 
   it("Should deposit and rebalance", async function() {
@@ -80,6 +76,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const balances = await getAndLogBalances(vaultMock, allProtocols);
     const allocations = await getAllocations(vaultMock, allProtocols);
     const totalAllocatedTokens = await vaultMock.totalAllocatedTokens();
+    console.log(allocations)
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
@@ -88,9 +85,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     })
 
     console.log('--------------rebalancing with amount 0----------------')
-    protocolYearn = [1, 40];
-    protocolCompound = [2, -20];
-    protocolAave = [5, -20];
+    protocolYearn.allocation = 40;
+    protocolCompound.allocation = -20;
+    protocolAave.allocation = -20;
     allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
     await setDeltaAllocations(vaultMock, allProtocols);
@@ -108,10 +105,11 @@ describe("Deploy Contracts and interact with Vault", async () => {
     })
 
     console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
-    protocolYearn = [1, -60]; // to 0
-    protocolCompound = [2, 80];
-    protocolAave = [5, 40];
+    protocolYearn.allocation = -60;
+    protocolCompound.allocation = 80;
+    protocolAave.allocation = 40;
     allProtocols = [protocolYearn, protocolCompound, protocolAave];
+
     const amountToDeposit = parseUSDC('50000');
     const totalAmountDeposited = amountUSDC.add(amountToDeposit);
 
