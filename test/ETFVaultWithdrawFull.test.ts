@@ -49,7 +49,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   it("Should deposit and withdraw in order from protocols", async function() {
     await setDeltaAllocations(vaultMock, allProtocols);
 
-    console.log('---------Deposit and rebalance with 100k----------')
+    console.log('---------Deposit and rebalance with 100k----------');
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
@@ -59,10 +59,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Total supply LP tokens == 100k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(100_000);
 
-    console.log('---------Withdraw 20k----------')
+    console.log('---------Withdraw 20k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('20000'));
-
-    console.log(formatUSDC(await vaultMock.totalSupply()));
 
     // USDC Balance user == 20k
     expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(20_000, 1);
@@ -73,8 +71,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     console.log('---------Withdraw 60k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('60000'));
-
-    console.log(formatUSDC(await vaultMock.totalSupply()));
 
     // USDC Balance user == 20k + 60k = 80k
     expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
