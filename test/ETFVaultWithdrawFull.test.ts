@@ -54,25 +54,34 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.rebalanceETF();
 
     // TotalUnderlying == 100k
-    const totalUnderlying = (await vaultMock.getTotalUnderlying()).add(await IUSDc.balanceOf(vaultMock.address))
+    const totalUnderlying = (await vaultMock.getTotalUnderlying()).add(await IUSDc.balanceOf(vaultMock.address));
     expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(100_000, 1);
+    // Total supply LP tokens == 100k
+    expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(100_000);
 
     console.log('---------Withdraw 20k----------')
     await vaultMock.withdrawETF(userAddr, parseUSDC('20000'));
+
+    console.log(formatUSDC(await vaultMock.totalSupply()));
 
     // USDC Balance user == 20k
     expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(20_000, 1);
     // TotalUnderlying == 100k -20k = 80k
     expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(80_000, 1);
+    // Total supply LP tokens == 80k
+    expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(80_000);
 
     console.log('---------Withdraw 60k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('60000'));
+
+    console.log(formatUSDC(await vaultMock.totalSupply()));
 
     // USDC Balance user == 20k + 60k = 80k
     expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
     // TotalUnderlying == 100k -20k -60k = 20k
     expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(20_000, 1);
-
+    // Total supply LP tokens == 20k
+    expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(20_000);
   });
 
 });

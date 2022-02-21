@@ -151,14 +151,13 @@ contract ETFVault is IETFVault, VaultToken {
   function pullFunds(uint256 _value) internal {
     uint256 latestProtocolId = router.latestProtocolId();
     
-
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (currentAllocations[i] == 0) continue;
 
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
-      
+
       console.log("amountToWithdraw %s", amountToWithdraw);
 
       withdrawFromProtocol(i, amountToWithdraw);
