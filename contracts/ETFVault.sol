@@ -150,13 +150,16 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _value The value of underlying an user is trying to withdraw
   function pullFunds(uint256 _value) internal {
     uint256 latestProtocolId = router.latestProtocolId();
-    uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
+    
 
     for (uint i = 0; i <= latestProtocolId; i++) {
       if (currentAllocations[i] == 0) continue;
 
+      uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
+      
+      console.log("amountToWithdraw %s", amountToWithdraw);
 
       withdrawFromProtocol(i, amountToWithdraw);
 
@@ -241,7 +244,7 @@ contract ETFVault is IETFVault, VaultToken {
 
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
     router.deposit(ETFnumber, _protocolNum, address(this), _amount);
-    console.log("deposited: %s, to Protocol: %s", uint(_amount), _protocolNum);
+    console.log("deposited: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -255,7 +258,7 @@ contract ETFVault is IETFVault, VaultToken {
 
     IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
     router.withdraw(ETFnumber, _protocolNum, address(this), shares);
-    console.log("withdrawed: %s, to Protocol: %s", uint(_amount), _protocolNum);
+    console.log("withdrawed: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
   /// @notice Get total balance in VaultCurrency in all underlying protocols
