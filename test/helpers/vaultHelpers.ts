@@ -12,12 +12,12 @@ interface Protocol {
 
 export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol[]) {
   const promises = protocols.map((protocol: Protocol) => {
-    return vault.balanceUnderlying(protocol.address)
+    return vault.balanceUnderlying(protocol.number)
   });
   const balances = await Promise.all(promises);
 
   balances.forEach((balance: BigNumber, i) => {
-    console.log(`Balance vault ${protocols[i]}: ${balance}`)
+    console.log(`Balance vault ${protocols[i].number}: ${balance}`)
   });
 
   return balances;
@@ -30,7 +30,7 @@ export function setDeltaAllocations(vault: ETFVaultMock, protocols: Protocol[]) 
 
 export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) =>
-    vault.getAllocationTEST(protocol.address))
+    vault.getAllocationTEST(protocol.number))
 )}
 
 export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]) {

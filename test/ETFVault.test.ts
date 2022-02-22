@@ -73,15 +73,17 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
-    const balances = await getAndLogBalances(vaultMock, allProtocols);
-    const allocations = await getAllocations(vaultMock, allProtocols);
-    const totalAllocatedTokens = await vaultMock.totalAllocatedTokens();
-    console.log(allocations)
+    const [balances, allocations, totalAllocatedTokens, balanceVault] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      getAllocations(vaultMock, allProtocols),
+      vaultMock.totalAllocatedTokens(),
+      IUSDc.balanceOf(vaultMock.address)
+    ]);
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances[i].div(1E6))
-      .to.be.closeTo(allocations[i].mul(amountUSDC).div(totalAllocatedTokens).div(1E6), 5)
+      .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(1E6), 5)
     })
 
     console.log('--------------rebalancing with amount 0----------------')
@@ -91,17 +93,19 @@ describe("Deploy Contracts and interact with Vault", async () => {
     allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
     await setDeltaAllocations(vaultMock, allProtocols);
-
     await vaultMock.rebalanceETF();
 
-    const balances2 = await getAndLogBalances(vaultMock, allProtocols);
-    const allocations2 = await getAllocations(vaultMock, allProtocols);
-    const totalAllocatedTokens2 = await vaultMock.totalAllocatedTokens();
+    const [balances2, allocations2, totalAllocatedTokens2, balanceVault2] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      getAllocations(vaultMock, allProtocols),
+      vaultMock.totalAllocatedTokens(),
+      IUSDc.balanceOf(vaultMock.address)
+    ]);
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances2[i].div(1E6))
-      .to.be.closeTo(allocations2[i].mul(amountUSDC).div(totalAllocatedTokens2).div(1E6), 5)
+      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2)).div(totalAllocatedTokens2).div(1E6), 5)
     })
 
     console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
@@ -118,14 +122,17 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();
 
-    const balances3 = await getAndLogBalances(vaultMock, allProtocols);
-    const allocations3 = await getAllocations(vaultMock, allProtocols);
-    const totalAllocatedTokens3 = await vaultMock.totalAllocatedTokens();
+    const [balances3, allocations3, totalAllocatedTokens3, balanceVault3] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      getAllocations(vaultMock, allProtocols),
+      vaultMock.totalAllocatedTokens(),
+      IUSDc.balanceOf(vaultMock.address)
+    ]);
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances3[i].div(1E6))
-      .to.be.closeTo(allocations3[i].mul(totalAmountDeposited).div(totalAllocatedTokens3).div(1E6), 5)
+      .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3))).div(totalAllocatedTokens3).div(1E6), 5)
     })
   });
 
