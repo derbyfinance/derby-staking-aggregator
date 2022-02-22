@@ -78,6 +78,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(20_000, 1);
     // Total supply LP tokens == 20k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(20_000);
+
+    console.log('---------Withdraw 30k = more then balance----------');
+    // Should be reverted
+    await expect(vaultMock.withdrawETF(userAddr, parseUSDC('60000'))).to.be.reverted;
   });
 
 });

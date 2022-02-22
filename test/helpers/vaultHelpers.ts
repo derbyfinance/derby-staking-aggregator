@@ -35,7 +35,7 @@ export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
 
 export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) => 
-    vault.setCurrentAllocation(protocol.address, protocol.allocation))
+    vault.setCurrentAllocation(protocol.number, protocol.allocation))
 )}
 
 export function deployAllProviders(dao: Signer, router: Router, protocols: Protocol[]) {
