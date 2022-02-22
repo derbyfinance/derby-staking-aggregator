@@ -3,11 +3,11 @@
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
 import { Signer, Wallet, utils, Contract } from "ethers";
-import { ethers, waffle } from "hardhat";
+import { ethers, waffle, network } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
-import { addProtocolsToRouter, deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { addProtocolsToRouter, deployAllProviders, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
 const name = 'DerbyUSDC';
@@ -21,7 +21,7 @@ let protocolCompound = { number: 2, allocation: 40, address: cusdc };
 let protocolAave = { number: 5, allocation: 60, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Deploy Contracts and interact with Vault Order", async () => {
   let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
 
   beforeEach(async function() {
@@ -62,8 +62,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log('---------Withdraw 20k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('20000'));
 
-    // USDC Balance user == 20k
-    expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(20_000, 1);
+    // LP Balance user == 100k - 20k = 80k
+    expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
     // TotalUnderlying == 100k -20k = 80k
     expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(80_000, 1);
     // Total supply LP tokens == 80k
@@ -72,8 +72,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log('---------Withdraw 60k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('60000'));
 
-    // USDC Balance user == 20k + 60k = 80k
-    expect(Number(formatUSDC(await IUSDc.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
+    // LP Balance user == 100k - 20k - 60k = 20k
+    expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(20_000, 1);
     // TotalUnderlying == 100k -20k -60k = 20k
     expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(20_000, 1);
     // Total supply LP tokens == 20k
@@ -83,6 +83,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Should be reverted
     await expect(vaultMock.withdrawETF(userAddr, parseUSDC('60000'))).to.be.reverted;
   });
+  
 
 });
 
