@@ -149,13 +149,13 @@ contract ETFVault is IETFVault, VaultToken {
   /// @dev Keeps on withdrawing until the Vault balance > _value
   /// @param _value The value of underlying an user is trying to withdraw
   function pullFunds(uint256 _value) internal {
-    uint256 latestProtocolId = router.latestProtocolId();
-    
-    for (uint i = 0; i <= latestProtocolId; i++) {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (currentAllocations[i] == 0) continue;
 
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
+
+      console.log("shortage %s", shortage);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
 
@@ -183,29 +183,25 @@ contract ETFVault is IETFVault, VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
-    uint256 balanceVault = vaultCurrency.balanceOf(address(this));
-    uint256 amount = balanceVault - (balanceVault * liquidityPerc / 100);
-    console.log("amount %s", amount);
-
-    uint256 latestProtocolId = router.latestProtocolId();
-    uint256 totalUnderlying = getTotalUnderlying();
+    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
+    uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
+    handleLiquidity(liquidityVault);
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
     
-    for (uint i = 0; i <= latestProtocolId; i++) {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
 
       currentAllocations[i] += deltaAllocations[i];
       deltaAllocations[i] = 0;
       require(currentAllocations[i] >= 0, "Current Allocation underflow");
 
-      int256 amountToProtocol = (int(totalUnderlying) + int(amount)) * currentAllocations[i] / totalAllocatedTokens;
+      int256 amountToProtocol = (int(totalUnderlying) - int(liquidityVault)) * currentAllocations[i] / totalAllocatedTokens;
       
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
-      console.log("amount to deposit %s", uint(amountToDeposit));
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
       if (amountToDeposit > marginScale) {
@@ -217,14 +213,21 @@ contract ETFVault is IETFVault, VaultToken {
       }
     }
 
-    executeDeposits(latestProtocolId);
+    executeDeposits();
+  }
+
+  function handleLiquidity(uint256 _amount) internal {
+    if (_amount > vaultCurrency.balanceOf(address(this))) {
+      pullFunds(_amount);
+    } else {
+      return;
+    }
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
-  /// @param _latestProtocolId Latest protocolNumber to stop the loop
-  function executeDeposits(uint256 _latestProtocolId) internal  {
-    for (uint i = 0; i <= _latestProtocolId; i++) {
+  function executeDeposits() internal {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
@@ -262,10 +265,9 @@ contract ETFVault is IETFVault, VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256) {
-    uint256 latestProtocolId = router.latestProtocolId();
     uint256 balance;
     
-    for (uint i = 0; i <= latestProtocolId; i++) {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);
       balance += balanceProtocol;
