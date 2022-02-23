@@ -176,7 +176,7 @@ contract ETFVault is IETFVault, VaultToken {
     
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
-      
+
       setAllocationAndPrice(i);
 
       int256 amountToProtocol = (int(totalUnderlying) - int(liquidityVault)) * currentAllocations[i] / totalAllocatedTokens;
@@ -198,6 +198,8 @@ contract ETFVault is IETFVault, VaultToken {
     executeDeposits();
   }
 
+  /// @notice Helper function to handle liquidity percentage in Vault
+  /// @param _amount Amount of vaultcurrency to have as liquidity
   function handleLiquidity(uint256 _amount) internal {
     if (_amount > vaultCurrency.balanceOf(address(this))) {
       pullFunds(_amount);
@@ -206,6 +208,8 @@ contract ETFVault is IETFVault, VaultToken {
     }
   }
 
+  /// @notice Helper function to set allocations and last price from protocols
+  /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
   function setAllocationAndPrice(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
