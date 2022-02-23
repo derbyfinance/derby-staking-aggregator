@@ -34,6 +34,7 @@ contract ETFVault is IETFVault, VaultToken {
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale = 1E6;
   uint256 public threshold;
+  uint256 public liquidityPerc = 10;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -136,13 +137,36 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
 
+    if (value > vaultCurrency.balanceOf(address(this))) pullFunds(value);
+      
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
 
     return value;
   }
 
-  // TotalUnderlying = Underlying balance protocols + balance vault
+  /// @notice Withdraw from protocols on shortage in Vault
+  /// @dev Keeps on withdrawing until the Vault balance > _value
+  /// @param _value The value of underlying an user is trying to withdraw
+  function pullFunds(uint256 _value) internal {
+    uint256 latestProtocolId = router.latestProtocolId();
+    
+    for (uint i = 0; i <= latestProtocolId; i++) {
+      if (currentAllocations[i] == 0) continue;
+
+      uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
+      uint256 balanceProtocol = balanceUnderlying(i);
+
+      uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
+
+      withdrawFromProtocol(i, amountToWithdraw);
+      
+      if (_value < vaultCurrency.balanceOf(address(this))) break;
+    }
+  }
+
+  /// @notice Exchange rate of Vault LP Tokens
+  /// @return Price per share of LP Token
   function exchangeRate() public view returns(uint256) {
     if (totalSupply() == 0) return 1;
     
@@ -159,7 +183,9 @@ contract ETFVault is IETFVault, VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
-    uint256 amount = vaultCurrency.balanceOf(address(this));
+    uint256 balanceVault = vaultCurrency.balanceOf(address(this));
+    uint256 amount = balanceVault - (balanceVault * liquidityPerc / 100);
+    console.log("amount %s", amount);
 
     uint256 latestProtocolId = router.latestProtocolId();
     uint256 totalUnderlying = getTotalUnderlying();
@@ -175,9 +201,11 @@ contract ETFVault is IETFVault, VaultToken {
       require(currentAllocations[i] >= 0, "Current Allocation underflow");
 
       int256 amountToProtocol = (int(totalUnderlying) + int(amount)) * currentAllocations[i] / totalAllocatedTokens;
+      
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
+      console.log("amount to deposit %s", uint(amountToDeposit));
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
       if (amountToDeposit > marginScale) {
@@ -214,7 +242,7 @@ contract ETFVault is IETFVault, VaultToken {
 
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
     router.deposit(ETFnumber, _protocolNum, address(this), _amount);
-    console.log("deposited: %s, to Protocol: %s", uint(_amount), _protocolNum);
+    console.log("deposited: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -228,7 +256,7 @@ contract ETFVault is IETFVault, VaultToken {
 
     IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
     router.withdraw(ETFnumber, _protocolNum, address(this), shares);
-    console.log("withdrawed: %s, to Protocol: %s", uint(_amount), _protocolNum);
+    console.log("withdrawed: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
   /// @notice Get total balance in VaultCurrency in all underlying protocols
@@ -255,7 +283,6 @@ contract ETFVault is IETFVault, VaultToken {
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
-  
     return underlyingBalance;
   }
 
@@ -276,7 +303,6 @@ contract ETFVault is IETFVault, VaultToken {
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
-    
     deltaAllocatedTokens += _allocation; 
   }
 
