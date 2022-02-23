@@ -169,42 +169,32 @@ contract ETFVault is IETFVault, VaultToken {
   function rebalanceETF() public {
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
-    handleLiquidity(liquidityVault);
+
+    if (liquidityVault > vaultCurrency.balanceOf(address(this))) pullFunds(liquidityVault);
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
     
+    rebalanceCheckProtocols(totalUnderlying - liquidityVault);
+
+    executeDeposits();
+  }
+
+  function rebalanceCheckProtocols(uint256 _totalUnderlying) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
 
       setAllocationAndPrice(i);
 
-      int256 amountToProtocol = (int(totalUnderlying) - int(liquidityVault)) * currentAllocations[i] / totalAllocatedTokens;
+      int256 amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
       
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
-      if (amountToDeposit > marginScale) {
-        protocolToDeposit[i] = uint256(amountToDeposit);
-      } 
-
-      if (amountToWithdraw > uint(marginScale)) {
-        withdrawFromProtocol(i, amountToWithdraw);
-      }
-    }
-
-    executeDeposits();
-  }
-
-  /// @notice Helper function to handle liquidity percentage in Vault
-  /// @param _amount Amount of vaultcurrency to have as liquidity
-  function handleLiquidity(uint256 _amount) internal {
-    if (_amount > vaultCurrency.balanceOf(address(this))) {
-      pullFunds(_amount);
-    } else {
-      return;
+      if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
+      if (amountToWithdraw > uint(marginScale)) withdrawFromProtocol(i, amountToWithdraw);
     }
   }
 
