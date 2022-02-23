@@ -47,24 +47,6 @@ contract ETFVault is IETFVault, VaultToken {
     _;
   }
 
-  // constructor(
-  //   bytes32 ETFname_, 
-  //   uint256 ETFnumber_, 
-  //   address _router,
-  //   address _vaultCurrency,
-  //   address ETFgame_,
-  //   address governed_,
-  //   string memory name_,
-  //   string memory symbol_
-  // ) VaultToken (name_, symbol_) {
-  //   ETFname = ETFname_;
-  //   ETFnumber = ETFnumber_;
-  //   router = IRouter(_router);
-  //   vaultCurrency = IERC20(_vaultCurrency);
-  //   ETFgame = ETFgame_;
-  //   governed = governed_;
-  // }
-
   constructor(
     string memory _name,
     string memory _symbol,
@@ -104,6 +86,8 @@ contract ETFVault is IETFVault, VaultToken {
 
   // protocols to deposit in after withdrawals are executed
   mapping(uint256 => uint256) private protocolToDeposit;
+
+  mapping(uint256 => uint256) private lastPrice;
 
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
@@ -192,10 +176,8 @@ contract ETFVault is IETFVault, VaultToken {
     
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
-
-      currentAllocations[i] += deltaAllocations[i];
-      deltaAllocations[i] = 0;
-      require(currentAllocations[i] >= 0, "Current Allocation underflow");
+      
+      setAllocationAndPrice(i);
 
       int256 amountToProtocol = (int(totalUnderlying) - int(liquidityVault)) * currentAllocations[i] / totalAllocatedTokens;
       
@@ -222,6 +204,14 @@ contract ETFVault is IETFVault, VaultToken {
     } else {
       return;
     }
+  }
+
+  function setAllocationAndPrice(uint256 _i) internal {
+    currentAllocations[_i] += deltaAllocations[_i];
+    deltaAllocations[_i] = 0;
+    require(currentAllocations[_i] >= 0, "Current Allocation underflow");
+
+    lastPrice[_i] = price(_i);
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
