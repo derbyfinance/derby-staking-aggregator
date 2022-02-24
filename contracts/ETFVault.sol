@@ -170,7 +170,7 @@ contract ETFVault is IETFVault, VaultToken {
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
-    if (liquidityVault > vaultCurrency.balanceOf(address(this))) pullFunds(liquidityVault);
+    // if (liquidityVault > vaultCurrency.balanceOf(address(this))) pullFunds(liquidityVault);
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
