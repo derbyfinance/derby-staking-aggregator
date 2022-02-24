@@ -33,7 +33,6 @@ contract ETFVault is IETFVault, VaultToken {
 
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale = 1E6;
-  uint256 public threshold;
   uint256 public liquidityPerc = 10;
 
   modifier onlyETFgame {
@@ -54,8 +53,7 @@ contract ETFVault is IETFVault, VaultToken {
     address _governed, 
     uint256 _ETFnumber, 
     address _router, 
-    address _vaultCurrency, 
-    uint256 _threshold
+    address _vaultCurrency
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     router = IRouter(_router);
@@ -63,7 +61,6 @@ contract ETFVault is IETFVault, VaultToken {
     governed = _governed;
     ETFnumber = _ETFnumber;
     routerAddr = _router;
-    threshold = _threshold;
   }
 
   // period number of the latest rebalance
@@ -290,10 +287,5 @@ contract ETFVault is IETFVault, VaultToken {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
-  }
-
-  /// @notice Set threshold by DAO i.e above which amount the rebalance will trigger
-  function setThreshold(uint256 _amount) external onlyDao {
-    threshold = _amount;
   }
 }
