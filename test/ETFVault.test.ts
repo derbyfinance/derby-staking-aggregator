@@ -6,7 +6,7 @@ import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
-import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deployRouter, deployETFVaultMock } from './helpers/deploy';
+import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { addProtocolsToRouter, deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 
@@ -85,13 +85,17 @@ describe("Deploy Contracts and interact with Vault", async () => {
       expect(balances[i].div(1E6))
       .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(1E6), 5)
     })
+    // liquidity vault should be 100k * 10% = 10k
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(10_000, 1)
 
-    console.log('--------------rebalancing with amount 0----------------')
+    console.log('--------------rebalancing with amount 0, withdraw 4k----------------')
     protocolYearn.allocation = 40;
     protocolCompound.allocation = -20;
     protocolAave.allocation = -20;
     allProtocols = [protocolYearn, protocolCompound, protocolAave];
+    const amountToWithdraw = parseUSDC('12000');
 
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
     await setDeltaAllocations(vaultMock, allProtocols);
     await vaultMock.rebalanceETF();
 
@@ -105,8 +109,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances2[i].div(1E6))
-      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2)).div(totalAllocatedTokens2).div(1E6), 5)
+      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(1E6), 5)
     })
+    // liquidity vault should be 100k - 12k * 10% = 8.8k
+    expect(Number(formatUSDC(balanceVault2))).to.be.closeTo(8800, 1)
 
     console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
     protocolYearn.allocation = -60;
@@ -132,8 +138,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances3[i].div(1E6))
-      .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3))).div(totalAllocatedTokens3).div(1E6), 5)
+      .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(1E6), 5)
     })
+    // liquidity vault should be 100k - 12k + 50k * 10% = 13.8k
+    expect(Number(formatUSDC(balanceVault3))).to.be.closeTo(13_800, 1)
   });
 
 });
