@@ -60,6 +60,11 @@ interface IRouter {
   )
     external;
 
+  function addProtocol(
+    address provider
+  )
+    external;
+
   function protocol(
     uint256 ETFNumber,
     uint256 protocolNumber

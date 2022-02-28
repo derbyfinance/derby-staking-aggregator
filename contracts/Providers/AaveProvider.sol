@@ -114,6 +114,10 @@ contract AaveProvider is IProvider{
     return 1;
   }
 
+  function claim() public {
+    
+  }
+
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
 
   }

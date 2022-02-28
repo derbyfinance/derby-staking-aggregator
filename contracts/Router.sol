@@ -7,6 +7,7 @@ import "hardhat/console.sol";
 contract Router {
   mapping(uint256 => mapping(uint256 => address)) public protocol;
   mapping(address => bool) public vaultWhitelist;
+  mapping(address => bool) public claimable;
 
   mapping(uint256 => bytes32) public protocolNames;
   uint256 public latestProtocolId;
@@ -124,6 +125,23 @@ contract Router {
     ) 
     external onlyVault view returns(address) {
       return IProvider(protocol[_ETFnumber][_protocolNumber]).protocolToken();
+  }
+
+  function claim(
+    uint256 _ETFnumber, 
+    uint256 _protocolNumber
+    ) 
+    external onlyVault {
+      console.log("hi from claim router");
+      if (claimable[protocol[_ETFnumber][_protocolNumber]]) {
+        console.log("hi from claim router within");
+        return IProvider(protocol[_ETFnumber][_protocolNumber]).claim();
+      }
+  }
+
+  function setClaimable(address _provider, bool _bool) 
+    external onlyDao { 
+      claimable[_provider] = _bool;
   }
 
   /// @notice Add protocol and vault to router

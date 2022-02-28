@@ -117,10 +117,10 @@ contract CompoundProvider is IProvider{
     return _price;
   }
 
-  function claim(address _address) public {
+  function claim() public {
     address[] memory cTokens = new address[](1);
     cTokens[0] = protocolToken;
-    comptroller.claimComp(_address, cTokens);
+    comptroller.claimComp(address(this), cTokens);
   }
 
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {

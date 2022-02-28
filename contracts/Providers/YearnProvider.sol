@@ -104,6 +104,10 @@ contract YearnProvider is IProvider{
     return _price;
   }
 
+  function claim() public {
+
+  }
+
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
 
   }

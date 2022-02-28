@@ -11,11 +11,13 @@ import type {
   ETFGame, 
   XaverToken, 
   IGoverned,
-  ETFVaultMock
+  ETFVaultMock,
+  CompoundProviderMock
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
+import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
 import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.sol/ETFVaultMock.json';
@@ -32,6 +34,10 @@ export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken
 
 export const deployCompoundProvider = (deployerSign: Signer, ctoken: string, utoken: string, router: string, comptroller: string): Promise<CompoundProvider> => {
   return (deployContract(deployerSign, CompoundProviderArtifact, [ctoken, utoken, router, comptroller])) as Promise<CompoundProvider>;
+};
+
+export const deployCompoundProviderMock = (deployerSign: Signer, ctoken: string, utoken: string, router: string, comptroller: string): Promise<CompoundProviderMock> => {
+  return (deployContract(deployerSign, CompoundProviderMockArtifact, [ctoken, utoken, router, comptroller])) as Promise<CompoundProviderMock>;
 };
 
 export const deployAaveProvider = (deployerSign: Signer, atoken: string, router: string): Promise<AaveProvider> => {
