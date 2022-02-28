@@ -25,6 +25,14 @@ export const getUSDCSigner = async () => {
   return ethers.provider.getSigner(USDCWhale);
 }
 
+export const getWhale = async (address: string) => {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [address],
+  });
+  return ethers.provider.getSigner(address);
+}
+
 export const erc20 = async (tokenAddress: string) => {
   return new ethers.Contract(tokenAddress, erc20ABI, provider);
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/ICToken.sol";
+import "../Interfaces/ExternalInterfaces/IComptroller.sol";
 import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
@@ -11,7 +12,8 @@ import "hardhat/console.sol";
 contract CompoundProvider is IProvider{
   using SafeERC20 for IERC20;
 
-  ICToken public cToken; // yusdc
+  ICToken public cToken; // cusdc
+  IComptroller public comptroller;
   address override public protocolToken;
 
   IERC20 public uToken; // usdc
@@ -24,7 +26,8 @@ contract CompoundProvider is IProvider{
     _;
   }
 
-  constructor(address _cToken, address _uToken, address _router) {
+  constructor(address _cToken, address _uToken, address _router, address _comptroller) {
+    comptroller = IComptroller(_comptroller);
     cToken = ICToken(_cToken);
     uToken = IERC20(_uToken);
     protocolToken = _cToken;
@@ -112,6 +115,12 @@ contract CompoundProvider is IProvider{
   function exchangeRate() public view override returns(uint256) {
     uint256 _price = cToken.exchangeRateStored();
     return _price;
+  }
+
+  function claim(address _address) public {
+    address[] memory cTokens = new address[](1);
+    cTokens[0] = protocolToken;
+    comptroller.claimComp(_address, cTokens);
   }
 
   function getHistoricalPrice(uint256 _period) external override view returns(uint256) {

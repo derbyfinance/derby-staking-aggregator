@@ -30,8 +30,8 @@ export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken
   return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
 };
 
-export const deployCompoundProvider = (deployerSign: Signer, ctoken: string, utoken: string, router: string): Promise<CompoundProvider> => {
-  return (deployContract(deployerSign, CompoundProviderArtifact, [ctoken, utoken, router])) as Promise<CompoundProvider>;
+export const deployCompoundProvider = (deployerSign: Signer, ctoken: string, utoken: string, router: string, comptroller: string): Promise<CompoundProvider> => {
+  return (deployContract(deployerSign, CompoundProviderArtifact, [ctoken, utoken, router, comptroller])) as Promise<CompoundProvider>;
 };
 
 export const deployAaveProvider = (deployerSign: Signer, atoken: string, router: string): Promise<AaveProvider> => {
