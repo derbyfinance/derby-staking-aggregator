@@ -132,9 +132,7 @@ contract Router {
     uint256 _protocolNumber
     ) 
     external onlyVault {
-      console.log("hi from claim router");
       if (claimable[protocol[_ETFnumber][_protocolNumber]]) {
-        console.log("hi from claim router within");
         return IProvider(protocol[_ETFnumber][_protocolNumber]).claim();
       }
   }
