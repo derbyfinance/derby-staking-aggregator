@@ -73,6 +73,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
+    let LPBalanceUser = await vaultMock.balanceOf(userAddr);
+    expect(LPBalanceUser).to.be.equal(amountUSDC);
+
     const [balances, allocations, totalAllocatedTokens, balanceVault] = await Promise.all([
       getAndLogBalances(vaultMock, allProtocols),
       getAllocations(vaultMock, allProtocols),
@@ -98,6 +101,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.withdrawETF(userAddr, amountToWithdraw);
     await setDeltaAllocations(user, vaultMock, allProtocols);
     await vaultMock.rebalanceETF();
+
+    LPBalanceUser = await vaultMock.balanceOf(userAddr);
+    expect(LPBalanceUser).to.be.equal(amountUSDC.sub(amountToWithdraw));
 
     const [balances2, allocations2, totalAllocatedTokens2, balanceVault2] = await Promise.all([
       getAndLogBalances(vaultMock, allProtocols),
@@ -127,6 +133,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();
+
+    LPBalanceUser = await vaultMock.balanceOf(userAddr);
+    console.log(`LP balance user: ${LPBalanceUser}`)
+    expect(LPBalanceUser.div(1E6)).to.be.closeTo(amountUSDC.sub(amountToWithdraw).add(amountToDeposit).div(1E6), 5);
 
     const [balances3, allocations3, totalAllocatedTokens3, balanceVault3] = await Promise.all([
       getAndLogBalances(vaultMock, allProtocols),

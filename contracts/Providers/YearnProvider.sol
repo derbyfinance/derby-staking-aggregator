@@ -92,7 +92,6 @@ contract YearnProvider is IProvider{
   /// @return number of shares i.e LP tokens
   function balance(address _address) public view override returns (uint256) {
     uint256 _balanceShares = yToken.balanceOf(_address);
-
     return _balanceShares;
   }
 
@@ -100,7 +99,6 @@ contract YearnProvider is IProvider{
   /// @return price of LP token
   function exchangeRate() public override view returns(uint256) {
     uint256 _price = yToken.pricePerShare();
-
     return _price;
   }
 
