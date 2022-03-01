@@ -31,7 +31,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
 
     // Deploy vault and all providers
     [vaultMock, USDCSigner, IUSDc, [yearnProvider, compoundProvider, aaveProvider]] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc),
       getUSDCSigner(),
       erc20(usdc),
       deployAllProviders(dao, router, allProtocols)
@@ -46,7 +46,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
   });
 
   it("Should deposit and withdraw in order from protocols", async function() {
-    await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
 
     console.log('---------Deposit and rebalance with 100k----------');
     await vaultMock.depositETF(userAddr, amountUSDC);

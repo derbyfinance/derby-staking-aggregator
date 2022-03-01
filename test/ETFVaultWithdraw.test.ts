@@ -33,7 +33,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc),
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),

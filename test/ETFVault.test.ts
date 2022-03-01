@@ -27,12 +27,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
-    userAddr = await user.getAddress();
+    userAddr = await user.getAddress(); // mock address for game
     router = await deployRouter(dao, daoAddr);
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc),
       deployAllProviders(dao, router, allProtocols),
       getUSDCSigner(),
       erc20(usdc),
@@ -53,7 +53,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should set delta allocations", async function() {
-    await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
 
     const [yearn, compound, aave] = await Promise.all([
       vaultMock.getDeltaAllocationTEST(protocolYearn.number),
@@ -68,7 +68,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
   it("Should deposit and rebalance", async function() {
     console.log('--------------depositing and rebalance with 100k ----------------')
-    await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
 
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
@@ -96,7 +96,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const amountToWithdraw = parseUSDC('12000');
 
     await vaultMock.withdrawETF(userAddr, amountToWithdraw);
-    await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
     await vaultMock.rebalanceETF();
 
     const [balances2, allocations2, totalAllocatedTokens2, balanceVault2] = await Promise.all([
@@ -123,7 +123,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const amountToDeposit = parseUSDC('50000');
     const totalAmountDeposited = amountUSDC.add(amountToDeposit);
 
-    await setDeltaAllocations(vaultMock, allProtocols);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
 
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();

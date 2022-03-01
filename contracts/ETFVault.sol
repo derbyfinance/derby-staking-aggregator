@@ -50,7 +50,8 @@ contract ETFVault is IETFVault, VaultToken {
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    address _governed, 
+    address _governed,
+    address _ETFGame, 
     uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency
@@ -59,6 +60,7 @@ contract ETFVault is IETFVault, VaultToken {
     router = IRouter(_router);
 
     governed = _governed;
+    ETFgame = _ETFGame;
     ETFnumber = _ETFnumber;
     routerAddr = _router;
   }
@@ -278,12 +280,11 @@ contract ETFVault is IETFVault, VaultToken {
     return protocolPrice;
   }
 
-  // onlyETFGame modifier
   /// @notice Set the delta allocated tokens by game contract
   /// @dev Allocation can be negative
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
-  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public {
+  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public onlyETFgame {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
