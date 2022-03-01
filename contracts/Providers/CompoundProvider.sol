@@ -117,6 +117,7 @@ contract CompoundProvider is IProvider{
     return _price;
   }
 
+  /// @notice Claims/harvest COMP tokens from the Comptroller
   function claim() public {
     address[] memory cTokens = new address[](1);
     cTokens[0] = protocolToken;

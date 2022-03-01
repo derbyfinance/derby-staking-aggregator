@@ -127,6 +127,9 @@ contract Router {
       return IProvider(protocol[_ETFnumber][_protocolNumber]).protocolToken();
   }
 
+  /// @notice Harvest tokens from underlying protocols
+  /// @param _ETFnumber Number of the ETFVault
+  /// @param _protocolNumber Protocol number linked to protocol vault
   function claim(
     uint256 _ETFnumber, 
     uint256 _protocolNumber
@@ -137,6 +140,9 @@ contract Router {
       }
   }
 
+  /// @notice Set if provider have claimable tokens
+  /// @param _provider Address of the underlying protocol
+  /// @param _bool True of the underlying protocol has claimable tokens
   function setClaimable(address _provider, bool _bool) 
     external onlyDao { 
       claimable[_provider] = _bool;

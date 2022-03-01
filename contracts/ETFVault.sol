@@ -139,8 +139,6 @@ contract ETFVault is IETFVault, VaultToken {
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
 
-      console.log("shortage %s", shortage);
-
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
 
       withdrawFromProtocol(i, amountToWithdraw);
@@ -161,7 +159,6 @@ contract ETFVault is IETFVault, VaultToken {
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
-  /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
@@ -169,8 +166,6 @@ contract ETFVault is IETFVault, VaultToken {
   function rebalanceETF() public {
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
-
-    // if (liquidityVault > vaultCurrency.balanceOf(address(this))) pullFunds(liquidityVault);
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
@@ -180,6 +175,9 @@ contract ETFVault is IETFVault, VaultToken {
     executeDeposits();
   }
 
+  /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
+  /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
+  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
