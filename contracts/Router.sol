@@ -6,6 +6,8 @@ import "hardhat/console.sol";
 
 contract Router {
   mapping(uint256 => mapping(uint256 => address)) public protocol;
+  mapping(uint256 => address) public ETFuToken;
+  mapping(uint256 => address) public protocolToken;
   mapping(address => bool) public vaultWhitelist;
   mapping(address => bool) public claimable;
 
@@ -40,9 +42,9 @@ contract Router {
     uint256 _protocolNumber, 
     address _vault, 
     uint256 _amount
-    ) 
-    external onlyVault returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).deposit(_vault, _amount);
+   ) external onlyVault returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .deposit(_vault, _amount, ETFuToken[_ETFnumber], protocolToken[_protocolNumber]);
   }
 
   /// @notice Withdraw the underlying asset in given protocol number
@@ -56,9 +58,9 @@ contract Router {
     uint256 _protocolNumber, 
     address _vault, 
     uint256 _amount
-    ) 
-    external onlyVault returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).withdraw(_vault, _amount);
+  ) external onlyVault returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .withdraw(_vault, _amount, ETFuToken[_ETFnumber], protocolToken[_protocolNumber]);
   }
 
   /// @notice Exchange rate of underyling protocol token
@@ -68,9 +70,9 @@ contract Router {
   function exchangeRate(
     uint256 _ETFnumber, 
     uint256 _protocolNumber
-    ) 
-    external onlyVault view returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).exchangeRate();
+  ) external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .exchangeRate(protocolToken[_protocolNumber]);
   }
 
   /// @notice Balance of  underlying Token from address
@@ -82,9 +84,9 @@ contract Router {
     uint256 _ETFnumber, 
     uint256 _protocolNumber,
     address _address
-    ) 
-    external onlyVault view returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).balance(_address);
+  ) external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .balance(_address, protocolToken[_protocolNumber]);
   }
 
   /// @notice Get balance from address in shares i.e LP tokens
@@ -96,9 +98,9 @@ contract Router {
     uint256 _ETFnumber, 
     uint256 _protocolNumber,
     address _address
-    ) 
-    external onlyVault view returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).balanceUnderlying(_address);
+  ) external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .balanceUnderlying(_address, protocolToken[_protocolNumber]);
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -110,9 +112,9 @@ contract Router {
     uint256 _ETFnumber, 
     uint256 _protocolNumber,
     uint256 _amount
-    ) 
-    external onlyVault view returns(uint256) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).calcShares(_amount);
+  ) external onlyVault view returns(uint256) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .calcShares(_amount, protocolToken[_protocolNumber]);
   }
 
   /// @notice Get underlying token address from protocol e.g USDC
@@ -122,9 +124,9 @@ contract Router {
   function getProtocolTokenAddress(
     uint256 _ETFnumber, 
     uint256 _protocolNumber
-    ) 
-    external onlyVault view returns(address) {
-      return IProvider(protocol[_ETFnumber][_protocolNumber]).protocolToken();
+  ) external onlyVault view returns(address) {
+      return IProvider(protocol[_ETFnumber][_protocolNumber])
+              .protocolToken();
   }
 
   /// @notice Harvest tokens from underlying protocols
@@ -133,10 +135,10 @@ contract Router {
   function claim(
     uint256 _ETFnumber, 
     uint256 _protocolNumber
-    ) 
-    external onlyVault {
+  ) external onlyVault {
       if (claimable[protocol[_ETFnumber][_protocolNumber]]) {
-        return IProvider(protocol[_ETFnumber][_protocolNumber]).claim();
+        return IProvider(protocol[_ETFnumber][_protocolNumber])
+                .claim(protocolToken[_protocolNumber]);
       }
   }
 
@@ -152,16 +154,27 @@ contract Router {
   /// @param _ETFnumber Number of the ETFVault
   /// @param _protocolNumber Protocol number linked to protocol vault
   /// @param _provider Provider contract
-  /// @param _vault ETFVault address to whitelist
   function addProtocol(
     uint256 _ETFnumber, 
-    uint256 _protocolNumber, 
+    uint256 _protocolNumber,
     address _provider,
-    address _vault
-    ) 
-    external onlyDao { 
+    address _protocolToken
+  ) external onlyDao { 
       protocol[_ETFnumber][_protocolNumber] = _provider;
       latestProtocolId = _protocolNumber;
+      protocolToken[_protocolNumber] = _protocolToken;
+  }
+
+  /// @notice Add protocol and vault to router
+  /// @param _ETFnumber Number of the ETFVault
+  /// @param _uToken Address of underlying token eg USDC
+  /// @param _vault ETFVault address to whitelist
+  function addVault(
+    uint256 _ETFnumber, 
+    address _uToken, 
+    address _vault
+  ) external onlyDao {
       vaultWhitelist[_vault] = true;
+      ETFuToken[_ETFnumber] = _uToken;
   }
 }

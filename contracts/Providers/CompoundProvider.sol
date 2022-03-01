@@ -14,7 +14,6 @@ contract CompoundProvider is IProvider{
 
   ICToken public cToken; // cusdc
   IComptroller public comptroller;
-  address override public protocolToken;
 
   IERC20 public uToken; // usdc
   
@@ -26,11 +25,8 @@ contract CompoundProvider is IProvider{
     _;
   }
 
-  constructor(address _cToken, address _uToken, address _router, address _comptroller) {
+  constructor(address _router, address _comptroller) {
     comptroller = IComptroller(_comptroller);
-    cToken = ICToken(_cToken);
-    uToken = IERC20(_uToken);
-    protocolToken = _cToken;
     router = _router;
   }
 
@@ -39,18 +35,23 @@ contract CompoundProvider is IProvider{
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @return Tokens received and sent to vault
-  function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(address(this));
+  function deposit(
+    address _vault, 
+    uint256 _amount, 
+    address _uToken, 
+    address _cToken
+  ) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    uToken.safeTransferFrom(_vault, address(this), _amount);
-    uToken.safeIncreaseAllowance(address(cToken), _amount);
+    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeIncreaseAllowance(address(cToken), _amount);
 
-    uint256 balanceAfter = uToken.balanceOf(address(this));
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    uint256 cTokenBefore = cToken.balanceOf(address(this));
-    require(cToken.mint(_amount) == 0, "Error minting Compound");
-    uint256 cTokenAfter = cToken.balanceOf(address(this));
+    uint256 cTokenBefore = ICToken(_cToken).balanceOf(address(this));
+    require(ICToken(_cToken).mint(_amount) == 0, "Error minting Compound");
+    uint256 cTokenAfter = ICToken(_cToken).balanceOf(address(this));
 
     uint cTokensReceived = cTokenAfter - cTokenBefore;
     cToken.transfer(_vault, cTokensReceived);
@@ -63,21 +64,26 @@ contract CompoundProvider is IProvider{
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @return Underlying tokens received and sent to vault e.g USDC
-  function withdraw(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(_vault); 
+  function withdraw(
+    address _vault, 
+    uint256 _amount, 
+    address _uToken, 
+    address _cToken
+  ) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
-    uint256 balanceBeforeRedeem = uToken.balanceOf(address(this)); 
+    uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
-    require(cToken.transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
+    require(ICToken(_cToken).transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
     // Compound redeem: 0 on success, otherwise an Error code
-    require(cToken.redeem(_amount) == 0, "Error: compound redeem"); 
+    require(ICToken(_cToken).redeem(_amount) == 0, "Error: compound redeem"); 
     
-    uint256 balanceAfterRedeem = uToken.balanceOf(address(this)); 
+    uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    uToken.safeTransfer(_vault, uTokensReceived);
+    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
 
-    uint256 balanceAfter = uToken.balanceOf(_vault); 
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
     require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");
 
     return uTokensReceived;
@@ -86,9 +92,9 @@ contract CompoundProvider is IProvider{
   /// @notice Get balance from address in underlying token
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @return balance in underlying token
-  function balanceUnderlying(address _address) public override view returns (uint256) {
-    uint256 balanceShares = balance(_address);
-    uint256 price = exchangeRate();
+  function balanceUnderlying(address _address, address _cToken) public override view returns (uint256) {
+    uint256 balanceShares = balance(_address, _cToken);
+    uint256 price = exchangeRate(_cToken);
     return balanceShares * price / 1E18;
   }
 
@@ -96,31 +102,31 @@ contract CompoundProvider is IProvider{
   /// @dev returned price from compound is scaled by 1e18
   /// @param _amount Amount in underyling token e.g USDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount) external view override returns (uint256) {
-    uint256 shares = _amount  * 1E18 / exchangeRate();
+  function calcShares(uint256 _amount, address _cToken) external view override returns (uint256) {
+    uint256 shares = _amount  * 1E18 / exchangeRate(_cToken);
     return shares;
   }
 
   /// @notice Get balance of cToken from address
   /// @param _address Address to request balance from
   /// @return number of shares i.e LP tokens
-  function balance(address _address) public view override returns (uint256) {
-    uint256 _balanceShares = cToken.balanceOf(_address);
+  function balance(address _address, address _cToken) public view override returns (uint256) {
+    uint256 _balanceShares = ICToken(_cToken).balanceOf(_address);
     return _balanceShares;
   }
 
   /// @notice Exchange rate of underyling protocol token
   /// @dev returned price from compound is scaled by 1e18
   /// @return price of LP token
-  function exchangeRate() public view override returns(uint256) {
-    uint256 _price = cToken.exchangeRateStored();
+  function exchangeRate(address _cToken) public view override returns(uint256) {
+    uint256 _price = ICToken(_cToken).exchangeRateStored();
     return _price;
   }
 
   /// @notice Claims/harvest COMP tokens from the Comptroller
-  function claim() public {
+  function claim(address _cToken) public {
     address[] memory cTokens = new address[](1);
-    cTokens[0] = protocolToken;
+    cTokens[0] = _cToken;
     comptroller.claimComp(address(this), cTokens);
   }
 

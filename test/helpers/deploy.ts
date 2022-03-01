@@ -32,12 +32,12 @@ export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken
   return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
 };
 
-export const deployCompoundProvider = (deployerSign: Signer, ctoken: string, utoken: string, router: string, comptroller: string): Promise<CompoundProvider> => {
-  return (deployContract(deployerSign, CompoundProviderArtifact, [ctoken, utoken, router, comptroller])) as Promise<CompoundProvider>;
+export const deployCompoundProvider = (deployerSign: Signer, router: string, comptroller: string): Promise<CompoundProvider> => {
+  return (deployContract(deployerSign, CompoundProviderArtifact, [router, comptroller])) as Promise<CompoundProvider>;
 };
 
-export const deployCompoundProviderMock = (deployerSign: Signer, ctoken: string, utoken: string, router: string, comptroller: string): Promise<CompoundProviderMock> => {
-  return (deployContract(deployerSign, CompoundProviderMockArtifact, [ctoken, utoken, router, comptroller])) as Promise<CompoundProviderMock>;
+export const deployCompoundProviderMock = (deployerSign: Signer, router: string, comptroller: string): Promise<CompoundProviderMock> => {
+  return (deployContract(deployerSign, CompoundProviderMockArtifact, [router, comptroller])) as Promise<CompoundProviderMock>;
 };
 
 export const deployAaveProvider = (deployerSign: Signer, atoken: string, router: string): Promise<AaveProvider> => {
