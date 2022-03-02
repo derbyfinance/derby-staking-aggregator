@@ -5,16 +5,14 @@ import "../Providers/CompoundProvider.sol";
 
 contract CompoundProviderMock is CompoundProvider { 
 
-  constructor(address _cToken, address _uToken, address _router, address _comptroller) CompoundProvider(
-    _cToken,
-    _uToken,
+  constructor(address _router, address _comptroller) CompoundProvider(
     _router,
     _comptroller
   ) {}
 
-  function claimTest(address _address) public {
+  function claimTest(address _address, address _cToken) public {
     address[] memory cTokens = new address[](1);
-    cTokens[0] = protocolToken;
+    cTokens[0] = _cToken;
     comptroller.claimComp(_address, cTokens);
   }
 }

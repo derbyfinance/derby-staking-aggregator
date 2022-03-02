@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { deployContract } from "ethereum-waffle";
-import { Signer, BigNumberish, Wallet, BigNumber } from "ethers";
+import { Signer, BigNumber } from "ethers";
 import type { 
   YearnProvider,
   CompoundProvider, 
@@ -28,8 +28,8 @@ import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/Baske
 import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
 
 
-export const deployYearnProvider = (deployerSign: Signer, ytoken: string, utoken: string, router: string): Promise<YearnProvider> => {
-  return (deployContract(deployerSign, YearnProviderArtifact, [ytoken, utoken, router])) as Promise<YearnProvider>;
+export const deployYearnProvider = (deployerSign: Signer, router: string): Promise<YearnProvider> => {
+  return (deployContract(deployerSign, YearnProviderArtifact, [router])) as Promise<YearnProvider>;
 };
 
 export const deployCompoundProvider = (deployerSign: Signer, router: string, comptroller: string): Promise<CompoundProvider> => {
@@ -40,8 +40,8 @@ export const deployCompoundProviderMock = (deployerSign: Signer, router: string,
   return (deployContract(deployerSign, CompoundProviderMockArtifact, [router, comptroller])) as Promise<CompoundProviderMock>;
 };
 
-export const deployAaveProvider = (deployerSign: Signer, atoken: string, router: string): Promise<AaveProvider> => {
-  return (deployContract(deployerSign, AaveProviderArtifact, [atoken, router])) as Promise<AaveProvider>;
+export const deployAaveProvider = (deployerSign: Signer, router: string): Promise<AaveProvider> => {
+  return (deployContract(deployerSign, AaveProviderArtifact, [router])) as Promise<AaveProvider>;
 };
 
 export const deployETFVault = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: number): Promise<ETFVault> => {
