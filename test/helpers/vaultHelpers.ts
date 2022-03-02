@@ -3,6 +3,7 @@ import { BigNumber, Signer } from 'ethers';
 import type { ETFVaultMock, Router } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { usdc, comptroller, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./addresses";
+import { routerAddProtocol } from './helpers';
 
 interface Protocol {
   number: number;
@@ -40,18 +41,8 @@ export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]
 
 export function deployAllProviders(dao: Signer, router: Router, protocols: Protocol[]) {
   return Promise.all([
-    deployYearnProvider(dao, yusdc, usdc, router.address),
-    deployCompoundProvider(dao, cusdc, usdc, router.address, comptroller),
-    deployAaveProvider(dao, ausdc, router.address),
+    deployYearnProvider(dao, router.address),
+    deployCompoundProvider(dao, router.address, comptroller),
+    deployAaveProvider(dao, router.address),
   ]);
-}
-
-export function addProtocolsToRouter(
-  ETFNumber: number, 
-  router: Router, 
-  vault: string, 
-  protocols: Protocol[],
-  providers: any[]
-  ) {
-  return protocols.map((protocol, i) => router.addProtocol(ETFNumber, protocol.number, providers[i].address, vault))
 }

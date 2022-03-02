@@ -46,7 +46,7 @@ contract Router {
     uint256 _amount
   ) external onlyVault returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
-              .deposit(_vault, _amount, protocolUnderlying[_protocolNumber], protocolLPToken[_protocolNumber]);
+              .deposit(_vault, _amount, protocolLPToken[_protocolNumber], protocolUnderlying[_protocolNumber]);
   }
 
   /// @notice Withdraw the underlying asset in given protocol number
@@ -60,7 +60,7 @@ contract Router {
     uint256 _amount
   ) external onlyVault returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
-              .withdraw(_vault, _amount, protocolUnderlying[_protocolNumber], protocolLPToken[_protocolNumber]);
+              .withdraw(_vault, _amount, protocolLPToken[_protocolNumber], protocolUnderlying[_protocolNumber]);
   }
 
   /// @notice Exchange rate of underyling protocol token

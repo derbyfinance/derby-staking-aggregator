@@ -4,23 +4,22 @@
 import chai, { expect } from "chai";
 import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, formatUnits } from './helpers/helpers';
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, formatUnits, routerAddProtocol } from './helpers/helpers';
 import type { ETFVaultMock, ERC20, Router } from '../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './helpers/deployMocks';
-import { addProtocolsToRouter, setCurrentAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
+import { setCurrentAllocations } from "./helpers/vaultHelpers";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, aave, yearn} from "./helpers/addresses";
 
 const name = 'XaverUSDC';
 const symbol = 'xUSDC';
 const decimals = 6;
 const amountUSDC = parseUSDC('100000'); // 100k
 const threshold = parseUSDC('0');
-const ETFNumber = 1;
-let protocolYearn = { number: 1, allocation: 20, address: yusdc };
-let protocolCompound = { number: 2, allocation: 40, address: cusdc };
-let protocolAave = { number: 5, allocation: 60, address: ausdc };
+let protocolYearn = { number: 0, allocation: 20, address: yusdc };
+let protocolCompound = { number: 0, allocation: 40, address: cusdc };
+let protocolAave = { number: 0, allocation: 60, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
@@ -34,7 +33,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc, threshold),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, router.address, usdc, threshold),
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),
@@ -43,15 +42,19 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
     
     // Transfer USDC to user(ETFGame) and set protocols in Router
-    await Promise.all([
+    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
+      routerAddProtocol(router, compoundProvider.address, cusdc, usdc, comp),
+      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
+      routerAddProtocol(router, yearnProvider.address, yusdc, usdc, yearn),
+      router.addVault(vaultMock.address),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
       IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
-      addProtocolsToRouter(ETFNumber, router, vaultMock.address, allProtocols, [yearnProvider, compoundProvider, aaveProvider])
-    ])
+    ]);
   });
 
   it("Deposit, mint and return Xaver LP tokens", async function() {
     console.log(`-------------Depositing 9k-------------`)
+    allProtocols = [protocolYearn, protocolCompound, protocolAave];
     const amountUSDC = parseUSDC('9000');
     await setCurrentAllocations(vaultMock, allProtocols); 
     await vaultMock.depositETF(userAddr, amountUSDC);

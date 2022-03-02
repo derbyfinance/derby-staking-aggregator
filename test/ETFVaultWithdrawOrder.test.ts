@@ -4,21 +4,20 @@
 import chai, { expect } from "chai";
 import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle, network } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, } from './helpers/helpers';
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
-import { addProtocolsToRouter, deployAllProviders, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
+import { deployAllProviders, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, yearn, aave} from "./helpers/addresses";
 
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
 const amountUSDC = parseUSDC('100000');
 const threshold = parseUSDC('0');
-const ETFNumber = 1;
-let protocolYearn = { number: 1, allocation: 20, address: yusdc };
-let protocolCompound = { number: 2, allocation: 40, address: cusdc };
-let protocolAave = { number: 5, allocation: 60, address: ausdc };
+let protocolYearn = { number: 0, allocation: 20, address: yusdc };
+let protocolCompound = { number: 0, allocation: 40, address: cusdc };
+let protocolAave = { number: 0, allocation: 60, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault Order", async () => {
@@ -32,21 +31,25 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
 
     // Deploy vault and all providers
     [vaultMock, USDCSigner, IUSDc, [yearnProvider, compoundProvider, aaveProvider]] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, ETFNumber, router.address, usdc, threshold),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, router.address, usdc, threshold),
       getUSDCSigner(),
       erc20(usdc),
       deployAllProviders(dao, router, allProtocols)
     ]);
     
     // Transfer USDC to user(ETFGame) and set protocols in Router
-    await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
-      IUSDc.connect(user).approve(vaultMock.address, amountUSDC),
-      addProtocolsToRouter(ETFNumber, router, vaultMock.address, allProtocols, [yearnProvider, compoundProvider, aaveProvider])
+    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
+      routerAddProtocol(router, compoundProvider.address, cusdc, usdc, comp),
+      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
+      routerAddProtocol(router, yearnProvider.address, yusdc, usdc, yearn),
+      router.addVault(vaultMock.address),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
+      IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
     ]);
   });
 
   it("Should deposit and withdraw in order from protocols", async function() {
+    allProtocols = [protocolYearn, protocolCompound, protocolAave];
     await setDeltaAllocations(vaultMock, allProtocols);
 
     console.log('---------Deposit and rebalance with 100k----------');
@@ -79,7 +82,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     // Total supply LP tokens == 20k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(20_000);
 
-    console.log('---------Withdraw 30k = more then balance----------');
+    console.log('---------Withdraw 60k = more then balance----------');
     // Should be reverted
     await expect(vaultMock.withdrawETF(userAddr, parseUSDC('60000'))).to.be.reverted;
   });

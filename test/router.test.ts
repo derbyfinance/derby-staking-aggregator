@@ -5,6 +5,7 @@ import { Signer, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import type { Router} from '../typechain-types';
 import { deployRouter } from './helpers/deploy';
+import { usdc, yearn, yearnUSDC as yusdc} from "./helpers/addresses";
 
 
 describe("Deploy router contract", async () => {
@@ -22,12 +23,11 @@ describe("Deploy router contract", async () => {
   });
 
   it("Should add a protocol", async function() {
-    const ETFNumber = 1;
     const protocolNumber = 1;
     const providerAddress = addr1Addr;
 
-    await router.addProtocol(ETFNumber, protocolNumber, providerAddress, vaultAddr);
-    const protocol = await router.protocol(ETFNumber, protocolNumber);
+    await router.addProtocol(providerAddress, yusdc, usdc, yearn);
+    const protocol = await router.protocolProvider(protocolNumber);
 
     expect(protocol).to.be.equal(providerAddress);
   });

@@ -48,8 +48,8 @@ export const deployETFVault = (deployerSign: Signer, name: string, symbol: strin
   return (deployContract(deployerSign, ETFVaultArtifact, [name, symbol, decimals, daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVault>;
 };
 
-export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, ETFNumber: number, router: string, vaultCurrency: string, threshold: BigNumber): Promise<ETFVaultMock> => {
-  return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, decimals, daoAddress, ETFNumber, router, vaultCurrency, threshold])) as Promise<ETFVaultMock>;
+export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, router: string, vaultCurrency: string, threshold: BigNumber): Promise<ETFVaultMock> => {
+  return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, decimals, daoAddress, router, vaultCurrency, threshold])) as Promise<ETFVaultMock>;
 };
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

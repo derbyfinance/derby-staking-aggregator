@@ -20,8 +20,6 @@ contract ETFVault is IETFVault, VaultToken {
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   bytes32 public ETFname;
 
-  uint256 public ETFnumber;
-
   IERC20 public vaultCurrency;
   IRouter public router;
   address public routerAddr;
@@ -52,7 +50,6 @@ contract ETFVault is IETFVault, VaultToken {
     string memory _symbol,
     uint8 _decimals,
     address _governed, 
-    uint256 _ETFnumber, 
     address _router, 
     address _vaultCurrency, 
     uint256 _threshold
@@ -61,7 +58,6 @@ contract ETFVault is IETFVault, VaultToken {
     router = IRouter(_router);
 
     governed = _governed;
-    ETFnumber = _ETFnumber;
     routerAddr = _router;
     threshold = _threshold;
   }
@@ -143,7 +139,7 @@ contract ETFVault is IETFVault, VaultToken {
 
       withdrawFromProtocol(i, amountToWithdraw);
       
-      if (_value < vaultCurrency.balanceOf(address(this))) break;
+      if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
   }
 
@@ -223,10 +219,10 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    address provider = router.protocol(ETFnumber, _protocolNum);
+    address provider = router.protocolProvider(_protocolNum);
 
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
-    router.deposit(ETFnumber, _protocolNum, address(this), _amount);
+    router.deposit(_protocolNum, address(this), _amount);
     console.log("deposited: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
@@ -235,12 +231,12 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    address provider = router.protocol(ETFnumber, _protocolNum);
-    address protocolToken = router.getProtocolTokenAddress(ETFnumber, _protocolNum);
-    uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
+    address provider = router.protocolProvider(_protocolNum);
+    address protocolLPToken = router.protocolLPToken(_protocolNum);
+    uint256 shares = router.calcShares(_protocolNum, _amount);
 
-    IERC20(protocolToken).safeIncreaseAllowance(provider, shares);
-    router.withdraw(ETFnumber, _protocolNum, address(this), shares);
+    IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
+    router.withdraw(_protocolNum, address(this), shares);
     console.log("withdrawed: %s, Protocol: %s", uint(_amount), _protocolNum);
   }
 
@@ -258,15 +254,11 @@ contract ETFVault is IETFVault, VaultToken {
     return balance;
   }
 
-  function addProtocol(bytes32 name, address addr) public override onlyDao {
-
-  }
-
   /// @notice Get balance in VaultCurrency in underlying protocol
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
-    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
+    uint256 underlyingBalance = router.balanceUnderlying(_protocolNum, address(this));
     return underlyingBalance;
   }
 
@@ -274,7 +266,7 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Price per share
   function price(uint256 _protocolNum) public view returns(uint256) {
-    uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNum);
+    uint256 protocolPrice = router.exchangeRate(_protocolNum);
 
     return protocolPrice;
   }
@@ -293,5 +285,9 @@ contract ETFVault is IETFVault, VaultToken {
   /// @notice Set threshold by DAO i.e above which amount the rebalance will trigger
   function setThreshold(uint256 _amount) external onlyDao {
     threshold = _amount;
+  }
+
+  function addProtocol(bytes32 name, address addr) public override onlyDao {
+
   }
 }

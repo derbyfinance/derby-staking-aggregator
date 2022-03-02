@@ -7,14 +7,11 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from 
 import type { AaveProvider, ERC20, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
 import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
-import { Result } from "ethers/lib/utils";
-
 
 const amountUSDC = parseUSDC('100000');
-const protocolNumber = 3;
 
 describe("Deploy Contract and interact with Aave", async () => {
-  let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string;
+  let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
@@ -30,10 +27,11 @@ describe("Deploy Contract and interact with Aave", async () => {
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to router contract
-    await Promise.all([
+    [protocolNumber] = await Promise.all([
+      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
+      router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC),
-      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave)
+      IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC)
     ])
   });
 

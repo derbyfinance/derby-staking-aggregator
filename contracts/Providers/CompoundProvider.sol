@@ -31,14 +31,14 @@ contract CompoundProvider is IProvider {
   /// @dev Pulls underlying asset from ETFVault, deposit them in Compound, send cTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
-  /// @param _uToken Address of underlying Token eg USDC
   /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
     address _vault, 
     uint256 _amount, 
-    address _uToken, 
-    address _cToken
+    address _cToken,
+    address _uToken
   ) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
@@ -62,14 +62,14 @@ contract CompoundProvider is IProvider {
   /// @dev Pulls cTokens from ETFVault, redeem them from Compound, send underlying back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
-  /// @param _uToken Address of underlying Token eg USDC
   /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
     address _vault, 
     uint256 _amount, 
-    address _uToken, 
-    address _cToken
+    address _cToken,
+    address _uToken
   ) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
