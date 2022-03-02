@@ -70,5 +70,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     const exchangeRate = await router.connect(vault).exchangeRate(ETFNumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
+
+  
   
 });
