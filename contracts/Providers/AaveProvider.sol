@@ -12,12 +12,6 @@ import "hardhat/console.sol";
 contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
 
-  IAToken public aToken; 
-  address override public protocolToken;
-
-  IERC20 public uToken; 
-  address public uTokenAddr;
-
   uint16 private aaveReferral;
   address public router; 
 
@@ -28,13 +22,7 @@ contract AaveProvider is IProvider{
     _;
   }
 
-  constructor(address _aToken, address _router) {
-    aToken = IAToken(_aToken);
-    protocolToken = _aToken;
-
-    uTokenAddr = aToken.UNDERLYING_ASSET_ADDRESS();
-    uToken = IERC20(uTokenAddr);
-    
+  constructor(address _router) {    
     router = _router;
     aaveReferral = 0;
   }
@@ -48,17 +36,25 @@ contract AaveProvider is IProvider{
   /// @dev Pulls underlying asset from ETFVault, deposit them in Aave, send aTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
+  /// @param _uToken Address of underlying Token eg USDC
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return Tokens received and sent to vault
-  function deposit(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(address(this));
+  function deposit(
+    address _vault, 
+    uint256 _amount, 
+    address _aToken,
+    address _uToken
+  ) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    uToken.safeTransferFrom(_vault, address(this), _amount);
-    uToken.safeIncreaseAllowance(address(aToken.POOL()), _amount);
+    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeIncreaseAllowance(address(IAToken(_aToken).POOL()), _amount);
 
-    uint256 balanceAfter = uToken.balanceOf(address(this));
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error");
 
-    IALendingPool(aToken.POOL()).deposit(uTokenAddr, _amount, _vault, aaveReferral);
+    IALendingPool(IAToken(_aToken).POOL())
+      .deposit(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault, aaveReferral);
 
     return _amount;
   }
@@ -67,14 +63,22 @@ contract AaveProvider is IProvider{
   /// @dev Pulls cTokens from ETFVault, redeem them from Aave, send underlying back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
+  /// @param _uToken Address of underlying Token eg USDC
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return Underlying tokens received and sent to vault e.g USDC
-  function withdraw(address _vault, uint256 _amount) external override onlyRouter returns(uint256) {
-    uint256 balanceBefore = uToken.balanceOf(_vault); 
+  function withdraw(
+    address _vault, 
+    uint256 _amount, 
+    address _aToken,
+    address _uToken
+  ) external override onlyRouter returns(uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
-    require(aToken.transferFrom(_vault, address(this), _amount) == true, "Error");
-    uint256 uTokensReceived = IALendingPool(aToken.POOL()).withdraw(uTokenAddr, _amount, _vault);
+    require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error");
+    uint256 uTokensReceived = IALendingPool(IAToken(_aToken).POOL())
+      .withdraw(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault);
 
-    uint256 balanceAfter = uToken.balanceOf(_vault); 
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
 
     require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");
 
@@ -83,38 +87,42 @@ contract AaveProvider is IProvider{
 
   /// @notice Get balance from address in shares i.e LP tokens
   /// @param _address Address to request balance from, most likely an ETFVault
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address) public override view returns (uint256) {
-    uint256 balanceShares = balance(_address);
+  function balanceUnderlying(address _address, address _aToken) public override view returns (uint256) {
+    uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }
 
   /// @notice Calculates how many shares are equal to the amount
   /// @dev Aave exchangeRate is 1
   /// @param _amount Amount in underyling token e.g USDC
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount) external view override returns (uint256) {
-    uint256 shares = _amount / exchangeRate();
+  function calcShares(uint256 _amount, address _aToken) external view override returns (uint256) {
+    uint256 shares = _amount / exchangeRate(_aToken);
 
     return shares;
   }
 
   /// @notice Get balance of aToken from address
   /// @param _address Address to request balance from
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balance(address _address) public view override returns (uint256) {
-    uint256 _balanceShares = aToken.balanceOf(_address);
+  function balance(address _address, address _aToken) public view override returns (uint256) {
+    uint256 _balanceShares = IAToken(_aToken).balanceOf(_address);
     return _balanceShares;
   }
 
   /// @notice Exchange rate of underyling protocol token
   /// @dev Aave exchangeRate is always 1
+  /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return price of LP token
-  function exchangeRate() public pure override returns(uint256) {
+  function exchangeRate(address _aToken) public pure override returns(uint256) {
     return 1;
   }
 
-  function claim() public {
+  function claim(address _aToken) public {
     
   }
 
