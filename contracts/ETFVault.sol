@@ -94,16 +94,18 @@ contract ETFVault is IETFVault, VaultToken {
   /// @param _amount Amount to deposit
   /// @return Tokens received by buyer
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
+    uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
+    uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
 
-    uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
+    uint256 amount = balanceAfter - balanceBefore;
     uint256 totalSupply = totalSupply();
     uint256 shares = 0;
 
     if (totalSupply > 0) {
-      shares = ( _amount * totalSupply ) / (getTotalUnderlying() + balanceSelf - _amount);
+      shares = ( amount * totalSupply ) / (getTotalUnderlying() + balanceBefore);
     } else {
-      shares = _amount; 
+      shares = amount; 
     }
     
     _mint(_buyer, shares);
