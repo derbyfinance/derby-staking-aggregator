@@ -114,8 +114,8 @@ contract ETFVault is IETFVault, VaultToken {
   /// @notice Withdraw from ETFVault
   /// @dev Withdraw VaultCurrency from ETFVault and burn LP tokens
   /// @param _seller Address from seller of the tokens
-  /// @param _amount Amount to withdraw
-  /// @return Amount received by seller
+  /// @param _amount Amount to withdraw in LP tokens
+  /// @return Amount received by seller in vaultCurrency
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
     uint256 value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
@@ -130,7 +130,8 @@ contract ETFVault is IETFVault, VaultToken {
 
   /// @notice Withdraw from protocols on shortage in Vault
   /// @dev Keeps on withdrawing until the Vault balance > _value
-  /// @param _value The value of underlying an user is trying to withdraw
+  /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
+  /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (currentAllocations[i] == 0) continue;
@@ -148,7 +149,7 @@ contract ETFVault is IETFVault, VaultToken {
     }
   }
 
-  /// @notice Exchange rate of Vault LP Tokens
+  /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
   /// @return Price per share of LP Token
   function exchangeRate() public view returns(uint256) {
     if (totalSupply() == 0) return 1;

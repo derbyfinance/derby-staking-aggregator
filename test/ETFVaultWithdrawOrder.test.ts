@@ -52,11 +52,25 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
+    // LP Balance User == 100k
+    expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(100_000, 1);
     // TotalUnderlying == 100k
-    const totalUnderlying = (await vaultMock.getTotalUnderlying()).add(await IUSDc.balanceOf(vaultMock.address));
+    let totalUnderlying = (await vaultMock.getTotalUnderlying()).add(await IUSDc.balanceOf(vaultMock.address));
     expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(100_000, 1);
+    // Total liquid funds in vault == 10k
+    let totalLiquidFunds = await IUSDc.balanceOf(vaultMock.address);
+    expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(10_000, 1);
     // Total supply LP tokens == 100k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(100_000);
+    // Total Yearn
+    let totalYearn = await yearnProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalYearn))).to.be.closeTo(15_000, 1);
+    // Total Compound
+    let totalCompound = await compoundProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalCompound))).to.be.closeTo(30_000, 1);   
+    // Total Aave
+    let totalAave = await aaveProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalAave))).to.be.closeTo(45_000, 1);
 
     console.log('---------Withdraw 20k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('20000'));
@@ -64,9 +78,22 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     // LP Balance user == 100k - 20k = 80k
     expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
     // TotalUnderlying == 100k -20k = 80k
-    expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(80_000, 1);
+    totalUnderlying = await vaultMock.getTotalUnderlying();
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(80_000, 1);
+    // Total liquid funds in vault == 0k
+    totalLiquidFunds = await IUSDc.balanceOf(vaultMock.address);
+    expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(0, 1); 
     // Total supply LP tokens == 80k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(80_000);
+    // Total Yearn
+    totalYearn = await yearnProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalYearn))).to.be.closeTo(5_000, 1);
+    // Total Compound
+    totalCompound = await compoundProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalCompound))).to.be.closeTo(30_000, 1);   
+    // Total Aave
+    totalAave = await aaveProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalAave))).to.be.closeTo(45_000, 1);
 
     console.log('---------Withdraw 60k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('60000'));
@@ -74,9 +101,22 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     // LP Balance user == 100k - 20k - 60k = 20k
     expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(20_000, 1);
     // TotalUnderlying == 100k -20k -60k = 20k
-    expect(Number(formatUSDC(await vaultMock.getTotalUnderlying()))).to.be.closeTo(20_000, 1);
+    totalUnderlying = await vaultMock.getTotalUnderlying();
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(20_000, 1);
+    // Total liquid funds in vault == 0k
+    totalLiquidFunds = await IUSDc.balanceOf(vaultMock.address);
+    expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(0, 1); 
     // Total supply LP tokens == 20k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(20_000);
+    // Total Yearn
+    totalYearn = await yearnProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalYearn))).to.be.closeTo(0, 1);
+    // Total Compound
+    totalCompound = await compoundProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalCompound))).to.be.closeTo(0, 1);   
+    // Total Aave
+    totalAave = await aaveProvider.balanceUnderlying(vaultMock.address);
+    expect(Number(formatUSDC(totalAave))).to.be.closeTo(20_000, 1);
 
     console.log('---------Withdraw 30k = more then balance----------');
     // Should be reverted
