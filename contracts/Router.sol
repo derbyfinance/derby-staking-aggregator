@@ -5,7 +5,9 @@ import "./Interfaces/IProvider.sol";
 import "hardhat/console.sol";
 
 contract Router {
+  // ETF Number => Protocol number => Protocol address
   mapping(uint256 => mapping(uint256 => address)) public protocol;
+  
   mapping(address => bool) public vaultWhitelist;
 
   mapping(uint256 => bytes32) public protocolNames;

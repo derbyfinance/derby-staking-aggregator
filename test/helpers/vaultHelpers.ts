@@ -23,9 +23,9 @@ export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol
   return balances;
 }
 
-export function setDeltaAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
+export function setDeltaAllocations(signer: Signer, vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) => 
-    vault.setDeltaAllocations(protocol.number, protocol.allocation))
+    vault.connect(signer).setDeltaAllocations(protocol.number, protocol.allocation))
 )}
 
 export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
