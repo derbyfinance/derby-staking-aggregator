@@ -13,6 +13,7 @@ import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} fro
 const name = 'XaverUSDC';
 const symbol = 'xUSDC';
 const decimals = 6;
+const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000');
 // const threshold = parseUSDC('0');
 const ETFNumber = 1;
@@ -32,7 +33,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc, liquidityPerc),
       deployAllProviders(dao, router, allProtocols),
       getUSDCSigner(),
       erc20(usdc),
@@ -89,7 +90,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(1E6), 5)
     })
     // liquidity vault should be 100k * 10% = 10k
-    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(10_000, 1)
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(100_000 * liquidityPerc / 100, 1)
 
     console.log('--------------rebalancing with amount 0, withdraw 4k----------------')
     protocolYearn.allocation = 40;
@@ -118,7 +119,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(1E6), 5)
     })
     // liquidity vault should be 100k - 12k * 10% = 8.8k
-    expect(Number(formatUSDC(balanceVault2))).to.be.closeTo(8800, 1)
+    expect(Number(formatUSDC(balanceVault2))).to.be.closeTo((100_000 - 12_000)  * liquidityPerc / 100, 1)
 
     console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
     protocolYearn.allocation = -60;
@@ -151,7 +152,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(1E6), 5)
     })
     // liquidity vault should be 100k - 12k + 50k * 10% = 13.8k
-    expect(Number(formatUSDC(balanceVault3))).to.be.closeTo(13_800, 1)
+    expect(Number(formatUSDC(balanceVault3))).to.be.closeTo((100_000 - 12_000 + 50_000) * liquidityPerc / 100, 1)
   });
 
 });

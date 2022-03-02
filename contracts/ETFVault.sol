@@ -33,7 +33,7 @@ contract ETFVault is IETFVault, VaultToken {
 
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale = 1E6;
-  uint256 public liquidityPerc = 10;
+  uint256 public liquidityPerc;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -54,7 +54,8 @@ contract ETFVault is IETFVault, VaultToken {
     address _ETFGame, 
     uint256 _ETFnumber, 
     address _router, 
-    address _vaultCurrency
+    address _vaultCurrency,
+    uint256 _liquidityPerc
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     router = IRouter(_router);
@@ -63,6 +64,7 @@ contract ETFVault is IETFVault, VaultToken {
     ETFgame = _ETFGame;
     ETFnumber = _ETFnumber;
     routerAddr = _router;
+    liquidityPerc = _liquidityPerc;
   }
 
   // period number of the latest rebalance
