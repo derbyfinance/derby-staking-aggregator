@@ -15,6 +15,7 @@ import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, com
 const name = 'XaverUSDC';
 const symbol = 'xUSDC';
 const decimals = 6;
+const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000'); // 100k
 const threshold = parseUSDC('0');
 let protocolYearn = { number: 0, allocation: 20, address: yusdc };
@@ -33,7 +34,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, router.address, usdc, threshold),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),

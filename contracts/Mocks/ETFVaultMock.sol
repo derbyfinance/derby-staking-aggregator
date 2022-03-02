@@ -10,18 +10,20 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    address _governed, 
+    address _governed,
+    address _ETFGame, 
     address _router, 
-    address _vaultCurrency, 
-    uint256 _threshold
+    address _vaultCurrency,
+    uint256 _liquidityPerc
   ) ETFVault(
     _name,
     _symbol,
     _decimals,
     _governed,
+    _ETFGame,
     _router,
     _vaultCurrency,
-    _threshold
+    _liquidityPerc
   ) {}
 
   function getAllocationTEST(uint256 _protocolNum) external view returns(int256) {
