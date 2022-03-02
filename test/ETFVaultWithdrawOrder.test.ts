@@ -49,7 +49,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     ]);
   });
 
-  it.only("Should deposit and withdraw in order from protocols", async function() {
+  it("Should deposit and withdraw in order from protocols", async function() {
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
     console.log('---------Deposit and rebalance with 100k----------');
