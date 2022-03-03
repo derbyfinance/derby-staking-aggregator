@@ -7,7 +7,7 @@ import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Route
 import { parseUSDC } from './helpers/helpers';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compoundUSDC} from "./helpers/addresses";
 
 const name = 'XaverUSDC';
 const symbol = 'xUSDC';
@@ -29,7 +29,6 @@ describe("Deploy router contract", async () => {
   daoAddr: string, 
   userAddr: string, 
   vaultMock: ETFVaultMock, 
-  addr1Addr: string, 
   vaultAddr: string, 
   addr1: Signer, 
   vault: Signer;
@@ -37,30 +36,38 @@ describe("Deploy router contract", async () => {
   beforeEach(async function() {
     [dao, addr1, vault] = await ethers.getSigners();
 
-    [daoAddr, addr1Addr, vaultAddr] = await Promise.all([
+    [daoAddr, userAddr, vaultAddr] = await Promise.all([
       dao.getAddress(),
       addr1.getAddress(),
       vault.getAddress(),
     ]);
+
+    router = await deployRouter(dao, daoAddr);
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider]] = await Promise.all([
       deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc, liquidityPerc),
       deployAllProviders(dao, router, allProtocols),
     ]);
-
-    router = await deployRouter(dao, daoAddr)
   });
 
-  it("Should add a protocol", async function() {
+  it.only("Should add protocols", async function() {
     const ETFNumber = 1;
-    const protocolNumber = 1;
-    const providerAddress = addr1Addr;
+    const providerAddress = userAddr;
 
-    await router.addProtocol(ETFNumber, protocolNumber, providerAddress, vaultAddr);
-    const protocol = await router.protocol(ETFNumber, protocolNumber);
+    await router.addProtocol(ETFNumber, 1, providerAddress, vaultAddr);
+    await router.addProtocol(ETFNumber, 2, yearnProvider.address, vaultAddr);
+    await router.addProtocol(ETFNumber, 3, compoundProvider.address, vaultAddr);
+    await router.addProtocol(ETFNumber, 4, aaveProvider.address, vaultAddr);
+    const protocol1 = await router.protocol(ETFNumber, 1);
+    const protocol2 = await router.protocol(ETFNumber, 2);
+    const protocol3 = await router.protocol(ETFNumber, 3);
+    const protocol4 = await router.protocol(ETFNumber, 4);
 
-    expect(protocol).to.be.equal(providerAddress);
+    expect(protocol1).to.be.equal(providerAddress);
+    expect(protocol2).to.be.equal(yearnProvider.address);
+    expect(protocol3).to.be.equal(compoundProvider.address);
+    expect(protocol4).to.be.equal(aaveProvider.address);
   });
   
 });
