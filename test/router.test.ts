@@ -49,19 +49,48 @@ describe("Deploy router contract", async () => {
     ]);
   });
 
-  it("Should add protocols", async function() {
+  it("Should add protocols and correctly set router mappings", async function() {
     const providerAddress = userAddr;
 
     await router.addProtocol(yearnProvider.address, yusdc, usdc, yearn);
     await router.addProtocol(compoundProvider.address, cusdc, usdc, compToken);
     await router.addProtocol(aaveProvider.address, ausdc, usdc, aave);
+
+    // check protocol provider
     const protocol1 = await router.protocolProvider(1);
     const protocol2 = await router.protocolProvider(2);
     const protocol3 = await router.protocolProvider(3);
 
-    expect(protocol1).to.be.equal(yearnProvider.address);
-    expect(protocol2).to.be.equal(compoundProvider.address);
-    expect(protocol3).to.be.equal(aaveProvider.address);
+    expect(protocol1.toUpperCase()).to.be.equal(yearnProvider.address.toUpperCase());
+    expect(protocol2.toUpperCase()).to.be.equal(compoundProvider.address.toUpperCase());
+    expect(protocol3.toUpperCase()).to.be.equal(aaveProvider.address.toUpperCase());
+
+    // check protocol lp token
+    const LPtoken1 = await router.protocolLPToken(1);
+    const LPtoken2 = await router.protocolLPToken(2);
+    const LPtoken3 = await router.protocolLPToken(3);
+
+    expect(LPtoken1.toUpperCase()).to.be.equal(yusdc.toUpperCase());
+    expect(LPtoken2.toUpperCase()).to.be.equal(cusdc.toUpperCase());
+    expect(LPtoken3.toUpperCase()).to.be.equal(ausdc.toUpperCase());
+    
+    // check protocol underlying
+    const underlying1 = await router.protocolUnderlying(1);
+    const underlying2 = await router.protocolUnderlying(2);
+    const underlying3 = await router.protocolUnderlying(3);
+
+    expect(underlying1.toUpperCase()).to.be.equal(usdc.toUpperCase());
+    expect(underlying2.toUpperCase()).to.be.equal(usdc.toUpperCase());
+    expect(underlying3.toUpperCase()).to.be.equal(usdc.toUpperCase());
+
+    // check protocol gov token
+    const gov1 = await router.protocolGovToken(1);
+    const gov2 = await router.protocolGovToken(2);
+    const gov3 = await router.protocolGovToken(3);
+
+    expect(gov1.toUpperCase()).to.be.equal(yearn.toUpperCase());
+    expect(gov2.toUpperCase()).to.be.equal(compToken.toUpperCase());
+    expect(gov3.toUpperCase()).to.be.equal(aave.toUpperCase());
   });
   
 });
