@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import chai, { expect } from "chai";
-import { Contract, Event, Signer, Wallet } from "ethers";
+import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { AaveProvider, ERC20, Router } from '../typechain-types';
+import type { AaveProvider, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
 import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
 

@@ -1,23 +1,22 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet, utils, Contract } from "ethers";
-import { ethers, waffle } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, formatUnits, routerAddProtocol } from './helpers/helpers';
-import type { ETFVaultMock, ERC20, Router } from '../typechain-types';
+import { expect } from "chai";
+import { Signer, Contract } from "ethers";
+import { ethers, } from "hardhat";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol } from './helpers/helpers';
+import type { ETFVaultMock, Router } from '../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './helpers/deployMocks';
 import { setCurrentAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, yearn, aave} from "./helpers/addresses";
 
-const name = 'XaverUSDC';
-const symbol = 'xUSDC';
+const name = 'DerbyUSDC';
+const symbol = 'dUSDC';
 const decimals = 6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000'); // 100k
-const threshold = parseUSDC('0');
 let protocolYearn = { number: 0, allocation: 20, address: yusdc };
 let protocolCompound = { number: 0, allocation: 40, address: cusdc };
 let protocolAave = { number: 0, allocation: 60, address: ausdc };

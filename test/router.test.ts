@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet } from "ethers";
+import { expect } from "chai";
+import { Signer } from "ethers";
 import { ethers } from "hardhat";
 import type { Router} from '../typechain-types';
 import { deployRouter } from './helpers/deploy';

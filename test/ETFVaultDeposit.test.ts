@@ -1,11 +1,11 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet, utils, Contract } from "ethers";
-import { ethers, waffle } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, formatUnits, routerAddProtocol } from './helpers/helpers';
-import type { ETFVaultMock, ERC20, Router } from '../typechain-types';
+import { expect } from "chai";
+import { Signer, Contract } from "ethers";
+import { ethers } from "hardhat";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol } from './helpers/helpers';
+import type { ETFVaultMock, Router } from '../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './helpers/deployMocks';

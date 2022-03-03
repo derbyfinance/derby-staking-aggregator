@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Contract, Signer, Wallet } from "ethers";
+import { expect } from "chai";
+import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { YearnProvider, ERC20, Router } from '../typechain-types';
+import type { YearnProvider, Router } from '../typechain-types';
 import { deployYearnProvider, deployRouter } from './helpers/deploy';
 import { usdc, yearnUSDC as yusdc, yearn} from "./helpers/addresses";
 

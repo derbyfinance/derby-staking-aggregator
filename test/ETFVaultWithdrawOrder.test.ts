@@ -1,9 +1,9 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet, utils, Contract } from "ethers";
-import { ethers, waffle, network } from "hardhat";
+import { expect } from "chai";
+import { Signer Contract } from "ethers";
+import { ethers} from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
@@ -15,7 +15,6 @@ const symbol = 'dUSDC';
 const decimals = 6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000');
-const threshold = parseUSDC('0');
 let protocolYearn = { number: 0, allocation: 20, address: yusdc };
 let protocolCompound = { number: 0, allocation: 40, address: cusdc };
 let protocolAave = { number: 0, allocation: 60, address: ausdc };
