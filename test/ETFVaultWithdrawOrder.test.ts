@@ -5,7 +5,7 @@ import chai, { expect } from "chai";
 import { Signer, Wallet, utils, Contract } from "ethers";
 import { ethers, waffle, network } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, yearn, aave} from "./helpers/addresses";
@@ -35,7 +35,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
       deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
       getUSDCSigner(),
       erc20(usdc),
-      deployAllProviders(dao, router, allProtocols)
+      deployAllProviders(dao, router)
     ]);
     
     // Transfer USDC to user(ETFGame) and set protocols in Router

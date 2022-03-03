@@ -2,8 +2,7 @@
 import { BigNumber, Signer } from 'ethers';
 import type { ETFVaultMock, Router } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
-import { usdc, comptroller, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./addresses";
-import { routerAddProtocol } from './helpers';
+import { comptroller } from "./addresses";
 
 interface Protocol {
   number: number;
@@ -39,7 +38,7 @@ export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]
     vault.setCurrentAllocation(protocol.number, protocol.allocation))
 )}
 
-export function deployAllProviders(dao: Signer, router: Router, protocols: Protocol[]) {
+export function deployAllProviders(dao: Signer, router: Router) {
   return Promise.all([
     deployYearnProvider(dao, router.address),
     deployCompoundProvider(dao, router.address, comptroller),

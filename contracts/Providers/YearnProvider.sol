@@ -42,7 +42,7 @@ contract YearnProvider is IProvider{
     IERC20(_uToken).safeIncreaseAllowance(_yToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    require((balanceAfter - balanceBefore - _amount) == 0, "Error");
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     uint256 yTokenReceived = IYearn(_yToken).deposit(_amount);
     IYearn(_yToken).transfer(_vault, yTokenReceived);
@@ -71,7 +71,7 @@ contract YearnProvider is IProvider{
     IERC20(_uToken).safeTransfer(_vault, uAmountReceived);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    require((balanceAfter - balanceBefore - uAmountReceived) == 0, "Error");
+    require((balanceAfter - balanceBefore - uAmountReceived) == 0, "Error Withdraw: under/overflow");
 
     return uAmountReceived;
   }

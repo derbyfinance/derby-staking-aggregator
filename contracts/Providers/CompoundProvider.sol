@@ -46,7 +46,7 @@ contract CompoundProvider is IProvider {
     IERC20(_uToken).safeIncreaseAllowance(_cToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    require((balanceAfter - balanceBefore - _amount) == 0, "Error");
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     uint256 cTokenBefore = ICToken(_cToken).balanceOf(address(this));
     require(ICToken(_cToken).mint(_amount) == 0, "Error minting Compound");
@@ -75,7 +75,7 @@ contract CompoundProvider is IProvider {
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
-    require(ICToken(_cToken).transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
+    require(ICToken(_cToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
     // Compound redeem: 0 on success, otherwise an Error code
     require(ICToken(_cToken).redeem(_amount) == 0, "Error: compound redeem"); 
     
@@ -85,7 +85,7 @@ contract CompoundProvider is IProvider {
     IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");
+    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
 
     return uTokensReceived;
   }

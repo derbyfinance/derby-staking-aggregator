@@ -51,7 +51,7 @@ contract AaveProvider is IProvider{
     IERC20(_uToken).safeIncreaseAllowance(address(IAToken(_aToken).POOL()), _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    require((balanceAfter - balanceBefore - _amount) == 0, "Error");
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     IALendingPool(IAToken(_aToken).POOL())
       .deposit(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault, aaveReferral);
@@ -74,13 +74,13 @@ contract AaveProvider is IProvider{
   ) external override onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
-    require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error");
+    require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
     uint256 uTokensReceived = IALendingPool(IAToken(_aToken).POOL())
       .withdraw(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
 
-    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error");
+    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
 
     return uTokensReceived;
   }

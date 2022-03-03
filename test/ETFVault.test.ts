@@ -33,7 +33,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
       deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
-      deployAllProviders(dao, router, allProtocols),
+      deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
     ]);
