@@ -10,9 +10,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    address _governed, 
-    address _ETFGame,
-    uint256 _ETFnumber, 
+    address _governed,
+    address _ETFGame, 
     address _router, 
     address _vaultCurrency,
     uint256 _liquidityPerc
@@ -22,7 +21,6 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     _decimals,
     _governed,
     _ETFGame,
-    _ETFnumber,
     _router,
     _vaultCurrency,
     _liquidityPerc

@@ -7,4 +7,14 @@ const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE";
 const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
 
-export { usdc, yearnUSDC, compoundUSDC, aaveUSDC }
+// gov Tokens
+const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
+const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
+
+// others
+const comptroller = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
+const compToken = "0xc00e94Cb662C3520282E6f5717214004A7f26888";
+
+
+
+export { usdc, yearnUSDC, compoundUSDC, aaveUSDC, comptroller, compToken, aave, yearn }

@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet } from "ethers";
+import { expect } from "chai";
+import { Signer } from "ethers";
 import { ethers } from "hardhat";
 import type { FeeTestContract} from '../typechain-types';
 import FeeTestContractArtifact from '../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';

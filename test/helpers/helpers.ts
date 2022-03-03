@@ -3,6 +3,9 @@ import { BigNumber } from "ethers";
 import { ethers, network, waffle } from "hardhat";
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
+import { Router } from "typechain-types";
+import { Result } from "ethers/lib/utils";
+
 const provider = waffle.provider;
 
 const DAIWhale = "0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0";
@@ -23,6 +26,28 @@ export const getUSDCSigner = async () => {
     params: [USDCWhale],
   });
   return ethers.provider.getSigner(USDCWhale);
+}
+
+export const getWhale = async (address: string) => {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [address],
+  });
+  return ethers.provider.getSigner(address);
+}
+
+export const routerAddProtocol = async (
+  router: Router, 
+  provider: string, 
+  protocolToken: string,
+  protocolUnderlying: string,
+  govToken: string
+) => {
+  const tx = await router.addProtocol(provider, protocolToken, protocolUnderlying, govToken)
+  const receipt = await tx.wait()
+  const { protocolNumber } = receipt.events![0].args as Result
+  
+  return Number(protocolNumber)
 }
 
 export const erc20 = async (tokenAddress: string) => {
