@@ -7,14 +7,13 @@ import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Route
 import { parseUSDC } from './helpers/helpers';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compoundUSDC} from "./helpers/addresses";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, yearn, compToken, aave} from "./helpers/addresses";
 
 const name = 'XaverUSDC';
 const symbol = 'xUSDC';
 const decimals = 6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000');
-const ETFNumber = 1;
 let protocolYearn = { number: 1, allocation: 20, address: yusdc };
 let protocolCompound = { number: 2, allocation: 40, address: cusdc };
 let protocolAave = { number: 5, allocation: 60, address: ausdc };
@@ -45,28 +44,24 @@ describe("Deploy router contract", async () => {
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider]] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc, liquidityPerc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
       deployAllProviders(dao, router),
     ]);
   });
 
-  it.only("Should add protocols", async function() {
-    const ETFNumber = 1;
+  it("Should add protocols", async function() {
     const providerAddress = userAddr;
 
-    await router.addProtocol(ETFNumber, 1, providerAddress, vaultAddr);
-    await router.addProtocol(ETFNumber, 2, yearnProvider.address, vaultAddr);
-    await router.addProtocol(ETFNumber, 3, compoundProvider.address, vaultAddr);
-    await router.addProtocol(ETFNumber, 4, aaveProvider.address, vaultAddr);
-    const protocol1 = await router.protocol(ETFNumber, 1);
-    const protocol2 = await router.protocol(ETFNumber, 2);
-    const protocol3 = await router.protocol(ETFNumber, 3);
-    const protocol4 = await router.protocol(ETFNumber, 4);
+    await router.addProtocol(yearnProvider.address, yusdc, usdc, yearn);
+    await router.addProtocol(compoundProvider.address, cusdc, usdc, compToken);
+    await router.addProtocol(aaveProvider.address, ausdc, usdc, aave);
+    const protocol1 = await router.protocolProvider(1);
+    const protocol2 = await router.protocolProvider(2);
+    const protocol3 = await router.protocolProvider(3);
 
-    expect(protocol1).to.be.equal(providerAddress);
-    expect(protocol2).to.be.equal(yearnProvider.address);
-    expect(protocol3).to.be.equal(compoundProvider.address);
-    expect(protocol4).to.be.equal(aaveProvider.address);
+    expect(protocol1).to.be.equal(yearnProvider.address);
+    expect(protocol2).to.be.equal(compoundProvider.address);
+    expect(protocol3).to.be.equal(aaveProvider.address);
   });
   
 });
