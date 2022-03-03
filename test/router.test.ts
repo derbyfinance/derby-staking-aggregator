@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
-import { Signer, Wallet } from "ethers";
+import { expect } from "chai";
+import { Signer } from "ethers";
 import { ethers } from "hardhat";
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { parseUSDC } from './helpers/helpers';
@@ -18,7 +18,6 @@ const ETFNumber = 1;
 let protocolYearn = { number: 1, allocation: 20, address: yusdc };
 let protocolCompound = { number: 2, allocation: 40, address: cusdc };
 let protocolAave = { number: 5, allocation: 60, address: ausdc };
-let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy router contract", async () => {
   let yearnProvider: YearnProvider, 
@@ -47,7 +46,7 @@ describe("Deploy router contract", async () => {
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider]] = await Promise.all([
       deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, ETFNumber, router.address, usdc, liquidityPerc),
-      deployAllProviders(dao, router, allProtocols),
+      deployAllProviders(dao, router),
     ]);
   });
 
