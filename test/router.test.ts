@@ -4,24 +4,18 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { ethers } from "hardhat";
 import { MockContract } from "ethereum-waffle";
-import type { YearnProvider, CompoundProvider, AaveProvider, Router } from '../typechain-types';
-import { parseUSDC, getUSDCSigner, erc20  } from './helpers/helpers';
+import type { Router } from '../typechain-types';
+import { getUSDCSigner, erc20  } from './helpers/helpers';
 import { deployRouter } from './helpers/deploy';
-import { deployAllProviders } from "./helpers/vaultHelpers";
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './helpers/deployMocks';
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, yearn, compToken, aave} from "./helpers/addresses";
 
-const name = 'XaverUSDC';
-const symbol = 'xUSDC';
-const decimals = 6;
-const liquidityPerc = 10;
-const amountUSDC = parseUSDC('12345');
+const yearnMock = Math.floor(Math.random() * 100000);
+const compoundMock =  Math.floor(Math.random() * 100000);
+const aaveMock =  Math.floor(Math.random() * 100000);
 
 describe("Deploy router contract", async () => {
-  let yearnProvider: YearnProvider, 
-  compoundProvider: CompoundProvider, 
-  aaveProvider: AaveProvider,
-  yearnProviderMock: MockContract, 
+  let yearnProviderMock: MockContract, 
   compoundProviderMock: MockContract, 
   aaveProviderMock: MockContract, 
   router: Router, 
@@ -46,26 +40,19 @@ describe("Deploy router contract", async () => {
     router = await deployRouter(dao, daoAddr);
     
     // Deploy vault and all providers
-    [yearnProviderMock, compoundProviderMock, aaveProviderMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
+    [yearnProviderMock, compoundProviderMock, aaveProviderMock, USDCSigner, IUSDc] = await Promise.all([
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),
-      deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
     ]);
 
     await router.addVault(vaultAddr);
 
-    IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
-    IUSDc.connect(addr1).approve(router.address, amountUSDC.mul(2)),
-
-    await router.addProtocol(yearnProvider.address, yusdc, usdc, yearn); // 1
-    await router.addProtocol(compoundProvider.address, cusdc, usdc, compToken); // 2
-    await router.addProtocol(aaveProvider.address, ausdc, usdc, aave); // 3
-    await router.addProtocol(yearnProviderMock.address, yusdc, usdc, yearn); // 4
-    await router.addProtocol(compoundProviderMock.address, cusdc, usdc, compToken); // 5
-    await router.addProtocol(aaveProviderMock.address, ausdc, usdc, aave); // 6
+    await router.addProtocol(yearnProviderMock.address, yusdc, usdc, yearn); // 1
+    await router.addProtocol(compoundProviderMock.address, cusdc, usdc, compToken); // 2
+    await router.addProtocol(aaveProviderMock.address, ausdc, usdc, aave); // 3
   }); 
 
   it("Should correctly set router mappings", async function() {
@@ -74,9 +61,9 @@ describe("Deploy router contract", async () => {
     const protocol2 = await router.protocolProvider(2);
     const protocol3 = await router.protocolProvider(3);
 
-    expect(protocol1.toUpperCase()).to.be.equal(yearnProvider.address.toUpperCase());
-    expect(protocol2.toUpperCase()).to.be.equal(compoundProvider.address.toUpperCase());
-    expect(protocol3.toUpperCase()).to.be.equal(aaveProvider.address.toUpperCase());
+    expect(protocol1.toUpperCase()).to.be.equal(yearnProviderMock.address.toUpperCase());
+    expect(protocol2.toUpperCase()).to.be.equal(compoundProviderMock.address.toUpperCase());
+    expect(protocol3.toUpperCase()).to.be.equal(aaveProviderMock.address.toUpperCase());
 
     // check protocol lp token
     const LPtoken1 = await router.protocolLPToken(1);
@@ -106,52 +93,75 @@ describe("Deploy router contract", async () => {
     expect(gov3.toUpperCase()).to.be.equal(aave.toUpperCase());
   });
 
-  it("Should correctly set route to exchangeRate", async function() {
+  it("Should correctly set router to deposit", async function() {
     await Promise.all([
-      yearnProviderMock.mock.exchangeRate.returns(11),
-      compoundProviderMock.mock.exchangeRate.returns(22),
-      aaveProviderMock.mock.exchangeRate.returns(33),
+      yearnProviderMock.mock.deposit.returns(yearnMock),
+      compoundProviderMock.mock.deposit.returns(compoundMock),
+      aaveProviderMock.mock.deposit.returns(aaveMock),
     ]);
 
-    expect(await router.connect(vaultSigner).exchangeRate(4)).to.be.equal(11);
-    expect(await router.connect(vaultSigner).exchangeRate(5)).to.be.equal(22);
-    expect(await router.connect(vaultSigner).exchangeRate(6)).to.be.equal(33);
+    let returnValue = await router.connect(vaultSigner).deposit(1, vaultAddr, 0)
+
+    expect(returnValue.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
   });
 
-  it("Should correctly set route to balance", async function() {
+  it("Should correctly set router to withdraw", async function() {
     await Promise.all([
-      yearnProviderMock.mock.balance.returns(11),
-      compoundProviderMock.mock.balance.returns(22),
-      aaveProviderMock.mock.balance.returns(33),
+      yearnProviderMock.mock.withdraw.returns(yearnMock),
+      compoundProviderMock.mock.withdraw.returns(compoundMock),
+      aaveProviderMock.mock.withdraw.returns(aaveMock),
     ]);
 
-    expect(await router.connect(vaultSigner).balance(4, vaultAddr)).to.be.equal(11);
-    expect(await router.connect(vaultSigner).balance(5, vaultAddr)).to.be.equal(22);
-    expect(await router.connect(vaultSigner).balance(6, vaultAddr)).to.be.equal(33);
+    let returnValue = await router.connect(vaultSigner).withdraw(1, vaultAddr, 0)
+
+    expect(returnValue.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
   });
 
-  it("Should correctly set route to balanceUnderlying", async function() {
+  it("Should correctly set router to exchangeRate", async function() {
     await Promise.all([
-      yearnProviderMock.mock.balanceUnderlying.returns(11),
-      compoundProviderMock.mock.balanceUnderlying.returns(22),
-      aaveProviderMock.mock.balanceUnderlying.returns(33),
+      yearnProviderMock.mock.exchangeRate.returns(yearnMock),
+      compoundProviderMock.mock.exchangeRate.returns(compoundMock),
+      aaveProviderMock.mock.exchangeRate.returns(aaveMock),
     ]);
 
-    expect(await router.connect(vaultSigner).balanceUnderlying(4, vaultAddr)).to.be.equal(11);
-    expect(await router.connect(vaultSigner).balanceUnderlying(5, vaultAddr)).to.be.equal(22);
-    expect(await router.connect(vaultSigner).balanceUnderlying(6, vaultAddr)).to.be.equal(33);    
+    expect(await router.connect(vaultSigner).exchangeRate(1)).to.be.equal(yearnMock);
+    expect(await router.connect(vaultSigner).exchangeRate(2)).to.be.equal(compoundMock);
+    expect(await router.connect(vaultSigner).exchangeRate(3)).to.be.equal(aaveMock);
   });
 
-  it("Should correctly set route to calcShares", async function() {
+  it("Should correctly set router to balance", async function() {
     await Promise.all([
-      yearnProviderMock.mock.calcShares.returns(11),
-      compoundProviderMock.mock.calcShares.returns(22),
-      aaveProviderMock.mock.calcShares.returns(33),
+      yearnProviderMock.mock.balance.returns(yearnMock),
+      compoundProviderMock.mock.balance.returns(compoundMock),
+      aaveProviderMock.mock.balance.returns(aaveMock),
     ]);
 
-    expect(await router.connect(vaultSigner).calcShares(4, 0)).to.be.equal(11);
-    expect(await router.connect(vaultSigner).calcShares(5, 0)).to.be.equal(22);
-    expect(await router.connect(vaultSigner).calcShares(6, 0)).to.be.equal(33);   
+    expect(await router.connect(vaultSigner).balance(1, vaultAddr)).to.be.equal(yearnMock);
+    expect(await router.connect(vaultSigner).balance(2, vaultAddr)).to.be.equal(compoundMock);
+    expect(await router.connect(vaultSigner).balance(3, vaultAddr)).to.be.equal(aaveMock);
   });
-  
+
+  it("Should correctly set router to balanceUnderlying", async function() {
+    await Promise.all([
+      yearnProviderMock.mock.balanceUnderlying.returns(yearnMock),
+      compoundProviderMock.mock.balanceUnderlying.returns(compoundMock),
+      aaveProviderMock.mock.balanceUnderlying.returns(aaveMock),
+    ]);
+
+    expect(await router.connect(vaultSigner).balanceUnderlying(1, vaultAddr)).to.be.equal(yearnMock);
+    expect(await router.connect(vaultSigner).balanceUnderlying(2, vaultAddr)).to.be.equal(compoundMock);
+    expect(await router.connect(vaultSigner).balanceUnderlying(3, vaultAddr)).to.be.equal(aaveMock);    
+  });
+
+  it("Should correctly set router to calcShares", async function() {
+    await Promise.all([
+      yearnProviderMock.mock.calcShares.returns(yearnMock),
+      compoundProviderMock.mock.calcShares.returns(compoundMock),
+      aaveProviderMock.mock.calcShares.returns(aaveMock),
+    ]);
+
+    expect(await router.connect(vaultSigner).calcShares(1, 0)).to.be.equal(yearnMock);
+    expect(await router.connect(vaultSigner).calcShares(2, 0)).to.be.equal(compoundMock);
+    expect(await router.connect(vaultSigner).calcShares(3, 0)).to.be.equal(aaveMock);   
+  });
 });
