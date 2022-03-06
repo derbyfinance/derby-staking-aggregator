@@ -117,6 +117,8 @@ contract Router {
       if (claimable[protocolProvider[_protocolNumber]]) {
         return IProvider(protocolProvider[_protocolNumber])
                 .claim(protocolLPToken[_protocolNumber]);
+      } else {
+        return;
       }
   }
 

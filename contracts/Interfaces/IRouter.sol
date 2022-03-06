@@ -48,7 +48,7 @@ interface IRouter {
   function claim(
     uint256 protocolNumber
   ) 
-    external view returns(uint256);
+    external view;
 
   function addProtocol(
     address provider,

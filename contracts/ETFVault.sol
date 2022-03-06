@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IRouter.sol";
 import "./Interfaces/IGoverned.sol";
+import "./Interfaces/ExternalInterfaces/ISwapRouter.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
 
 import "./VaultToken.sol";
 
@@ -23,6 +26,7 @@ contract ETFVault is VaultToken {
   IERC20 public vaultCurrency;
   IRouter public router;
   address public routerAddr;
+  address public vaultCurrencyAddr; 
 
   address public ETFgame;
 
@@ -55,6 +59,7 @@ contract ETFVault is VaultToken {
     uint256 _liquidityPerc
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
+    vaultCurrencyAddr = _vaultCurrency;
     router = IRouter(_router);
 
     governed = _governed;
@@ -283,5 +288,58 @@ contract ETFVault is VaultToken {
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
+  }
+
+  function claimTokens() public {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
+      // if (currentAllocations[i] == 0) continue;
+      router.claim(i);
+    }
+  }
+
+  function swapTokens(uint256 _amount, address _tokenIn) public returns(uint256) {
+    address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    uint24 poolFee = 3000;
+
+    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
+    vaultCurrency.safeIncreaseAllowance(uniswapRouter, _amount);
+
+    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+      tokenIn: _tokenIn,
+      tokenOut: vaultCurrencyAddr,
+      fee: poolFee,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: _amount,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    });
+
+    uint256 amountOut = ISwapRouter(uniswapRouter).exactInputSingle(params);
+    console.log("amount out %s", amountOut);
+
+    return amountOut;
+  }
+
+  function calcAmount(address _tokenIn) public {
+    address uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+    uint24 poolFee = 3000;
+
+    address pool = IUniswapV3Factory(uniswapFactory).getPool(
+      vaultCurrencyAddr,
+      _tokenIn,
+      poolFee
+    );
+
+    address token0 = IUniswapV3Pool(pool).token0();
+    address token1 = IUniswapV3Pool(pool).token1();
+
+    (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+    
+    console.log("pool %s", pool);
+    console.log("token1 %s", token0);
+    console.log("token1 %s", token1);
+    console.log("price %s", sqrtPriceX96);
+
   }
 }
