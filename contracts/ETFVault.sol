@@ -91,6 +91,8 @@ contract ETFVault is VaultToken {
 
   mapping(uint256 => uint256) private lastPrice;
 
+  uint256 public test;
+
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
   /// @param _buyer Address from buyer of the tokens
@@ -292,6 +294,7 @@ contract ETFVault is VaultToken {
 
   function claimTokens() public {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
+      test = 1 + 1;
       // if (currentAllocations[i] == 0) continue;
       router.claim(i);
     }
@@ -337,9 +340,8 @@ contract ETFVault is VaultToken {
     (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
     
     console.log("pool %s", pool);
-    console.log("token1 %s", token0);
+    console.log("token0 %s", token0);
     console.log("token1 %s", token1);
     console.log("price %s", sqrtPriceX96);
-
   }
 }

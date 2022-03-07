@@ -18,5 +18,5 @@ interface IProvider {
 
     function getHistoricalPrice(uint256 _period) external view returns(uint256);
 
-    function claim(address _protocolLPToken) external;
+    function claim(address _protocolLPToken, address _claimer) external;
 }

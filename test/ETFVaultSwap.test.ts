@@ -15,9 +15,9 @@ const symbol = 'dUSDC';
 const decimals = 6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000');
-let protocolYearn = { number: 0, allocation: 20, address: yusdc };
-let protocolCompound = { number: 0, allocation: 40, address: cusdc };
-let protocolAave = { number: 0, allocation: 60, address: ausdc };
+let protocolYearn = { number: 0, allocation: 0, address: yusdc };
+let protocolCompound = { number: 0, allocation: 70, address: cusdc };
+let protocolAave = { number: 0, allocation: 0, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
@@ -48,22 +48,38 @@ describe("Deploy Contracts and interact with Vault", async () => {
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
       router.setClaimable(compoundProvider.address, true)
     ]);
+
+    console.log(compoundProvider.address)
+    console.log(router.address)
+    console.log(vaultMock.address)
   });
 
   it("Should Swap tokens", async function() {
+    const sqrtRatioX96 = 1461446703485210103287273052203988822378723970341
+    const price = sqrtRatioX96 ** 2 / 2 ** 192;
+    // const price = 2 ** 192 / sqrtRatioX96 ** 2
+    console.log(price)
+    // await setDeltaAllocations(user, vaultMock, allProtocols);
+    // console.log('set delta')
+    // await vaultMock.depositETF(userAddr, amountUSDC);
+    // const tx = await vaultMock.rebalanceETF();
+
+    // const ICusdc = await erc20(cusdc)
+    // const balance = await ICusdc.balanceOf(vaultMock.address)
+    // console.log(`balance cusdc vault: ${balance}`)
+
     // await vaultMock.claimTokens();
-    // await IUSDc.connect(user).transfer(vaultMock.address, amountUSDC)
-    // const usdcBalance = await IUSDc.balanceOf(vaultMock.address)
-    // console.log(`USDC Balance vault: ${usdcBalance}`)
+    await IUSDc.connect(user).transfer(vaultMock.address, amountUSDC)
+    const usdcBalance = await IUSDc.balanceOf(vaultMock.address)
+    console.log(`USDC Balance vault: ${usdcBalance}`)
 
     // const swapAmount = parseUSDC('10000');
     // await vaultMock.swapTokens(swapAmount, comp);
 
-    // const compBalance = await IComp.balanceOf(vaultMock.address)
-    // console.log(`Comp Balance vault: ${compBalance}`)
+    const compBalance = await IComp.balanceOf(vaultMock.address)
+    console.log(`Comp Balance vault: ${compBalance}`)
 
     await vaultMock.calcAmount(comp);
-
   });
 
 });

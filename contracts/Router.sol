@@ -116,7 +116,7 @@ contract Router {
   ) external onlyVault {
       if (claimable[protocolProvider[_protocolNumber]]) {
         return IProvider(protocolProvider[_protocolNumber])
-                .claim(protocolLPToken[_protocolNumber]);
+                .claim(protocolLPToken[_protocolNumber], msg.sender);
       } else {
         return;
       }

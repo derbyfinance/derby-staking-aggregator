@@ -122,7 +122,7 @@ contract AaveProvider is IProvider{
     return 1;
   }
 
-  function claim(address _aToken) public {
+  function claim(address _aToken, address _claimer) public {
     
   }
 

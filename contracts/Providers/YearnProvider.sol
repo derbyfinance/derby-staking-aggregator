@@ -116,7 +116,7 @@ contract YearnProvider is IProvider{
     return _price;
   }
 
-  function claim(address _yToken) public {
+  function claim(address _yToken, address _claimer) public {
 
   }
 
