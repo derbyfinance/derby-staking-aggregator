@@ -15,6 +15,8 @@ import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, com
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
+const marginScale = 1E10;
+const uScale = 1E6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000'); // 100k
 let protocolYearn = { number: 0, allocation: 20, address: yusdc };
@@ -33,15 +35,13 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, marginScale, uScale, liquidityPerc),
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),
       getUSDCSigner(),
       erc20(usdc),
     ]);
-
-    const uScale = await vaultMock.uScale;
     
     // Transfer USDC to user(ETFGame) and set protocols in Router
     [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([

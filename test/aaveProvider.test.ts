@@ -8,7 +8,8 @@ import type { AaveProvider, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
 import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
 
-const amountUSDC = parseUSDC('100000');
+const amount = Math.floor(Math.random() * 100000);
+const amountUSDC = parseUSDC(amount.toString());
 
 describe("Deploy Contract and interact with Aave", async () => {
   let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;

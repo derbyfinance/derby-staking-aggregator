@@ -139,8 +139,7 @@ contract Router {
     address _underlying,
     address _govToken
   ) external onlyDao returns(uint256) { 
-      uint256 protocolNumber = latestProtocolId + 1;
-      latestProtocolId = protocolNumber;
+      uint256 protocolNumber = latestProtocolId;
 
       protocolProvider[protocolNumber] = _provider;
       protocolLPToken[protocolNumber] = _protocolLPToken;
@@ -148,6 +147,8 @@ contract Router {
       protocolGovToken[protocolNumber] = _govToken;
 
       emit SetProtocolNumber(protocolNumber, _protocolLPToken);
+
+      latestProtocolId++;
 
       return protocolNumber;
   }
