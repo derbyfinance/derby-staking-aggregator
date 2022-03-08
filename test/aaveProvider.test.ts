@@ -43,7 +43,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     await router.connect(vault).deposit(protocolNumber, vaultAddr, amountUSDC);
 
     const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
-    expect(formatUSDC(aTokenbalance)).to.be.equal(formatUSDC(amountUSDC));
+    expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(aTokenbalance);
