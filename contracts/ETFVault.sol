@@ -91,8 +91,6 @@ contract ETFVault is VaultToken {
 
   mapping(uint256 => uint256) private lastPrice;
 
-  uint256 public test;
-
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
   /// @param _buyer Address from buyer of the tokens
@@ -294,43 +292,41 @@ contract ETFVault is VaultToken {
 
   function claimTokens() public {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
-      test = 1 + 1;
       // if (currentAllocations[i] == 0) continue;
       router.claim(i);
     }
   }
 
-  function swapTokens(uint256 _amount, address _tokenIn) public returns(uint256) {
+  function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) public returns(uint256) {
     address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     uint24 poolFee = 3000;
 
-    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
-    vaultCurrency.safeIncreaseAllowance(uniswapRouter, _amount);
+    IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
 
-    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-      tokenIn: _tokenIn,
-      tokenOut: vaultCurrencyAddr,
-      fee: poolFee,
-      recipient: address(this),
-      deadline: block.timestamp,
-      amountIn: _amount,
-      amountOutMinimum: 0,
-      sqrtPriceLimitX96: 0
-    });
+    ISwapRouter.ExactInputParams memory params =
+      ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(_tokenIn, poolFee, weth, poolFee, _tokenOut),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: _amount,
+        amountOutMinimum: 0
+      });
 
-    uint256 amountOut = ISwapRouter(uniswapRouter).exactInputSingle(params);
+    uint256 amountOut = ISwapRouter(uniswapRouter).exactInput(params);
     console.log("amount out %s", amountOut);
 
     return amountOut;
   }
 
-  function calcAmount(address _tokenIn) public {
+  function getPoolInfo(address _token0, address _token1) public view returns(uint256){
     address uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+    address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     uint24 poolFee = 3000;
 
     address pool = IUniswapV3Factory(uniswapFactory).getPool(
-      vaultCurrencyAddr,
-      _tokenIn,
+      _token0,
+      _token1,
       poolFee
     );
 
@@ -343,5 +339,7 @@ contract ETFVault is VaultToken {
     console.log("token0 %s", token0);
     console.log("token1 %s", token1);
     console.log("price %s", sqrtPriceX96);
+
+    return sqrtPriceX96;
   }
 }
