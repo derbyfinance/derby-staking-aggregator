@@ -56,37 +56,44 @@ describe("Deploy router contract", async () => {
   }); 
 
   it("Should correctly set router mappings", async function() {
-    // check protocol provider
-    const protocol1 = await router.protocolProvider(1);
-    const protocol2 = await router.protocolProvider(2);
-    const protocol3 = await router.protocolProvider(3);
+    const [protocol1, protocol2, protocol3] = await Promise.all([
+      router.protocolProvider(1),
+      router.protocolProvider(2),
+      router.protocolProvider(3),
+    ])
 
     expect(protocol1.toUpperCase()).to.be.equal(yearnProviderMock.address.toUpperCase());
     expect(protocol2.toUpperCase()).to.be.equal(compoundProviderMock.address.toUpperCase());
     expect(protocol3.toUpperCase()).to.be.equal(aaveProviderMock.address.toUpperCase());
 
     // check protocol lp token
-    const LPtoken1 = await router.protocolLPToken(1);
-    const LPtoken2 = await router.protocolLPToken(2);
-    const LPtoken3 = await router.protocolLPToken(3);
+    const [LPtoken1, LPtoken2, LPtoken3] = await Promise.all([
+      router.protocolLPToken(1),
+      router.protocolLPToken(2),
+      router.protocolLPToken(3),
+    ])
 
     expect(LPtoken1.toUpperCase()).to.be.equal(yusdc.toUpperCase());
     expect(LPtoken2.toUpperCase()).to.be.equal(cusdc.toUpperCase());
     expect(LPtoken3.toUpperCase()).to.be.equal(ausdc.toUpperCase());
     
     // check protocol underlying
-    const underlying1 = await router.protocolUnderlying(1);
-    const underlying2 = await router.protocolUnderlying(2);
-    const underlying3 = await router.protocolUnderlying(3);
+    const [underlying1, underlying2, underlying3] = await Promise.all([
+      router.protocolUnderlying(1),
+      router.protocolUnderlying(2),
+      router.protocolUnderlying(3),
+    ])
 
     expect(underlying1.toUpperCase()).to.be.equal(usdc.toUpperCase());
     expect(underlying2.toUpperCase()).to.be.equal(usdc.toUpperCase());
     expect(underlying3.toUpperCase()).to.be.equal(usdc.toUpperCase());
 
     // check protocol gov token
-    const gov1 = await router.protocolGovToken(1);
-    const gov2 = await router.protocolGovToken(2);
-    const gov3 = await router.protocolGovToken(3);
+    const [gov1, gov2, gov3] = await Promise.all([
+      router.protocolGovToken(1),
+      router.protocolGovToken(2),
+      router.protocolGovToken(3),
+    ])
 
     expect(gov1.toUpperCase()).to.be.equal(yearn.toUpperCase());
     expect(gov2.toUpperCase()).to.be.equal(compToken.toUpperCase());
@@ -100,9 +107,13 @@ describe("Deploy router contract", async () => {
       aaveProviderMock.mock.deposit.returns(aaveMock),
     ]);
 
-    let returnValue = await router.connect(vaultSigner).deposit(1, vaultAddr, 0)
+    let returnValueYearn = await router.connect(vaultSigner).deposit(1, vaultAddr, 0);
+    let returnValueCompound = await router.connect(vaultSigner).deposit(2, vaultAddr, 0)
+    let returnValueAave = await router.connect(vaultSigner).deposit(3, vaultAddr, 0)
 
-    expect(returnValue.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueYearn.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueCompound.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueAave.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
   });
 
   it("Should correctly set router to withdraw", async function() {
@@ -112,9 +123,13 @@ describe("Deploy router contract", async () => {
       aaveProviderMock.mock.withdraw.returns(aaveMock),
     ]);
 
-    let returnValue = await router.connect(vaultSigner).withdraw(1, vaultAddr, 0)
+    let returnValueYearn = await router.connect(vaultSigner).withdraw(1, vaultAddr, 0);
+    let returnValueCompound = await router.connect(vaultSigner).withdraw(2, vaultAddr, 0);
+    let returnValueAave = await router.connect(vaultSigner).withdraw(3, vaultAddr, 0);
 
-    expect(returnValue.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueYearn.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueCompound.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
+    expect(returnValueAave.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
   });
 
   it("Should correctly set router to exchangeRate", async function() {
