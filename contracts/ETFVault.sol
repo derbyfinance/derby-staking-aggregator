@@ -324,12 +324,11 @@ contract ETFVault is VaultToken {
       });
 
     uint256 amountOut = ISwapRouter(uniswapRouter).exactInput(params);
-    console.log("amount out %s", amountOut);
 
     return amountOut;
   }
 
-  function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256){
+  function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256) {
     uint256 amountOut = 0;
     address pool = IUniswapV3Factory(uniswapFactory).getPool(
       _tokenIn,
@@ -342,18 +341,17 @@ contract ETFVault is VaultToken {
 
     (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
-    if (token0 == _tokenIn) {
-      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
-    }
-
-    if (token1 == _tokenIn) {
+    if (token0 == _tokenOut) {
       amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+    }
+    if (token1 == _tokenOut) {
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
     }
 
     // console.log("pool %s", pool);
     // console.log("token0 %s", token0);
     // console.log("token1 %s", token1);
-    // console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    console.log("sqrtPriceX96 %s", sqrtPriceX96);
     // console.log("amountOut pool %s", amountOut);
 
     return amountOut;
