@@ -29,8 +29,8 @@ contract ETFVault is VaultToken {
   // address of DAO governance contract
   address public governed;
 
-  int256 public marginScale = 1E10; // 1000 USDC
-  uint256 public uScale = 1E6;
+  int256 public marginScale; // 1000 USDC
+  uint256 public uScale;
   uint256 public liquidityPerc;
 
   modifier onlyETFgame {
@@ -290,4 +290,43 @@ contract ETFVault is VaultToken {
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
   }
+
+  /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 
+  /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
+  /// @dev Take into account the uScale (scale of the underlying).
+  /// @param _marginScale Value at which to set the marginScale.
+  function setMarginScale(int256 _marginScale) public onlyDao {
+    marginScale = _marginScale;
+  }
+
+  /// @notice Get the marginScale, the threshold used for deposits and withdrawals. 
+  function getMarginScale() public view returns(int256) {
+    return marginScale;
+  }
+
+  /// @notice Set the uScale, the decimals for the underlying.
+  /// @dev Usually 1E18 but for USDC 1E6. 
+  /// @param _uScale Value at which to set the uScale.
+  function setUScale(uint256 _uScale) public onlyDao {
+    uScale = _uScale;
+  }
+
+  /// @notice Get the uScale, the decimals for the underlying.
+  function getUScale() public view returns(uint256) {
+    return uScale;
+  }
+
+  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
+  /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here. 
+  /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale. 
+  /// @param _liquidityPerc Value at which to set the liquidityPerc.
+  function setLiquidityPerc(uint256 _liquidityPerc) public onlyDao {
+    require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
+    liquidityPerc = _liquidityPerc;
+  } 
+
+  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
+  function getLiquidityPerc() public view returns(uint256) {
+    return liquidityPerc;
+  } 
 }

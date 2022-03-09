@@ -46,7 +46,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(aTokenbalance);
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.be.closeTo(aTokenbalance, 1E6);
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);

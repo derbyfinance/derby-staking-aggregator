@@ -159,5 +159,31 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUSDC(balanceVault3))).to.be.closeTo((100_000 - 12_000 + 50_000) * liquidityPerc / 100, 1)
   });
 
+  it("Should be able to set the marginScale", async function() {
+    const ms = Math.floor(Math.random() * 1E10);
+    await vaultMock.connect(dao).setMarginScale(ms);
+
+    expect(await vaultMock.getMarginScale()).to.be.equal(ms);
+  });
+
+  it("Should be able to set the uScale", async function() {
+    const us = Math.floor(Math.random() * 1E10);
+    await vaultMock.connect(dao).setUScale(us);
+
+    expect(await vaultMock.getUScale()).to.be.equal(us);
+  });
+
+  it("Should be able to set the liquidityPerc", async function() {
+    const lp = Math.floor(Math.random() * 100);
+    await vaultMock.connect(dao).setLiquidityPerc(lp);
+
+    expect(await vaultMock.getLiquidityPerc()).to.be.equal(lp);
+  });
+
+  it("Should not be able to set the liquidityPerc higher than 100%", async function() {
+    const lp = Math.floor(Math.random() * 100) * 1000;
+    await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
+  });
+
 });
 
