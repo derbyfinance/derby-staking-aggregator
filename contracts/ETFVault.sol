@@ -25,8 +25,12 @@ contract ETFVault is VaultToken {
 
   IERC20 public vaultCurrency;
   IRouter public router;
-  address public routerAddr;
+
   address public vaultCurrencyAddr; 
+  address public routerAddr;
+  address public uniswapRouter;
+  address public uniswapFactory;
+  address public WETH;
 
   address public ETFgame;
 
@@ -56,16 +60,24 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    uint256 _liquidityPerc
+    uint256 _liquidityPerc,
+    address _uniSwapRouter,
+    address _uniswapFactory,
+    address _WETH
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
+
     router = IRouter(_router);
+    routerAddr = _router;
 
     governed = _governed;
     ETFgame = _ETFGame;
-    routerAddr = _router;
     liquidityPerc = _liquidityPerc;
+    
+    uniswapRouter = _uniSwapRouter;
+    uniswapFactory =_uniswapFactory;
+    WETH = _WETH;
   }
 
   // period number of the latest rebalance
