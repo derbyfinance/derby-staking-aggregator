@@ -14,6 +14,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
+    int256 _marginScale,
+    uint256 _uScale,
     uint256 _liquidityPerc
   ) ETFVault(
     _name,
@@ -23,6 +25,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     _ETFGame,
     _router,
     _vaultCurrency,
+    _marginScale,
+    _uScale,
     _liquidityPerc
   ) {}
 

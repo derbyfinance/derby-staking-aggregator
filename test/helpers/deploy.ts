@@ -44,12 +44,12 @@ export const deployAaveProvider = (deployerSign: Signer, router: string): Promis
   return (deployContract(deployerSign, AaveProviderArtifact, [router])) as Promise<AaveProvider>;
 };
 
-export const deployETFVault = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, gameAddress: string, router: string, vaultCurrency: string, liquidityPrec: number): Promise<ETFVault> => {
-  return (deployContract(deployerSign, ETFVaultArtifact, [name, symbol, decimals, daoAddress, gameAddress, router, vaultCurrency, liquidityPrec])) as Promise<ETFVault>;
+export const deployETFVault = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, router: string, vaultCurrency: string, marginScale: number, uScale: number, liquidityPrec: number): Promise<ETFVault> => {
+  return (deployContract(deployerSign, ETFVaultArtifact, [name, symbol, decimals, daoAddress, router, vaultCurrency, marginScale, uScale, liquidityPrec])) as Promise<ETFVault>;
 };
 
-export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, gameAddress: string, router: string, vaultCurrency: string, liquidityPrec: number): Promise<ETFVaultMock> => {
-  return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, decimals, daoAddress, gameAddress, router, vaultCurrency, liquidityPrec])) as Promise<ETFVaultMock>;
+export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, userAddress: string, router: string, vaultCurrency: string, marginScale: number, uScale: number, liquidityPrec: number): Promise<ETFVaultMock> => {
+  return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, decimals, daoAddress, userAddress, router, vaultCurrency, marginScale, uScale, liquidityPrec])) as Promise<ETFVaultMock>;
 };
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

@@ -8,7 +8,8 @@ import type { CompoundProviderMock, ERC20, Router } from '../typechain-types';
 import { deployCompoundProviderMock, deployRouter } from './helpers/deploy';
 import { usdc, compoundUSDC as cusdc, comptroller, compToken as compTokenAddr} from "./helpers/addresses";
 
-const amountUSDC = parseUSDC('100000');
+const amount = Math.floor(Math.random() * 100000);
+const amountUSDC = parseUSDC(amount.toString());
 const cusdcWhaleAddr = '0xabde2f02fe84e083e1920471b54c3612456365ef';
 
 describe("Deploy Contract and interact with Compound", async () => {
