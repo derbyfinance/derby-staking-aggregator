@@ -41,6 +41,8 @@ contract ETFVault is VaultToken {
   uint256 public uScale = 1E6;
   uint256 public liquidityPerc;
 
+  uint24 public poolFee = 3000;
+
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
     _;
@@ -74,7 +76,7 @@ contract ETFVault is VaultToken {
     governed = _governed;
     ETFgame = _ETFGame;
     liquidityPerc = _liquidityPerc;
-    
+
     uniswapRouter = _uniSwapRouter;
     uniswapFactory =_uniswapFactory;
     WETH = _WETH;
@@ -310,15 +312,11 @@ contract ETFVault is VaultToken {
   }
 
   function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) public returns(uint256) {
-    address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-    address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    uint24 poolFee = 3000;
-
     IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
 
     ISwapRouter.ExactInputParams memory params =
       ISwapRouter.ExactInputParams({
-        path: abi.encodePacked(_tokenIn, poolFee, weth, poolFee, _tokenOut),
+        path: abi.encodePacked(_tokenIn, poolFee, WETH, poolFee, _tokenOut),
         recipient: address(this),
         deadline: block.timestamp,
         amountIn: _amount,
@@ -331,14 +329,11 @@ contract ETFVault is VaultToken {
     return amountOut;
   }
 
-  function getPoolInfo(address _token0, address _token1) public view returns(uint256){
-    address uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
-    address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    uint24 poolFee = 3000;
-
+  function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256){
+    uint256 amountOut = 0;
     address pool = IUniswapV3Factory(uniswapFactory).getPool(
-      _token0,
-      _token1,
+      _tokenIn,
+      _tokenOut,
       poolFee
     );
 
@@ -346,12 +341,21 @@ contract ETFVault is VaultToken {
     address token1 = IUniswapV3Pool(pool).token1();
 
     (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
-    
-    console.log("pool %s", pool);
-    console.log("token0 %s", token0);
-    console.log("token1 %s", token1);
-    console.log("price %s", sqrtPriceX96);
 
-    return sqrtPriceX96;
+    if (token0 == _tokenIn) {
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
+    }
+
+    if (token1 == _tokenIn) {
+      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+    }
+
+    // console.log("pool %s", pool);
+    // console.log("token0 %s", token0);
+    // console.log("token1 %s", token1);
+    // console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    // console.log("amountOut pool %s", amountOut);
+
+    return amountOut;
   }
 }

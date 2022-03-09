@@ -61,7 +61,7 @@ export const deployETFVault = (
     deployerSign, 
     ETFVaultArtifact, 
     [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, liquidityPerc, uniswapRouter, uniswapFactory, WEth]
-  ) as Promise<ETFVault>;
+  ) as Promise<ETFVaultMock>;
 
 export const deployETFVaultMock = (
   deployerSign: Signer, 

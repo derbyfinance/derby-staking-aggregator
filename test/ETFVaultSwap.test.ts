@@ -5,8 +5,8 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
-import { deployRouter, deployETFVaultMock } from './helpers/deploy';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router, ETFVault } from '../typechain-types';
+import { deployRouter, deployETFVault, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp, uniswapFactory, uniswapRouter, WEth} from "./helpers/addresses";
 
@@ -31,7 +31,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc, IComp] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
+      deployETFVault(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
       deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
@@ -56,11 +56,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should Swap tokens", async function() {
-    // const sqrtRatioX96 = 15798159122422380402535916280;
-    // const testPrice = sqrtRatioX96 ** 2 / 2 ** 192;
-    // console.log(testPrice)
-    // const price = await vaultMock.getPoolInfo(comp, '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2');
-
     await IUSDc.connect(user).transfer(vaultMock.address, amountUSDC)
     const usdcBalance = await IUSDc.balanceOf(vaultMock.address)
     console.log(`USDC Balance vault: ${usdcBalance}`)
@@ -71,11 +66,24 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const compBalance = await IComp.balanceOf(vaultMock.address)
     console.log(`Comp Balance vault: ${compBalance}`)
 
-    await vaultMock.swapTokensMulti(compBalance, comp, usdc);
+    // await vaultMock.swapTokensMulti(compBalance, comp, usdc);
 
-    console.log(`Comp Balance vault End: ${await IComp.balanceOf(vaultMock.address)}`)
-    console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`)
+    // console.log(`Comp Balance vault End: ${await IComp.balanceOf(vaultMock.address)}`)
+    // console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`)
+
+    const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, usdc, WEth);
+    console.log(`10k USDC to WETH: ${amountOutWeth}`)
+
+    const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, comp)
+    console.log(`Weth to Comp: ${amountOutComp}`)
+
+    const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, comp, WEth);
+    const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, usdc)
+    // await vaultMock.getPoolInfo(swapAmount, WEth, comp)
   });
 
 });
 
+// COMP received => 
+88634752105670065756
+88516897874190322643
