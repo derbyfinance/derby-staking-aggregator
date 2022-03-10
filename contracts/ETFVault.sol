@@ -111,6 +111,7 @@ contract ETFVault is VaultToken {
   /// @param _amount Amount to deposit
   /// @return Tokens received by buyer
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
+    console.log("depsoit");
     uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
@@ -200,7 +201,7 @@ contract ETFVault is VaultToken {
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
-
+  
       setAllocationAndPrice(i);
 
       int256 amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
@@ -306,7 +307,7 @@ contract ETFVault is VaultToken {
 
   function claimTokens() public {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
-      // if (currentAllocations[i] == 0) continue;
+      if (currentAllocations[i] == 0) continue;
       router.claim(i);
     }
   }
@@ -328,6 +329,7 @@ contract ETFVault is VaultToken {
     return amountOut;
   }
 
+  // Not functional yet
   function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256) {
     uint256 amountOut = 0;
     address pool = IUniswapV3Factory(uniswapFactory).getPool(

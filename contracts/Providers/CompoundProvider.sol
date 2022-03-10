@@ -131,7 +131,6 @@ contract CompoundProvider is IProvider {
   /// @notice Claims/harvest COMP tokens from the Comptroller
   /// @param _cToken Address of protocol LP Token eg cUSDC
   function claim(address _cToken, address _claimer) public {
-    console.log("hi compound %s from %s", _cToken, _claimer);
     address[] memory cTokens = new address[](1);
     cTokens[0] = _cToken;
     comptroller.claimComp(_claimer, cTokens);

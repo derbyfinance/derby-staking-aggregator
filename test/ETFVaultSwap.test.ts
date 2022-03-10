@@ -2,9 +2,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
-import { Signer, Contract } from "ethers";
-import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, getWhale, parseUnits, } from './helpers/helpers';
+import { Signer, Contract, BigNumber } from "ethers";
+import { ethers, network } from "hardhat";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, getWhale, parseUnits, formatUnits, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router, ETFVault } from '../typechain-types';
 import { deployRouter, deployETFVault, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
@@ -16,13 +16,14 @@ const decimals = 6;
 const liquidityPerc = 10;
 const amountUSDC = parseUSDC('100000');
 const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec'
+const cusdcWhaleAddr = '0x39AA39c021dfbaE8faC545936693aC917d5E7563';
 let protocolYearn = { number: 0, allocation: 0, address: yusdc };
 let protocolCompound = { number: 0, allocation: 70, address: cusdc };
 let protocolAave = { number: 0, allocation: 0, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, IComp: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock, compSigner: Signer;
+  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, IComp: Contract, IcUSDC: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock, compSigner: Signer, cusdcWhale: Signer;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -30,14 +31,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
     userAddr = await user.getAddress(); // mock address for game
     router = await deployRouter(dao, daoAddr);
     compSigner = await getWhale(CompWhale);
+    cusdcWhale = await getWhale(cusdcWhaleAddr);
 
     // Deploy vault and all providers
-    [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc, IComp] = await Promise.all([
+    [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc, IComp, IcUSDC] = await Promise.all([
       deployETFVault(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
       deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
       erc20(comp),
+      erc20(cusdc)
     ]);
 
     // Transfer USDC to user(ETFGame) and set protocols in Router
@@ -53,22 +56,66 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
   });
 
-  // it("Sending USDC and Swapping for COMP", async function() {
-  //   await IUSDc.connect(user).transfer(vaultMock.address, amountUSDC)
-  //   const usdcBalance = await IUSDc.balanceOf(vaultMock.address)
-  //   console.log(`USDC Balance vault: ${usdcBalance}`)
+  
+  it.only("Claim loop in vault should reach Compound Claim function", async function() {
+    const amountToDeposit = parseUSDC('100000')
+    await setDeltaAllocations(user, vaultMock, allProtocols);
 
-  //   const swapAmount = parseUSDC('10000');
-  //   await vaultMock.swapTokensMulti(swapAmount, usdc, comp);
+    // Deposit and rebalance with 100k in only Compound
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await vaultMock.rebalanceETF();
 
-  //   const compBalance = await IComp.balanceOf(vaultMock.address)
-  //   console.log(`Comp Balance vault: ${compBalance}`)
+    // skip forward some blocks
+    await network.provider.send("evm_increaseTime", [36000])
+    await network.provider.send("evm_mine")
 
-  //   await vaultMock.swapTokensMulti(compBalance, comp, usdc);
+    await vaultMock.claimTokens()
 
-  //   console.log(`Comp Balance vault End: ${await IComp.balanceOf(vaultMock.address)}`)
-  //   console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`)
-  // });
+    console.log(`Comp Balance vault After: ${await IComp.balanceOf(vaultMock.address)}`);
+    const compBalanceAfter = await IComp.balanceOf(vaultMock.address)
+
+    // Expect to atleast receive some COMP tokens 
+    expect(Number(formatUnits(compBalanceAfter, 18))).to.be.greaterThan(0)
+  });
+
+  it("Swapping COMP to USDC", async function() {
+    const swapAmount = parseUnits('1000', 18); // 1000 comp tokens
+    await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
+
+    const compBalance = await IComp.balanceOf(vaultMock.address);
+    expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
+
+    await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
+    const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
+    const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
+
+    expect(Number(formatUSDC(usdcBalanceEnd))).to.be.greaterThan(0);
+    expect(compBalanceEnd).to.be.equal(0);
+  });
+
+  it("Swapping USDC to COMP and COMP back to USDC", async function() {
+    const swapAmount = parseUSDC('10000');
+    await IUSDc.connect(user).transfer(vaultMock.address, swapAmount);
+    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    console.log(`USDC Balance vault: ${usdcBalance}`)
+
+    await vaultMock.swapTokensMulti(swapAmount, usdc, comp);
+
+    const compBalance = await IComp.balanceOf(vaultMock.address);
+    console.log(`Comp Balance vault: ${compBalance}`);
+
+    // Atleast receive some COMP
+    expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
+    await vaultMock.swapTokensMulti(compBalance, comp, usdc);
+
+    console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`);
+    const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
+    const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
+
+    // MultiHop swap fee is 0,6% => total fee = +- 1,2% => 10_000 * 1,2% = 120 fee
+    expect(Number(formatUSDC(usdcBalanceEnd))).to.be.closeTo(10_000 - 120, 25);
+    expect(compBalanceEnd).to.be.equal(0);
+  });
 
   // it("Calc USDC to COMP", async function() {
   //   const swapAmount = parseUSDC('10000');
@@ -90,46 +137,40 @@ describe("Deploy Contracts and interact with Vault", async () => {
   //   console.log(`Weth Back to USDC: ${amountOutBacktoUSDC}`)
   // });
 
-  it("SWap and calc COMP to USDC", async function() {
-    const swapAmount = parseUnits('100', 18); // 100 comp tokens
-    console.log(`USDC Balance vault Before: ${await IUSDc.balanceOf(vaultMock.address)}`)
+  // it("SWap and calc COMP to USDC", async function() {
+  //   const swapAmount = parseUnits('100', 18); // 100 comp tokens
+  //   console.log(`USDC Balance vault Before: ${await IUSDc.balanceOf(vaultMock.address)}`)
 
-    await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
-    console.log(`Comp Balance Vault: ${await IComp.balanceOf(vaultMock.address)}`)
+  //   await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
+  //   console.log(`Comp Balance Vault: ${await IComp.balanceOf(vaultMock.address)}`)
 
-    await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
+  //   await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
 
-    console.log(`USDC Balance vault After: ${await IUSDc.balanceOf(vaultMock.address)}`)
+  //   console.log(`USDC Balance vault After: ${await IUSDc.balanceOf(vaultMock.address)}`)
 
-    console.log('--------------------')
-    const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, comp, WEth);
-    console.log(`100 COMP to WETH: ${amountOutWeth}`)
+  //   console.log('--------------------')
+  //   const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, comp, WEth);
+  //   console.log(`100 COMP to WETH: ${amountOutWeth}`)
+  //   console.log(amountOutWeth)
 
-    console.log('--------------------')
-    const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, usdc)
-    console.log(`Weth to USDC: ${amountOutComp}`)
+  //   console.log('--------------------')
+  //   const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, usdc)
+  //   console.log(`Weth to USDC: ${amountOutComp}`)
+  //   console.log(amountOutComp)
 
-    console.log('--------------------')
-    const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, usdc, WEth);
-    console.log(`USDC to Weth: ${amountOutBack}`)
+  //   console.log('--------------------')
+  //   const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, usdc, WEth);
+  //   console.log(`USDC to Weth: ${amountOutBack}`)
+  //   console.log(amountOutBack)
 
-    console.log('--------------------')
-    const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, comp)
-    console.log(`Weth Back to COMP: ${amountOutBacktoUSDC}`)
+  //   console.log('--------------------')
+  //   const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, comp)
+  //   console.log(`Weth Back to COMP: ${amountOutBacktoUSDC}`)
+  //   console.log(amountOutBacktoUSDC)
 
-  });
+  // });
 
 });
 
 // price Token0 = sqrtRatioX96 ** 2 / 2 ** 192
 // price Token1 = 2 ** 192 / sqrtRatioX96 ** 2
-
-88634752105670065756  // COMP Received from 10k USDC
-100000000000 // USDC 10k
-99880896578 // USDC Received back from COMP
-
-
-100000000000000000000 // 100 comp
-
-10112223804 // USDC Received for 100 COMP
-9280303328
