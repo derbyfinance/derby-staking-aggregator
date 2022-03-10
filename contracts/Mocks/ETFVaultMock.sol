@@ -14,12 +14,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    int256 _marginScale,
-    uint256 _uScale,
-    uint256 _liquidityPerc,
-    address _uniSwapRouter,
-    address _uniswapFactory,
-    address _WETH
+    uint256 _uScale
   ) ETFVault(
     _name,
     _symbol,
@@ -28,12 +23,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     _ETFGame,
     _router,
     _vaultCurrency,
-    _marginScale,
-    _uScale,
-    _liquidityPerc,
-    _uniSwapRouter,
-    _uniswapFactory,
-    _WETH
+    _uScale
   ) {}
 
   function getAllocationTEST(uint256 _protocolNum) external view returns(int256) {

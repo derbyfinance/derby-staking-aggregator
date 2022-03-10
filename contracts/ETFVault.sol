@@ -26,11 +26,11 @@ contract ETFVault is VaultToken {
   IERC20 public vaultCurrency;
   IRouter public router;
 
+  address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address public uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+  address public uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
   address public vaultCurrencyAddr; 
   address public routerAddr;
-  address public uniswapRouter;
-  address public uniswapFactory;
-  address public WETH;
 
   address public ETFgame;
 
@@ -38,8 +38,8 @@ contract ETFVault is VaultToken {
   address public governed;
 
   int256 public marginScale = 1E10; // 1000 USDC
-  uint256 public uScale = 1E6;
-  uint256 public liquidityPerc;
+  uint256 public uScale;
+  uint256 public liquidityPerc = 10;
 
   uint24 public poolFee = 3000;
 
@@ -62,12 +62,7 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    int256 _marginScale,
-    uint256 _uScale,
-    uint256 _liquidityPerc,
-    address _uniSwapRouter,
-    address _uniswapFactory,
-    address _WETH
+    uint256 _uScale
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
@@ -78,13 +73,7 @@ contract ETFVault is VaultToken {
     governed = _governed;
     ETFgame = _ETFGame;
     routerAddr = _router;
-    marginScale = _marginScale;
     uScale = _uScale;
-    liquidityPerc = _liquidityPerc;
-
-    uniswapRouter = _uniSwapRouter;
-    uniswapFactory =_uniswapFactory;
-    WETH = _WETH;
   }
 
   // period number of the latest rebalance
@@ -378,4 +367,34 @@ contract ETFVault is VaultToken {
 
     return amountOut;
   }
+
+  /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 
+  /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
+  /// @dev Take into account the uScale (scale of the underlying).
+  /// @param _marginScale Value at which to set the marginScale.
+  function setMarginScale(int256 _marginScale) external onlyDao {
+    marginScale = _marginScale;
+  }
+
+  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
+  /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here. 
+  /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale. 
+  /// @param _liquidityPerc Value at which to set the liquidityPerc.
+  function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
+    require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
+    liquidityPerc = _liquidityPerc;
+  } 
+
+  /// @notice Set the Uniswap Router address
+  /// @param _uniswapRouter New Uniswap Router address
+  function setUniswapRouter(address _uniswapRouter) external onlyDao {
+    uniswapRouter = _uniswapRouter;
+  }
+
+  /// @notice Set the Uniswap Factory address
+  /// @param _uniswapFactory New Uniswap Factory address
+  function setUniswapFactory(address _uniswapFactory) external onlyDao {
+    uniswapFactory = _uniswapFactory;
+  }
+
 }
