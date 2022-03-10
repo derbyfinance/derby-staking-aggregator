@@ -123,7 +123,7 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
     totalYearn = await yearnProvider.balanceUnderlying(vaultMock.address, yusdc);
     expect(Number(formatUSDC(totalYearn))).to.be.closeTo(15_000, 1);
 
-    console.log('---------Withdraw 60k = more then balance----------');
+    console.log('---------Withdraw 60k = more than balance----------');
     // Should be reverted
     await expect(vaultMock.withdrawETF(userAddr, parseUSDC('60000'))).to.be.reverted;
   });

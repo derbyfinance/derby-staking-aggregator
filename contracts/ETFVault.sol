@@ -196,7 +196,7 @@ contract ETFVault is VaultToken {
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
 
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
-      if (amountToWithdraw > uint(marginScale)) withdrawFromProtocol(i, amountToWithdraw);
+      if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
   }
 
@@ -241,12 +241,14 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    address provider = router.protocolProvider(_protocolNum);
-    address protocolLPToken = router.protocolLPToken(_protocolNum);
-    uint256 shares = router.calcShares(_protocolNum, _amount);
+    if (_amount > 0) {
+      address provider = router.protocolProvider(_protocolNum);
+      address protocolLPToken = router.protocolLPToken(_protocolNum);
+      uint256 shares = router.calcShares(_protocolNum, _amount);
 
-    IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
-    router.withdraw(_protocolNum, address(this), shares);
+      IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
+      router.withdraw(_protocolNum, address(this), shares);
+    }
     console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
   }
 
