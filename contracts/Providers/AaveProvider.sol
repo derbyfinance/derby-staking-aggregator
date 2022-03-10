@@ -44,7 +44,7 @@ contract AaveProvider is IProvider{
     uint256 _amount, 
     address _aToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -71,7 +71,7 @@ contract AaveProvider is IProvider{
     uint256 _amount, 
     address _aToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
@@ -89,7 +89,7 @@ contract AaveProvider is IProvider{
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _aToken) public override view returns (uint256) {
+  function balanceUnderlying(address _address, address _aToken) public view returns (uint256) {
     uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }
@@ -99,7 +99,7 @@ contract AaveProvider is IProvider{
   /// @param _amount Amount in underyling token e.g USDC
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _aToken) external view override returns (uint256) {
+  function calcShares(uint256 _amount, address _aToken) external view returns (uint256) {
     uint256 shares = _amount / exchangeRate(_aToken);
 
     return shares;
@@ -109,7 +109,7 @@ contract AaveProvider is IProvider{
   /// @param _address Address to request balance from
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balance(address _address, address _aToken) public view override returns (uint256) {
+  function balance(address _address, address _aToken) public view returns (uint256) {
     uint256 _balanceShares = IAToken(_aToken).balanceOf(_address);
     return _balanceShares;
   }
@@ -118,15 +118,15 @@ contract AaveProvider is IProvider{
   /// @dev Aave exchangeRate is always 1
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return price of LP token
-  function exchangeRate(address _aToken) public pure override returns(uint256) {
+  function exchangeRate(address _aToken) public pure returns(uint256) {
     return 1;
   }
 
-  function claim(address _aToken, address _claimer) public {
+  function claim(address _aToken, address _claimer) public returns(bool){
     
   }
 
-  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
 
   }
 

@@ -10,7 +10,7 @@ import { MockContract } from "ethereum-waffle";
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './helpers/deployMocks';
 import { setCurrentAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, yearn, aave} from "./helpers/addresses";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, compToken as comp, yearn, aave, uniswapRouter, uniswapFactory, WEth} from "./helpers/addresses";
 
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
@@ -33,7 +33,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, yearnProvider, compoundProvider, aaveProvider, USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),

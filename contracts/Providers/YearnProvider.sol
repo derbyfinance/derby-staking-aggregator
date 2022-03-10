@@ -35,7 +35,7 @@ contract YearnProvider is IProvider{
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -62,7 +62,7 @@ contract YearnProvider is IProvider{
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external onlyRouter returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     require(IYearn(_yToken).transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
@@ -80,7 +80,7 @@ contract YearnProvider is IProvider{
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _yToken) public override view returns (uint256) {
+  function balanceUnderlying(address _address, address _yToken) public view returns (uint256) {
     uint256 balanceShares = balance(_address, _yToken);
     uint256 price = exchangeRate(_yToken);
     return balanceShares * price / 1E6;
@@ -91,7 +91,7 @@ contract YearnProvider is IProvider{
   /// @param _amount Amount in underyling token e.g USDC
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _yToken) external view override returns (uint256) {
+  function calcShares(uint256 _amount, address _yToken) external view returns (uint256) {
     uint256 shares = _amount  * 1E6 / exchangeRate(_yToken);
 
     return shares;
@@ -101,7 +101,7 @@ contract YearnProvider is IProvider{
   /// @param _address Address to request balance from
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
-  function balance(address _address, address _yToken) public view override returns (uint256) {
+  function balance(address _address, address _yToken) public view returns (uint256) {
     uint256 _balanceShares = IYearn(_yToken).balanceOf(_address);
 
     return _balanceShares;
@@ -110,17 +110,17 @@ contract YearnProvider is IProvider{
   /// @notice Exchange rate of underyling protocol token
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return price of LP token
-  function exchangeRate(address _yToken) public override view returns(uint256) {
+  function exchangeRate(address _yToken) public view returns(uint256) {
     uint256 _price = IYearn(_yToken).pricePerShare();
 
     return _price;
   }
 
-  function claim(address _yToken, address _claimer) public {
+  function claim(address _yToken, address _claimer) public returns(bool) {
 
   }
 
-  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
 
   }
 

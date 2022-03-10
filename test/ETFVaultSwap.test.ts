@@ -56,8 +56,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
   });
 
-  
-  it.only("Claim loop in vault should reach Compound Claim function", async function() {
+  it("Claim function in vault should claim COMP and sell for USDC", async function() {
     const amountToDeposit = parseUSDC('100000')
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
@@ -65,17 +64,17 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();
 
-    // skip forward some blocks
-    await network.provider.send("evm_increaseTime", [36000])
-    await network.provider.send("evm_mine")
+    // mine 100 blocks to gain COMP Tokens
+    for (let i = 0; i <= 100; i++) await network.provider.send("evm_mine");
 
+    const USDCBalanceBeforeClaim = await IUSDc.balanceOf(vaultMock.address);
     await vaultMock.claimTokens()
+    const USDCBalanceAfterClaim = await IUSDc.balanceOf(vaultMock.address);
 
-    console.log(`Comp Balance vault After: ${await IComp.balanceOf(vaultMock.address)}`);
-    const compBalanceAfter = await IComp.balanceOf(vaultMock.address)
+    const USDCReceived = USDCBalanceAfterClaim.sub(USDCBalanceBeforeClaim)
+    console.log(`USDC Received ${USDCReceived}`);
 
-    // Expect to atleast receive some COMP tokens 
-    expect(Number(formatUnits(compBalanceAfter, 18))).to.be.greaterThan(0)
+    expect(Number(USDCBalanceAfterClaim)).to.be.greaterThan(Number(USDCBalanceBeforeClaim))
   });
 
   it("Swapping COMP to USDC", async function() {

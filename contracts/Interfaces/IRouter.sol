@@ -48,7 +48,7 @@ interface IRouter {
   function claim(
     uint256 protocolNumber
   ) 
-    external;
+    external returns(bool);
 
   function addProtocol(
     address provider,
@@ -66,6 +66,11 @@ interface IRouter {
     external view returns(address);
 
   function protocolLPToken(
+    uint256 protocolNumber
+  )
+    external view returns(address);
+  
+  function protocolGovToken(
     uint256 protocolNumber
   )
     external view returns(address);

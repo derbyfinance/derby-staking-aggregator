@@ -113,12 +113,12 @@ contract Router {
   /// @param _protocolNumber Protocol number linked to protocol vault
   function claim(
     uint256 _protocolNumber
-  ) external onlyVault {
+  ) external onlyVault returns(bool) {
       if (claimable[protocolProvider[_protocolNumber]]) {
         return IProvider(protocolProvider[_protocolNumber])
                 .claim(protocolLPToken[_protocolNumber], msg.sender);
       } else {
-        return;
+        return false;
       }
   }
 

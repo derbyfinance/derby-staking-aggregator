@@ -111,7 +111,6 @@ contract ETFVault is VaultToken {
   /// @param _amount Amount to deposit
   /// @return Tokens received by buyer
   function depositETF(address _buyer, uint256 _amount) external returns(uint256) {
-    console.log("depsoit");
     uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
     vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
     uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
@@ -305,13 +304,27 @@ contract ETFVault is VaultToken {
     deltaAllocatedTokens += _allocation; 
   }
 
+  /// @notice Harvest extra tokens from underlying protocols
+  /// @dev Loops over protocols in ETF and check if they are claimable in router contract
   function claimTokens() public {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (currentAllocations[i] == 0) continue;
-      router.claim(i);
+      bool claim = router.claim(i);
+
+      if (claim) {
+        address govToken = router.protocolGovToken(i);
+        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+        
+        swapTokensMulti(tokenBalance, govToken, vaultCurrencyAddr);
+      }
     }
   }
 
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @return Amountout Number of tokens received
   function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) public returns(uint256) {
     IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
 
