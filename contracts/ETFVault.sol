@@ -188,7 +188,9 @@ contract ETFVault is VaultToken {
 
       setAllocationAndPrice(i);
 
-      int256 amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
+      int256 amountToProtocol;
+      if (totalAllocatedTokens == 0) amountToProtocol = 0;
+      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
       
       uint256 currentBalance = balanceUnderlying(i);
 

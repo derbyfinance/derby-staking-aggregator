@@ -289,6 +289,27 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
 
+    console.log('-------------- everything to the vault ----------------');
+    protocolCompound.allocation = -44; // compound: 0
+    protocolAave.allocation = -44; // aave 0
+    protocolYearn.allocation = -2; // yearn: 0
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+
+    allocations = await getAllocations(vaultMock, allProtocols);
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [0, 0, 0];
+    expectedVaultLiquidity = 65000;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
   });
 });
 
