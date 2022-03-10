@@ -182,7 +182,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
   });
 
-  it.only("Should not deposit and withdraw when hitting the marginScale", async function() {
+  it("Should not deposit and withdraw when hitting the marginScale", async function() {
     console.log('-------------- depostit 100k, but for the 2nd protocol the margin gets hit ----------------');
     await setDeltaAllocations(user, vaultMock, allProtocols); // 0: compound: 40, 1: aave: 60, 2: yearn: 20
 
