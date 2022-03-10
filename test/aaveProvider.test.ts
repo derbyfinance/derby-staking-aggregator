@@ -8,7 +8,8 @@ import type { AaveProvider, Router } from '../typechain-types';
 import { deployAaveProvider, deployRouter } from './helpers/deploy';
 import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
 
-const amountUSDC = parseUSDC('100000');
+const amount = Math.floor(Math.random() * 100000);
+const amountUSDC = parseUSDC(amount.toString());
 
 describe("Deploy Contract and interact with Aave", async () => {
   let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
@@ -42,7 +43,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     await router.connect(vault).deposit(protocolNumber, vaultAddr, amountUSDC);
 
     const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
-    expect(formatUSDC(aTokenbalance)).to.be.equal(formatUSDC(amountUSDC));
+    expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(aTokenbalance);
@@ -69,5 +70,4 @@ describe("Deploy Contract and interact with Aave", async () => {
     const exchangeRate = await router.connect(vault).exchangeRate(protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
-  
 });

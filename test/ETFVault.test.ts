@@ -2,10 +2,10 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
-import { Signer, Contract } from "ethers";
+import { Signer, Contract, BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router } from '../typechain-types';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp, WEth, uniswapFactory, uniswapRouter} from "./helpers/addresses";
@@ -13,12 +13,15 @@ import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aav
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
+const marginScale = 1E9;
+const uScale = 1E6;
 const liquidityPerc = 10;
-const amountUSDC = parseUSDC('100000');
-let protocolYearn = { number: 0, allocation: 20, address: yusdc };
+const amount = 100000;
+const amountUSDC = parseUSDC(amount.toString());
 let protocolCompound = { number: 0, allocation: 40, address: cusdc };
 let protocolAave = { number: 0, allocation: 60, address: ausdc };
-let allProtocols = [protocolYearn, protocolCompound, protocolAave];
+let protocolYearn = { number: 0, allocation: 20, address: yusdc };
+let allProtocols = [protocolCompound, protocolAave, protocolYearn];
 
 describe("Deploy Contracts and interact with Vault", async () => {
   let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
@@ -31,7 +34,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale, marginScale, liquidityPerc, uniswapRouter, uniswapFactory, WEth),
       deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
@@ -88,7 +91,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances[i].div(1E6))
-      .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(1E6), 5)
+      .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(uScale), 5)
     })
     // liquidity vault should be 100k * 10% = 10k
     expect(Number(formatUSDC(balanceVault))).to.be.closeTo(100_000 * liquidityPerc / 100, 1)
@@ -117,7 +120,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances2[i].div(1E6))
-      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(1E6), 5)
+      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(uScale), 5)
     })
     // liquidity vault should be 100k - 12k * 10% = 8.8k
     expect(Number(formatUSDC(balanceVault2))).to.be.closeTo((100_000 - 12_000)  * liquidityPerc / 100, 1)
@@ -138,7 +141,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     LPBalanceUser = await vaultMock.balanceOf(userAddr);
     console.log(`LP balance user: ${LPBalanceUser}`)
-    expect(LPBalanceUser.div(1E6)).to.be.closeTo(amountUSDC.sub(amountToWithdraw).add(amountToDeposit).div(1E6), 5);
+    expect(LPBalanceUser.div(1E6)).to.be.closeTo(amountUSDC.sub(amountToWithdraw).add(amountToDeposit).div(uScale), 5);
 
     const [balances3, allocations3, totalAllocatedTokens3, balanceVault3] = await Promise.all([
       getAndLogBalances(vaultMock, allProtocols),
@@ -150,7 +153,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances3[i].div(1E6))
-      .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(1E6), 5)
+      .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(uScale), 5)
     })
     // liquidity vault should be 100k - 12k + 50k * 10% = 13.8k
     expect(Number(formatUSDC(balanceVault3))).to.be.closeTo((100_000 - 12_000 + 50_000) * liquidityPerc / 100, 1)

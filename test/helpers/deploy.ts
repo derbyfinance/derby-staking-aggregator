@@ -53,6 +53,8 @@ export const deployETFVault = (
   ETFGame: string, 
   router: string, 
   vaultCurrency: string, 
+  marginScale: number, 
+  uScale: number,
   liquidityPerc: number,
   uniswapRouter: string,
   uniswapFactory: string,
@@ -60,7 +62,7 @@ export const deployETFVault = (
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifact, 
-    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, liquidityPerc, uniswapRouter, uniswapFactory, WEth]
+    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, marginScale, uScale, liquidityPerc, uniswapRouter, uniswapFactory, WEth]
   ) as Promise<ETFVaultMock>;
 
 export const deployETFVaultMock = (
@@ -71,7 +73,9 @@ export const deployETFVaultMock = (
   daoAddress: string, 
   ETFGame: string,
   router: string, 
-  vaultCurrency: string, 
+  vaultCurrency: string,
+  marginScale: number,
+   uScale: number, 
   liquidityPerc: number,
   uniswapRouter: string,
   uniswapFactory: string,
@@ -79,7 +83,7 @@ export const deployETFVaultMock = (
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifactMock, 
-    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, liquidityPerc, uniswapRouter, uniswapFactory, WEth]
+    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, marginScale, uScale, liquidityPerc, uniswapRouter, uniswapFactory, WEth]
   ) as Promise<ETFVaultMock>;
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

@@ -62,6 +62,8 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
+    int256 _marginScale,
+    uint256 _uScale,
     uint256 _liquidityPerc,
     address _uniSwapRouter,
     address _uniswapFactory,
@@ -75,6 +77,9 @@ contract ETFVault is VaultToken {
 
     governed = _governed;
     ETFgame = _ETFGame;
+    routerAddr = _router;
+    marginScale = _marginScale;
+    uScale = _uScale;
     liquidityPerc = _liquidityPerc;
 
     uniswapRouter = _uniSwapRouter;
@@ -244,9 +249,11 @@ contract ETFVault is VaultToken {
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
     address provider = router.protocolProvider(_protocolNum);
 
+    if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
+
     vaultCurrency.safeIncreaseAllowance(provider, _amount);
     router.deposit(_protocolNum, address(this), _amount);
-    console.log("deposited: %s, Protocol: %s", uint(_amount), _protocolNum);
+    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -260,7 +267,7 @@ contract ETFVault is VaultToken {
 
     IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
     router.withdraw(_protocolNum, address(this), shares);
-    console.log("withdrawed: %s, Protocol: %s", uint(_amount), _protocolNum);
+    console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
   }
 
   /// @notice Get total balance in VaultCurrency in all underlying protocols

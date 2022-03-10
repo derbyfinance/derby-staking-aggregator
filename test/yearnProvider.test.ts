@@ -8,7 +8,8 @@ import type { YearnProvider, Router } from '../typechain-types';
 import { deployYearnProvider, deployRouter } from './helpers/deploy';
 import { usdc, yearnUSDC as yusdc, yearn} from "./helpers/addresses";
 
-const amountUSDC = parseUSDC('100000');
+const amount = Math.floor(Math.random() * 100000);
+const amountUSDC = parseUSDC(amount.toString());
 
 describe("Deploy Contract and interact with Yearn", async () => {
   let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;

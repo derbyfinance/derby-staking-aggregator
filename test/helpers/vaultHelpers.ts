@@ -17,7 +17,7 @@ export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol
   const balances = await Promise.all(promises);
 
   balances.forEach((balance: BigNumber, i) => {
-    console.log(`Balance vault ${protocols[i].number}: ${balance}`)
+    console.log(`Balance vault ${protocols[i].number}: ${balance.div(1E6)}`)
   });
 
   return balances;
