@@ -177,6 +177,8 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
+    claimTokens(); 
+    
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
