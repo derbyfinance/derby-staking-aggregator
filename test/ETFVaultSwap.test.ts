@@ -15,15 +15,14 @@ const symbol = 'dUSDC';
 const decimals = 6;
 const uScale = 1E6;
 const amountUSDC = parseUSDC('100000');
-const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec'
-const cusdcWhaleAddr = '0x39AA39c021dfbaE8faC545936693aC917d5E7563';
+const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
 let protocolYearn = { number: 0, allocation: 0, address: yusdc };
 let protocolCompound = { number: 0, allocation: 70, address: cusdc };
 let protocolAave = { number: 0, allocation: 0, address: ausdc };
 let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, IComp: Contract, IcUSDC: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock, compSigner: Signer, cusdcWhale: Signer;
+  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, IComp: Contract, IcUSDC: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock, compSigner: Signer;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -31,7 +30,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     userAddr = await user.getAddress(); // mock address for game
     router = await deployRouter(dao, daoAddr);
     compSigner = await getWhale(CompWhale);
-    cusdcWhale = await getWhale(cusdcWhaleAddr);
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc, IComp, IcUSDC] = await Promise.all([

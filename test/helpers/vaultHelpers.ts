@@ -10,6 +10,10 @@ interface Protocol {
   address: string;
 }
 
+const providerList = [
+  
+]
+
 export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol[]) {
   const promises = protocols.map((protocol: Protocol) => {
     return vault.balanceUnderlying(protocol.number)

@@ -8,7 +8,8 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from 
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
 import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp, uniswapFactory, uniswapRouter} from "./helpers/addresses";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp} from "./helpers/addresses";
+import {beforeEachVault} from "@testhelp/vaultBeforeEach";
 
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
@@ -24,31 +25,60 @@ let protocolYearn = { number: 0, allocation: 20, address: yusdc };
 let allProtocols = [protocolCompound, protocolAave, protocolYearn];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock;
+  let yearnProvider: YearnProvider, 
+  compoundProvider: CompoundProvider, 
+  aaveProvider: AaveProvider, 
+  vaultMock: ETFVaultMock,
+  router: Router, 
+  USDCSigner: Signer, 
+  IUSDc: Contract, 
+  IcUSDC: Contract,
+  IComp: Contract,
+  compSigner: Signer,
+  dao: Signer, 
+  daoAddr: string, 
+  user: Signer, 
+  userAddr: string;
 
   beforeEach(async function() {
-    [dao, user] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    userAddr = await user.getAddress(); // mock address for game
-    router = await deployRouter(dao, daoAddr);
+    [ 
+      yearnProvider,
+      compoundProvider,
+      aaveProvider,
+      vaultMock,
+      user,
+      userAddr,
+      router,
+      USDCSigner,
+      IUSDc,
+      IcUSDC,
+      IComp,
+      compSigner, 
+     ] = await beforeEachVault(
+      yearnProvider, compoundProvider, aaveProvider, vaultMock, dao, daoAddr, user, userAddr, router, USDCSigner, IUSDc, IcUSDC, IComp, compSigner, amountUSDC
+    )
+    // [dao, user] = await ethers.getSigners();
+    // daoAddr = await dao.getAddress();
+    // userAddr = await user.getAddress(); // mock address for game
+    // router = await deployRouter(dao, daoAddr);
 
-    // Deploy vault and all providers
-    [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale),
-      deployAllProviders(dao, router),
-      getUSDCSigner(),
-      erc20(usdc),
-    ]);
+    // // Deploy vault and all providers
+    // [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
+    //   deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale),
+    //   deployAllProviders(dao, router),
+    //   getUSDCSigner(),
+    //   erc20(usdc),
+    // ]);
     
-    // Transfer USDC to user(ETFGame) and set protocols in Router
-    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, compoundProvider.address, cusdc, usdc, comp),
-      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
-      routerAddProtocol(router, yearnProvider.address, yusdc, usdc, yearn),
-      router.addVault(vaultMock.address),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
-      IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
-    ]);
+    // // Transfer USDC to user(ETFGame) and set protocols in Router
+    // [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
+    //   routerAddProtocol(router, compoundProvider.address, cusdc, usdc, comp),
+    //   routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
+    //   routerAddProtocol(router, yearnProvider.address, yusdc, usdc, yearn),
+    //   router.addVault(vaultMock.address),
+    //   IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
+    //   IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
+    // ]);
   });
 
   it("Should have a name and symbol", async function() {
@@ -100,7 +130,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolYearn.allocation = 40;
     protocolCompound.allocation = -20;
     protocolAave.allocation = -20;
-    allProtocols = [protocolYearn, protocolCompound, protocolAave];
     const amountToWithdraw = parseUSDC('12000');
 
     await vaultMock.withdrawETF(userAddr, amountToWithdraw);
@@ -129,7 +158,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolYearn.allocation = -60;
     protocolCompound.allocation = 80;
     protocolAave.allocation = 40;
-    allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
     const amountToDeposit = parseUSDC('50000');
     const totalAmountDeposited = amountUSDC.add(amountToDeposit);
