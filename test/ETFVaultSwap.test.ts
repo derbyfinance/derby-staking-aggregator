@@ -2,66 +2,53 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
-import { Signer, Contract, BigNumber } from "ethers";
-import { ethers, network } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, getWhale, parseUnits, formatUnits, } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, ERC20, Router, ETFVault } from '../typechain-types';
-import { deployRouter, deployETFVault, deployETFVaultMock } from './helpers/deploy';
-import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp, uniswapFactory, uniswapRouter} from "./helpers/addresses";
+import { Signer, Contract } from "ethers";
+import { network } from "hardhat";
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, } from './helpers/helpers';
+import type { ETFVaultMock } from '../typechain-types';
+import { setDeltaAllocations } from "./helpers/vaultHelpers";
+import { usdc, compToken as comp} from "./helpers/addresses";
+import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
-const name = 'DerbyUSDC';
-const symbol = 'dUSDC';
-const decimals = 6;
-const uScale = 1E6;
 const amountUSDC = parseUSDC('100000');
-const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
-let protocolYearn = { number: 0, allocation: 0, address: yusdc };
-let protocolCompound = { number: 0, allocation: 70, address: cusdc };
-let protocolAave = { number: 0, allocation: 0, address: ausdc };
-let allProtocols = [protocolYearn, protocolCompound, protocolAave];
 
 describe("Deploy Contracts and interact with Vault", async () => {
-  let yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, router: Router, dao: Signer, USDCSigner: Signer, IUSDc: Contract, IComp: Contract, IcUSDC: Contract, daoAddr: string, user: Signer, userAddr: string, vaultMock: ETFVaultMock, compSigner: Signer;
+  let vaultMock: ETFVaultMock,
+  user: Signer,
+  userAddr: string,
+  IUSDc: Contract, 
+  protocolCompound: Protocol,
+  protocolAave: Protocol,
+  protocolYearn: Protocol,
+  allProtocols: Protocol[],
+  IComp: Contract,
+  compSigner: Signer;
 
   beforeEach(async function() {
-    [dao, user] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    userAddr = await user.getAddress(); // mock address for game
-    router = await deployRouter(dao, daoAddr);
-    compSigner = await getWhale(CompWhale);
+    [
+      vaultMock,
+      user,
+      userAddr,
+      [protocolCompound, protocolAave, protocolYearn],
+      allProtocols,
+      IUSDc,,,,,,,
+      IComp,
+      compSigner
+    ] = await beforeEachETFVault(amountUSDC)
 
-    // Deploy vault and all providers
-    [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc, IComp, IcUSDC] = await Promise.all([
-      deployETFVault(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale),
-      deployAllProviders(dao, router),
-      getUSDCSigner(),
-      erc20(usdc),
-      erc20(comp),
-      erc20(cusdc)
-    ]);
-
-    // Transfer USDC to user(ETFGame) and set protocols in Router
-    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, compoundProvider.address, cusdc, usdc, comp),
-      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
-      routerAddProtocol(router, yearnProvider.address, yusdc, usdc, yearn),
-      router.addVault(vaultMock.address),
-      router.addVault(userAddr),
-      IUSDc.connect(user).approve(vaultMock.address, amountUSDC),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
-      router.setClaimable(compoundProvider.address, true)
-    ]);
   });
 
   it("Claim function in vault should claim COMP and sell for USDC", async function() {
+    protocolYearn.allocation = 0;
+    protocolCompound.allocation = 70;
+    protocolAave.allocation = 0;
+
     const amountToDeposit = parseUSDC('100000')
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
     // Deposit and rebalance with 100k in only Compound
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();
-
     // mine 100 blocks to gain COMP Tokens
     for (let i = 0; i <= 100; i++) await network.provider.send("evm_mine");
 
