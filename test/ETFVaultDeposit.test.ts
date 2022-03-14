@@ -52,7 +52,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance),
     ]);
     await vaultMock.depositETF(userAddr, parseUSDC('1000'));
-    console.log('hiiii')
     
     // expect LP Token balance User == 9k + 1k because Expect price == 1 i.e 1:1
     expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1'));
