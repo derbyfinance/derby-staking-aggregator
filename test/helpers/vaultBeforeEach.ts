@@ -3,7 +3,7 @@
 /* eslint-disable prettier/prettier */
 import { MockContract, MockProvider } from "ethereum-waffle";
 import { BigNumber, Contract, Signer } from "ethers";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { AaveProvider, CompoundProvider, YearnProvider } from "typechain-types";
 import { aave, aaveUSDC, compoundUSDC, compToken, comptroller, CompWhale, usdc, yearn, yearnUSDC } from "./addresses";
 import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployRouter, deployYearnProvider } from "./deploy";
@@ -21,15 +21,15 @@ const symbol = 'dUSDC';
 const decimals = 6;
 const uScale = 1E6;
 
-const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
-const protocolAave = { number: 0, allocation: 60, address: aaveUSDC };
-const protocolYearn = { number: 0, allocation: 20, address: yearnUSDC };
-const allProtocols = [protocolCompound, protocolAave, protocolYearn];
-
 export async function beforeEachETFVault(
   amountUSDC: BigNumber,
   providerMocks: boolean = false
 ) {
+  const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
+  const protocolAave = { number: 0, allocation: 60, address: aaveUSDC };
+  const protocolYearn = { number: 0, allocation: 20, address: yearnUSDC };
+  const allProtocols = [protocolCompound, protocolAave, protocolYearn];
+
   let yearnProvider, compoundProvider, aaveProvider;
   let yearnProviderMock, compoundProviderMock, aaveProviderMock;
   const [dao, user] = await ethers.getSigners();

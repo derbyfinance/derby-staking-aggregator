@@ -166,8 +166,8 @@ contract ETFVault is VaultToken {
     if (totalSupply() == 0) return 1;
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
-    // console.log("total supply %s", totalSupply());
-    // console.log("getTotalUnderlying %s", getTotalUnderlying());
+    console.log("total supply %s", totalSupply());
+    console.log("getTotalUnderlying %s", getTotalUnderlying());
     return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
 
