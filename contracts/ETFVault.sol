@@ -308,18 +308,6 @@ contract ETFVault is VaultToken {
     return marginScale;
   }
 
-  /// @notice Set the uScale, the decimals for the underlying.
-  /// @dev Usually 1E18 but for USDC 1E6. 
-  /// @param _uScale Value at which to set the uScale.
-  function setUScale(uint256 _uScale) public onlyDao {
-    uScale = _uScale;
-  }
-
-  /// @notice Get the uScale, the decimals for the underlying.
-  function getUScale() public view returns(uint256) {
-    return uScale;
-  }
-
   /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
   /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here. 
   /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale. 

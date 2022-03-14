@@ -3,11 +3,11 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
-import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations, getDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp} from "./helpers/addresses";
 import exp from "constants";
 
@@ -160,16 +160,11 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUSDC(balanceVault3))).to.be.closeTo((100_000 - 12_000 + 50_000) * liquidityPerc / 100, 1)
   });
 
-  it("Should be able to set the marginScale, uScale and liquidityPerc", async function() {
+  it("Should be able to set the marginScale and liquidityPerc", async function() {
     const ms = Math.floor(Math.random() * 1E10);
     await vaultMock.connect(dao).setMarginScale(ms);
 
     expect(await vaultMock.getMarginScale()).to.be.equal(ms);
-
-    const us = Math.floor(Math.random() * 1E10);
-    await vaultMock.connect(dao).setUScale(us);
-
-    expect(await vaultMock.getUScale()).to.be.equal(us);
 
     const lp = Math.floor(Math.random() * 100);
     await vaultMock.connect(dao).setLiquidityPerc(lp);
@@ -183,23 +178,30 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
-    console.log('-------------- depostit 100k, but for the 2nd protocol the margin gets hit ----------------');
-    await setDeltaAllocations(user, vaultMock, allProtocols); // 0: compound: 40, 1: aave: 60, 2: yearn: 20
+    console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
+    let allocations = await getAllocations(vaultMock, allProtocols);
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    let balances = await getAndLogBalances(vaultMock, allProtocols);
+    protocolCompound.allocation = 40; // compound: 40
+    protocolAave.allocation = 60; // aave 60
+    protocolYearn.allocation = 20; // yearn: 20
+    await setDeltaAllocations(user, vaultMock, allProtocols); 
 
     await vaultMock.connect(dao).setMarginScale(26000*uScale); // set really high marginScale for testing
 
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
-    let allocations = await getAllocations(vaultMock, allProtocols);
+    allocations = await getAllocations(vaultMock, allProtocols);
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
-    let balances = await getAndLogBalances(vaultMock, allProtocols);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
     let expectedBalances = [30000, 45000, 0];
     let expectedVaultLiquidity = 25000;
 
     allProtocols.forEach((protocol, i) => {
+      console.log("protocol %s: %s", i, balances[i]);
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
     });
 
