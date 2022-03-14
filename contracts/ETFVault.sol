@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IRouter.sol";
 import "./Interfaces/IGoverned.sol";
+import "./Interfaces/ExternalInterfaces/ISwapRouter.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
 
 import "./VaultToken.sol";
 
@@ -22,6 +25,11 @@ contract ETFVault is VaultToken {
 
   IERC20 public vaultCurrency;
   IRouter public router;
+
+  address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address public uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+  address public uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+  address public vaultCurrencyAddr; 
   address public routerAddr;
 
   address public ETFgame;
@@ -29,9 +37,11 @@ contract ETFVault is VaultToken {
   // address of DAO governance contract
   address public governed;
 
-  int256 public marginScale; // 1000 USDC
+  int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale;
-  uint256 public liquidityPerc;
+  uint256 public liquidityPerc = 10;
+
+  uint24 public poolFee = 3000;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -52,19 +62,18 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    int256 _marginScale,
-    uint256 _uScale,
-    uint256 _liquidityPerc
+    uint256 _uScale
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
+    vaultCurrencyAddr = _vaultCurrency;
+
     router = IRouter(_router);
+    routerAddr = _router;
 
     governed = _governed;
     ETFgame = _ETFGame;
     routerAddr = _router;
-    marginScale = _marginScale;
     uScale = _uScale;
-    liquidityPerc = _liquidityPerc;
   }
 
   // period number of the latest rebalance
@@ -168,6 +177,8 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
+    claimTokens(); 
+    
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
@@ -185,7 +196,7 @@ contract ETFVault is VaultToken {
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       if (deltaAllocations[i] == 0) continue;
-
+  
       setAllocationAndPrice(i);
 
       int256 amountToProtocol;
@@ -295,30 +306,101 @@ contract ETFVault is VaultToken {
     deltaAllocatedTokens += _allocation; 
   }
 
+  /// @notice Harvest extra tokens from underlying protocols
+  /// @dev Loops over protocols in ETF and check if they are claimable in router contract
+  function claimTokens() public {
+    for (uint i = 0; i <= router.latestProtocolId(); i++) {
+      if (currentAllocations[i] == 0) continue;
+      bool claim = router.claim(i);
+
+      if (claim) {
+        address govToken = router.protocolGovToken(i);
+        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+        
+        swapTokensMulti(tokenBalance, govToken, vaultCurrencyAddr);
+      }
+    }
+  }
+
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @return Amountout Number of tokens received
+  function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) internal returns(uint256) {
+    IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
+
+    ISwapRouter.ExactInputParams memory params =
+      ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(_tokenIn, poolFee, WETH, poolFee, _tokenOut),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: _amount,
+        amountOutMinimum: 0
+      });
+
+    uint256 amountOut = ISwapRouter(uniswapRouter).exactInput(params);
+
+    return amountOut;
+  }
+
+  // Not functional yet
+  function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256) {
+    uint256 amountOut = 0;
+    address pool = IUniswapV3Factory(uniswapFactory).getPool(
+      _tokenIn,
+      _tokenOut,
+      poolFee
+    );
+
+    address token0 = IUniswapV3Pool(pool).token0();
+    address token1 = IUniswapV3Pool(pool).token1();
+
+    (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+
+    if (token0 == _tokenOut) {
+      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+    }
+    if (token1 == _tokenOut) {
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
+    }
+
+    // console.log("pool %s", pool);
+    // console.log("token0 %s", token0);
+    // console.log("token1 %s", token1);
+    console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    // console.log("amountOut pool %s", amountOut);
+
+    return amountOut;
+  }
+
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 
   /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
   /// @dev Take into account the uScale (scale of the underlying).
   /// @param _marginScale Value at which to set the marginScale.
-  function setMarginScale(int256 _marginScale) public onlyDao {
+  function setMarginScale(int256 _marginScale) external onlyDao {
     marginScale = _marginScale;
-  }
-
-  /// @notice Get the marginScale, the threshold used for deposits and withdrawals. 
-  function getMarginScale() public view returns(int256) {
-    return marginScale;
   }
 
   /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
   /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here. 
   /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale. 
   /// @param _liquidityPerc Value at which to set the liquidityPerc.
-  function setLiquidityPerc(uint256 _liquidityPerc) public onlyDao {
+  function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
     require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
   } 
 
-  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
-  function getLiquidityPerc() public view returns(uint256) {
-    return liquidityPerc;
-  } 
+  /// @notice Set the Uniswap Router address
+  /// @param _uniswapRouter New Uniswap Router address
+  function setUniswapRouter(address _uniswapRouter) external onlyDao {
+    uniswapRouter = _uniswapRouter;
+  }
+
+  /// @notice Set the Uniswap Factory address
+  /// @param _uniswapFactory New Uniswap Factory address
+  function setUniswapFactory(address _uniswapFactory) external onlyDao {
+    uniswapFactory = _uniswapFactory;
+  }
+
 }

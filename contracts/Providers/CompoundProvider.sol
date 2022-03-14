@@ -94,7 +94,7 @@ contract CompoundProvider is IProvider {
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _cToken) public override view returns (uint256) {
+  function balanceUnderlying(address _address, address _cToken) public view override returns(uint256) {
     uint256 balanceShares = balance(_address, _cToken);
     uint256 price = exchangeRate(_cToken);
     return balanceShares * price / 1E18;
@@ -105,7 +105,7 @@ contract CompoundProvider is IProvider {
   /// @param _amount Amount in underyling token e.g USDC
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _cToken) external view override returns (uint256) {
+  function calcShares(uint256 _amount, address _cToken) external view override returns(uint256) {
     uint256 shares = _amount  * 1E18 / exchangeRate(_cToken);
     return shares;
   }
@@ -114,7 +114,7 @@ contract CompoundProvider is IProvider {
   /// @param _address Address to request balance from
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
-  function balance(address _address, address _cToken) public view override returns (uint256) {
+  function balance(address _address, address _cToken) public view override returns(uint256) {
     uint256 _balanceShares = ICToken(_cToken).balanceOf(_address);
     return _balanceShares;
   }
@@ -130,13 +130,15 @@ contract CompoundProvider is IProvider {
 
   /// @notice Claims/harvest COMP tokens from the Comptroller
   /// @param _cToken Address of protocol LP Token eg cUSDC
-  function claim(address _cToken) public {
+  function claim(address _cToken, address _claimer) external override returns(bool) {
     address[] memory cTokens = new address[](1);
     cTokens[0] = _cToken;
-    comptroller.claimComp(address(this), cTokens);
+    comptroller.claimComp(_claimer, cTokens);
+
+    return true;
   }
 
-  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
 
   }
 

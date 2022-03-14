@@ -80,7 +80,7 @@ contract YearnProvider is IProvider{
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _yToken) public override view returns (uint256) {
+  function balanceUnderlying(address _address, address _yToken) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _yToken);
     uint256 price = exchangeRate(_yToken);
     return balanceShares * price / 1E6;
@@ -110,17 +110,17 @@ contract YearnProvider is IProvider{
   /// @notice Exchange rate of underyling protocol token
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return price of LP token
-  function exchangeRate(address _yToken) public override view returns(uint256) {
+  function exchangeRate(address _yToken) public view override returns(uint256) {
     uint256 _price = IYearn(_yToken).pricePerShare();
 
     return _price;
   }
 
-  function claim(address _yToken) public {
+  function claim(address _yToken, address _claimer) public override returns(bool) {
 
   }
 
-  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
 
   }
 

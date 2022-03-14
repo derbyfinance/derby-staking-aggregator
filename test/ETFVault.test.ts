@@ -7,9 +7,8 @@ import { ethers, network } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
 import { deployRouter, deployETFVaultMock } from './helpers/deploy';
-import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations, getDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp} from "./helpers/addresses";
-import exp from "constants";
+import { deployAllProviders, getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, aave, yearn, compToken as comp, uniswapFactory, uniswapRouter} from "./helpers/addresses";
 
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
@@ -35,7 +34,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deploy vault and all providers
     [vaultMock, [yearnProvider, compoundProvider, aaveProvider], USDCSigner, IUSDc] = await Promise.all([
-      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale, marginScale, liquidityPerc),
+      deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale),
       deployAllProviders(dao, router),
       getUSDCSigner(),
       erc20(usdc),
@@ -314,4 +313,3 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
   });
 });
-

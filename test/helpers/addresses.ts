@@ -1,20 +1,25 @@
 /* eslint-disable prettier/prettier */
-// stable coins
+// Stable coins
 const usdc = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 
-// protocols
+// Protocols
 const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE";
 const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
 
-// gov Tokens
+// Gov Tokens
 const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
 const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
+
+// Uniswap
+const uniswapFactory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+const uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
 // others
 const comptroller = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
 const compToken = "0xc00e94Cb662C3520282E6f5717214004A7f26888";
+const WEth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
 
 
-export { usdc, yearnUSDC, compoundUSDC, aaveUSDC, comptroller, compToken, aave, yearn }
+export { usdc, yearnUSDC, compoundUSDC, aaveUSDC, comptroller, compToken, aave, yearn, uniswapFactory, uniswapRouter, WEth }
