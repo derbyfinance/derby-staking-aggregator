@@ -17,9 +17,10 @@ const liquidityPerc = 10;
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe.only("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
+  dao: Signer,
   userAddr: string,
   IUSDc: Contract, 
   protocolCompound: Protocol,
@@ -34,7 +35,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
       userAddr,
       [protocolCompound, protocolAave, protocolYearn],
       allProtocols,
-      IUSDc,
+      IUSDc,,,,,,,,,,,,
+      dao
     ] = await beforeEachETFVault(amountUSDC)
   });
 
@@ -164,9 +166,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
     console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
-    let allocations = await getAllocations(vaultMock, allProtocols);
-    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
-    let balances = await getAndLogBalances(vaultMock, allProtocols);
     protocolCompound.allocation = 40; // compound: 40
     protocolAave.allocation = 60; // aave 60
     protocolYearn.allocation = 20; // yearn: 20
@@ -177,16 +176,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.depositETF(userAddr, amountUSDC);
     await vaultMock.rebalanceETF();
 
-    allocations = await getAllocations(vaultMock, allProtocols);
+    let allocations = await getAllocations(vaultMock, allProtocols);
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
-    balances = await getAndLogBalances(vaultMock, allProtocols);
+    let balances = await getAndLogBalances(vaultMock, allProtocols);
     let expectedBalances = [30000, 45000, 0];
     let expectedVaultLiquidity = 25000;
 
     allProtocols.forEach((protocol, i) => {
-      console.log("protocol %s: %s", i, balances[i]);
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
     });
 

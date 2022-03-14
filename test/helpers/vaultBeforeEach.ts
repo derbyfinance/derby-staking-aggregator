@@ -106,7 +106,8 @@ export async function beforeEachETFVault(
     compSigner,
     yearnProvider as YearnProvider,
     compoundProvider as CompoundProvider,
-    aaveProvider as AaveProvider
+    aaveProvider as AaveProvider,
+    dao
   ])
 };
 
