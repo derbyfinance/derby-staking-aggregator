@@ -403,4 +403,11 @@ contract ETFVault is VaultToken {
     uniswapFactory = _uniswapFactory;
   }
 
+  /// @notice The DAO should be able to disable protocols, the funds should be sent to the vault.
+  /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
+  function disableProtocol(uint256 _protocolNum) external onlyDao {
+    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
+    currentAllocations[_protocolNum] = 0;
+    withdrawFromProtocol(_protocolNum, balanceProtocol);
+  }
 }
