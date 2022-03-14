@@ -89,7 +89,7 @@ contract AaveProvider is IProvider{
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _aToken) public override view returns (uint256) {
+  function balanceUnderlying(address _address, address _aToken) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }
@@ -122,11 +122,11 @@ contract AaveProvider is IProvider{
     return 1;
   }
 
-  function claim(address _aToken) public {
+  function claim(address _aToken, address _claimer) public override returns(bool){
     
   }
 
-  function getHistoricalPrice(uint256 _period) external override view returns(uint256) {
+  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
 
   }
 

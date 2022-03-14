@@ -14,9 +14,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    int256 _marginScale,
-    uint256 _uScale,
-    uint256 _liquidityPerc
+    uint256 _uScale
   ) ETFVault(
     _name,
     _symbol,
@@ -25,9 +23,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     _ETFGame,
     _router,
     _vaultCurrency,
-    _marginScale,
-    _uScale,
-    _liquidityPerc
+    _uScale
   ) {}
 
   function getAllocationTEST(uint256 _protocolNum) external view returns(int256) {
@@ -44,5 +40,9 @@ contract ETFVaultMock is ETFVault { // is VaultToken
 
   function clearCurrencyBalance(uint256 _balance) external {
     vaultCurrency.transfer(governed, _balance);
+  }
+
+  function swapTokensMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+    return swapTokensMulti(_amount, _tokenIn, _tokenOut);
   }
 }

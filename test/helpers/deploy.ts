@@ -44,13 +44,37 @@ export const deployAaveProvider = (deployerSign: Signer, router: string): Promis
   return (deployContract(deployerSign, AaveProviderArtifact, [router])) as Promise<AaveProvider>;
 };
 
-export const deployETFVault = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, router: string, vaultCurrency: string, marginScale: number, uScale: number, liquidityPrec: number): Promise<ETFVault> => {
-  return (deployContract(deployerSign, ETFVaultArtifact, [name, symbol, decimals, daoAddress, router, vaultCurrency, marginScale, uScale, liquidityPrec])) as Promise<ETFVault>;
-};
+export const deployETFVault = (
+  deployerSign: Signer, 
+  name: string, 
+  symbol: string, 
+  decimals: number, 
+  daoAddress: string,
+  ETFGame: string, 
+  router: string, 
+  vaultCurrency: string, 
+  uScale: number,
+  ) => deployContract(
+    deployerSign, 
+    ETFVaultArtifact, 
+    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, uScale,]
+  ) as Promise<ETFVaultMock>;
 
-export const deployETFVaultMock = (deployerSign: Signer, name: string, symbol: string, decimals: number, daoAddress: string, userAddress: string, router: string, vaultCurrency: string, marginScale: number, uScale: number, liquidityPrec: number): Promise<ETFVaultMock> => {
-  return (deployContract(deployerSign, ETFVaultArtifactMock, [name, symbol, decimals, daoAddress, userAddress, router, vaultCurrency, marginScale, uScale, liquidityPrec])) as Promise<ETFVaultMock>;
-};
+export const deployETFVaultMock = (
+  deployerSign: Signer, 
+  name: string, 
+  symbol: string, 
+  decimals: number, 
+  daoAddress: string, 
+  ETFGame: string,
+  router: string, 
+  vaultCurrency: string,
+  uScale: number, 
+  ) => deployContract(
+    deployerSign, 
+    ETFVaultArtifactMock, 
+    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, uScale]
+  ) as Promise<ETFVaultMock>;
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {
   return (deployContract(deployerSign, RouterArtifact,  [daoAddress]) as Promise<Router>);
