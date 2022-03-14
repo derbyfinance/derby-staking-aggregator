@@ -91,22 +91,3 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
 });
-
-
-// total supply 18000000000
-// getTotalUnderlying 5300000000
-// exchangerate BigNumber { _hex: '0x07dbb8', _isBigNumber: true }
-// total supply 18000000000
-// getTotalUnderlying 5300000000
-
-
-// total supply 18000000000
-// getTotalUnderlying 15900000000
-// exchangerate BigNumber { _hex: '0x0ff208', _isBigNumber: true }
-// total supply 18000000000
-
-
-// getTotalUnderlying 15900000000
-// getTotalUnderlying 5300000000
-
-// mocked balance 5300000000
