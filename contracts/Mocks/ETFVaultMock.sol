@@ -34,6 +34,14 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     return deltaAllocations[_protocolNum];
   }
 
+  function getMarginScale() external view returns(int256) {
+    return marginScale;
+  }
+
+  function getLiquidityPerc() external view returns(uint256) {
+    return liquidityPerc;
+  }
+
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }

@@ -17,9 +17,10 @@ const liquidityPerc = 10;
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe.only("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
+  dao: Signer,
   userAddr: string,
   IUSDc: Contract, 
   protocolCompound: Protocol,
@@ -34,7 +35,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
       userAddr,
       [protocolCompound, protocolAave, protocolYearn],
       allProtocols,
-      IUSDc,
+      IUSDc,,,,,,,,,,,,
+      dao
     ] = await beforeEachETFVault(amountUSDC)
   });
 
@@ -77,7 +79,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
-      expect(balances[i].div(1E6))
+      expect(balances[i].div(uScale))
       .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(uScale), 5)
     })
     // liquidity vault should be 100k * 10% = 10k
@@ -106,7 +108,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
-      expect(balances2[i].div(1E6))
+      expect(balances2[i].div(uScale))
       .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(uScale), 5)
     })
     // liquidity vault should be 100k - 12k * 10% = 8.8k
@@ -138,11 +140,160 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * totalAmountDeposited
     allProtocols.forEach((protocol, i) => {
-      expect(balances3[i].div(1E6))
+      expect(balances3[i].div(uScale))
       .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(uScale), 5)
     })
     // liquidity vault should be 100k - 12k + 50k * 10% = 13.8k
     expect(Number(formatUSDC(balanceVault3))).to.be.closeTo((100_000 - 12_000 + 50_000) * liquidityPerc / 100, 1)
   });
 
+  it("Should be able to set the marginScale and liquidityPerc", async function() {
+    const ms = Math.floor(Math.random() * 1E10);
+    await vaultMock.connect(dao).setMarginScale(ms);
+
+    expect(await vaultMock.getMarginScale()).to.be.equal(ms);
+
+    const lp = Math.floor(Math.random() * 100);
+    await vaultMock.connect(dao).setLiquidityPerc(lp);
+
+    expect(await vaultMock.getLiquidityPerc()).to.be.equal(lp);
+  });
+
+  it("Should not be able to set the liquidityPerc higher than 100%", async function() {
+    const lp = Math.floor(Math.random() * 100) * 1000;
+    await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
+  });
+
+  it("Should not deposit and withdraw when hitting the marginScale", async function() {
+    console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
+    protocolCompound.allocation = 40; // compound: 40
+    protocolAave.allocation = 60; // aave 60
+    protocolYearn.allocation = 20; // yearn: 20
+    await setDeltaAllocations(user, vaultMock, allProtocols); 
+
+    await vaultMock.connect(dao).setMarginScale(26000*uScale); // set really high marginScale for testing
+
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    await vaultMock.rebalanceETF();
+
+    let allocations = await getAllocations(vaultMock, allProtocols);
+    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    let balances = await getAndLogBalances(vaultMock, allProtocols);
+    let expectedBalances = [30000, 45000, 0];
+    let expectedVaultLiquidity = 25000;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1)
+
+    console.log('-------------- withdraw 35k, withdrawal should always be possible also when < marginScale ----------------');
+    const amountToWithdraw = parseUSDC('35000');
+
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
+
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [20000, 45000, 0];
+    expectedVaultLiquidity = 0;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1)
+
+    console.log('-------------- rebalance to 60 - 60 compound - aave, does not have any effect because margin ----------------');
+    protocolCompound.allocation = 20; // compound: 60
+    protocolAave.allocation = 0; // aave 60
+    protocolYearn.allocation = -20; // yearn: 0
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+
+    allocations = await getAllocations(vaultMock, allProtocols);
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [20000, 45000, 0];
+    expectedVaultLiquidity = 0;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1)
+
+    console.log('-------------- rebalance only has partial effect because margin ----------------');
+    protocolCompound.allocation = -55; // compound: 5
+    protocolAave.allocation = -40; // aave 20
+    protocolYearn.allocation = 50; // yearn: 50
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+
+    allocations = await getAllocations(vaultMock, allProtocols);
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [20000, 15600, 29400];
+    expectedVaultLiquidity = 0;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+
+    console.log('-------------- rebalance so that the withdrawals from yearn all end up in the liquidity of the vault ----------------');
+    protocolCompound.allocation = 39; // compound: 44
+    protocolAave.allocation = 24; // aave 44
+    protocolYearn.allocation = -48; // yearn: 2
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+
+    allocations = await getAllocations(vaultMock, allProtocols);
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [20000, 15600, 1300];
+    expectedVaultLiquidity = 28100;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+
+    console.log('-------------- everything to the vault ----------------');
+    protocolCompound.allocation = -44; // compound: 0
+    protocolAave.allocation = -44; // aave 0
+    protocolYearn.allocation = -2; // yearn: 0
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+
+    allocations = await getAllocations(vaultMock, allProtocols);
+    vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
+    console.log("liquidity vault: %s", vaultBalance);
+    balances = await getAndLogBalances(vaultMock, allProtocols);
+    expectedBalances = [0, 0, 0];
+    expectedVaultLiquidity = 65000;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+  });
 });

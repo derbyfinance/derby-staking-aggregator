@@ -33,6 +33,11 @@ export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
     vault.getAllocationTEST(protocol.number))
 )}
 
+export function getDeltaAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
+  return Promise.all(protocols.map((protocol: Protocol) =>
+    vault.getDeltaAllocationTEST(protocol.number))
+)}
+
 export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) => 
     vault.setCurrentAllocation(protocol.number, protocol.allocation))
