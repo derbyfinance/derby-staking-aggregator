@@ -20,6 +20,8 @@ const comptroller = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
 const compToken = "0xc00e94Cb662C3520282E6f5717214004A7f26888";
 const WEth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
+const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
 
 
-export { usdc, yearnUSDC, compoundUSDC, aaveUSDC, comptroller, compToken, aave, yearn, uniswapFactory, uniswapRouter, WEth }
+
+export { usdc, yearnUSDC, compoundUSDC, aaveUSDC, comptroller, compToken, aave, yearn, uniswapFactory, uniswapRouter, WEth, CompWhale }
