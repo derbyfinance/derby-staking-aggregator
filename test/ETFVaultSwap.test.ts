@@ -70,7 +70,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const compBalance = await IComp.balanceOf(vaultMock.address);
     expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
 
-    await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
+    await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
     const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
     const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
 
@@ -84,14 +84,14 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
     console.log(`USDC Balance vault: ${usdcBalance}`)
 
-    await vaultMock.swapTokensMulti(swapAmount, usdc, comp);
+    await vaultMock.swapTokensMultiTest(swapAmount, usdc, comp);
 
     const compBalance = await IComp.balanceOf(vaultMock.address);
     console.log(`Comp Balance vault: ${compBalance}`);
 
     // Atleast receive some COMP
     expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
-    await vaultMock.swapTokensMulti(compBalance, comp, usdc);
+    await vaultMock.swapTokensMultiTest(compBalance, comp, usdc);
 
     console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`);
     const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
