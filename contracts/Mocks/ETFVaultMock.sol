@@ -41,4 +41,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   function clearCurrencyBalance(uint256 _balance) external {
     vaultCurrency.transfer(governed, _balance);
   }
+
+  function swapTokensMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+    return swapTokensMulti(_amount, _tokenIn, _tokenOut);
+  }
 }

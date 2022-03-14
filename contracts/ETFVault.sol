@@ -323,7 +323,7 @@ contract ETFVault is VaultToken {
   /// @param _tokenIn Token to sell
   /// @param _tokenOut Token to receive
   /// @return Amountout Number of tokens received
-  function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) public returns(uint256) {
+  function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) internal returns(uint256) {
     IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
 
     ISwapRouter.ExactInputParams memory params =
