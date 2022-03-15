@@ -76,12 +76,6 @@ contract ETFVault is VaultToken {
     uScale = _uScale;
   }
 
-  // period number of the latest rebalance
-  uint256 public latestRebalancingPeriod;
-
-  // from the rebalancing period to block number;
-  mapping(uint256 => uint256) public rebalancingPeriodToBlock;
-
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
@@ -94,10 +88,8 @@ contract ETFVault is VaultToken {
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
-  // protocols to deposit in after withdrawals are executed
-  mapping(uint256 => uint256) private protocolToDeposit;
-
-  mapping(uint256 => uint256) private lastPrice;
+  // protocol blacklist
+  mapping(uint256 => bool) internal protocolBlacklist;
 
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
@@ -185,17 +177,19 @@ contract ETFVault is VaultToken {
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
     
-    rebalanceCheckProtocols(totalUnderlying - liquidityVault);
+    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
 
-    executeDeposits();
+    executeDeposits(protocolToDeposit);
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
-  function rebalanceCheckProtocols(uint256 _totalUnderlying) internal {
+  /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
+  function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
+    uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId() + 1);
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
-      if (deltaAllocations[i] == 0) continue;
+      if (deltaAllocations[i] == 0 || protocolBlacklist[i]) continue;
   
       setAllocationAndPrice(i);
 
@@ -211,6 +205,7 @@ contract ETFVault is VaultToken {
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
+    return protocolToDeposit;
   }
 
   /// @notice Helper function to set allocations and last price from protocols
@@ -219,19 +214,17 @@ contract ETFVault is VaultToken {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
     require(currentAllocations[_i] >= 0, "Current Allocation underflow");
-
-    lastPrice[_i] = price(_i);
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
-  function executeDeposits() internal {
+  /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
+  function executeDeposits(uint256[] memory protocolToDeposit) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
       depositInProtocol(i, amount);
-      protocolToDeposit[i] = 0;
     }
   }
 
@@ -301,6 +294,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public onlyETFgame {
+    require(!protocolBlacklist[_protocolNum], "Protocol is on the blacklist");
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
@@ -403,4 +397,12 @@ contract ETFVault is VaultToken {
     uniswapFactory = _uniswapFactory;
   }
 
+  /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
+  /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
+  function blacklistProtocol(uint256 _protocolNum) external onlyDao {
+    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
+    currentAllocations[_protocolNum] = 0;
+    protocolBlacklist[_protocolNum] = true;
+    withdrawFromProtocol(_protocolNum, balanceProtocol);
+  }
 }

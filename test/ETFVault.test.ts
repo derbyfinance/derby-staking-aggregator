@@ -1,7 +1,7 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { expect } from "chai";
+import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
@@ -17,7 +17,7 @@ const liquidityPerc = 10;
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe.only("Deploy Contracts and interact with Vault", async () => {
+describe("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -166,9 +166,6 @@ describe.only("Deploy Contracts and interact with Vault", async () => {
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
     console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
-    protocolCompound.allocation = 40; // compound: 40
-    protocolAave.allocation = 60; // aave 60
-    protocolYearn.allocation = 20; // yearn: 20
     await setDeltaAllocations(user, vaultMock, allProtocols); 
 
     await vaultMock.connect(dao).setMarginScale(26000*uScale); // set really high marginScale for testing
@@ -295,5 +292,55 @@ describe.only("Deploy Contracts and interact with Vault", async () => {
     });
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+  });
+
+  it("Should be able to blacklist protocol and pull all funds", async function() {
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    await vaultMock.rebalanceETF();
+
+    await vaultMock.connect(dao).blacklistProtocol(0);
+
+    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("liquidity vault after blacklisting: %s", vaultBalance);
+    let balances = await getAndLogBalances(vaultMock, allProtocols);
+    let expectedBalances = [0, 45000, 15000];
+    let expectedVaultLiquidity = 40000;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+    
+    expect(await vaultMock.getProtocolBlacklist(0)).to.be.true;
+  });
+
+  it("Should not be able to set delta on blacklisted protocol", async function() {
+    await vaultMock.connect(dao).blacklistProtocol(0);
+    await expect(vaultMock.connect(user).setDeltaAllocations(0, 30))
+    .to.be.revertedWith('Protocol is on the blacklist');
+  });
+
+  it("Should not be able to rebalance in blacklisted protocol", async function() {
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.connect(dao).blacklistProtocol(0);
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    await vaultMock.rebalanceETF();
+
+    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    console.log("liquidity vault after blacklisting: %s", vaultBalance);
+    let balances = await getAndLogBalances(vaultMock, allProtocols);
+    let expectedBalances = [0, 45000, 15000];
+    let expectedVaultLiquidity = 40000;
+
+    allProtocols.forEach((protocol, i) => {
+      expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
+    });
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+    const result = await vaultMock.getProtocolBlacklist(0);
+    expect(result).to.be.true;
   });
 });
