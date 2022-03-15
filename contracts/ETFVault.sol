@@ -185,6 +185,7 @@ contract ETFVault is VaultToken {
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId() + 1);
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
@@ -217,6 +218,7 @@ contract ETFVault is VaultToken {
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
+  /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
       uint256 amount = protocolToDeposit[i];
