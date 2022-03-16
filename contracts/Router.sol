@@ -2,9 +2,10 @@
 pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
+import "./Interfaces/IRouter.sol";
 import "hardhat/console.sol";
 
-contract Router {
+contract Router is IRouter{
   mapping(uint256 => address) public protocolLPToken;
   mapping(uint256 => address) public protocolProvider;
   mapping(uint256 => address) public protocolUnderlying;
@@ -14,6 +15,7 @@ contract Router {
   mapping(address => bool) public claimable;
 
   mapping(uint256 => bytes32) public protocolNames;
+  mapping(uint256 => bool) public protocolBlacklist;
   uint256 public latestProtocolId = 0;
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
@@ -44,7 +46,7 @@ contract Router {
     uint256 _protocolNumber, 
     address _vault, 
     uint256 _amount
-  ) external onlyVault returns(uint256) {
+  ) external override onlyVault returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .deposit(_vault, _amount, protocolLPToken[_protocolNumber], protocolUnderlying[_protocolNumber]);
   }
@@ -58,7 +60,7 @@ contract Router {
     uint256 _protocolNumber, 
     address _vault, 
     uint256 _amount
-  ) external onlyVault returns(uint256) {
+  ) external override onlyVault returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .withdraw(_vault, _amount, protocolLPToken[_protocolNumber], protocolUnderlying[_protocolNumber]);
   }
@@ -68,7 +70,7 @@ contract Router {
   /// @return ExchangeRate function for requested protocol
   function exchangeRate(
     uint256 _protocolNumber
-  ) external onlyVault view returns(uint256) {
+  ) external override onlyVault view returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .exchangeRate(protocolLPToken[_protocolNumber]);
   }
@@ -80,7 +82,7 @@ contract Router {
   function balance(
     uint256 _protocolNumber,
     address _address
-  ) external onlyVault view returns(uint256) {
+  ) external override onlyVault view returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .balance(_address, protocolLPToken[_protocolNumber]);
   }
@@ -92,7 +94,7 @@ contract Router {
   function balanceUnderlying(
     uint256 _protocolNumber,
     address _address
-  ) external onlyVault view returns(uint256) {
+  ) external override onlyVault view returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .balanceUnderlying(_address, protocolLPToken[_protocolNumber]);
   }
@@ -104,7 +106,7 @@ contract Router {
   function calcShares(
     uint256 _protocolNumber,
     uint256 _amount
-  ) external onlyVault view returns(uint256) {
+  ) external override onlyVault view returns(uint256) {
       return IProvider(protocolProvider[_protocolNumber])
               .calcShares(_amount, protocolLPToken[_protocolNumber]);
   }
@@ -113,7 +115,7 @@ contract Router {
   /// @param _protocolNumber Protocol number linked to protocol vault
   function claim(
     uint256 _protocolNumber
-  ) external onlyVault returns(bool) {
+  ) external override onlyVault returns(bool) {
       if (claimable[protocolProvider[_protocolNumber]]) {
         return IProvider(protocolProvider[_protocolNumber])
                 .claim(protocolLPToken[_protocolNumber], msg.sender);
@@ -161,5 +163,13 @@ contract Router {
     address _vault
   ) external onlyDao {
       vaultWhitelist[_vault] = true;
+  }
+
+  function getProtocolBlacklist(uint256 _protocolNum) external override onlyVault view returns(bool) {
+    return protocolBlacklist[_protocolNum];
+  }
+
+  function setProtocolBlacklist(uint256 _protocolNum) external override onlyVault {
+    protocolBlacklist[_protocolNum] = true;
   }
 }

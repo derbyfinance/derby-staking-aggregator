@@ -42,10 +42,6 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     return liquidityPerc;
   }
 
-  function getProtocolBlacklist(uint256 _protocolNum) external view returns(bool) {
-    return protocolBlacklist[_protocolNum];
-  }
-
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }
