@@ -14,16 +14,10 @@ interface IRouter {
     address seller,
     uint256 balance
   ) 
-    external;
+    external returns(uint256);
 
   function exchangeRate(
     uint256 protocolNumber
-  ) 
-    external view returns(uint256);
-
-  function exchangeRate(
-    uint256 protocolNumber,
-    address _address
   ) 
     external view returns(uint256);
 
@@ -51,12 +45,13 @@ interface IRouter {
     external returns(bool);
 
   function addProtocol(
+    string calldata name,
     address provider,
     address protocolLPToken,
     address underlying,
     address govToken
   )
-    external;
+    external returns(uint256);
 
   function latestProtocolId() external view returns(uint256);
 
@@ -67,6 +62,11 @@ interface IRouter {
   function uniswapFactory() external view returns(address);
 
   function uniswapPoolFee() external view returns(uint24);
+
+  function curveIndex(
+    address token
+  )
+    external view returns(int128);
 
   function protocolProvider(
     uint256 protocolNumber
@@ -82,9 +82,8 @@ interface IRouter {
     uint256 protocolNumber
   )
     external view returns(address);
-  
-  function curveIndex(
-    address token
-  )
-    external view returns(int128);
+
+  function getProtocolBlacklist(uint256 _protocolNum) external view returns(bool);
+
+  function setProtocolBlacklist(uint256 _protocolNum) external;
 }

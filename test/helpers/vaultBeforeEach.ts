@@ -51,9 +51,9 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, compoundProvider.address, compoundUSDC, usdc, compToken),
-      routerAddProtocol(router, aaveProvider.address, aaveUSDC, usdc, aave),
-      routerAddProtocol(router, yearnProvider.address, yearnUSDC, usdc, yearn),
+      routerAddProtocol(router, 'compound_usdc_01', compoundProvider.address, compoundUSDC, usdc, compToken),
+      routerAddProtocol(router, 'aave_usdc_01', aaveProvider.address, aaveUSDC, usdc, aave),
+      routerAddProtocol(router, 'yearn_usdc_01', yearnProvider.address, yearnUSDC, usdc, yearn),
       router.setClaimable(compoundProvider.address, true),
     ]);
   }
@@ -66,9 +66,9 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, compoundProviderMock.address, compoundUSDC, usdc, compToken),
-      routerAddProtocol(router, aaveProviderMock.address, aaveUSDC, usdc, aave),
-      routerAddProtocol(router, yearnProviderMock.address, yearnUSDC, usdc, yearn),
+      routerAddProtocol(router, 'compound_usdc_01', compoundProviderMock.address, compoundUSDC, usdc, compToken),
+      routerAddProtocol(router, 'aave_usdc_01', aaveProviderMock.address, aaveUSDC, usdc, aave),
+      routerAddProtocol(router, 'yearn_usdc_01', yearnProviderMock.address, yearnUSDC, usdc, yearn),
     ]);
   }
 

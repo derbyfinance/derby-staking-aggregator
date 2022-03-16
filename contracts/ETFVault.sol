@@ -45,9 +45,6 @@ contract ETFVault is VaultToken {
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
-  // protocol blacklist
-  mapping(uint256 => bool) internal protocolBlacklist;
-
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
     _;
@@ -178,7 +175,8 @@ contract ETFVault is VaultToken {
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId() + 1);
     for (uint i = 0; i <= router.latestProtocolId(); i++) {
-      if (deltaAllocations[i] == 0 || protocolBlacklist[i]) continue;
+      bool isBlacklisted = router.getProtocolBlacklist(i);
+      if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocationAndPrice(i);
 
@@ -283,7 +281,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public onlyETFgame {
-    require(!protocolBlacklist[_protocolNum], "Protocol is on the blacklist");
+    require(!router.getProtocolBlacklist(_protocolNum), "Protocol is on the blacklist");
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
@@ -333,7 +331,7 @@ contract ETFVault is VaultToken {
   function blacklistProtocol(uint256 _protocolNum) external onlyDao {
     uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
-    protocolBlacklist[_protocolNum] = true;
+    router.setProtocolBlacklist(_protocolNum);
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 }

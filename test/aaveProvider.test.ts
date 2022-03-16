@@ -29,7 +29,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, aaveProvider.address, ausdc, usdc, aave),
+      routerAddProtocol(router, 'aave_usdc_01', aaveProvider.address, ausdc, usdc, aave),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC)
