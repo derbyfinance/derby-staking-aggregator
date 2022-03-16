@@ -18,6 +18,8 @@ export interface Protocol {
 
 const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
+const ETFname = 'USDC_med_risk';
+const ETFnumber = 0;
 const decimals = 6;
 const uScale = 1E6;
 
@@ -40,7 +42,7 @@ export async function beforeEachETFVault(
     user.getAddress(),
   ]);
   const router = await deployRouter(dao, daoAddr);
-  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale);
+  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale);
   
   // Deploy all providers and Vault
   if (!providerMocks) {
