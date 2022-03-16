@@ -79,9 +79,18 @@ interface IRouter {
   )
     external view returns(address);
 
+  function protocolUnderlying(
+    uint256 _ETFnumber,
+    uint256 protocolNumber
+  )
+    external view returns(address);
+
+  function latestProtocolId(
+    uint256 _ETFnumber
+  )
+    external view returns(uint256);
+
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external view returns(bool);
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
-
-  function getLatestProtocolId(uint256 _ETFnumber) external view returns(uint256);
 }

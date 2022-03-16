@@ -184,15 +184,17 @@ contract Router is IRouter{
       vaultWhitelist[_vault] = true;
   }
 
+  /// @notice Getter for protocol blacklist, given an ETFnumber and protocol number returns true if blacklisted. Can only be called by vault.
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault view returns(bool) {
     return protocolBlacklist[_ETFnumber][_protocolNum];
   }
 
+  /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
-  }
-
-  function getLatestProtocolId(uint256 _ETFnumber) external override view returns(uint256){
-    return latestProtocolId[_ETFnumber];
   }
 }

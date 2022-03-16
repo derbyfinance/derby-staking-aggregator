@@ -39,12 +39,13 @@ export const getWhale = async (address: string) => {
 export const routerAddProtocol = async (
   router: Router, 
   name: string, 
+  ETFnumber: number,
   provider: string, 
   protocolToken: string,
   protocolUnderlying: string,
   govToken: string
 ) => {
-  const tx = await router.addProtocol(name, provider, protocolToken, protocolUnderlying, govToken)
+  const tx = await router.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken)
   const receipt = await tx.wait()
   const { protocolNumber } = receipt.events![0].args as Result
   

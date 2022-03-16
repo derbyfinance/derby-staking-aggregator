@@ -10,6 +10,7 @@ import { usdc, yearnUSDC as yusdc, yearn} from "./helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
+const ETFnumber = 0;
 
 describe("Deploy Contract and interact with Yearn", async () => {
   let yearnProvider: YearnProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
@@ -29,7 +30,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, 'yearn_usdc_01', yearnProvider.address, yusdc, usdc, yearn),
+      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yusdc, usdc, yearn),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(yearnProvider.address, amountUSDC),
@@ -40,7 +41,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
-    await router.connect(vault).deposit( protocolNumber, vaultAddr, amountUSDC);
+    await router.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = Number(await yearnProvider.balance(vaultAddr, yusdc));
     const price = Number(await yearnProvider.exchangeRate(yusdc));
     const amount = (balanceShares * price) / 1E12
@@ -53,7 +54,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
-    await router.connect(vault).withdraw( protocolNumber, vaultAddr, balanceShares);
+    await router.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
@@ -65,12 +66,12 @@ describe("Deploy Contract and interact with Yearn", async () => {
   });
 
   it("Should fail when !Vault is calling the Router", async function() {
-    await expect(router.deposit( protocolNumber, vaultAddr, amountUSDC))
+    await expect(router.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
     .to.be.revertedWith('Router: only Vault');
   });
 
   it("Should get exchangeRate through Router", async function() {
-    const exchangeRate = await router.connect(vault).exchangeRate( protocolNumber)
+    const exchangeRate = await router.connect(vault).exchangeRate(ETFnumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
   
