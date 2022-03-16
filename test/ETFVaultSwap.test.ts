@@ -119,7 +119,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const daiBalance = await IDAI.balanceOf(vaultMock.address);
     console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
 
-    // Expect DAI received to be 10_000 - fee
+    // Expect DAI received to be 10_000 - fee 
     expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
   });
 
