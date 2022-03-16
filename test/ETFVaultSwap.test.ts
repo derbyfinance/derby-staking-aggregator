@@ -4,10 +4,10 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, } from './helpers/helpers';
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
 import { setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, compToken as comp} from "./helpers/addresses";
+import { usdc, dai, compToken as comp} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
@@ -22,7 +22,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
   protocolYearn: Protocol,
   allProtocols: Protocol[],
   IComp: Contract,
-  compSigner: Signer;
+  compSigner: Signer,
+  IDAI: Contract;
 
 
   beforeEach(async function() {
@@ -37,6 +38,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       compSigner
     ] = await beforeEachETFVault(amountUSDC)
 
+    IDAI = await erc20(dai);
   });
 
   it("Claim function in vault should claim COMP and sell for USDC", async function() {
@@ -117,7 +119,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const daiBalance = await IDAI.balanceOf(vaultMock.address);
     console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
 
-    // Expect DAI received to be 10_000 - fee 
+    // Expect DAI received to be 10_000 - fee
     expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
   });
 
