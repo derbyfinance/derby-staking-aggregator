@@ -50,9 +50,9 @@ describe("Deploy router contract", async () => {
 
     await router.addVault(vaultAddr);
 
-    await router.addProtocol(yearnProviderMock.address, yusdc, usdc, yearn); // 0
-    await router.addProtocol(compoundProviderMock.address, cusdc, usdc, compToken); // 1
-    await router.addProtocol(aaveProviderMock.address, ausdc, usdc, aave); // 2
+    await router.addProtocol('yearn_usdc_01', yearnProviderMock.address, yusdc, usdc, yearn); // 0
+    await router.addProtocol('compound_usdc_01', compoundProviderMock.address, cusdc, usdc, compToken); // 1
+    await router.addProtocol('aave_usdc_01', aaveProviderMock.address, ausdc, usdc, aave); // 2
   }); 
 
   it("Should correctly set router mappings for the protocol provider", async function() {

@@ -45,6 +45,7 @@ interface IRouter {
     external returns(bool);
 
   function addProtocol(
+    string calldata name,
     address provider,
     address protocolLPToken,
     address underlying,

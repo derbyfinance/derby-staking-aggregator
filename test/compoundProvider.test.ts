@@ -32,7 +32,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, compoundProviderMock.address, cusdc, usdc, compTokenAddr),
+      routerAddProtocol(router, 'compound_usdc_01', compoundProviderMock.address, cusdc, usdc, compTokenAddr),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(compoundProviderMock.address, amountUSDC),

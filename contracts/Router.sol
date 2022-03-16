@@ -14,7 +14,7 @@ contract Router is IRouter{
   mapping(address => bool) public vaultWhitelist;
   mapping(address => bool) public claimable;
 
-  mapping(uint256 => bytes32) public protocolNames;
+  mapping(uint256 => string) public protocolNames;
   mapping(uint256 => bool) public protocolBlacklist;
   uint256 public latestProtocolId = 0;
 
@@ -138,6 +138,7 @@ contract Router is IRouter{
   /// @param _underlying Address of underlying protocol vault eg USDC
   /// @param _govToken Address of underlying protocol vault eg USDC
   function addProtocol(
+    string calldata _name,
     address _provider,
     address _protocolLPToken,
     address _underlying,
@@ -145,6 +146,7 @@ contract Router is IRouter{
   ) external onlyDao returns(uint256) { 
       uint256 protocolNumber = latestProtocolId;
 
+      protocolNames[protocolNumber] = _name;
       protocolProvider[protocolNumber] = _provider;
       protocolLPToken[protocolNumber] = _protocolLPToken;
       protocolUnderlying[protocolNumber] = _underlying;
