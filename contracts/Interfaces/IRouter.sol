@@ -14,16 +14,10 @@ interface IRouter {
     address seller,
     uint256 balance
   ) 
-    external;
+    external returns(uint256);
 
   function exchangeRate(
     uint256 protocolNumber
-  ) 
-    external view returns(uint256);
-
-  function exchangeRate(
-    uint256 protocolNumber,
-    address _address
   ) 
     external view returns(uint256);
 
@@ -51,12 +45,13 @@ interface IRouter {
     external returns(bool);
 
   function addProtocol(
+    string calldata name,
     address provider,
     address protocolLPToken,
     address underlying,
     address govToken
   )
-    external;
+    external returns(uint256);
 
   function latestProtocolId() external view returns(uint256);
 
@@ -74,4 +69,8 @@ interface IRouter {
     uint256 protocolNumber
   )
     external view returns(address);
+
+  function getProtocolBlacklist(uint256 _protocolNum) external view returns(bool);
+
+  function setProtocolBlacklist(uint256 _protocolNum) external;
 }
