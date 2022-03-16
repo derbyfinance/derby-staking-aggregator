@@ -15,27 +15,37 @@ library Swap {
   using SafeERC20 for IERC20;
 
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-  address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-  address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
+  /// @notice Swap stable coins on Curve
+  /// @param _amount Number of tokens to swap
+  /// @param _tokenIn Token to sell
+  /// @param _curve3Pool Curve pool address
+  /// @param _indexTokenIn Curve pool index number of TokenIn address
+  /// @param _indexTokenOut Curve pool index number of TokenOut address
   function swapStableCoins(
     uint256 _amount, 
     address _tokenIn, 
-    address _tokenOut, 
-    address _curve3Pool
+    address _curve3Pool,
+    int128 _indexTokenIn,
+    int128 _indexTokenOut
   ) internal {
+    // uint256 daiScale = 1E18;
+    // uint256 usdcScale = 1E6;
+    // uint256 usdtScale = 1E6;
 
-    uint256 daiScale = 1E18;
-    uint256 usdcScale = 1E6;
-    uint256 usdtScale = 1E6;
-
-    uint256 fee = 5; // 0.05%              
-    uint256 amountOutMin = (_amount * (10000 - fee) / 10000) * daiScale / usdcScale;
+    uint256 fee = 5; // 0.05%    
+    // Amount out 0 for now, will calc later          
+    uint256 amountOutMin = 0;
+    // uint256 amountOutMin = (_amount * (10000 - fee) / 10000) * daiScale / usdcScale;
 
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
-    IStableSwap3Pool(_curve3Pool).exchange(1, 0, _amount, amountOutMin);
+    IStableSwap3Pool(_curve3Pool).exchange(
+      _indexTokenIn, 
+      _indexTokenOut, 
+      _amount, 
+      amountOutMin
+    );
   }
 
   /// @notice Swap tokens on Uniswap

@@ -26,17 +26,27 @@ contract ETFVault is VaultToken {
 
   address public vaultCurrencyAddr; 
   address public routerAddr;
-
   address public ETFgame;
-
-  // address of DAO governance contract
   address public governed;
 
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
 
-  uint24 public poolFee = 3000;
+  // total number of allocated xaver tokens currently
+  int256 public totalAllocatedTokens;
+
+  // current allocations over the protocols 
+  mapping(uint256 => int256) internal currentAllocations;
+
+  // delta of the total number of xaver tokens allocated on next rebalancing
+  int256 private deltaAllocatedTokens;
+
+  // delta of the portfolio on next rebalancing
+  mapping(uint256 => int256) internal deltaAllocations;
+
+  // protocol blacklist
+  mapping(uint256 => bool) internal protocolBlacklist;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -44,7 +54,6 @@ contract ETFVault is VaultToken {
   }
 
   modifier onlyDao {
-    // require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
     require(msg.sender == governed, "ETFvault: only DAO");
     _;
   }
@@ -70,21 +79,6 @@ contract ETFVault is VaultToken {
     routerAddr = _router;
     uScale = _uScale;
   }
-
-  // total number of allocated xaver tokens currently
-  int256 public totalAllocatedTokens;
-
-  // current allocations over the protocols 
-  mapping(uint256 => int256) internal currentAllocations;
-
-  // delta of the total number of xaver tokens allocated on next rebalancing
-  int256 private deltaAllocatedTokens;
-
-  // delta of the portfolio on next rebalancing
-  mapping(uint256 => int256) internal deltaAllocations;
-
-  // protocol blacklist
-  mapping(uint256 => bool) internal protocolBlacklist;
 
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
@@ -315,14 +309,6 @@ contract ETFVault is VaultToken {
         );
       }
     }
-  }
-
-  // curve index for stable coins
-  mapping(address => int128) internal curveIndex;
-
-  // set to internal
-  function swapper(uint256 _amount, address _tokenIn, address _tokenOut) public {
-    Swap.swapStableCoins(_amount, _tokenIn, _tokenOut, router.curve3Pool());
   }
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 

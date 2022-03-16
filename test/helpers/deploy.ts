@@ -26,6 +26,7 @@ import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverTo
 import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
+import { curve3Pool, uniswapFactory, uniswapRouter } from "./addresses";
 
 
 export const deployYearnProvider = (deployerSign: Signer, router: string): Promise<YearnProvider> => {
@@ -79,15 +80,11 @@ export const deployETFVaultMock = (
 export const deployRouter = (
   deployerSign: Signer, 
   daoAddress: string, 
-  curve3Pool: string,
-  uniswapRouter: string,
-  uniswapFactory: string,
-  poolFee: number
 ): Promise<Router> => {
   return (deployContract(
     deployerSign, 
     RouterArtifact, 
-    [daoAddress, curve3Pool, uniswapRouter, uniswapFactory, poolFee]
+    [daoAddress, curve3Pool, uniswapRouter, uniswapFactory, 3000]
   ) as Promise<Router>);
 };
 

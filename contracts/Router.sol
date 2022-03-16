@@ -14,16 +14,19 @@ contract Router {
   mapping(address => bool) public claimable;
 
   mapping(uint256 => bytes32) public protocolNames;
-  uint256 public latestProtocolId = 0;
 
-  event SetProtocolNumber(uint256 protocolNumber, address protocol);
+  // curve index for stable coins
+  mapping(address => int128) public curveIndex;
 
   address public dao;
   address public curve3Pool;
   address public uniswapRouter;
   address public uniswapFactory;
 
+  uint256 public latestProtocolId = 0;
   uint24 public uniswapPoolFee;
+
+  event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
   constructor(
     address _dao, 
@@ -172,10 +175,8 @@ contract Router {
 
   /// @notice Add protocol and vault to router
   /// @param _vault ETFVault address to whitelist
-  function addVault( 
-    address _vault
-  ) external onlyDao {
-      vaultWhitelist[_vault] = true;
+  function addVault(address _vault) external onlyDao {
+    vaultWhitelist[_vault] = true;
   }
 
   /// @notice Set the Uniswap Router address
@@ -188,5 +189,18 @@ contract Router {
   /// @param _uniswapFactory New Uniswap Factory address
   function setUniswapFactory(address _uniswapFactory) external onlyDao {
     uniswapFactory = _uniswapFactory;
+  }
+
+  /// @notice Set the Uniswap Pool fee
+  /// @param _poolFee New Pool fee
+  function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
+    uniswapPoolFee = _poolFee;
+  }
+
+  /// @notice Set curve pool index for underlying token
+  /// @param _token Address of Token
+  /// @param _index Curve index as decribed in Swap pool
+  function addCurveIndex(address _token, int128 _index) external onlyDao {
+    curveIndex[_token] = _index;
   }
 }

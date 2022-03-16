@@ -5,7 +5,7 @@ import { MockContract, MockProvider } from "ethereum-waffle";
 import { BigNumber, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
 import { AaveProvider, CompoundProvider, YearnProvider } from "typechain-types";
-import { aave, aaveUSDC, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, uniswapFactory, uniswapRouter, usdc, yearn, yearnUSDC } from "./addresses";
+import { aave, aaveUSDC, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, uniswapFactory, uniswapRouter, usdc, usdt, yearn, yearnUSDC } from "./addresses";
 import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployRouter, deployYearnProvider } from "./deploy";
 import { deployAaveProviderMock, deployYearnProviderMock, deployCompoundProviderMock } from "./deployMocks";
 import { getUSDCSigner, erc20, routerAddProtocol, getWhale, } from './helpers';
@@ -39,7 +39,7 @@ export async function beforeEachETFVault(
     dao.getAddress(),
     user.getAddress(),
   ]);
-  const router = await deployRouter(dao, daoAddr, curve3Pool, uniswapRouter, uniswapFactory, 3000);
+  const router = await deployRouter(dao, daoAddr);
   const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, daoAddr, userAddr, router.address, usdc, uScale);
   
   // Deploy all providers and Vault
@@ -81,10 +81,13 @@ export async function beforeEachETFVault(
     erc20(compoundUSDC)
   ]);
 
-  // Transfer USDC to User address and add Vault address to router
+  // Transfer USDC to User address, add Vault address to router, set Curve pool index
   await Promise.all([
     router.addVault(vaultMock.address),
     router.addVault(userAddr),
+    router.addCurveIndex(dai, 0),
+    router.addCurveIndex(usdc, 1),
+    router.addCurveIndex(usdt, 2),
     IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
     IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
   ]);

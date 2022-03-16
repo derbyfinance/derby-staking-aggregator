@@ -82,4 +82,9 @@ interface IRouter {
     uint256 protocolNumber
   )
     external view returns(address);
+  
+  function curveIndex(
+    address token
+  )
+    external view returns(int128);
 }

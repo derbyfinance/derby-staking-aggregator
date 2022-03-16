@@ -104,17 +104,23 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(compBalanceEnd).to.be.equal(0);
   });
 
-  it("Swapping USDC to COMP and COMP back to USDC", async function() {
+  it("Curve Stable coin swap USDC to DAI", async function() {
     const swapAmount = parseUSDC('10000');
     await IUSDc.connect(user).transfer(vaultMock.address, swapAmount);
+
+    // USDC Balance vault
     const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
     console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`)
 
-    await vaultMock.swapper(swapAmount, usdc, dai);
+    // Curve swap USDC to DAI
+    await vaultMock.curveSwapTest(swapAmount, usdc, dai);
 
+    // DAI Balance vault
     const daiBalance = await IDAI.balanceOf(vaultMock.address);
     console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
 
+    // Expect DAI received to be 10_000 - fee
+    expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
   });
 
 
