@@ -60,6 +60,14 @@ interface IRouter {
 
   function latestProtocolId() external view returns(uint256);
 
+  function curve3Pool() external view returns(address);
+
+  function uniswapRouter() external view returns(address);
+
+  function uniswapFactory() external view returns(address);
+
+  function uniswapPoolFee() external view returns(uint24);
+
   function protocolProvider(
     uint256 protocolNumber
   )

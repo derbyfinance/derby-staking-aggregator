@@ -55,6 +55,6 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   }
 
   function swapTokensMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
-    return swapTokensMulti(_amount, _tokenIn, _tokenOut);
+    return Swap.swapTokensMulti(_amount, _tokenIn, _tokenOut, router.uniswapRouter(), 3000);
   }
 }

@@ -19,9 +19,24 @@ contract Router {
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
   address public dao;
+  address public curve3Pool;
+  address public uniswapRouter;
+  address public uniswapFactory;
 
-  constructor(address _dao) {
+  uint24 public uniswapPoolFee;
+
+  constructor(
+    address _dao, 
+    address _curve3Pool, 
+    address _uniswapRouter,
+    address _uniswapFactory,
+    uint24 _poolFee
+  ) {
     dao = _dao;
+    curve3Pool = _curve3Pool;
+    uniswapRouter = _uniswapRouter;
+    uniswapFactory = _uniswapFactory;
+    uniswapPoolFee = _poolFee;
   }
 
   // Modifier for only vault?
@@ -161,5 +176,17 @@ contract Router {
     address _vault
   ) external onlyDao {
       vaultWhitelist[_vault] = true;
+  }
+
+  /// @notice Set the Uniswap Router address
+  /// @param _uniswapRouter New Uniswap Router address
+  function setUniswapRouter(address _uniswapRouter) external onlyDao {
+    uniswapRouter = _uniswapRouter;
+  }
+
+  /// @notice Set the Uniswap Factory address
+  /// @param _uniswapFactory New Uniswap Factory address
+  function setUniswapFactory(address _uniswapFactory) external onlyDao {
+    uniswapFactory = _uniswapFactory;
   }
 }

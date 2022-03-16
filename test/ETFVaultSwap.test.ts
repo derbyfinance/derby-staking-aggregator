@@ -4,10 +4,10 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, } from './helpers/helpers';
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
 import { setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, compToken as comp} from "./helpers/addresses";
+import { usdc, dai, compToken as comp} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
@@ -22,7 +22,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
   protocolYearn: Protocol,
   allProtocols: Protocol[],
   IComp: Contract,
-  compSigner: Signer;
+  compSigner: Signer,
+  IDAI: Contract;
 
 
   beforeEach(async function() {
@@ -37,6 +38,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       compSigner
     ] = await beforeEachETFVault(amountUSDC)
 
+    IDAI = await erc20(dai);
   });
 
   it("Claim function in vault should claim COMP and sell for USDC", async function() {
@@ -101,6 +103,20 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUSDC(usdcBalanceEnd))).to.be.closeTo(10_000 - 120, 25);
     expect(compBalanceEnd).to.be.equal(0);
   });
+
+  it("Swapping USDC to COMP and COMP back to USDC", async function() {
+    const swapAmount = parseUSDC('10000');
+    await IUSDc.connect(user).transfer(vaultMock.address, swapAmount);
+    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`)
+
+    await vaultMock.swapper(swapAmount, usdc, dai);
+
+    const daiBalance = await IDAI.balanceOf(vaultMock.address);
+    console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
+
+  });
+
 
   // it("Calc USDC to COMP", async function() {
   //   const swapAmount = parseUSDC('10000');
