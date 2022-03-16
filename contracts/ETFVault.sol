@@ -7,9 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IRouter.sol";
 import "./Interfaces/IGoverned.sol";
+import "./Interfaces/ExternalInterfaces/ISwapRouter.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
+import "./Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
 
 import "./VaultToken.sol";
-import "./libraries/swap.sol";
 
 import "hardhat/console.sol";
 
@@ -24,26 +26,22 @@ contract ETFVault is VaultToken {
   IERC20 public vaultCurrency;
   IRouter public router;
 
+  address public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address public uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+  address public uniswapFactory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
   address public vaultCurrencyAddr; 
   address public routerAddr;
+
   address public ETFgame;
+
+  // address of DAO governance contract
   address public governed;
 
   int256 public marginScale = 1E10; // 1000 USDC
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
 
-  // total number of allocated xaver tokens currently
-  int256 public totalAllocatedTokens;
-
-  // current allocations over the protocols 
-  mapping(uint256 => int256) internal currentAllocations;
-
-  // delta of the total number of xaver tokens allocated on next rebalancing
-  int256 private deltaAllocatedTokens;
-
-  // delta of the portfolio on next rebalancing
-  mapping(uint256 => int256) internal deltaAllocations;
+  uint24 public poolFee = 3000;
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -51,6 +49,7 @@ contract ETFVault is VaultToken {
   }
 
   modifier onlyDao {
+    // require(msg.sender == IGoverned(governed).dao(), "ETFvault: only DAO");
     require(msg.sender == governed, "ETFvault: only DAO");
     _;
   }
@@ -76,6 +75,18 @@ contract ETFVault is VaultToken {
     routerAddr = _router;
     uScale = _uScale;
   }
+
+  // total number of allocated xaver tokens currently
+  int256 public totalAllocatedTokens;
+
+  // current allocations over the protocols 
+  mapping(uint256 => int256) internal currentAllocations;
+
+  // delta of the total number of xaver tokens allocated on next rebalancing
+  int256 private deltaAllocatedTokens;
+
+  // delta of the portfolio on next rebalancing
+  mapping(uint256 => int256) internal deltaAllocations;
 
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
@@ -298,15 +309,61 @@ contract ETFVault is VaultToken {
         address govToken = router.protocolGovToken(i);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         
-        Swap.swapTokensMulti(
-          tokenBalance, 
-          govToken, 
-          vaultCurrencyAddr,
-          router.uniswapRouter(),
-          router.uniswapPoolFee()
-        );
+        swapTokensMulti(tokenBalance, govToken, vaultCurrencyAddr);
       }
     }
+  }
+
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @return Amountout Number of tokens received
+  function swapTokensMulti(uint256 _amount, address _tokenIn, address _tokenOut) internal returns(uint256) {
+    IERC20(_tokenIn).safeIncreaseAllowance(uniswapRouter, _amount);
+
+    ISwapRouter.ExactInputParams memory params =
+      ISwapRouter.ExactInputParams({
+        path: abi.encodePacked(_tokenIn, poolFee, WETH, poolFee, _tokenOut),
+        recipient: address(this),
+        deadline: block.timestamp,
+        amountIn: _amount,
+        amountOutMinimum: 0
+      });
+
+    uint256 amountOut = ISwapRouter(uniswapRouter).exactInput(params);
+
+    return amountOut;
+  }
+
+  // Not functional yet
+  function getPoolAmountOut(uint256 _amount, address _tokenIn, address _tokenOut) public view returns(uint256) {
+    uint256 amountOut = 0;
+    address pool = IUniswapV3Factory(uniswapFactory).getPool(
+      _tokenIn,
+      _tokenOut,
+      poolFee
+    );
+
+    address token0 = IUniswapV3Pool(pool).token0();
+    address token1 = IUniswapV3Pool(pool).token1();
+
+    (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+
+    if (token0 == _tokenOut) {
+      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+    }
+    if (token1 == _tokenOut) {
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
+    }
+
+    // console.log("pool %s", pool);
+    // console.log("token0 %s", token0);
+    // console.log("token1 %s", token1);
+    console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    // console.log("amountOut pool %s", amountOut);
+
+    return amountOut;
   }
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 
@@ -325,6 +382,18 @@ contract ETFVault is VaultToken {
     require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
   } 
+
+  /// @notice Set the Uniswap Router address
+  /// @param _uniswapRouter New Uniswap Router address
+  function setUniswapRouter(address _uniswapRouter) external onlyDao {
+    uniswapRouter = _uniswapRouter;
+  }
+
+  /// @notice Set the Uniswap Factory address
+  /// @param _uniswapFactory New Uniswap Factory address
+  function setUniswapFactory(address _uniswapFactory) external onlyDao {
+    uniswapFactory = _uniswapFactory;
+  }
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01

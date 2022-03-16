@@ -16,32 +16,14 @@ contract Router is IRouter{
 
   mapping(uint256 => string) public protocolNames;
   mapping(uint256 => bool) public protocolBlacklist;
-
-  // curve index for stable coins
-  mapping(address => int128) public curveIndex;
-
-  address public dao;
-  address public curve3Pool;
-  address public uniswapRouter;
-  address public uniswapFactory;
-
   uint256 public latestProtocolId = 0;
-  uint24 public uniswapPoolFee;
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
-  constructor(
-    address _dao, 
-    address _curve3Pool, 
-    address _uniswapRouter,
-    address _uniswapFactory,
-    uint24 _poolFee
-  ) {
+  address public dao;
+
+  constructor(address _dao) {
     dao = _dao;
-    curve3Pool = _curve3Pool;
-    uniswapRouter = _uniswapRouter;
-    uniswapFactory = _uniswapFactory;
-    uniswapPoolFee = _poolFee;
   }
 
   // Modifier for only vault?
@@ -179,33 +161,10 @@ contract Router is IRouter{
 
   /// @notice Add protocol and vault to router
   /// @param _vault ETFVault address to whitelist
-  function addVault(address _vault) external onlyDao {
-    vaultWhitelist[_vault] = true;
-  }
-
-  /// @notice Set the Uniswap Router address
-  /// @param _uniswapRouter New Uniswap Router address
-  function setUniswapRouter(address _uniswapRouter) external onlyDao {
-    uniswapRouter = _uniswapRouter;
-  }
-
-  /// @notice Set the Uniswap Factory address
-  /// @param _uniswapFactory New Uniswap Factory address
-  function setUniswapFactory(address _uniswapFactory) external onlyDao {
-    uniswapFactory = _uniswapFactory;
-  }
-
-  /// @notice Set the Uniswap Pool fee
-  /// @param _poolFee New Pool fee
-  function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
-    uniswapPoolFee = _poolFee;
-  }
-
-  /// @notice Set curve pool index for underlying token
-  /// @param _token Address of Token
-  /// @param _index Curve index as decribed in Swap pool
-  function addCurveIndex(address _token, int128 _index) external onlyDao {
-    curveIndex[_token] = _index;
+  function addVault( 
+    address _vault
+  ) external onlyDao {
+      vaultWhitelist[_vault] = true;
   }
 
   function getProtocolBlacklist(uint256 _protocolNum) external override onlyVault view returns(bool) {
