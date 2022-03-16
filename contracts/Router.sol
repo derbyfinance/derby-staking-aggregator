@@ -16,7 +16,7 @@ contract Router is IRouter{
 
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
   mapping(uint256 => mapping(uint256 => bool)) public protocolBlacklist;
-  uint256 public latestProtocolId = 0;
+  mapping(uint256 => uint256) public latestProtocolId;
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -161,7 +161,7 @@ contract Router is IRouter{
     address _underlying,
     address _govToken
   ) external onlyDao returns(uint256) { 
-      uint256 protocolNumber = latestProtocolId;
+      uint256 protocolNumber = latestProtocolId[_ETFnumber];
 
       protocolNames[_ETFnumber][protocolNumber] = _name;
       protocolProvider[_ETFnumber][protocolNumber] = _provider;
@@ -171,7 +171,7 @@ contract Router is IRouter{
 
       emit SetProtocolNumber(protocolNumber, _protocolLPToken);
 
-      latestProtocolId++;
+      latestProtocolId[_ETFnumber]++;
 
       return protocolNumber;
   }
@@ -190,5 +190,9 @@ contract Router is IRouter{
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
+  }
+
+  function getLatestProtocolId(uint256 _ETFnumber) external override view returns(uint256){
+    return latestProtocolId[_ETFnumber];
   }
 }

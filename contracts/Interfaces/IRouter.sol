@@ -61,8 +61,6 @@ interface IRouter {
   )
     external returns(uint256);
 
-  function latestProtocolId() external view returns(uint256);
-
   function protocolProvider(
     uint256 _ETFnumber,
     uint256 protocolNumber
@@ -84,4 +82,6 @@ interface IRouter {
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external view returns(bool);
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
+
+  function getLatestProtocolId(uint256 _ETFnumber) external view returns(uint256);
 }
