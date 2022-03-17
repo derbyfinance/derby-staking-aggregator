@@ -10,6 +10,7 @@ import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
+const ETFnumber = 0;
 
 describe("Deploy Contract and interact with Aave", async () => {
   let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
@@ -29,7 +30,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, 'aave_usdc_01', aaveProvider.address, ausdc, usdc, aave),
+      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, ausdc, usdc, aave),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC)
@@ -40,7 +41,7 @@ describe("Deploy Contract and interact with Aave", async () => {
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
-    await router.connect(vault).deposit(protocolNumber, vaultAddr, amountUSDC);
+    await router.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
 
     const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
     expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
@@ -50,7 +51,7 @@ describe("Deploy Contract and interact with Aave", async () => {
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);
-    await router.connect(vault).withdraw(protocolNumber, vaultAddr, aTokenbalance);
+    await router.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, aTokenbalance);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
@@ -62,12 +63,12 @@ describe("Deploy Contract and interact with Aave", async () => {
   });
 
   it("Should fail when !Vault is calling the Router", async function() {
-    await expect(router.deposit(protocolNumber, vaultAddr, amountUSDC))
+    await expect(router.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
     .to.be.revertedWith('Router: only Vault');
   });
 
   it("Should get exchangeRate through Router", async function() {
-    const exchangeRate = await router.connect(vault).exchangeRate(protocolNumber)
+    const exchangeRate = await router.connect(vault).exchangeRate(ETFnumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
 });

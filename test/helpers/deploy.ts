@@ -49,6 +49,8 @@ export const deployETFVault = (
   name: string, 
   symbol: string, 
   decimals: number, 
+  ETFname: string,
+  ETFnumber: number,
   daoAddress: string,
   ETFGame: string, 
   router: string, 
@@ -57,7 +59,7 @@ export const deployETFVault = (
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifact, 
-    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, uScale,]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale,]
   ) as Promise<ETFVaultMock>;
 
 export const deployETFVaultMock = (
@@ -65,6 +67,8 @@ export const deployETFVaultMock = (
   name: string, 
   symbol: string, 
   decimals: number, 
+  ETFname: string,
+  ETFnumber: number,
   daoAddress: string, 
   ETFGame: string,
   router: string, 
@@ -73,7 +77,7 @@ export const deployETFVaultMock = (
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifactMock, 
-    [name, symbol, decimals, daoAddress, ETFGame, router, vaultCurrency, uScale]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale]
   ) as Promise<ETFVaultMock>;
 
 export const deployRouter = (deployerSign: Signer, daoAddress: string): Promise<Router> => {

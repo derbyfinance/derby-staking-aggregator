@@ -317,7 +317,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
     
-    expect(await router.connect(dao).getProtocolBlacklist(0)).to.be.true;
+    expect(await router.connect(dao).getProtocolBlacklist(0, 0)).to.be.true;
   });
 
   it("Should not be able to set delta on blacklisted protocol", async function() {
@@ -345,7 +345,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     });
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
-    const result = await router.connect(dao).getProtocolBlacklist(0);
+    const result = await router.connect(dao).getProtocolBlacklist(0, 0);
     expect(result).to.be.true;
   });
 });
