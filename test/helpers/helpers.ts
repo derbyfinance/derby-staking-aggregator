@@ -67,4 +67,3 @@ export const parseUnits = (amount: string, number: number) => ethers.utils.parse
 export const formatUnits = (amount: string, number: number) => ethers.utils.formatUnits(amount, number)
 export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6)
 export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6)
-

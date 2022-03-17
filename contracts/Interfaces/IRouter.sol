@@ -61,6 +61,19 @@ interface IRouter {
   )
     external returns(uint256);
 
+  function curve3Pool() external view returns(address);
+
+  function uniswapRouter() external view returns(address);
+
+  function uniswapFactory() external view returns(address);
+
+  function uniswapPoolFee() external view returns(uint24);
+
+  function curveIndex(
+    address _token
+  )
+    external view returns(int128);
+
   function protocolProvider(
     uint256 _ETFnumber,
     uint256 protocolNumber
@@ -89,6 +102,16 @@ interface IRouter {
     uint256 _ETFnumber
   )
     external view returns(uint256);
+
+  function addVault(address _vault) external;
+
+  function addCurveIndex(address _token, int128 _index) external;
+
+  function setUniswapRouter(address _uniswapRouter) external;
+
+  function setUniswapFactory(address _uniswapFactory) external;
+
+  function setUniswapPoolFee(uint24 _poolFee) external;
 
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external view returns(bool);
 
