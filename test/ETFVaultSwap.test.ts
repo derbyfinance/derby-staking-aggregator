@@ -4,10 +4,10 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, } from './helpers/helpers';
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, routerAddProtocol, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
-import { setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, dai, compToken as comp} from "./helpers/addresses";
+import { getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { usdc, dai, compToken as comp, compoundDAI} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
@@ -18,6 +18,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   userAddr: string,
   IUSDc: Contract, 
   protocolCompound: Protocol,
+  protocolCompoundDAI: Protocol,
   protocolAave: Protocol,
   protocolYearn: Protocol,
   allProtocols: Protocol[],
@@ -25,13 +26,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
   compSigner: Signer,
   IDAI: Contract;
 
-
   beforeEach(async function() {
     [
       vaultMock,
       user,
       userAddr,
-      [protocolCompound, protocolAave, protocolYearn],
+      [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI],
       allProtocols,
       IUSDc,,,,,,,
       IComp,
@@ -43,7 +43,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
   it("Claim function in vault should claim COMP and sell for USDC", async function() {
     protocolYearn.allocation = 0;
-    protocolCompound.allocation = 70;
+    protocolCompound.allocation = 60;
     protocolAave.allocation = 0;
 
     const amountToDeposit = parseUSDC('100000')
@@ -121,6 +121,23 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Expect DAI received to be 10_000 - fee
     expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
+  });
+
+  it.only("Should add CompoundDAI vault", async function() {
+    protocolYearn.allocation = 0;
+    protocolCompound.allocation = 60;
+    protocolCompoundDAI.allocation = 60;
+    protocolAave.allocation = 0;
+
+    allProtocols = [...allProtocols, protocolCompoundDAI]
+
+    const amountToDeposit = parseUSDC('100000')
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    // Deposit and rebalance with 100k in only Compound
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await vaultMock.rebalanceETF();
+    await getAndLogBalances(vaultMock, allProtocols);
   });
 
 

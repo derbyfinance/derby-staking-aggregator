@@ -68,6 +68,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     Swap.swapStableCoins(
       _amount, 
       _tokenIn, 
+      _tokenOut,
       router.curve3Pool(),
       router.curveIndex(_tokenIn),
       router.curveIndex(_tokenOut)

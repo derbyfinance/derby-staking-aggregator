@@ -25,10 +25,11 @@ library Swap {
   function swapStableCoins(
     uint256 _amount, 
     address _tokenIn, 
+    address _tokenOut,
     address _curve3Pool,
     int128 _indexTokenIn,
     int128 _indexTokenOut
-  ) internal {
+  ) internal returns(uint256) {
     // uint256 daiScale = 1E18;
     // uint256 usdcScale = 1E6;
     // uint256 usdtScale = 1E6;
@@ -39,6 +40,7 @@ library Swap {
     // uint256 amountOutMin = (_amount * (10000 - fee) / 10000) * daiScale / usdcScale;
 
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
+    uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
 
     IStableSwap3Pool(_curve3Pool).exchange(
       _indexTokenIn, 
@@ -46,6 +48,9 @@ library Swap {
       _amount, 
       amountOutMin
     );
+
+    uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+    return balanceAfter - balanceBefore;
   }
 
   /// @notice Swap tokens on Uniswap
@@ -76,7 +81,7 @@ library Swap {
     return amountOut;
   }
 
-    // Not functional yet
+  // Not functional yet
   function getPoolAmountOut(
     uint256 _amount, 
     address _tokenIn, 

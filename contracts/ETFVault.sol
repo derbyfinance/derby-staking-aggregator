@@ -227,11 +227,25 @@ contract ETFVault is VaultToken {
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
     address provider = router.protocolProvider(ETFnumber, _protocolNum);
+    address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
+    console.log("underlying %s", underlying);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
 
-    vaultCurrency.safeIncreaseAllowance(provider, _amount);
+    if (underlying != vaultCurrencyAddr) {
+      _amount = Swap.swapStableCoins(
+        _amount, 
+        vaultCurrencyAddr, 
+        underlying,
+        router.curve3Pool(), 
+        router.curveIndex(vaultCurrencyAddr), 
+        router.curveIndex(underlying)
+      );
+    }
+    console.log("_amount %s", _amount);
+    IERC20(underlying).safeIncreaseAllowance(provider, _amount);
     router.deposit(ETFnumber, _protocolNum, address(this), _amount);
+
     console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
 

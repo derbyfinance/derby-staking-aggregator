@@ -5,7 +5,7 @@ import { MockContract, MockProvider } from "ethereum-waffle";
 import { BigNumber, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
 import { AaveProvider, CompoundProvider, YearnProvider } from "typechain-types";
-import { aave, aaveUSDC, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, uniswapFactory, uniswapRouter, usdc, usdt, yearn, yearnUSDC } from "./addresses";
+import { aave, aaveUSDC, compoundDAI, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, usdc, usdt, yearn, yearnUSDC } from "./addresses";
 import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployRouter, deployYearnProvider } from "./deploy";
 import { deployAaveProviderMock, deployYearnProviderMock, deployCompoundProviderMock } from "./deployMocks";
 import { getUSDCSigner, erc20, routerAddProtocol, getWhale, } from './helpers';
@@ -27,10 +27,14 @@ export async function beforeEachETFVault(
   amountUSDC: BigNumber,
   providerMocks: boolean = false
 ) {
+  // stock protocols
   const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
   const protocolAave = { number: 0, allocation: 60, address: aaveUSDC };
   const protocolYearn = { number: 0, allocation: 20, address: yearnUSDC };
   const allProtocols = [protocolCompound, protocolAave, protocolYearn];
+
+  // new protocols
+  const protocolCompoundDAI = { number: 0, allocation: 40, address: compoundDAI };
 
   let yearnProvider, compoundProvider, aaveProvider;
   let yearnProviderMock, compoundProviderMock, aaveProviderMock;
@@ -52,8 +56,9 @@ export async function beforeEachETFVault(
       deployYearnProvider(dao, router.address),
     ]);
 
-    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
+    [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolYearn.number] = await Promise.all([
       routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken),
+      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken),
       routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave),
       routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn),
       router.setClaimable(compoundProvider.address, true),
@@ -67,8 +72,9 @@ export async function beforeEachETFVault(
       deployYearnProviderMock(dao),
     ]);
 
-    [protocolCompound.number, protocolAave.number, protocolYearn.number] = await Promise.all([
+    [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolYearn.number] = await Promise.all([
       routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken),
+      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken),
       routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave),
       routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn),
     ]);
@@ -98,7 +104,7 @@ export async function beforeEachETFVault(
     vaultMock,
     user,
     userAddr,
-    allProtocols,
+    [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI],
     allProtocols,
     IUSDc,
     yearnProviderMock as MockContract, 
