@@ -11,6 +11,7 @@ import { usdc, compoundUSDC as cusdc, comptroller, compToken as compTokenAddr} f
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const cusdcWhaleAddr = '0xabde2f02fe84e083e1920471b54c3612456365ef';
+const ETFnumber = 0;
 
 describe("Deploy Contract and interact with Compound", async () => {
   let compoundProviderMock: CompoundProviderMock, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, cToken: Contract, daoAddr: string, vaultAddr: string, cusdcWhale: Signer, compToken: Contract, protocolNumber: number;
@@ -32,7 +33,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, 'compound_usdc_01', compoundProviderMock.address, cusdc, usdc, compTokenAddr),
+      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, cusdc, usdc, compTokenAddr),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(compoundProviderMock.address, amountUSDC),
@@ -44,7 +45,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     console.log(`-------------------------Deposit-------------------------`);
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
     
-    await router.connect(vault).deposit(protocolNumber, vaultAddr, amountUSDC);
+    await router.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = Number(await compoundProviderMock.balance(vaultAddr, cusdc));
     const price = Number(await compoundProviderMock.exchangeRate(cusdc));
     const amount = (balanceShares * price) / 1E18
@@ -59,7 +60,7 @@ describe("Deploy Contract and interact with Compound", async () => {
     console.log(`balance shares ${balanceShares}`)
 
     await cToken.connect(vault).approve(compoundProviderMock.address, balanceShares);
-    await router.connect(vault).withdraw(protocolNumber, vaultAddr, balanceShares);
+    await router.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
 
@@ -69,7 +70,7 @@ describe("Deploy Contract and interact with Compound", async () => {
   });
 
   it("Should claim Comp tokens from Comptroller", async function() {
-    await router.connect(vault).claim(protocolNumber);
+    await router.connect(vault).claim(ETFnumber, protocolNumber);
 
     const compBalanceBefore = Number(await compToken.balanceOf(cusdcWhaleAddr));
     await compoundProviderMock.connect(cusdcWhale).claimTest(cusdcWhaleAddr, cusdc);
@@ -87,12 +88,12 @@ describe("Deploy Contract and interact with Compound", async () => {
   });
 
   it("Should fail when !Vault is calling the Router", async function() {
-    await expect(router.deposit(protocolNumber, vaultAddr, amountUSDC))
+    await expect(router.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
     .to.be.revertedWith('Router: only Vault');
   });
 
   it("Should get Compound exchangeRate through Router", async function() {
-    const exchangeRate = await router.connect(vault).exchangeRate(protocolNumber)
+    const exchangeRate = await router.connect(vault).exchangeRate(ETFnumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
 
