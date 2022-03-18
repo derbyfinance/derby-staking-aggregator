@@ -51,9 +51,9 @@ describe("Deploy router contract", async () => {
 
     await router.addVault(vaultAddr);
 
-    await router.addProtocol('yearn_usdc_01', ETFnumber, yearnProviderMock.address, yusdc, usdc, yearn); // 0
-    await router.addProtocol('compound_usdc_01', ETFnumber, compoundProviderMock.address, cusdc, usdc, compToken); // 1
-    await router.addProtocol('aave_usdc_01', ETFnumber, aaveProviderMock.address, ausdc, usdc, aave); // 2
+    await router.addProtocol('yearn_usdc_01', ETFnumber, yearnProviderMock.address, yusdc, usdc, yearn,'1000000'); // 0
+    await router.addProtocol('compound_usdc_01', ETFnumber, compoundProviderMock.address, cusdc, usdc, compToken, '1000000'); // 1
+    await router.addProtocol('aave_usdc_01', ETFnumber, aaveProviderMock.address, ausdc, usdc, aave,'1000000'); // 2
   }); 
 
   it("Should correctly set router mappings for the protocol names", async function() {

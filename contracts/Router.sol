@@ -180,7 +180,7 @@ contract Router is IRouter {
     address _underlying,
     address _govToken,
     uint256 _uScale
-  ) external onlyDao returns(uint256) { 
+  ) external onlyDao returns(uint256) {
     uint256 protocolNumber = latestProtocolId[_ETFnumber];
 
     protocolNames[_ETFnumber][protocolNumber] = _name;

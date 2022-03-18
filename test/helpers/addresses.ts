@@ -9,6 +9,8 @@ export const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE";
 export const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 export const compoundDAI = "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643";
 export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
+export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
+export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
 
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";

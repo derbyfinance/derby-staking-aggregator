@@ -20,6 +20,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   protocolCompound: Protocol,
   protocolCompoundDAI: Protocol,
   protocolAave: Protocol,
+  protocolAaveUSDT: Protocol,
   protocolYearn: Protocol,
   allProtocols: Protocol[],
   IComp: Contract,
@@ -31,7 +32,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vaultMock,
       user,
       userAddr,
-      [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI],
+      [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT],
       allProtocols,
       IUSDc,,,,,,,
       IComp,
@@ -125,11 +126,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
   it.only("Should add CompoundDAI vault", async function() {
     protocolYearn.allocation = 0;
-    protocolCompound.allocation = 40;
-    protocolCompoundDAI.allocation = 60;
+    protocolCompound.allocation = 20;
+    protocolCompoundDAI.allocation = 40;
     protocolAave.allocation = 0;
+    protocolAaveUSDT.allocation = 40;
 
-    allProtocols = [...allProtocols, protocolCompoundDAI]
+    allProtocols = [...allProtocols, protocolCompoundDAI, protocolAaveUSDT]
 
     const amountToDeposit = parseUSDC('100000')
     await setDeltaAllocations(user, vaultMock, allProtocols);
@@ -139,15 +141,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await vaultMock.rebalanceETF();
     await getAndLogBalances(vaultMock, allProtocols);
 
-    const totalUnderlying = await vaultMock.getTotalUnderlying()
-    console.log(formatUSDC(totalUnderlying));
-
     console.log('-----------------Withdraw--------------------')
-    protocolCompoundDAI.allocation = -50;
+    protocolCompoundDAI.allocation = -40;
+    protocolAaveUSDT.allocation = -40;
     await setDeltaAllocations(user, vaultMock, allProtocols);
     
     await vaultMock.rebalanceETF();
     await getAndLogBalances(vaultMock, allProtocols);
+
+    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`)
   });
 
   // it("Calc USDC to COMP", async function() {

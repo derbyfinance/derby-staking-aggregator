@@ -257,18 +257,19 @@ contract ETFVault is VaultToken {
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
       uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
-      _amount = _amount * protocolUScale / uScale;
-
+      address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
       address provider = router.protocolProvider(ETFnumber, _protocolNum);
       address protocolLPToken = router.protocolLPToken(ETFnumber, _protocolNum);
+
+      _amount = _amount * protocolUScale / uScale;
+
       uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
 
       IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
 
       uint256 amountReceived = router.withdraw(ETFnumber, _protocolNum, address(this), shares);
 
-      if (protocolUScale != uScale) {
-        address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
+      if (underlying != vaultCurrencyAddr) {
         
         _amount = Swap.swapStableCoins(
           amountReceived, 
@@ -302,13 +303,8 @@ contract ETFVault is VaultToken {
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
-    uint256 underlyingBalance = 0;
+    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
 
-    if (protocolUScale == uScale) {
-      underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
-    } else {
-      underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
-    }
     return underlyingBalance;
   }
 

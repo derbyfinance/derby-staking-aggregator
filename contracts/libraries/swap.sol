@@ -40,7 +40,7 @@ library Swap {
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
-
+    
     IStableSwap3Pool(_curve3Pool).exchange(
       _indexTokenIn, 
       _indexTokenOut, 
@@ -49,6 +49,7 @@ library Swap {
     );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+
     return balanceAfter - balanceBefore;
   }
 

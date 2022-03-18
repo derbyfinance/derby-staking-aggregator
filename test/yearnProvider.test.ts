@@ -30,7 +30,7 @@ describe("Deploy Contract and interact with Yearn", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to router contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yusdc, usdc, yearn),
+      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yusdc, usdc, yearn, '1000000'),
       router.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(yearnProvider.address, amountUSDC),
