@@ -39,7 +39,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     
     const amountUSDC = parseUSDC('9000');
     const startingBalance = await IUSDc.balanceOf(userAddr);
-    console.log(allProtocols)
     await setCurrentAllocations(vaultMock, allProtocols); 
     await vaultMock.depositETF(userAddr, amountUSDC);
 

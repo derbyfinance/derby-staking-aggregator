@@ -228,8 +228,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    address provider = router.protocolProvider(ETFnumber, _protocolNum);
-    address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
+    (address underlying, address provider,) = getProtocolInfo(_protocolNum);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
 
@@ -257,20 +256,17 @@ contract ETFVault is VaultToken {
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
       uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
-      address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
-      address provider = router.protocolProvider(ETFnumber, _protocolNum);
-      address protocolLPToken = router.protocolLPToken(ETFnumber, _protocolNum);
+      (address underlying, address provider, address LPToken) = getProtocolInfo(_protocolNum);
 
       _amount = _amount * protocolUScale / uScale;
 
       uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
 
-      IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
+      IERC20(LPToken).safeIncreaseAllowance(provider, shares);
 
       uint256 amountReceived = router.withdraw(ETFnumber, _protocolNum, address(this), shares);
 
       if (underlying != vaultCurrencyAddr) {
-        
         _amount = Swap.swapStableCoins(
           amountReceived, 
           underlying,
@@ -282,6 +278,20 @@ contract ETFVault is VaultToken {
       }
     }
     console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
+  }
+
+  /// @notice Gets underlying, provider and LPToken address for the given protocol vault
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  function getProtocolInfo(uint256 _protocolNum) internal view returns(
+    address underlying,
+    address provider,
+    address lpToken
+  ) {
+    return (
+      router.protocolUnderlying(ETFnumber, _protocolNum), 
+      router.protocolProvider(ETFnumber, _protocolNum), 
+      router.protocolLPToken(ETFnumber, _protocolNum)
+    );
   }
 
   /// @notice Get total balance in VaultCurrency in all underlying protocols

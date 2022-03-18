@@ -124,7 +124,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
   });
 
-  it.only("Should add CompoundDAI vault", async function() {
+  it("Should add CompoundDAI vault", async function() {
     protocolYearn.allocation = 0;
     protocolCompound.allocation = 20;
     protocolCompoundDAI.allocation = 40;
