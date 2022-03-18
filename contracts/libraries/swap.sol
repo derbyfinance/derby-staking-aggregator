@@ -32,14 +32,13 @@ library Swap {
   ) internal returns(uint256) {
     // uint256 daiScale = 1E18;
     // uint256 usdcScale = 1E6;
-    // uint256 usdtScale = 1E6;
-
+    // uint256 usdtScale = 1E6;\
     uint256 fee = 5; // 0.05%    
     // Amount out 0 for now, will calc later          
     uint256 amountOutMin = 0;
     // uint256 amountOutMin = (_amount * (10000 - fee) / 10000) * daiScale / usdcScale;
-
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
+
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
 
     IStableSwap3Pool(_curve3Pool).exchange(

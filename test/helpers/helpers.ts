@@ -43,9 +43,10 @@ export const routerAddProtocol = async (
   provider: string, 
   protocolToken: string,
   protocolUnderlying: string,
-  govToken: string
+  govToken: string,
+  uScale: string,
 ) => {
-  const tx = await router.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken)
+  const tx = await router.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken, uScale)
   const receipt = await tx.wait()
   const { protocolNumber } = receipt.events![0].args as Result
   

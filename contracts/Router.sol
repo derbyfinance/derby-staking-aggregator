@@ -10,6 +10,7 @@ contract Router is IRouter {
   mapping(uint256 => mapping(uint256 => address)) public protocolProvider;
   mapping(uint256 => mapping(uint256 => address)) public protocolUnderlying;
   mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
+  mapping(uint256 => mapping(uint256 => uint256)) public protocolUScale;
 
   mapping(address => bool) public vaultWhitelist;
   mapping(address => bool) public claimable;
@@ -177,21 +178,23 @@ contract Router is IRouter {
     address _provider,
     address _protocolLPToken,
     address _underlying,
-    address _govToken
+    address _govToken,
+    uint256 _uScale
   ) external onlyDao returns(uint256) { 
-      uint256 protocolNumber = latestProtocolId[_ETFnumber];
+    uint256 protocolNumber = latestProtocolId[_ETFnumber];
 
-      protocolNames[_ETFnumber][protocolNumber] = _name;
-      protocolProvider[_ETFnumber][protocolNumber] = _provider;
-      protocolLPToken[_ETFnumber][protocolNumber] = _protocolLPToken;
-      protocolUnderlying[_ETFnumber][protocolNumber] = _underlying;
-      protocolGovToken[_ETFnumber][protocolNumber] = _govToken;
+    protocolNames[_ETFnumber][protocolNumber] = _name;
+    protocolProvider[_ETFnumber][protocolNumber] = _provider;
+    protocolLPToken[_ETFnumber][protocolNumber] = _protocolLPToken;
+    protocolUnderlying[_ETFnumber][protocolNumber] = _underlying;
+    protocolGovToken[_ETFnumber][protocolNumber] = _govToken;
+    protocolUScale[_ETFnumber][protocolNumber] = _uScale;
 
-      emit SetProtocolNumber(protocolNumber, _protocolLPToken);
+    emit SetProtocolNumber(protocolNumber, _protocolLPToken);
 
-      latestProtocolId[_ETFnumber]++;
+    latestProtocolId[_ETFnumber]++;
 
-      return protocolNumber;
+    return protocolNumber;
   }
 
   /// @notice Add protocol and vault to router

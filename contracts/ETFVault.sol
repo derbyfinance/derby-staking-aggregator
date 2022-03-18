@@ -180,6 +180,7 @@ contract ETFVault is VaultToken {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
+
     for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
@@ -198,6 +199,7 @@ contract ETFVault is VaultToken {
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
+
     return protocolToDeposit;
   }
 
@@ -228,7 +230,6 @@ contract ETFVault is VaultToken {
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
     address provider = router.protocolProvider(ETFnumber, _protocolNum);
     address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
-    console.log("underlying %s", underlying);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
 
@@ -242,7 +243,7 @@ contract ETFVault is VaultToken {
         router.curveIndex(underlying)
       );
     }
-    console.log("_amount %s", _amount);
+
     IERC20(underlying).safeIncreaseAllowance(provider, _amount);
     router.deposit(ETFnumber, _protocolNum, address(this), _amount);
 
@@ -255,12 +256,29 @@ contract ETFVault is VaultToken {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
+      uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
+      _amount = _amount * protocolUScale / uScale;
+
       address provider = router.protocolProvider(ETFnumber, _protocolNum);
       address protocolLPToken = router.protocolLPToken(ETFnumber, _protocolNum);
       uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
 
       IERC20(protocolLPToken).safeIncreaseAllowance(provider, shares);
-      router.withdraw(ETFnumber, _protocolNum, address(this), shares);
+
+      uint256 amountReceived = router.withdraw(ETFnumber, _protocolNum, address(this), shares);
+
+      if (protocolUScale != uScale) {
+        address underlying = router.protocolUnderlying(ETFnumber, _protocolNum);
+        
+        _amount = Swap.swapStableCoins(
+          amountReceived, 
+          underlying,
+          vaultCurrencyAddr, 
+          router.curve3Pool(), 
+          router.curveIndex(underlying), 
+          router.curveIndex(vaultCurrencyAddr)
+        );
+      }
     }
     console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
   }
@@ -283,7 +301,14 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
-    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
+    uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
+    uint256 underlyingBalance = 0;
+
+    if (protocolUScale == uScale) {
+      underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this));
+    } else {
+      underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
+    }
     return underlyingBalance;
   }
 
@@ -292,7 +317,6 @@ contract ETFVault is VaultToken {
   /// @return Price per share
   function price(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNum);
-
     return protocolPrice;
   }
 

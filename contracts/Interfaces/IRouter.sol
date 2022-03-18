@@ -57,7 +57,8 @@ interface IRouter {
     address provider,
     address protocolLPToken,
     address underlying,
-    address govToken
+    address govToken,
+    uint256 _uScale
   )
     external returns(uint256);
 
@@ -97,6 +98,12 @@ interface IRouter {
     uint256 protocolNumber
   )
     external view returns(address);
+
+  function protocolUScale(
+    uint256 _ETFnumber,
+    uint256 protocolNumber
+  )
+    external view returns(uint256);
 
   function latestProtocolId(
     uint256 _ETFnumber
