@@ -30,9 +30,12 @@ contract ETFVault is VaultToken {
   address public ETFgame;
   address public governed;
 
-  int256 public marginScale = 1E10; // 1000 USDC
+  int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
+  uint256 public performancePerc = 10;
+  uint256 public performanceFee; // in VaultCurrency
+  uint256 public lastExchangeRate = 1;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -176,10 +179,13 @@ contract ETFVault is VaultToken {
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
+  /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),  
+  /// @dev the performancePerc and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault. 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
+    uint256 totalCurrentBalance = 0; // used for the performance fee
     for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
@@ -191,6 +197,7 @@ contract ETFVault is VaultToken {
       else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
       
       uint256 currentBalance = balanceUnderlying(i);
+      totalCurrentBalance += currentBalance; 
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
@@ -198,6 +205,10 @@ contract ETFVault is VaultToken {
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
+    // calculate performance fee
+    uint256 currentExchageRate = exchangeRate();
+    performanceFee = performancePerc/100 * totalCurrentBalance * (currentExchageRate - lastExchangeRate) / lastExchangeRate;
+    lastExchangeRate = currentExchageRate;
     return protocolToDeposit;
   }
 
@@ -330,6 +341,13 @@ contract ETFVault is VaultToken {
   function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
     require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
+  } 
+
+  /// @notice Set the performancePerc, the percentage of the profits which go to the game.
+  /// @param _performancePerc Value at which to set the performancePerc.
+  function setPerformancePerc(uint256 _performancePerc) external onlyDao {
+    require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
+    performancePerc = _performancePerc;
   } 
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
