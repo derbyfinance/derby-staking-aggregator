@@ -19,24 +19,25 @@ library Swap {
   /// @notice Swap stable coins on Curve
   /// @param _amount Number of tokens to swap
   /// @param _tokenIn Token to sell
-  /// @param _curve3Pool Curve pool address
+  /// @param _tokenOut Token to receive
+  /// @param _tokenInUScale Scale of tokenIn e.g 1E6
+  /// @param _tokenOutUScale Scale of tokenOut e.g 1E6
   /// @param _indexTokenIn Curve pool index number of TokenIn address
   /// @param _indexTokenOut Curve pool index number of TokenOut address
+  /// @param _curve3Pool Curve pool address
   function swapStableCoins(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
-    address _curve3Pool,
+    uint256 _tokenInUScale,
+    uint256 _tokenOutUScale,
     int128 _indexTokenIn,
-    int128 _indexTokenOut
-  ) internal returns(uint256) {
-    // uint256 daiScale = 1E18;
-    // uint256 usdcScale = 1E6;
-    // uint256 usdtScale = 1E6;\
-    uint256 fee = 5; // 0.05%    
-    // Amount out 0 for now, will calc later          
-    uint256 amountOutMin = 0;
-    // uint256 amountOutMin = (_amount * (10000 - fee) / 10000) * daiScale / usdcScale;
+    int128 _indexTokenOut,
+    address _curve3Pool,
+    uint256 _curvePoolFee
+  ) internal returns(uint256) {        
+    uint256 amountOutMin = (_amount * (10000 - _curvePoolFee) / 10000) * _tokenOutUScale / _tokenInUScale;
+
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
@@ -49,7 +50,7 @@ library Swap {
     );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
-
+    console.log("amount received %s", (balanceAfter - balanceBefore));
     return balanceAfter - balanceBefore;
   }
 

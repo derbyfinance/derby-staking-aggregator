@@ -6,11 +6,12 @@ import { Signer, Contract } from "ethers";
 import { network } from "hardhat";
 import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, routerAddProtocol, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
-import { getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
+import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, dai, compToken as comp, compoundDAI} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
+const uScale = 1E6;
 
 describe("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
@@ -124,7 +125,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
   });
 
-  it("Should add CompoundDAI vault", async function() {
+  it.only("Should add CompoundDAI and AaveUSDT vault", async function() {
     protocolYearn.allocation = 0;
     protocolCompound.allocation = 20;
     protocolCompoundDAI.allocation = 40;
@@ -139,18 +140,43 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Deposit and rebalance with 100k 
     await vaultMock.depositETF(userAddr, amountToDeposit);
     await vaultMock.rebalanceETF();
-    await getAndLogBalances(vaultMock, allProtocols);
 
-    console.log('-----------------Withdraw--------------------')
-    protocolCompoundDAI.allocation = -40;
+    console.log(`USDC Balance vault: ${formatUSDC(await IUSDc.balanceOf(vaultMock.address))}`)
+
+    const [balances, allocations, totalAllocatedTokens, balanceVault] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      getAllocations(vaultMock, allProtocols),
+      vaultMock.totalAllocatedTokens(),
+      IUSDc.balanceOf(vaultMock.address)
+    ]);
+
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((protocol, i) => {
+      expect(balances[i].div(uScale))
+      .to.be.closeTo(allocations[i].mul(amountUSDC.sub(balanceVault)).div(totalAllocatedTokens).div(uScale), 30)
+    })
+
+    console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------')
+    protocolCompoundDAI.allocation = -30;
     protocolAaveUSDT.allocation = -40;
     await setDeltaAllocations(user, vaultMock, allProtocols);
     
     await vaultMock.rebalanceETF();
-    await getAndLogBalances(vaultMock, allProtocols);
 
-    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
-    console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`)
+    console.log(`USDC Balance vault: ${formatUSDC(await IUSDc.balanceOf(vaultMock.address))}`)
+
+    const [balances2, allocations2, totalAllocatedTokens2, balanceVault2] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      getAllocations(vaultMock, allProtocols),
+      vaultMock.totalAllocatedTokens(),
+      IUSDc.balanceOf(vaultMock.address)
+    ]);
+
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((protocol, i) => {
+      expect(balances2[i].div(uScale))
+      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2)).div(totalAllocatedTokens2).div(uScale), 50) // swap fees
+    })
   });
 
   // it("Calc USDC to COMP", async function() {

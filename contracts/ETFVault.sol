@@ -228,7 +228,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    (address underlying, address provider,) = getProtocolInfo(_protocolNum);
+    (uint256 protocolUScale, address underlying, address provider,) = getProtocolInfo(_protocolNum);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
 
@@ -237,9 +237,12 @@ contract ETFVault is VaultToken {
         _amount, 
         vaultCurrencyAddr, 
         underlying,
-        router.curve3Pool(), 
+        uScale,
+        protocolUScale,
         router.curveIndex(vaultCurrencyAddr), 
-        router.curveIndex(underlying)
+        router.curveIndex(underlying),
+        router.curve3Pool(),
+        router.curve3PoolFee()
       );
     }
 
@@ -255,13 +258,11 @@ contract ETFVault is VaultToken {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
-      uint256 protocolUScale = router.protocolUScale(ETFnumber, _protocolNum);
-      (address underlying, address provider, address LPToken) = getProtocolInfo(_protocolNum);
+      (uint256 protocolUScale, address underlying, address provider, address LPToken) = getProtocolInfo(_protocolNum);
 
       _amount = _amount * protocolUScale / uScale;
 
       uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
-
       IERC20(LPToken).safeIncreaseAllowance(provider, shares);
 
       uint256 amountReceived = router.withdraw(ETFnumber, _protocolNum, address(this), shares);
@@ -271,9 +272,12 @@ contract ETFVault is VaultToken {
           amountReceived, 
           underlying,
           vaultCurrencyAddr, 
-          router.curve3Pool(), 
+          protocolUScale,
+          uScale,
           router.curveIndex(underlying), 
-          router.curveIndex(vaultCurrencyAddr)
+          router.curveIndex(vaultCurrencyAddr),
+          router.curve3Pool(),
+          router.curve3PoolFee()
         );
       }
     }
@@ -282,12 +286,18 @@ contract ETFVault is VaultToken {
 
   /// @notice Gets underlying, provider and LPToken address for the given protocol vault
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @return protocolUScale uScale of protocol e.g 1E6
+  /// @return underlying underlying address of protocol e.g USDC
+  /// @return provider provider address of protocol e.g Compound Provider
+  /// @return lpToken LPToken address of protocol e.g cUSDC
   function getProtocolInfo(uint256 _protocolNum) internal view returns(
+    uint256 protocolUScale,
     address underlying,
     address provider,
     address lpToken
   ) {
     return (
+      router.protocolUScale(ETFnumber, _protocolNum),
       router.protocolUnderlying(ETFnumber, _protocolNum), 
       router.protocolProvider(ETFnumber, _protocolNum), 
       router.protocolLPToken(ETFnumber, _protocolNum)

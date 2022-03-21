@@ -28,6 +28,7 @@ contract Router is IRouter {
   address public uniswapFactory;
 
   uint24 public uniswapPoolFee;
+  uint256 public curve3PoolFee = 6; // 0.05%
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -219,6 +220,12 @@ contract Router is IRouter {
   /// @param _poolFee New Pool fee
   function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
     uniswapPoolFee = _poolFee;
+  }
+
+  /// @notice Set the Curve3Pool fee
+  /// @param _poolFee New Pool fee
+  function setCurvePoolFee(uint24 _poolFee) external onlyDao {
+    curve3PoolFee = _poolFee;
   }
 
   /// @notice Set curve pool index for underlying token

@@ -70,6 +70,8 @@ interface IRouter {
 
   function uniswapPoolFee() external view returns(uint24);
 
+  function curve3PoolFee() external view returns(uint256);
+
   function curveIndex(
     address _token
   )
