@@ -50,7 +50,6 @@ library Swap {
     );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
-    console.log("amount received %s", (balanceAfter - balanceBefore));
     return balanceAfter - balanceBefore;
   }
 
