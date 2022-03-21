@@ -122,19 +122,19 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
 
     // Expect DAI received to be 10_000 - fee
-    expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5)
+    expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5);
   });
 
-  it.only("Should add CompoundDAI and AaveUSDT vault", async function() {
+  it("Should add CompoundDAI and AaveUSDT to vault and Swap on deposit/withdraw", async function() {
     protocolYearn.allocation = 0;
     protocolCompound.allocation = 20;
     protocolCompoundDAI.allocation = 40;
     protocolAave.allocation = 0;
     protocolAaveUSDT.allocation = 40;
 
-    allProtocols = [...allProtocols, protocolCompoundDAI, protocolAaveUSDT]
+    allProtocols = [...allProtocols, protocolCompoundDAI, protocolAaveUSDT];
 
-    const amountToDeposit = parseUSDC('100000')
+    const amountToDeposit = parseUSDC('100000');
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
     // Deposit and rebalance with 100k 
@@ -175,7 +175,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
     allProtocols.forEach((protocol, i) => {
       expect(balances2[i].div(uScale))
-      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2)).div(totalAllocatedTokens2).div(uScale), 50) // swap fees
+        .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2)).div(totalAllocatedTokens2).div(uScale), 50) // swap fees
     })
   });
 
