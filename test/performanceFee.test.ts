@@ -16,6 +16,7 @@ const decimals = 6;
 const marginScale = 1E9;
 const uScale = 1E6;
 const liquidityPerc = 10;
+const performancePerc = 10;
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 
@@ -38,7 +39,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       userAddr,
       ,
       allProtocols,
-      ,
+      IUSDc,
       yearnProvider, 
       compoundProvider, 
       aaveProvider
@@ -46,9 +47,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it.only("Should calculate performance fee correctly", async function() {
-    // await setDeltaAllocations(user, vaultMock, allProtocols);
-    await setCurrentAllocations(vaultMock, allProtocols);
-    await vaultMock.depositETF(userAddr, amountUSDC);
+    await setCurrentAllocations(vaultMock, allProtocols); // only used to make sure getTotalUnderlying returns > 0
+    await setDeltaAllocations(user, vaultMock, allProtocols); // only used to make sure the totalCurrentBalance calculation inside rebalanceETF returns > 0
+    await vaultMock.depositETF(userAddr, amountUSDC); // only used to make sure totalSupply (LP tokens) returns > 0
 
     console.log("Set mock functions");
     const mockedBalance = parseUSDC('1000'); // 3k in each protocol
@@ -67,10 +68,26 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
 
     await vaultMock.rebalanceETF();
-    console.log("total balance: %s", await vaultMock.getTotalUnderlying());
-    await getAndLogBalances(vaultMock, allProtocols);
-    let performanceFee = await vaultMock.performanceFee();
-    console.log("performanceFee: %s", performanceFee);
+    let totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
+    let totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
+    const totalBefore = totalUnderlying + totalLiquidity;
+
+    // bump up the underlying balances to simulate a profit being made
+    const profit = parseUSDC('1000');
+    await Promise.all([
+      yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      compoundProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+    ]);
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.rebalanceETF();
+    totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
+    totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
+    const totalAfter = totalUnderlying + totalLiquidity;
+    const performanceFee = await vaultMock.performanceFee();
+
+    // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc x uScale
+    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo(performanceFee, 1);
   });
 
 });

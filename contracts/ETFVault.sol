@@ -206,9 +206,11 @@ contract ETFVault is VaultToken {
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
     // calculate performance fee
-    uint256 currentExchageRate = exchangeRate();
-    performanceFee = performancePerc/100 * totalCurrentBalance * (currentExchageRate - lastExchangeRate) / lastExchangeRate;
-    lastExchangeRate = currentExchageRate;
+    uint256 currentExchangeRate = exchangeRate();
+    performanceFee = totalCurrentBalance * (currentExchangeRate - lastExchangeRate);
+    performanceFee = performancePerc * performanceFee / lastExchangeRate;
+    performanceFee = performanceFee / 100;
+    lastExchangeRate = currentExchangeRate;
     return protocolToDeposit;
   }
 
