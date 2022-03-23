@@ -6,16 +6,12 @@ import "./Interfaces/IRouter.sol";
 import "hardhat/console.sol";
 
 contract Router is IRouter {
-  mapping(uint256 => mapping(uint256 => address)) public protocolLPToken;
-  mapping(uint256 => mapping(uint256 => address)) public protocolProvider;
-  mapping(uint256 => mapping(uint256 => address)) public protocolUnderlying;
-  mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
-  mapping(uint256 => mapping(uint256 => uint256)) public protocolUScale;
+  mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
+  mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
   mapping(address => bool) public vaultWhitelist;
   mapping(address => bool) public claimable;
 
-  mapping(uint256 => mapping(uint256 => string)) public protocolNames;
   mapping(uint256 => mapping(uint256 => bool)) public protocolBlacklist;
   mapping(uint256 => uint256) public latestProtocolId;
 
@@ -69,8 +65,13 @@ contract Router is IRouter {
     address _vault, 
     uint256 _amount
   ) external override onlyVault returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .deposit(_vault, _amount, protocolLPToken[_ETFnumber][_protocolNumber], protocolUnderlying[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .deposit(
+                _vault, 
+                _amount, 
+                protocolInfo[_ETFnumber][_protocolNumber].LPToken, 
+                protocolInfo[_ETFnumber][_protocolNumber].underlying
+              );
   }
 
   /// @notice Withdraw the underlying asset in given protocol number
@@ -85,8 +86,13 @@ contract Router is IRouter {
     address _vault, 
     uint256 _amount
   ) external override onlyVault returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .withdraw(_vault, _amount, protocolLPToken[_ETFnumber][_protocolNumber], protocolUnderlying[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .withdraw(
+                _vault, 
+                _amount, 
+                protocolInfo[_ETFnumber][_protocolNumber].LPToken, 
+                protocolInfo[_ETFnumber][_protocolNumber].underlying
+              );
   }
 
   /// @notice Exchange rate of underyling protocol token
@@ -97,8 +103,8 @@ contract Router is IRouter {
     uint256 _ETFnumber,
     uint256 _protocolNumber
   ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .exchangeRate(protocolLPToken[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .exchangeRate(protocolInfo[_ETFnumber][_protocolNumber].LPToken);
   }
 
   /// @notice Balance of  underlying Token from address
@@ -111,8 +117,11 @@ contract Router is IRouter {
     uint256 _protocolNumber,
     address _address
   ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .balance(_address, protocolLPToken[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .balance(
+                _address, 
+                protocolInfo[_ETFnumber][_protocolNumber].LPToken
+              );
   }
 
   /// @notice Get balance from address in shares i.e LP tokens
@@ -125,8 +134,11 @@ contract Router is IRouter {
     uint256 _protocolNumber,
     address _address
   ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .balanceUnderlying(_address, protocolLPToken[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .balanceUnderlying(
+                _address, 
+                protocolInfo[_ETFnumber][_protocolNumber].LPToken
+              );
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -139,8 +151,11 @@ contract Router is IRouter {
     uint256 _protocolNumber,
     uint256 _amount
   ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-              .calcShares(_amount, protocolLPToken[_ETFnumber][_protocolNumber]);
+      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+              .calcShares(
+                _amount, 
+                protocolInfo[_ETFnumber][_protocolNumber].LPToken
+              );
   }
 
   /// @notice Harvest tokens from underlying protocols
@@ -150,9 +165,9 @@ contract Router is IRouter {
     uint256 _ETFnumber,
     uint256 _protocolNumber
   ) external override onlyVault returns(bool) {
-      if (claimable[protocolProvider[_ETFnumber][_protocolNumber]]) {
-        return IProvider(protocolProvider[_ETFnumber][_protocolNumber])
-                .claim(protocolLPToken[_ETFnumber][_protocolNumber], msg.sender);
+      if (claimable[protocolInfo[_ETFnumber][_protocolNumber].provider]) {
+        return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
+                .claim(protocolInfo[_ETFnumber][_protocolNumber].LPToken, msg.sender);
       } else {
         return false;
       }
@@ -185,11 +200,13 @@ contract Router is IRouter {
     uint256 protocolNumber = latestProtocolId[_ETFnumber];
 
     protocolNames[_ETFnumber][protocolNumber] = _name;
-    protocolProvider[_ETFnumber][protocolNumber] = _provider;
-    protocolLPToken[_ETFnumber][protocolNumber] = _protocolLPToken;
-    protocolUnderlying[_ETFnumber][protocolNumber] = _underlying;
-    protocolGovToken[_ETFnumber][protocolNumber] = _govToken;
-    protocolUScale[_ETFnumber][protocolNumber] = _uScale;
+    protocolInfo[_ETFnumber][protocolNumber] = ProtocolInfoS(
+      _protocolLPToken,
+      _provider,
+      _underlying,
+      _govToken,
+      _uScale
+    );
 
     emit SetProtocolNumber(protocolNumber, _protocolLPToken);
 
@@ -240,6 +257,13 @@ contract Router is IRouter {
   /// @param _protocolNum Protocol number linked to protocol vault
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault view returns(bool) {
     return protocolBlacklist[_ETFnumber][_protocolNum];
+  }
+
+  /// @notice Getter for the ProtocolInfo struct
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
+  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault view returns(ProtocolInfoS memory) {
+    return protocolInfo[_ETFnumber][_protocolNum];
   }
 
   /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
