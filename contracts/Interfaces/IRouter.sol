@@ -2,6 +2,14 @@
 pragma solidity ^0.8.11;
 
 interface IRouter {
+  struct ProtocolInfoS {
+    address LPToken;
+    address provider;
+    address underlying;
+    address govToken;
+    uint256 uScale;
+  }
+  
   function deposit(
     uint256 _ETFnumber,
     uint256 protocolNumber, 
@@ -57,7 +65,8 @@ interface IRouter {
     address provider,
     address protocolLPToken,
     address underlying,
-    address govToken
+    address govToken,
+    uint256 _uScale
   )
     external returns(uint256);
 
@@ -69,34 +78,18 @@ interface IRouter {
 
   function uniswapPoolFee() external view returns(uint24);
 
+  function curve3PoolFee() external view returns(uint256);
+
   function curveIndex(
     address _token
   )
     external view returns(int128);
-
-  function protocolProvider(
+    
+  function getProtocolInfo(
     uint256 _ETFnumber,
     uint256 protocolNumber
   )
-    external view returns(address);
-
-  function protocolLPToken(
-    uint256 _ETFnumber,
-    uint256 protocolNumber
-  )
-    external view returns(address);
-  
-  function protocolGovToken(
-    uint256 _ETFnumber,
-    uint256 protocolNumber
-  )
-    external view returns(address);
-
-  function protocolUnderlying(
-    uint256 _ETFnumber,
-    uint256 protocolNumber
-  )
-    external view returns(address);
+    external view returns(ProtocolInfoS memory);
 
   function latestProtocolId(
     uint256 _ETFnumber

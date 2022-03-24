@@ -51,9 +51,9 @@ describe("Deploy router contract", async () => {
 
     await router.addVault(vaultAddr);
 
-    await router.addProtocol('yearn_usdc_01', ETFnumber, yearnProviderMock.address, yusdc, usdc, yearn); // 0
-    await router.addProtocol('compound_usdc_01', ETFnumber, compoundProviderMock.address, cusdc, usdc, compToken); // 1
-    await router.addProtocol('aave_usdc_01', ETFnumber, aaveProviderMock.address, ausdc, usdc, aave); // 2
+    await router.addProtocol('yearn_usdc_01', ETFnumber, yearnProviderMock.address, yusdc, usdc, yearn,1E6.toString()); // 0
+    await router.addProtocol('compound_usdc_01', ETFnumber, compoundProviderMock.address, cusdc, usdc, compToken, 1E6.toString()); // 1
+    await router.addProtocol('aave_usdc_01', ETFnumber, aaveProviderMock.address, ausdc, usdc, aave,1E6.toString()); // 2
   }); 
 
   it("Should correctly set router mappings for the protocol names", async function() {
@@ -70,53 +70,53 @@ describe("Deploy router contract", async () => {
 
   it("Should correctly set router mappings for the protocol provider", async function() {
     const [protocol1, protocol2, protocol3] = await Promise.all([
-      router.protocolProvider(ETFnumber, 0),
-      router.protocolProvider(ETFnumber, 1),
-      router.protocolProvider(ETFnumber, 2),
+      router.getProtocolInfo(ETFnumber, 0),
+      router.getProtocolInfo(ETFnumber, 1),
+      router.getProtocolInfo(ETFnumber, 2),
     ])
 
-    expect(protocol1.toUpperCase()).to.be.equal(yearnProviderMock.address.toUpperCase());
-    expect(protocol2.toUpperCase()).to.be.equal(compoundProviderMock.address.toUpperCase());
-    expect(protocol3.toUpperCase()).to.be.equal(aaveProviderMock.address.toUpperCase());
+    expect(protocol1.provider.toUpperCase()).to.be.equal(yearnProviderMock.address.toUpperCase());
+    expect(protocol2.provider.toUpperCase()).to.be.equal(compoundProviderMock.address.toUpperCase());
+    expect(protocol3.provider.toUpperCase()).to.be.equal(aaveProviderMock.address.toUpperCase());
   });
 
   it("Should correctly set router mappings for the protocol LP Token", async function() {
     // check protocol lp token
     const [LPtoken1, LPtoken2, LPtoken3] = await Promise.all([
-      router.protocolLPToken(ETFnumber, 0),
-      router.protocolLPToken(ETFnumber, 1),
-      router.protocolLPToken(ETFnumber, 2),
+      router.getProtocolInfo(ETFnumber, 0),
+      router.getProtocolInfo(ETFnumber, 1),
+      router.getProtocolInfo(ETFnumber, 2),
     ])
 
-    expect(LPtoken1.toUpperCase()).to.be.equal(yusdc.toUpperCase());
-    expect(LPtoken2.toUpperCase()).to.be.equal(cusdc.toUpperCase());
-    expect(LPtoken3.toUpperCase()).to.be.equal(ausdc.toUpperCase());
+    expect(LPtoken1.LPToken.toUpperCase()).to.be.equal(yusdc.toUpperCase());
+    expect(LPtoken2.LPToken.toUpperCase()).to.be.equal(cusdc.toUpperCase());
+    expect(LPtoken3.LPToken.toUpperCase()).to.be.equal(ausdc.toUpperCase());
   });
     
   it("Should correctly set router mappings for the protocol underlying", async function() {
     // check protocol underlying
     const [underlying1, underlying2, underlying3] = await Promise.all([
-      router.protocolUnderlying(ETFnumber, 0),
-      router.protocolUnderlying(ETFnumber, 1),
-      router.protocolUnderlying(ETFnumber, 2),
+      router.getProtocolInfo(ETFnumber, 0),
+      router.getProtocolInfo(ETFnumber, 1),
+      router.getProtocolInfo(ETFnumber, 2),
     ])
 
-    expect(underlying1.toUpperCase()).to.be.equal(usdc.toUpperCase());
-    expect(underlying2.toUpperCase()).to.be.equal(usdc.toUpperCase());
-    expect(underlying3.toUpperCase()).to.be.equal(usdc.toUpperCase());
+    expect(underlying1.underlying.toUpperCase()).to.be.equal(usdc.toUpperCase());
+    expect(underlying2.underlying.toUpperCase()).to.be.equal(usdc.toUpperCase());
+    expect(underlying3.underlying.toUpperCase()).to.be.equal(usdc.toUpperCase());
   });
 
   it("Should correctly set router mappings for the protocol gov token", async function() {
     // check protocol gov token
     const [gov1, gov2, gov3] = await Promise.all([
-      router.protocolGovToken(ETFnumber, 0),
-      router.protocolGovToken(ETFnumber, 1),
-      router.protocolGovToken(ETFnumber, 2),
+      router.getProtocolInfo(ETFnumber, 0),
+      router.getProtocolInfo(ETFnumber, 1),
+      router.getProtocolInfo(ETFnumber, 2),
     ])
 
-    expect(gov1.toUpperCase()).to.be.equal(yearn.toUpperCase());
-    expect(gov2.toUpperCase()).to.be.equal(compToken.toUpperCase());
-    expect(gov3.toUpperCase()).to.be.equal(aave.toUpperCase());
+    expect(gov1.govToken.toUpperCase()).to.be.equal(yearn.toUpperCase());
+    expect(gov2.govToken.toUpperCase()).to.be.equal(compToken.toUpperCase());
+    expect(gov3.govToken.toUpperCase()).to.be.equal(aave.toUpperCase());
   });
 
   it("Should correctly set router to deposit", async function() {
