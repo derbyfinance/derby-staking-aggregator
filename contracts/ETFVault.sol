@@ -161,7 +161,6 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
-    uint256 gasleftStart = gasleft();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
@@ -173,9 +172,6 @@ contract ETFVault is VaultToken {
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
 
     executeDeposits(protocolToDeposit);
-
-    uint256 gasUsed = gasleftStart - gasleft();
-    console.log("gas used %s", gasUsed);
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols

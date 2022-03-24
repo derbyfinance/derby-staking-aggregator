@@ -262,7 +262,7 @@ contract Router is IRouter {
   /// @notice Getter for the ProtocolInfo struct
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault view returns(ProtocolInfoS memory) {
+  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum) external override view returns(ProtocolInfoS memory) {
     return protocolInfo[_ETFnumber][_protocolNum];
   }
 
