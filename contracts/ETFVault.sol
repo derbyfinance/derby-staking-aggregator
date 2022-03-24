@@ -35,7 +35,7 @@ contract ETFVault is VaultToken {
   uint256 public liquidityPerc = 10;
   uint256 public performancePerc = 10;
   uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
-  uint256 public lastExchangeRate = 1;
+  uint256 public lastExchangeRate = 0;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -153,8 +153,7 @@ contract ETFVault is VaultToken {
     if (totalSupply() == 0) return 1;
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
-    // console.log("total supply %s", totalSupply());
-    // console.log("getTotalUnderlying %s", getTotalUnderlying());
+
     return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
 
@@ -211,11 +210,13 @@ contract ETFVault is VaultToken {
   /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
   /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
   function calculatePerformanceFee() internal returns(uint256) {
-    // calculate performance fee
+    uint256 performanceFee = 0;
     uint256 currentExchangeRate = exchangeRate();
-    uint256 performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
-    performanceFee = performancePerc * performanceFee / lastExchangeRate;
-    performanceFee = performanceFee / 100;
+    if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
+      performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
+      performanceFee = performancePerc * performanceFee / lastExchangeRate;
+      performanceFee = performanceFee / 100;   
+    }
     lastExchangeRate = currentExchangeRate;
     return performanceFee;
   }
