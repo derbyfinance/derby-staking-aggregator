@@ -25,6 +25,7 @@ library Swap {
   /// @param _indexTokenIn Curve pool index number of TokenIn address
   /// @param _indexTokenOut Curve pool index number of TokenOut address
   /// @param _curve3Pool Curve pool address
+  /// @param _curvePoolFee Curve pool fee, in basis points, set in Router. 0.05% = 5
   function swapStableCoins(
     uint256 _amount, 
     address _tokenIn, 

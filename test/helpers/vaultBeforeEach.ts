@@ -58,11 +58,11 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, '1000000'),
-      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, '1000000000000000000'),
-      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, '1000000'),
-      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, '1000000'),
-      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, '1000000'),
+      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
+      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
+      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
+      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
+      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
       router.setClaimable(compoundProvider.address, true),
     ]);
   }
@@ -75,11 +75,11 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, '1000000'),
-      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, '1000000000000000000'),
-      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave, '1000000'),
-      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProviderMock.address, aaveUSDT, usdt, aave, '1000000'),
-      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn, '1000000'),
+      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, 1E6.toString()),
+      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, 1E18.toString()),
+      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave, 1E6.toString()),
+      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProviderMock.address, aaveUSDT, usdt, aave, 1E6.toString()),
+      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn, 1E6.toString()),
     ]);
   }
 
