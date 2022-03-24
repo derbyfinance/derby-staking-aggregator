@@ -46,7 +46,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ] = await beforeEachETFVault(amountUSDC, true);
   });
 
-  it.only("Should calculate performance fee correctly", async function() {
+  it("Should calculate performance fee correctly", async function() {
     await setCurrentAllocations(vaultMock, allProtocols); // only used to make sure getTotalUnderlying returns > 0
     await setDeltaAllocations(user, vaultMock, allProtocols); // only used to make sure the totalCurrentBalance calculation inside rebalanceETF returns > 0
     await vaultMock.depositETF(userAddr, amountUSDC); // only used to make sure totalSupply (LP tokens) returns > 0
@@ -71,6 +71,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     let totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
     let totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
     const totalBefore = totalUnderlying + totalLiquidity;
+    const dummyPerformanceFee = Number(formatUSDC(await vaultMock.cummulativePerformanceFee())); // because we use dummies everywhere the starting performanceFee is not 0, 
+                                                                            //hence this value is used to later substract from the result.
 
     // bump up the underlying balances to simulate a profit being made
     const profit = parseUSDC('1000');
@@ -84,10 +86,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
     totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
     const totalAfter = totalUnderlying + totalLiquidity;
-    const performanceFee = await vaultMock.performanceFee();
-
-    // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc x uScale
-    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo(performanceFee, 1);
+    const performanceFee = Number(formatUSDC(await vaultMock.cummulativePerformanceFee()));
+    console.log("performanceFee: %s", performanceFee - dummyPerformanceFee);
+    // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc
+    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo((performanceFee - dummyPerformanceFee) * uScale, 1);
   });
 
 });

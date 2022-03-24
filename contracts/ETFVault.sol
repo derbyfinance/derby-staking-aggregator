@@ -34,7 +34,7 @@ contract ETFVault is VaultToken {
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
   uint256 public performancePerc = 10;
-  uint256 public performanceFee; // in VaultCurrency
+  uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 1;
 
   // total number of allocated xaver tokens currently
@@ -164,6 +164,7 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
+    cummulativePerformanceFee += calculatePerformanceFee();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
@@ -185,7 +186,6 @@ contract ETFVault is VaultToken {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
-    uint256 totalCurrentBalance = 0; // used for the performance fee
     for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
@@ -197,7 +197,6 @@ contract ETFVault is VaultToken {
       else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
       
       uint256 currentBalance = balanceUnderlying(i);
-      totalCurrentBalance += currentBalance; 
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
@@ -205,13 +204,20 @@ contract ETFVault is VaultToken {
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
+    return protocolToDeposit;
+  }
+
+  /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
+  /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
+  /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
+  function calculatePerformanceFee() internal returns(uint256) {
     // calculate performance fee
     uint256 currentExchangeRate = exchangeRate();
-    performanceFee = totalCurrentBalance * (currentExchangeRate - lastExchangeRate);
+    uint256 performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
     performanceFee = performancePerc * performanceFee / lastExchangeRate;
     performanceFee = performanceFee / 100;
     lastExchangeRate = currentExchangeRate;
-    return protocolToDeposit;
+    return performanceFee;
   }
 
   /// @notice Helper function to set allocations and last price from protocols
