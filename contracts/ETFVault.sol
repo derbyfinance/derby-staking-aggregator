@@ -30,9 +30,12 @@ contract ETFVault is VaultToken {
   address public ETFgame;
   address public governed;
 
-  int256 public marginScale = 1E10; // 1000 USDC
+  int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
+  uint256 public performancePerc = 10;
+  uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
+  uint256 public lastExchangeRate = 0;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -150,8 +153,7 @@ contract ETFVault is VaultToken {
     if (totalSupply() == 0) return 1;
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
-    // console.log("total supply %s", totalSupply());
-    // console.log("getTotalUnderlying %s", getTotalUnderlying());
+
     return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
 
@@ -161,6 +163,7 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
+    cummulativePerformanceFee += calculatePerformanceFee();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
@@ -176,6 +179,8 @@ contract ETFVault is VaultToken {
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
+  /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),  
+  /// @dev the performancePerc and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault. 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
@@ -201,6 +206,21 @@ contract ETFVault is VaultToken {
     }
     
     return protocolToDeposit;
+  }
+
+  /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
+  /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
+  /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
+  function calculatePerformanceFee() internal returns(uint256) {
+    uint256 performanceFee = 0;
+    uint256 currentExchangeRate = exchangeRate();
+    if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
+      performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
+      performanceFee = performancePerc * performanceFee / lastExchangeRate;
+      performanceFee = performanceFee / 100;   
+    }
+    lastExchangeRate = currentExchangeRate;
+    return performanceFee;
   }
 
   /// @notice Helper function to set allocations and last price from protocols
@@ -365,6 +385,13 @@ contract ETFVault is VaultToken {
   function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
     require(_liquidityPerc <= 100, "Liquidity percentage cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
+  } 
+
+  /// @notice Set the performancePerc, the percentage of the profits which go to the game.
+  /// @param _performancePerc Value at which to set the performancePerc.
+  function setPerformancePerc(uint256 _performancePerc) external onlyDao {
+    require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
+    performancePerc = _performancePerc;
   } 
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
