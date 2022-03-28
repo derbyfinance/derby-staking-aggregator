@@ -193,15 +193,13 @@ contract ETFVault is VaultToken {
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
-      else {
-        amountToProtocol = int(_totalUnderlying) * currentAllocations[i];
-        amountToProtocol = amountToProtocol / totalAllocatedTokens;
-      } 
+      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
 
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
+      
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
