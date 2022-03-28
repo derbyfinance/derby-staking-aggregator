@@ -37,6 +37,9 @@ contract ETFVault is VaultToken {
   uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 0;
 
+  uint256 public blockInterval = 1;
+  uint256 public lastTimeStamp;
+
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
@@ -84,6 +87,8 @@ contract ETFVault is VaultToken {
     ETFgame = _ETFGame;
     routerAddr = _router;
     uScale = _uScale;
+
+    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Deposit in ETFVault
@@ -163,6 +168,8 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
+    if (!rebalanceNeeded()) return;
+  
     cummulativePerformanceFee += calculatePerformanceFee();
     claimTokens(); 
     
@@ -175,6 +182,12 @@ contract ETFVault is VaultToken {
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
 
     executeDeposits(protocolToDeposit);
+
+    lastTimeStamp = block.timestamp;
+  }
+
+  function rebalanceNeeded() public view returns(bool) {
+    return (block.timestamp - lastTimeStamp) > blockInterval;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
