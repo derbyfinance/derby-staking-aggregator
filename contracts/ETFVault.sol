@@ -34,7 +34,6 @@ contract ETFVault is VaultToken {
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
   uint256 public performancePerc = 10;
-  uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 0;
 
   // total number of allocated xaver tokens currently
@@ -163,7 +162,7 @@ contract ETFVault is VaultToken {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() public {
-    cummulativePerformanceFee += calculatePerformanceFee();
+    lastExchangeRate = exchangeRate();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
@@ -211,7 +210,7 @@ contract ETFVault is VaultToken {
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
   /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
   /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
-  function calculatePerformanceFee() internal returns(uint256) {
+  function calculatePerformanceFee() public view returns(uint256) {
     uint256 performanceFee = 0;
     uint256 currentExchangeRate = exchangeRate();
     if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
@@ -219,7 +218,6 @@ contract ETFVault is VaultToken {
       performanceFee = performancePerc * performanceFee / lastExchangeRate;
       performanceFee = performanceFee / 100;   
     }
-    lastExchangeRate = currentExchangeRate;
     return performanceFee;
   }
 
