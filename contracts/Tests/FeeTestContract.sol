@@ -35,7 +35,7 @@ contract FeeTestContract is ETFVault {
 
   uint256[] public protocolsInETF;
 
-  mapping(uint256 => int256) private test;
+  mapping(uint256 => int256) private test; 
 
   function loopArray() public {
     for (uint i = 0; i < protocolsInETF.length; i++) {
@@ -66,9 +66,5 @@ contract FeeTestContract is ETFVault {
 
   function deleteArray() public {
     delete protocolsInETF;
-  }
-
-  function setTestMapping(uint256 _key, int256 _value) public {
-    test[_key] = _value;
   }
 }

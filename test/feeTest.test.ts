@@ -51,7 +51,7 @@ const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;
 const decimals = 6;
 const uScale = 1E6;
-const amount = 100000;
+const amount = 10000000;
 const amountUSDC = parseUSDC(amount.toString());
 
 describe("Test gas", async () => {
@@ -99,7 +99,7 @@ describe("Test gas", async () => {
   
 });
 
-describe.only("Simulate looping through game players and calculating weighted average price", async () => {
+describe.skip("Simulate looping through game players and calculating weighted average price", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -135,10 +135,10 @@ describe.only("Simulate looping through game players and calculating weighted av
       deployYearnProvider(dao, router.address),
     ]);
 
-    // loop 9 times, so in total there are 50 protocols in the vault
+    // loop 9 times, so in total there are 25 protocols in the vault
     const protocols = [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT];
     let p: Protocol;
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 5; i++) {
       await Promise.all([
         routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
         routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
@@ -166,8 +166,9 @@ describe.only("Simulate looping through game players and calculating weighted av
 
     protocols.forEach((protocol, i) => {
       console.log("allocation: %s, balance: %s", allocations[i], balances[i]);
-      // console.log("protocol number: %s, allocation: %s", protocols[i].number, protocols[i].allocation);
     });
+
+    await vaultMock.testLargeGameplayerSet(1);
 
   });
 })
