@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `${process.env.PROVIDER_FORKING}`,
-        blockNumber: 14358496,
+        blockNumber: 14474928,
       },
     },
   },

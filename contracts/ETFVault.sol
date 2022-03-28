@@ -167,8 +167,9 @@ contract ETFVault is VaultToken {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() public {
+  function rebalanceETF() public onlyDao {
     if (!rebalanceNeeded()) return;
+    uint256 gasStart = gasleft();
   
     cummulativePerformanceFee += calculatePerformanceFee();
     claimTokens(); 
@@ -180,10 +181,38 @@ contract ETFVault is VaultToken {
     deltaAllocatedTokens = 0;
     
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
-
     executeDeposits(protocolToDeposit);
 
     lastTimeStamp = block.timestamp;
+
+    uint256 gasUsed = gasStart - gasleft();
+    console.log("gas used %s", gasUsed);
+    swapAndPayGasFee(gasUsed);
+  }
+
+  function swapAndPayGasFee(uint256 _gasUsed) internal {
+    console.log("omelet swap"); 
+
+    uint256 etherToVaultcurrency = Swap.getPoolAmountOut(
+      _gasUsed * 37000000000,
+      0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+      vaultCurrencyAddr,
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      0
+    );
+
+    Swap.swapTokensMulti(
+      etherToVaultcurrency, 
+      vaultCurrencyAddr, 
+      0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+      router.uniswapRouter(),
+      router.uniswapPoolFee()
+    );
+    
+
+    console.log("ether to vault currency %s", etherToVaultcurrency);
+
   }
 
   function rebalanceNeeded() public view returns(bool) {

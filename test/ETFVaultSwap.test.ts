@@ -179,6 +179,14 @@ describe("Deploy Contracts and interact with Vault", async () => {
     })
   });
 
+  it.only("Swapping ether to USDC for rebalance fee", async function() {
+    const amountToDeposit = parseUSDC('100000')
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await vaultMock.rebalanceETF();
+  });
+
   // it("Calc USDC to COMP", async function() {
   //   const swapAmount = parseUSDC('10000');
 

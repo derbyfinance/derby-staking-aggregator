@@ -82,14 +82,51 @@ library Swap {
     return amountOut;
   }
 
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @return Amountout Number of tokens received
+  function swapTokensSingle(
+    uint256 _amount, 
+    address _tokenIn, 
+    address _tokenOut,
+    address _uniswapRouter,
+    address _uniswapFactory,
+    uint24 _poolFee
+  ) internal returns(uint256) {
+    IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
+
+    getPoolAmountOut(_amount, _tokenIn, _tokenOut, _uniswapFactory, _poolFee, 0);
+
+    ISwapRouter.ExactInputSingleParams memory params =
+      ISwapRouter.ExactInputSingleParams({
+      tokenIn: _tokenIn,
+      tokenOut: _tokenOut,
+      fee: _poolFee,
+      recipient: msg.sender,
+      deadline: block.timestamp,
+      amountIn: _amount,
+      amountOutMinimum: 0,
+      sqrtPriceLimitX96: 0
+    });
+
+    // The call to `exactInputSingle` executes the swap.
+    uint256 amountOut = ISwapRouter(_uniswapRouter).exactInputSingle(params);
+
+    return amountOut;
+  }
+
   // Not functional yet
   function getPoolAmountOut(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
     address _uniswapFactory,
-    uint24 _poolFee
-  ) public view returns(uint256) {
+    uint24 _poolFee,
+    uint256 _fee
+  ) internal view returns(uint256) {
+    console.log("amount gas in %s", _amount);
     uint256 amountOut = 0;
     address pool = IUniswapV3Factory(_uniswapFactory).getPool(
       _tokenIn,
@@ -103,17 +140,17 @@ library Swap {
     (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
     if (token0 == _tokenOut) {
-      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * (10000 - _fee) / 10000;
     }
     if (token1 == _tokenOut) {
-      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * (10000 - _fee) / 10000;
     }
 
     console.log("pool %s", pool);
     console.log("token0 %s", token0);
     console.log("token1 %s", token1);
     console.log("sqrtPriceX96 %s", sqrtPriceX96);
-    // console.log("amountOut pool %s", amountOut);
+    console.log("amountOut pool %s", amountOut);
 
     return amountOut;
   }
