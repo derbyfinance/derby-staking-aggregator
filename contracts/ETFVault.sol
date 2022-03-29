@@ -190,34 +190,6 @@ contract ETFVault is VaultToken {
     swapAndPayGasFee(gasUsed);
   }
 
-  function swapAndPayGasFee(uint256 _gasUsed) internal {
-    uint256 gas = router.getGasPrice();
-    console.log("omelet swap", gas); 
-
-    uint256 etherToVaultcurrency = Swap.getPoolAmountOut(
-      _gasUsed * 37000000000,
-      0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-      vaultCurrencyAddr,
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      0
-    );
-
-    Swap.swapTokensMulti(
-      etherToVaultcurrency, 
-      vaultCurrencyAddr, 
-      0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-      router.uniswapRouter(),
-      router.uniswapPoolFee()
-    );
-    
-    console.log("ether to vault currency %s", etherToVaultcurrency);
-  }
-
-  function rebalanceNeeded() public view returns(bool) {
-    return (block.timestamp - lastTimeStamp) > blockInterval;
-  }
-
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),  
@@ -247,6 +219,44 @@ contract ETFVault is VaultToken {
     }
     
     return protocolToDeposit;
+  }
+
+  function swapAndPayGasFee(uint256 _gasUsed) internal {
+    uint256 gasStart = gasleft();
+
+    uint256 gas = router.getGasPrice();
+    console.log("omelet swap", gas); 
+
+    uint256 amountEtherToVaultCurrency = Swap.getPoolAmountOut(
+      _gasUsed * router.getGasPrice(),
+      Swap.WETH,
+      vaultCurrencyAddr,
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      0
+    );
+
+    uint256 wethReceived = Swap.swapTokensSingle(
+      amountEtherToVaultCurrency, 
+      vaultCurrencyAddr, 
+      Swap.WETH,
+      router.uniswapRouter(),
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      router.uniswapSwapFee()
+    );
+    
+    console.log("ether to vault currency %s", amountEtherToVaultCurrency);
+    console.log("wethReceived %s", wethReceived);
+
+    uint256 gasUsed = gasStart - gasleft();
+    console.log("gas used swap %s", gasUsed);
+  }
+
+  /// @notice Check if a rebalance is needed based on a set block interval 
+  /// @return bool True of rebalance is needed, false if not
+  function rebalanceNeeded() public view returns(bool) {
+    return (block.timestamp - lastTimeStamp) > blockInterval;
   }
 
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 

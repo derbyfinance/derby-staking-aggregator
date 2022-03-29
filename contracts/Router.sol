@@ -27,6 +27,7 @@ contract Router is IRouter {
 
   uint24 public uniswapPoolFee;
   uint256 public curve3PoolFee = 6; // 0.05%
+  uint256 public uniswapSwapFee = 60; // 0.6% // 0.3 plus some slippage
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -277,8 +278,15 @@ contract Router is IRouter {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
   }
 
-  /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
   function getGasPrice() external override returns(uint256) {
     return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
+  }
+
+  function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
+    chainlinkGasPriceOracle = _chainlinkGasPriceOracle
+  }
+
+  function setUniswapSwapFee(uint256 _swapFee) external override onlyDao {
+    uniswapSwapFee = _swapFee
   }
 }

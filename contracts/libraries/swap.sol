@@ -93,11 +93,12 @@ library Swap {
     address _tokenOut,
     address _uniswapRouter,
     address _uniswapFactory,
-    uint24 _poolFee
+    uint24 _poolFee,
+    uint256 _swapFee
   ) internal returns(uint256) {
     IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
 
-    getPoolAmountOut(_amount, _tokenIn, _tokenOut, _uniswapFactory, _poolFee, 0);
+    uint256 amountOutMinimum = getPoolAmountOut(_amount, _tokenIn, _tokenOut, _uniswapFactory, _poolFee, _swapFee);
 
     ISwapRouter.ExactInputSingleParams memory params =
       ISwapRouter.ExactInputSingleParams({
@@ -107,7 +108,7 @@ library Swap {
       recipient: msg.sender,
       deadline: block.timestamp,
       amountIn: _amount,
-      amountOutMinimum: 0,
+      amountOutMinimum: amountOutMinimum,
       sqrtPriceLimitX96: 0
     });
 
@@ -125,8 +126,7 @@ library Swap {
     address _uniswapFactory,
     uint24 _poolFee,
     uint256 _fee
-  ) internal view returns(uint256) {
-    console.log("amount gas in %s", _amount);
+  ) internal view returns(uint256) {    
     uint256 amountOut = 0;
     address pool = IUniswapV3Factory(_uniswapFactory).getPool(
       _tokenIn,
@@ -146,12 +146,13 @@ library Swap {
       amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * (10000 - _fee) / 10000;
     }
 
-    console.log("pool %s", pool);
-    console.log("token0 %s", token0);
-    console.log("token1 %s", token1);
-    console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    // console.log("pool %s", pool);
+    // console.log("token0 %s", token0);
+    // console.log("token1 %s", token1);
+    // console.log("sqrtPriceX96 %s", sqrtPriceX96);
     console.log("amountOut pool %s", amountOut);
 
     return amountOut;
   }
+
 }

@@ -80,10 +80,9 @@ interface IRouter {
 
   function curve3PoolFee() external view returns(uint256);
 
-  function curveIndex(
-    address _token
-  )
-    external view returns(int128);
+  function uniswapSwapFee() external view returns(uint256);
+
+  function curveIndex(address _token) external view returns(int128);
     
   function getProtocolInfo(
     uint256 _ETFnumber,
@@ -91,10 +90,7 @@ interface IRouter {
   )
     external view returns(ProtocolInfoS memory);
 
-  function latestProtocolId(
-    uint256 _ETFnumber
-  )
-    external view returns(uint256);
+  function latestProtocolId(uint256 _ETFnumber) external view returns(uint256);
 
   function addVault(address _vault) external;
 
