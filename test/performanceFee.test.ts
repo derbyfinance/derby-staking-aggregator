@@ -68,11 +68,10 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ]);
 
     await vaultMock.rebalanceETF();
+    console.log("old ex rate: %s", await vaultMock.exchangeRate());
     let totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
     let totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
     const totalBefore = totalUnderlying + totalLiquidity;
-    const dummyPerformanceFee = Number(formatUSDC(await vaultMock.cummulativePerformanceFee())); // because we use dummies everywhere the starting performanceFee is not 0, 
-                                                                            //hence this value is used to later substract from the result.
 
     // bump up the underlying balances to simulate a profit being made
     const profit = parseUSDC('1000');
@@ -82,14 +81,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
     ]);
     await setDeltaAllocations(user, vaultMock, allProtocols);
+    const performanceFee = Number(formatUSDC(await vaultMock.calculatePerformanceFee()));
+    console.log("performanceFee: %s", performanceFee);
     await vaultMock.rebalanceETF();
     totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
     totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
     const totalAfter = totalUnderlying + totalLiquidity;
-    const performanceFee = Number(formatUSDC(await vaultMock.cummulativePerformanceFee()));
-    console.log("performanceFee: %s", performanceFee - dummyPerformanceFee);
+
     // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc
-    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo((performanceFee - dummyPerformanceFee) * uScale, 1);
+    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo((performanceFee) * uScale, 1);
   });
 
 });
