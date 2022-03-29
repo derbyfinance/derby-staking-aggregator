@@ -191,7 +191,8 @@ contract ETFVault is VaultToken {
   }
 
   function swapAndPayGasFee(uint256 _gasUsed) internal {
-    console.log("omelet swap"); 
+    uint256 gas = router.getGasPrice();
+    console.log("omelet swap", gas); 
 
     uint256 etherToVaultcurrency = Swap.getPoolAmountOut(
       _gasUsed * 37000000000,
@@ -210,9 +211,7 @@ contract ETFVault is VaultToken {
       router.uniswapPoolFee()
     );
     
-
     console.log("ether to vault currency %s", etherToVaultcurrency);
-
   }
 
   function rebalanceNeeded() public view returns(bool) {

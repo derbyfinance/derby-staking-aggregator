@@ -109,4 +109,6 @@ interface IRouter {
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external view returns(bool);
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
+
+  function getGasPrice() external returns(uint256);
 }

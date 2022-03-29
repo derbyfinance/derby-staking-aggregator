@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
 import "./Interfaces/IRouter.sol";
+import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Router is IRouter {
@@ -22,6 +23,7 @@ contract Router is IRouter {
   address public curve3Pool;
   address public uniswapRouter;
   address public uniswapFactory;
+  address public chainlinkGasPriceOracle;
 
   uint24 public uniswapPoolFee;
   uint256 public curve3PoolFee = 6; // 0.05%
@@ -33,13 +35,15 @@ contract Router is IRouter {
     address _curve3Pool, 
     address _uniswapRouter,
     address _uniswapFactory,
-    uint24 _poolFee
+    uint24 _poolFee,
+    address _chainlinkGasPriceOracle
   ) {
     dao = _dao;
     curve3Pool = _curve3Pool;
     uniswapRouter = _uniswapRouter;
     uniswapFactory = _uniswapFactory;
     uniswapPoolFee = _poolFee;
+    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
 
   // Modifier for only vault?
@@ -271,5 +275,10 @@ contract Router is IRouter {
   /// @param _protocolNum Protocol number linked to protocol vault
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
+  }
+
+  /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
+  function getGasPrice() external override returns(uint256) {
+    return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
   }
 }
