@@ -36,6 +36,7 @@ contract ETFVault is VaultToken {
   uint256 public performancePerc = 10;
   uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 0;
+  uint256 public rebalancingPeriod = 0;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -175,6 +176,7 @@ contract ETFVault is VaultToken {
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
 
     executeDeposits(protocolToDeposit);
+    rebalancingPeriod++;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols

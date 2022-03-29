@@ -100,8 +100,8 @@ export const deployXaverToken = (deployerSign: Signer, name: string, symbol: str
     return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol])) as Promise<XaverToken>;
 };
 
-export const deployETFGame = (deployerSign: Signer, XaverTokenAddress: string, governedAddress: string): Promise<ETFGame> => {
-    return (deployContract(deployerSign, ETFGameArtifact, [XaverTokenAddress, governedAddress])) as Promise<ETFGame>;
+export const deployETFGame = (deployerSign: Signer, BasketTokenAddress: string, XaverTokenAddress: string, governedAddress: string): Promise<ETFGame> => {
+    return (deployContract(deployerSign, ETFGameArtifact, [BasketTokenAddress, XaverTokenAddress, governedAddress])) as Promise<ETFGame>;
 };
 
 export const deployBasketToken = (deployerSign: Signer, ETFgame: string, name: string, symbol: string): Promise<BasketToken> => {

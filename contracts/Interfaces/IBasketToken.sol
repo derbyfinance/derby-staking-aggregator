@@ -9,5 +9,5 @@ interface IBasketToken is IERC721 {
 
     function burn(uint256 tokenId) external;
 
-    // function ownerOf(uint256 tokenId) external view returns (address);
+    function ownerOf(uint256 tokenId) external view returns (address);
 }
