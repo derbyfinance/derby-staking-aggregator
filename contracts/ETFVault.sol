@@ -184,7 +184,6 @@ contract ETFVault is VaultToken {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
-
     for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
@@ -193,13 +192,13 @@ contract ETFVault is VaultToken {
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
-      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
+      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
 
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
-
+      
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }

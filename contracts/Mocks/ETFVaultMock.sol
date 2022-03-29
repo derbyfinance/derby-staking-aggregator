@@ -6,6 +6,8 @@ import "hardhat/console.sol";
 
 contract ETFVaultMock is ETFVault { // is VaultToken
 
+  mapping(uint256 => uint256) private players;
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -76,5 +78,12 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       router.curve3Pool(),
       router.curve3PoolFee()
     );
+  }
+
+  function testLargeGameplayerSet(uint256 _amountOfPlayers) public {
+    for (uint256 i = 0; i < _amountOfPlayers; i++){
+      uint256 exchangeRate = exchangeRate();
+      players[i] = exchangeRate;
+    }
   }
 }
