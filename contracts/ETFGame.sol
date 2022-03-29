@@ -15,7 +15,7 @@ import "./Interfaces/IGoverned.sol";
  * and stored on a per token basis in averagePastPerformancePerToken.
  * Redeeming (part) of the xaver tokens is the same as rebalancing and then taking out the xaver tokens plus earnings. 
  */
-abstract contract ETFGame {
+contract ETFGame {
     // xaver token address
     address public xaverTokenAddress;
 
@@ -30,8 +30,7 @@ abstract contract ETFGame {
         _;
     }
 
-    constructor(address _basketTokenAddress, address _xaverTokenAddress, address _governed){
-        basketTokenAddress = _basketTokenAddress;
+    constructor(address _xaverTokenAddress, address _governed){
         xaverTokenAddress = _xaverTokenAddress;
         governed = _governed;
     }
@@ -40,10 +39,10 @@ abstract contract ETFGame {
     uint256 private latestBasketId;
 
     // latest ETFnumber
-    uint256 public latestETFNumber;
+    uint256 public latestETFNumber = 0;
 
     // maps the ETF number to the vault address of the ETF
-    mapping(uint256 => address) public ETFvaults;
+    mapping(uint256 => address) public ETFVaults;
 
     // stores the total value locked per active locked derby token in the game. Stored per ETFvault per period.
     mapping(uint256 => mapping(uint256 => uint256)) public TVLperToken;
@@ -68,6 +67,10 @@ abstract contract ETFGame {
         mapping(uint256 => uint256) allocations;
     }
 
+    // setup the basket contract address
+    function setupBasketContractAddress(address _basketTokenAddress) public onlyDao {
+        basketTokenAddress = _basketTokenAddress;
+    }
 
     // function to see the total number of allocated tokens. Only the owner of the basket can view this. 
     function basketTotalAllocatedTokens(uint256 _basketId) public view returns(uint256){
@@ -84,28 +87,29 @@ abstract contract ETFGame {
     }
 
     // add a new ETF
-    function addETF() public onlyDao {
-
+    function addETF(address _ETFVaultAddress) public onlyDao {
+        ETFVaults[latestETFNumber] = _ETFVaultAddress;
+        latestETFNumber++;
     }
 
-    // mints a new NFT with a Basket of allocations
-    function mintNewBasket(uint256 _ETFnumber) public {
+    // // mints a new NFT with a Basket of allocations
+    // function mintNewBasket(uint256 _ETFnumber) public {
 
-    }
+    // }
 
-    // rebalances an existing Basket
-    function rebalanceExistingBasket(uint256 _basketId) public {
+    // // rebalances an existing Basket
+    // function rebalanceExistingBasket(uint256 _basketId) public {
 
-    }
+    // }
 
-    // redeem funds from basket
-    function redeemFromBasket(uint256 _basketId) public {
+    // // redeem funds from basket
+    // function redeemFromBasket(uint256 _basketId) public {
 
-    }
+    // }
 
-    // adjusts the deltaAllocations in the ETF vault
-    function adjustDeltaAllocations(uint256 _ETFnumber) private {
+    // // adjusts the deltaAllocations in the ETF vault
+    // function adjustDeltaAllocations(uint256 _ETFnumber) private {
 
-    }
+    // }
 
 }
