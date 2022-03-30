@@ -15,7 +15,7 @@ import "./Interfaces/IGoverned.sol";
  * and stored on a per token basis in averagePastPerformancePerToken.
  * Redeeming (part) of the xaver tokens is the same as rebalancing and then taking out the xaver tokens plus earnings. 
  */
-contract ETFGame {
+contract ETFGame is IETFGame{
     // xaver token address
     address public xaverTokenAddress;
 

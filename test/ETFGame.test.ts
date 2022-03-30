@@ -48,9 +48,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ] = await beforeEachETFVault(amountUSDC)
 
     const daoAddr = await dao.getAddress();
-    xaverToken = await deployXaverToken(dao, name, symbol);
-    game = await deployETFGame(dao, xaverToken.address, daoAddr);  
-    basketToken = await deployBasketToken(dao, game.address, nftName, nftSymbol);
+    xaverToken = await deployXaverToken(user, name, symbol);
+    game = await deployETFGame(user, xaverToken.address, daoAddr);  
+    basketToken = await deployBasketToken(user, game.address, nftName, nftSymbol);
     await game.connect(dao).setupBasketContractAddress(basketToken.address);
   });
 
@@ -69,4 +69,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(await game.xaverTokenAddress()).to.be.equal(xaverToken.address);
     expect(await game.basketTokenAddress()).to.be.equal(basketToken.address);
   });
+  
+  it.only("Can add a vault", async function() {
+    await expect(game.addETF(vaultMock.address)).to.be.revertedWith("ETFvault: only DAO");
+    let latestETFNumber = await game.latestETFNumber();
+    expect(latestETFNumber).to.be.equal(0);
+    await game.connect(dao).addETF(vaultMock.address);
+    latestETFNumber = await game.latestETFNumber();
+    expect(latestETFNumber).to.be.equal(1);
+    expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
+  });
+
 });
