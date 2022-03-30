@@ -16,7 +16,7 @@ library Swap {
   using SafeERC20 for IERC20;
 
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  uint256 internal constant gasUsedForSwap = 200000;
+  uint256 internal constant gasUsedForSwap = 210000;
 
   /// @notice Swap stable coins on Curve
   /// @param _amount Number of tokens to swap
@@ -157,10 +157,9 @@ library Swap {
     return amountOut;
   }
 
-  function unWrapWETH(uint256 _amount) internal {
-    // IWETH(WETH).approve(WETH, _amount);
-    console.log("approved");
-    IWETH(WETH).withdraw(address(this), _amount);
+  function unWrapWETHtoGov(address payable _governed, uint256 _amount) internal {
+    IWETH9(WETH).withdraw(_amount);
+    _governed.transfer(_amount);
   }
 
 }

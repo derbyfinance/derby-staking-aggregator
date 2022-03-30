@@ -9,6 +9,7 @@ import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, dai, compToken as comp, compoundDAI} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { parseEther } from "ethers/lib/utils";
 
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
@@ -16,6 +17,7 @@ const uScale = 1E6;
 describe("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
+  dao: Signer,
   userAddr: string,
   IUSDc: Contract, 
   protocolCompound: Protocol,
@@ -37,7 +39,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
       allProtocols,
       IUSDc,,,,,,,
       IComp,
-      compSigner
+      compSigner,,,,
+      dao
     ] = await beforeEachETFVault(amountUSDC)
 
     IDAI = await erc20(dai);
@@ -179,12 +182,18 @@ describe("Deploy Contracts and interact with Vault", async () => {
     })
   });
 
-  it.only("Swapping ether to USDC for rebalance fee", async function() {
+  it("Swapping USDC to Ether, unwrap and send to DAO to cover gas costs", async function() {
     const amountToDeposit = parseUSDC('100000')
     await setDeltaAllocations(user, vaultMock, allProtocols);
-
     await vaultMock.depositETF(userAddr, amountToDeposit);
-    await vaultMock.rebalanceETF();
+
+    const ETHBalanceBefore = await dao.getBalance();
+    await vaultMock.connect(dao).rebalanceETF();
+    const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
+    console.log({ETHBalanceReceived})
+
+    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether back after the rebalance function
+    expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')))
   });
 
   // it("Calc USDC to COMP", async function() {
@@ -244,3 +253,4 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
 // price Token0 = sqrtRatioX96 ** 2 / 2 ** 192
 // price Token1 = 2 ** 192 / sqrtRatioX96 ** 2
+// 

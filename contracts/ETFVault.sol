@@ -186,7 +186,6 @@ contract ETFVault is VaultToken {
     lastTimeStamp = block.timestamp;
 
     uint256 gasUsed = gasStart - gasleft();
-    console.log("gas used %s", gasUsed);
     swapAndPayGasFee(gasUsed);
   }
 
@@ -221,6 +220,9 @@ contract ETFVault is VaultToken {
     return protocolToDeposit;
   }
 
+  /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
+  /// @notice This way the vault will pay the gas for the RebalanceETF function
+  /// @param _gasUsed total gas used by RebalanceETF
   function swapAndPayGasFee(uint256 _gasUsed) internal {
     uint256 amountEtherToVaultCurrency = Swap.getPoolAmountOut(
       (_gasUsed + Swap.gasUsedForSwap) * router.getGasPrice(),
@@ -230,7 +232,7 @@ contract ETFVault is VaultToken {
       router.uniswapPoolFee(),
       0
     );
-
+    
     uint256 wethReceived = Swap.swapTokensSingle(
       amountEtherToVaultCurrency, 
       vaultCurrencyAddr, 
@@ -240,20 +242,10 @@ contract ETFVault is VaultToken {
       router.uniswapPoolFee(),
       router.uniswapSwapFee()
     );
-
-    console.log("ether to vault currency %s", amountEtherToVaultCurrency);
-    console.log("wethReceived %s", wethReceived);
-    uint256 testbalance = IERC20(Swap.WETH).balanceOf(address(this));
-    console.log("testbalance %s", testbalance);
-
-    Swap.unWrapWETH(wethReceived);
-
-    uint256 testbalanceETH = balanceOf(address(this));
-
-    console.log("testbalanceETH %s", testbalanceETH);
+    Swap.unWrapWETHtoGov(payable(governed), wethReceived);
   }
 
-  /// @notice Check if a rebalance is needed based on a set block interval 
+  /// @notice Checks if a rebalance is needed based on the set block interval 
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns(bool) {
     return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
@@ -458,5 +450,10 @@ contract ETFVault is VaultToken {
     currentAllocations[_protocolNum] = 0;
     router.setProtocolBlacklist(ETFnumber, _protocolNum);
     withdrawFromProtocol(_protocolNum, balanceProtocol);
+  }
+
+  /// @notice callback to receive Ether from unwrapping WETH
+  receive() external payable {
+    require(msg.sender == Swap.WETH, "Not WETH");
   }
 }

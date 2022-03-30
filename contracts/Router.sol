@@ -26,7 +26,7 @@ contract Router is IRouter {
   address public chainlinkGasPriceOracle;
 
   uint24 public uniswapPoolFee;
-  uint256 public curve3PoolFee = 6; // 0.05%
+  uint256 public curve3PoolFee = 6; // 0.06%
   uint256 public uniswapSwapFee = 60; // 0.6% // 0.3 plus some slippage
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
