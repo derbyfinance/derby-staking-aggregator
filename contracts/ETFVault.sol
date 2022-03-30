@@ -37,7 +37,7 @@ contract ETFVault is VaultToken {
   uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 0;
 
-  uint256 public blockInterval = 1;
+  uint256 public blockRebalanceInterval = 1;
   uint256 public lastTimeStamp;
 
   // total number of allocated xaver tokens currently
@@ -222,13 +222,8 @@ contract ETFVault is VaultToken {
   }
 
   function swapAndPayGasFee(uint256 _gasUsed) internal {
-    uint256 gasStart = gasleft();
-
-    uint256 gas = router.getGasPrice();
-    console.log("omelet swap", gas); 
-
     uint256 amountEtherToVaultCurrency = Swap.getPoolAmountOut(
-      _gasUsed * router.getGasPrice(),
+      (_gasUsed + Swap.gasUsedForSwap) * router.getGasPrice(),
       Swap.WETH,
       vaultCurrencyAddr,
       router.uniswapFactory(),
@@ -245,18 +240,23 @@ contract ETFVault is VaultToken {
       router.uniswapPoolFee(),
       router.uniswapSwapFee()
     );
-    
+
     console.log("ether to vault currency %s", amountEtherToVaultCurrency);
     console.log("wethReceived %s", wethReceived);
+    uint256 testbalance = IERC20(Swap.WETH).balanceOf(address(this));
+    console.log("testbalance %s", testbalance);
 
-    uint256 gasUsed = gasStart - gasleft();
-    console.log("gas used swap %s", gasUsed);
+    Swap.unWrapWETH(wethReceived);
+
+    uint256 testbalanceETH = balanceOf(address(this));
+
+    console.log("testbalanceETH %s", testbalanceETH);
   }
 
   /// @notice Check if a rebalance is needed based on a set block interval 
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns(bool) {
-    return (block.timestamp - lastTimeStamp) > blockInterval;
+    return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
   }
 
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
@@ -443,6 +443,12 @@ contract ETFVault is VaultToken {
   function setPerformancePerc(uint256 _performancePerc) external onlyDao {
     require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
     performancePerc = _performancePerc;
+  } 
+
+  /// @notice Set minimum block interval for the rebalance function
+  /// @param _blockInterval number of blocks
+  function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
+    blockRebalanceInterval = _blockInterval;
   } 
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.

@@ -278,15 +278,21 @@ contract Router is IRouter {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
   }
 
+  /// @notice Gets the gas price from Chainlink oracle
+  /// @return gasPrice latest gas price from oracle
   function getGasPrice() external override returns(uint256) {
     return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
   }
 
+  /// @notice Setter for the Chainlink Gas price oracle contract address in case it changes
+  /// @param _chainlinkGasPriceOracle Contract address
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
-    chainlinkGasPriceOracle = _chainlinkGasPriceOracle
+    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
 
+  /// @notice Setter for the Uniswap swap fee plus some slippage
+  /// @param _swapFee In nominals e.g 60 = 0.06%
   function setUniswapSwapFee(uint256 _swapFee) external override onlyDao {
-    uniswapSwapFee = _swapFee
+    uniswapSwapFee = _swapFee;
   }
 }

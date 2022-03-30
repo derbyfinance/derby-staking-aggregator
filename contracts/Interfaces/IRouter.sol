@@ -107,4 +107,8 @@ interface IRouter {
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
 
   function getGasPrice() external returns(uint256);
+
+  function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
+
+  function setUniswapSwapFee(uint256 _swapFee) external;
 }
