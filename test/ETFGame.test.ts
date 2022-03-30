@@ -9,10 +9,10 @@ import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helper
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 import { deployETFGame, deployBasketToken, deployXaverToken } from "./helpers/deploy";
 
-const name = 'DerbyUSDC';
+const name = 'XaverUSDC';
 const symbol = 'dUSDC';
-const nftName = 'derbyNFT';
-const nftSymbol = 'DRBNFT';
+const nftName = 'XaverNFT';
+const nftSymbol = 'XAVNFT';
 const decimals = 18;
 const marginScale = 1E9;
 const uScale = 1E6;

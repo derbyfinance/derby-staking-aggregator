@@ -45,7 +45,7 @@ const protocols = [
   [20, 60],
 ]
 
-const name = 'DerbyUSDC';
+const name = 'XaverUSDC';
 const symbol = 'dUSDC';
 const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;

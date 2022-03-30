@@ -2,20 +2,14 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IBasketToken.sol";
 import "./Interfaces/IGoverned.sol";
 
-/** One contract is going to be created which is central to the ETF management game.
- * ETFs can be added here.
- * A player can create a Basket where he can allocate his xaver tokens to different protocols
- * Allocations are tracked per period, a period is n nr of blocks.
- * If a user rebalances his allocations then the performance over the last x active periods is measured
- * and stored on a per token basis in averagePastPerformancePerToken.
- * Redeeming (part) of the xaver tokens is the same as rebalancing and then taking out the xaver tokens plus earnings. 
- */
 contract ETFGame {
+    using SafeERC20 for IERC20;
     // xaver token address
     address public xaverTokenAddress;
 
@@ -63,6 +57,9 @@ contract ETFGame {
         // nr of total allocated tokens 
         uint256 totalAllocatedTokens;
 
+        // nr of locked tokens that are not allocated yet
+        uint256 nrOfUnAllocatedTokens;
+
         // allocations per period
         mapping(uint256 => uint256) allocations;
     }
@@ -79,6 +76,13 @@ contract ETFGame {
         return baskets[_basketId].totalAllocatedTokens;
     }
 
+    // function to see the total number of unallocated tokens. Only the owner of the basket can view this. 
+    function basketTotalUnAllocatedTokens(uint256 _basketId) public view returns(uint256){
+        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+
+        return baskets[_basketId].nrOfUnAllocatedTokens;
+    }
+
     // function to see the allocation of a specific protocol in a basket. Only the owner of the basket can view this. 
     function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) public view returns(uint256){
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
@@ -92,10 +96,13 @@ contract ETFGame {
         latestETFNumber++;
     }
 
-    // // mints a new NFT with a Basket of allocations
-    // function mintNewBasket(uint256 _ETFnumber) public {
+    // mints a new NFT with a Basket of allocations
+    function mintNewBasket(uint256 _ETFnumber, uint256 _lockedTokenAmount) public {
+        // lock xaver tokens in game contract
 
-    // }
+        // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
+
+    }
 
     // // rebalances an existing Basket
     // function rebalanceExistingBasket(uint256 _basketId) public {

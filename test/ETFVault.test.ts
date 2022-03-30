@@ -8,7 +8,7 @@ import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
-const name = 'DerbyUSDC';
+const name = 'XaverUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
 const marginScale = 1E9;
