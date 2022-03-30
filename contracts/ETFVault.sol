@@ -133,7 +133,7 @@ contract ETFVault is VaultToken {
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
   /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
-    for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
 
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
@@ -185,8 +185,8 @@ contract ETFVault is VaultToken {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
-    uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
-    for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
+    uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber));
+    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
@@ -234,7 +234,7 @@ contract ETFVault is VaultToken {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
@@ -308,7 +308,7 @@ contract ETFVault is VaultToken {
   function getTotalUnderlying() public view returns(uint256) {
     uint256 balance;
     
-    for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);
       balance += balanceProtocol;
@@ -349,7 +349,7 @@ contract ETFVault is VaultToken {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in router contract
   function claimTokens() public {
-    for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       bool claim = router.claim(ETFnumber, i);
 

@@ -70,7 +70,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(await game.basketTokenAddress()).to.be.equal(basketToken.address);
   });
   
-  it.only("Can add a vault", async function() {
+  it("Can add a vault", async function() {
     await expect(game.addETF(vaultMock.address)).to.be.revertedWith("ETFvault: only DAO");
     let latestETFNumber = await game.latestETFNumber();
     expect(latestETFNumber).to.be.equal(0);

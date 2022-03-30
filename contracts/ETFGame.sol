@@ -4,6 +4,8 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "./Interfaces/IETFVault.sol";
+
 import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IBasketToken.sol";
 import "./Interfaces/IGoverned.sol";
@@ -99,14 +101,24 @@ contract ETFGame {
     // mints a new NFT with a Basket of allocations
     function mintNewBasket(uint256 _ETFnumber, uint256 _lockedTokenAmount) public {
         // lock xaver tokens in game contract
+        IERC20(xaverTokenAddress).safeTransfer(address(this), _lockedTokenAmount);
 
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
-
+        IBasketToken(basketTokenAddress).mint(msg.sender, latestBasketId);
+        baskets[latestBasketId].ETFnumber = _ETFnumber;
+        baskets[latestBasketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod();
+        baskets[latestBasketId].nrOfUnAllocatedTokens = _lockedTokenAmount;
+        latestBasketId++;
     }
 
     // // rebalances an existing Basket
-    // function rebalanceExistingBasket(uint256 _basketId) public {
+    // function rebalanceExistingBasket(uint256 _basketId, uint256[] memory _allocations) public {
+    //     require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
+    //     for (uint256 i = 0; i < _allocations.length; i++) {
+    //         if (_allocations[i] == 0) continue;
+    //         baskets[_basketId] = _allocations[i];
+    //     }
     // }
 
     // // redeem funds from basket

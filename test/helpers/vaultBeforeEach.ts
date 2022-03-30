@@ -16,7 +16,7 @@ export interface Protocol {
   address: string;
 }
 
-const name = 'DerbyUSDC';
+const name = 'XaverUSDC';
 const symbol = 'dUSDC';
 const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;
