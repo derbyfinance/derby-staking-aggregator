@@ -89,9 +89,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const userAddr = await user.getAddress();
     expect(ownerOfNFT).to.be.equal(userAddr);
 
-    await game.connect(user).lockTokensToBasket(userAddr, 0, 1000);
-    const unlockedTokens = await game.basketTotalUnAllocatedTokens(0);
-    console.log("unlockedTokens %s", unlockedTokens);
+    // await game.connect(user).lockTokensToBasket(userAddr, 0, 1000);
+    // const unlockedTokens = await game.basketTotalUnAllocatedTokens(0);
+    // console.log("unlockedTokens %s", unlockedTokens);
   });
 
 });

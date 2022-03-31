@@ -13,7 +13,7 @@ import "./XaverToken.sol";
 
 contract ETFGame {
     using SafeERC20 for IERC20;
-    
+
     // xaver token address
     address public xaverTokenAddress;
 
@@ -107,13 +107,11 @@ contract ETFGame {
     }
 
     // mints a new NFT with a Basket of allocations
-    function mintNewBasket(uint256 _ETFnumber, uint256 _lockedTokenAmount) public {
+    function mintNewBasket(uint256 _ETFnumber) public {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
         IBasketToken(basketTokenAddress).mint(msg.sender, latestBasketId);
         baskets[latestBasketId].ETFnumber = _ETFnumber;
         baskets[latestBasketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
-        
-        lockTokensToBasket(latestBasketId, _lockedTokenAmount);
         latestBasketId++;
     }
 
