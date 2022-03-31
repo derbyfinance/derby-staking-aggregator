@@ -5,7 +5,7 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
 import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
-import { setDeltaAllocations } from "./helpers/vaultHelpers";
+import { rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
 import {  yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
@@ -40,16 +40,17 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
 
     console.log('---------Deposit and rebalance with 100k----------');
     await vaultMock.depositETF(userAddr, amountUSDC);
-    await vaultMock.rebalanceETF();
+    const gasUsed = Number(formatUSDC(await rebalanceETF(vaultMock)));
+    console.log({gasUsed})
 
     // LP Balance User == 100k
-    expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(100_000, 1);
+    expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(100_000 , 1);
     // TotalUnderlying == 100k
     let totalUnderlying = (await vaultMock.getTotalUnderlying()).add(await IUSDc.balanceOf(vaultMock.address));
-    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(100_000, 1);
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(100_000 - gasUsed, 1);
     // Total liquid funds in vault == 10k
     let totalLiquidFunds = await IUSDc.balanceOf(vaultMock.address);
-    expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(10_000, 1);
+    expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(10_000 - gasUsed, 1);
     // Total supply LP tokens == 100k
     expect(Number(formatUSDC(await vaultMock.totalSupply()))).to.be.equal(100_000);
     // Total Yearn
@@ -64,12 +65,12 @@ describe("Deploy Contracts and interact with Vault Order", async () => {
 
     console.log('---------Withdraw 20k----------');
     await vaultMock.withdrawETF(userAddr, parseUSDC('20000'));
-
+    
     // LP Balance user == 100k - 20k = 80k
     expect(Number(formatUSDC(await vaultMock.balanceOf(userAddr)))).to.be.closeTo(80_000, 1);
     // TotalUnderlying == 100k -20k = 80k
     totalUnderlying = await vaultMock.getTotalUnderlying();
-    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(80_000, 1);
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(80_000 - gasUsed, 1);
     // Total liquid funds in vault == 0k
     totalLiquidFunds = await IUSDc.balanceOf(vaultMock.address);
     expect(Number(formatUSDC(totalLiquidFunds))).to.be.closeTo(0, 1); 
