@@ -52,6 +52,8 @@ contract ETFVault is VaultToken {
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
+  event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
+
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
     _;
@@ -243,6 +245,8 @@ contract ETFVault is VaultToken {
       router.uniswapSwapFee()
     );
     Swap.unWrapWETHtoGov(payable(governed), wethReceived);
+
+    emit GasPaidRebalanceETF(amountEtherToVaultCurrency);
   }
 
   /// @notice Checks if a rebalance is needed based on the set block interval 

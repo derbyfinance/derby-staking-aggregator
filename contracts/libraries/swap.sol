@@ -40,6 +40,8 @@ library Swap {
     uint256 _curvePoolFee
   ) internal returns(uint256) {        
     uint256 amountOutMin = (_amount * (10000 - _curvePoolFee) / 10000) * _tokenOutUScale / _tokenInUScale;
+    console.log("_amount %s", _amount);
+    console.log("amountoutmin %s", amountOutMin);
 
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
@@ -53,6 +55,7 @@ library Swap {
     );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+    console.log("Received %s", balanceAfter - balanceBefore);
     return balanceAfter - balanceBefore;
   }
 

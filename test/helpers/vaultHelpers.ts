@@ -3,6 +3,7 @@ import { BigNumber, Signer } from 'ethers';
 import type { ETFVaultMock, Router } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { comptroller } from "./addresses";
+import { Result } from 'ethers/lib/utils';
 
 interface Protocol {
   number: number;
@@ -49,4 +50,12 @@ export function deployAllProviders(dao: Signer, router: Router) {
     deployCompoundProvider(dao, router.address, comptroller),
     deployAaveProvider(dao, router.address),
   ]);
+}
+
+export const rebalanceETF = async (vaultMock: ETFVaultMock) => {
+  const tx = await vaultMock.rebalanceETF()
+  const receipt = await tx.wait()
+  const  { gasInVaultCurrency }  = receipt.events!.at(-1)!.args as Result
+
+  return gasInVaultCurrency
 }
