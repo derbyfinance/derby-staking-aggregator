@@ -1,9 +1,9 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { expect, assert } from "chai";
+import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
+import { formatUSDC, parseUSDC, parseEther } from './helpers/helpers';
 import { ETFVaultMock, ETFGame, XaverToken, BasketToken } from '../typechain-types';
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
@@ -19,6 +19,7 @@ const uScale = 1E6;
 const liquidityPerc = 10;
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
+const totalXaverSupply = parseEther(1E8.toString()); 
 
 describe("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
@@ -48,15 +49,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ] = await beforeEachETFVault(amountUSDC)
 
     const daoAddr = await dao.getAddress();
-    xaverToken = await deployXaverToken(user, name, symbol);
+    xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
     game = await deployETFGame(user, xaverToken.address, daoAddr);  
     basketToken = await deployBasketToken(user, game.address, nftName, nftSymbol);
     await game.connect(dao).setupBasketContractAddress(basketToken.address);
   });
 
-  it("XaverToken should have name and symbol set", async function() {
+  it("XaverToken should have name, symbol and totalSupply set", async function() {
     expect(await xaverToken.name()).to.be.equal(name);
     expect(await xaverToken.symbol()).to.be.equal(symbol);
+    expect(await xaverToken.totalSupply()).to.be.equal(totalXaverSupply);
   });
 
   it("BasketToken should have name, symbol and game contract address set", async function() {
@@ -78,6 +80,18 @@ describe("Deploy Contracts and interact with Vault", async () => {
     latestETFNumber = await game.latestETFNumber();
     expect(latestETFNumber).to.be.equal(1);
     expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
+  });
+
+  it("Can mint a basket NFT and lock xaver tokens in it", async function() {
+    await game.connect(dao).addETF(vaultMock.address);
+    await game.mintNewBasket(0);
+    const ownerOfNFT = await basketToken.ownerOf(0);
+    const userAddr = await user.getAddress();
+    expect(ownerOfNFT).to.be.equal(userAddr);
+
+    await game.connect(user).lockTokensToBasket(userAddr, 0, 1000);
+    const unlockedTokens = await game.basketTotalUnAllocatedTokens(0);
+    console.log("unlockedTokens %s", unlockedTokens);
   });
 
 });

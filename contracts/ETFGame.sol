@@ -9,9 +9,11 @@ import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IBasketToken.sol";
 import "./Interfaces/IGoverned.sol";
+import "./XaverToken.sol";
 
 contract ETFGame {
     using SafeERC20 for IERC20;
+    
     // xaver token address
     address public xaverTokenAddress;
 

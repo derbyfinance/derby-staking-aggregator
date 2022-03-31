@@ -5,11 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract XaverToken  is ERC20 {
     constructor(
-      string memory name_,
-      string memory symbol_
+      string memory _name,
+      string memory _symbol,
+      uint256 _totalSupply
     )
-      ERC20(name_, symbol_)
+      ERC20(_name, _symbol)
     {
-
+      _mint(msg.sender, _totalSupply);
     }
 }
