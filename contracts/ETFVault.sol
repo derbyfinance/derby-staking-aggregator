@@ -114,7 +114,7 @@ contract ETFVault is VaultToken {
     }
     
     _mint(_buyer, shares);
-    
+    console.log("shares %s", shares);
     return shares;
   }
 
