@@ -159,34 +159,33 @@ contract ETFGame {
         baskets[_basketId].nrOfUnAllocatedTokens -= _lockedTokenAmount;
     }
 
-    // // rebalances an existing Basket
-    // function rebalanceExistingBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
-    //     require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+    // rebalances an existing Basket
+    function rebalanceExistingBasket(address _user, uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
+        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
-    //     addToTotalRewards(_basketId);
-    //     baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+        addToTotalRewards(_basketId);
+        baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
-    //     uint256 totalNewAllocatedTokens = 0;
-    //     uint256 totalOldAllocatedTokens = baskets[_basketId].nrOfUnAllocatedTokens + baskets[_basketId].nrOfAllocatedTokens;
-    //     for (uint256 i = 0; i < _allocations.length; i++) {
-    //         totalNewAllocatedTokens += _allocations[i];
-    //         if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
-    //         uint256 deltaAllocation = _allocations[i] - baskets[_basketId].allocations[i];
-    //         adjustDeltaAllocations(_ETFnumber, i, deltaAllocation);
-    //         baskets[_basketId].allocations[i] = _allocations[i];
-    //     }
+        uint256 totalNewAllocatedTokens = 0;
+        uint256 deltaAllocation;
+        uint256 totalOldTokens = baskets[_basketId].nrOfUnAllocatedTokens + baskets[_basketId].nrOfAllocatedTokens;
+        for (uint256 i = 0; i < _allocations.length; i++) {
+            totalNewAllocatedTokens += _allocations[i];
+            if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
+            else if (baskets[_basketId].allocations[i] < _allocations[i]) deltaAllocation = _allocations[i] - baskets[_basketId].allocations[i];
+            else deltaAllocation = baskets[_basketId].allocations[i] - _allocations[i];
+            adjustDeltaAllocations(_ETFnumber, i, deltaAllocation);
+            baskets[_basketId].allocations[i] = _allocations[i];
+        }
 
-    //     if (totalNewAllocatedTokens > totalOldAllocatedTokens) {
-    //         uint256 lockedTokenAmount = totalNewAllocatedTokens - totalOldAllocatedTokens;
-    //         lockTokensToBasket(_basketId, lockedTokenAmount);
-    //         baskets[_basketId].nrOfUnAllocatedTokens = 0;
+        if (totalNewAllocatedTokens > totalOldTokens) {
+            uint256 lockedTokenAmount = totalNewAllocatedTokens - totalOldTokens;
+            lockTokensToBasket(_user, _basketId, lockedTokenAmount);
+            baskets[_basketId].nrOfUnAllocatedTokens = 0;
             
-    //     } else {
-    //         if (totalNewAllocatedTokens <= baskets[_basketId].nrOfUnAllocatedTokens) baskets[_basketId].nrOfUnAllocatedTokens -= totalNewAllocatedTokens;
-    //         else baskets[_basketId].nrOfUnAllocatedTokens = 0;
-    //     }
-    //     baskets[_basketId].nrOfAllocatedTokens = totalNewAllocatedTokens;
-    // }
+        } else baskets[_basketId].nrOfUnAllocatedTokens = totalOldTokens - totalNewAllocatedTokens;
+        baskets[_basketId].nrOfAllocatedTokens = totalNewAllocatedTokens;
+    }
 
     // // redeem funds from basket
     // function redeemRewards(uint256 _basketId, uint256 _amount) public {
@@ -203,18 +202,18 @@ contract ETFGame {
 
     // }
 
-    // // add to total rewards, formula of calculating the game rewards here
-    // function addToTotalRewards(uint256 _basketId) private {
-    //     baskets[_basketId].lastBasketPrice = 1;
-    //     uint256 amount = 0;
+    // add to total rewards, formula of calculating the game rewards here
+    function addToTotalRewards(uint256 _basketId) private {
+        baskets[_basketId].lastBasketPrice = 1;
+        uint256 amount = 0;
 
 
-    //     baskets[_basketId].totalUnRedeemedRewards += amount;
-    // }
+        baskets[_basketId].totalUnRedeemedRewards += amount;
+    }
 
-    // // adjusts the deltaAllocations in the ETF vault
-    // function adjustDeltaAllocations(uint256 _ETFnumber, uint256 _protocolId, uint256 _deltaAllocation) private {
+    // adjusts the deltaAllocations in the ETF vault
+    function adjustDeltaAllocations(uint256 _ETFnumber, uint256 _protocolId, uint256 _deltaAllocation) private {
 
-    // }
+    }
 
 }

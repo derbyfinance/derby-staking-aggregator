@@ -21,7 +21,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalXaverSupply = parseEther(1E8.toString()); 
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Deploy Contracts and interact with Game", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
