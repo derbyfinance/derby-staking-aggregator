@@ -30,7 +30,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
   router: Contract;
 
   beforeEach(async function() {
-    console.log(1E206 * 4E20);
     [
       vaultMock,
       user,
@@ -141,12 +140,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     console.log({ balanceVault })
     console.log({ gasUsed3 })
-    console.log({ totalGas })
+    console.log({ exchangeRate })
 
     // LP user 138217 verwacht 138000
     // gasUsed 391 usdc
     // totalGas 795 usdc
-    995663
+
     LPBalanceUser = await vaultMock.balanceOf(userAddr);
     console.log(`LP balance user: ${LPBalanceUser}`);
     
