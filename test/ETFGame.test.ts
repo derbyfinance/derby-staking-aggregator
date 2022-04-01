@@ -82,16 +82,31 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
   });
 
-  it("Can mint a basket NFT and lock xaver tokens in it", async function() {
+  it.only("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
     await game.connect(dao).addETF(vaultMock.address);
     await game.mintNewBasket(0);
     const ownerOfNFT = await basketToken.ownerOf(0);
     const userAddr = await user.getAddress();
     expect(ownerOfNFT).to.be.equal(userAddr);
 
-    // await game.connect(user).lockTokensToBasket(userAddr, 0, 1000);
-    // const unlockedTokens = await game.basketTotalUnAllocatedTokens(0);
-    // console.log("unlockedTokens %s", unlockedTokens);
+    const amountToLock = 1000;
+    const balanceBefore = await xaverToken.balanceOf(userAddr);
+    await xaverToken.approve(game.address, amountToLock),
+    await expect(game.connect(dao).lockTokensToBasket(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
+    await game.lockTokensToBasket(userAddr, 0, amountToLock);
+    const balanceDiff = balanceBefore.sub(await xaverToken.balanceOf(userAddr));
+    await expect(game.connect(dao).basketTotalUnAllocatedTokens(0)).to.be.revertedWith("Not the owner of the Basket.");
+    let unAllocatedTokens = await game.basketTotalUnAllocatedTokens(0);
+    expect(unAllocatedTokens).to.be.equal(amountToLock);
+    expect(balanceDiff).to.be.equal(amountToLock.toString());
+
+    await expect(game.connect(dao).unlockTokensFromBasket(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
+    await expect(game.unlockTokensFromBasket(userAddr, 0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
+    await game.unlockTokensFromBasket(userAddr, 0, amountToLock);
+    await expect(game.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Not the owner of the Basket.");
+    unAllocatedTokens = await game.basketTotalUnAllocatedTokens(0);
+    expect(unAllocatedTokens).to.be.equal(0);
+    expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
   });
 
 });

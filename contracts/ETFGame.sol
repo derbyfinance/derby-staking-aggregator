@@ -115,26 +115,25 @@ contract ETFGame {
         latestBasketId++;
     }
 
-    function lockTokensToBasket(uint256 _basketId, uint256 _lockedTokenAmount) public {
+    function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
-        IERC20(xaverTokenAddress).safeTransfer(address(this), _lockedTokenAmount);
+        IERC20(xaverTokenAddress).safeTransferFrom(_user, address(this), _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
         require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
 
-        baskets[latestBasketId].nrOfUnAllocatedTokens += _lockedTokenAmount;
+        baskets[_basketId].nrOfUnAllocatedTokens += _lockedTokenAmount;
     }
 
-
-    function unlockTokensFromBasket(uint256 _basketId, uint256 _lockedTokenAmount) public {
+    function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
         require(baskets[_basketId].nrOfUnAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
-        IERC20(xaverTokenAddress).safeTransferFrom(address(this), msg.sender,  _lockedTokenAmount);
+        IERC20(xaverTokenAddress).safeTransfer(_user, _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
-        require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
+        require((balanceBefore - balanceAfter - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
 
         baskets[_basketId].nrOfUnAllocatedTokens -= _lockedTokenAmount;
     }
