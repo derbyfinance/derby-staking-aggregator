@@ -82,13 +82,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
   });
 
-  it.only("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+  it("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+    // minting
     await game.connect(dao).addETF(vaultMock.address);
     await game.mintNewBasket(0);
     const ownerOfNFT = await basketToken.ownerOf(0);
     const userAddr = await user.getAddress();
     expect(ownerOfNFT).to.be.equal(userAddr);
 
+    // locking
     const amountToLock = 1000;
     const balanceBefore = await xaverToken.balanceOf(userAddr);
     await xaverToken.approve(game.address, amountToLock),
@@ -100,6 +102,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(unAllocatedTokens).to.be.equal(amountToLock);
     expect(balanceDiff).to.be.equal(amountToLock.toString());
 
+    // unlocking
     await expect(game.connect(dao).unlockTokensFromBasket(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
     await expect(game.unlockTokensFromBasket(userAddr, 0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
     await game.unlockTokensFromBasket(userAddr, 0, amountToLock);

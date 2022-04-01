@@ -74,39 +74,52 @@ contract ETFGame {
         mapping(uint256 => uint256) allocations;
     }
 
-    // setup the basket contract address
+    /// @notice Setup the basket contract address.
+    /// @dev Not in the constructor because basket token needs to set game address first.
+    /// @dev This function is ran in the deploy script.
+    /// @param  _basketTokenAddress The address of te basketToken (NFT).
     function setupBasketContractAddress(address _basketTokenAddress) public onlyDao {
         basketTokenAddress = _basketTokenAddress;
     }
 
-    // function to see the total number of allocated tokens. Only the owner of the basket can view this. 
+    /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this. 
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @return uint256 Number of xaver tokens that are allocated towards protocols. 
     function basketTotalAllocatedTokens(uint256 _basketId) public view returns(uint256){
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         return baskets[_basketId].nrOfAllocatedTokens;
     }
 
-    // function to see the total number of unallocated tokens. Only the owner of the basket can view this. 
+    /// @notice function to see the total number of unallocated tokens. Only the owner of the basket can view this. 
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @return uint256 Number of xaver tokens that are locked in this contract but not (yet) allocated towards protocols.
     function basketTotalUnAllocatedTokens(uint256 _basketId) public view returns(uint256){
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         return baskets[_basketId].nrOfUnAllocatedTokens;
     }
 
-    // function to see the allocation of a specific protocol in a basket. Only the owner of the basket can view this. 
+    /// @notice function to see the allocation of a specific protocol by a basketId. Only the owner of the basket can view this. 
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @param _protocolId Id of the protocol of which the allocation is queried.
+    /// @return uint256 Number of xaver tokens that are allocated towards this specific protocol. 
     function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) public view returns(uint256){
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         return baskets[_basketId].allocations[_protocolId];
     }
 
-    // add a new ETF
+    /// @notice Adding a vault to the game.
+    /// @param _ETFVaultAddress Address of the vault which is added.
     function addETF(address _ETFVaultAddress) public onlyDao {
         ETFVaults[latestETFNumber] = _ETFVaultAddress;
         latestETFNumber++;
     }
 
-    // mints a new NFT with a Basket of allocations
+    /// @notice Mints a new NFT with a Basket of allocations.
+    /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
+    /// @param _ETFnumber Number of the vault. Same as in Router.
     function mintNewBasket(uint256 _ETFnumber) public {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
         IBasketToken(basketTokenAddress).mint(msg.sender, latestBasketId);
@@ -115,6 +128,10 @@ contract ETFGame {
         latestBasketId++;
     }
 
+    /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated. 
+    /// @param _user User address from which the xaver tokens are locked inside this contract.
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
     function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
@@ -126,6 +143,10 @@ contract ETFGame {
         baskets[_basketId].nrOfUnAllocatedTokens += _lockedTokenAmount;
     }
 
+    /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.  
+    /// @param _user User address to which the xaver tokens are transferred from this contract.
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
     function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
         require(baskets[_basketId].nrOfUnAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
