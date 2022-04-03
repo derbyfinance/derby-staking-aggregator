@@ -166,7 +166,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
       vaultMock.totalAllocatedTokens(),
       IUSDc.balanceOf(vaultMock.address)
     ]);
-    console.log("hiiiii23123212321")
 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
     allProtocols.forEach((protocol, i) => {
@@ -174,7 +173,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       .to.be.closeTo(allocations3[i].mul((totalAmountDeposited.sub(balanceVault3).sub(totalGas).sub(amountToWithdraw))).div(totalAllocatedTokens3).div(uScale), 20)
     })
     gasUsedUSDC = Number(formatUSDC(gasUsed3))
-    console.log("hiiiii23")
+
     // liquidity vault should be 100k - 12k + 50k * 10% = 13.8k
     const LPReceivedUser2Num = Number(formatUSDC(LPReceivedUser2));
     const LPReceivedUser3Num = Number(formatUSDC(LPReceivedUser3));
@@ -199,13 +198,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
     await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
   });
 
-  it.only("Should not deposit and withdraw when hitting the marginScale", async function() {
+  it("Should not deposit and withdraw when hitting the marginScale", async function() {
     console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
     await setDeltaAllocations(user, vaultMock, allProtocols); 
 
     await vaultMock.connect(dao).setMarginScale(26000*uScale); // set really high marginScale for testing
 
-    await vaultMock.depositETF(userAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vaultMock);
     let gasUsedUSDC = Number(formatUSDC(gasUsed))
     console.log({ gasUsed })
@@ -255,7 +253,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolYearn.allocation = -20; // yearn: 0
 
     await setDeltaAllocations(user, vaultMock, allProtocols);
-    await vaultMock.rebalanceETF();
+    const gasUsed2 = await rebalanceETF(vaultMock);
 
     allocations = await getAllocations(vaultMock, allProtocols);
     vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
