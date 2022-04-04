@@ -199,14 +199,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
-    console.log('-------------- depostit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
+    console.log('-------------- deposit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
     await setDeltaAllocations(user, vaultMock, allProtocols); 
 
     await vaultMock.connect(dao).setMarginScale(26000*uScale); // set really high marginScale for testing
 
+    await vaultMock.depositETF(userAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vaultMock);
     let gasUsedUSDC = Number(formatUSDC(gasUsed))
     console.log({ gasUsed })
+    console.log('oja2')
 
     let allocations = await getAllocations(vaultMock, allProtocols);
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
@@ -219,7 +221,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
     allProtocols.forEach((protocol, i) => {
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
     });
-    console.log('oja')
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1)
 
     console.log('-------------- withdraw 35k, withdrawal should always be possible also when < marginScale ----------------');
@@ -253,15 +254,23 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolYearn.allocation = -20; // yearn: 0
 
     await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.depositETF(userAddr, parseUSDC('2000')); // for gas fees
     const gasUsed2 = await rebalanceETF(vaultMock);
+    let gasUsedUSDC2 = Number(formatUSDC(gasUsed2))
+    console.log({gasUsed2})
 
     allocations = await getAllocations(vaultMock, allProtocols);
     vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
     balances = await getAndLogBalances(vaultMock, allProtocols);
-    expectedBalances = [20000, 45000, 0];
-    expectedVaultLiquidity = 0;
+    expectedVaultLiquidity = 25000 - gasUsedUSDC;
+    expectedBalances = [
+      (expectedVaultLiquidity + 30_000 - Number(LPReceivedUser1)),
+      45000,
+      0
+    ];
+    expectedVaultLiquidity = 2000 - gasUsedUSDC2;
 
     allProtocols.forEach((protocol, i) => {
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
@@ -275,7 +284,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
     protocolYearn.allocation = 50; // yearn: 50
 
     await setDeltaAllocations(user, vaultMock, allProtocols);
-    await vaultMock.rebalanceETF();
+    const gasUsed3 = await rebalanceETF(vaultMock);
+    let gasUsedUSDC3 = Number(formatUSDC(gasUsed3));
+    console.log({ gasUsed3 })
 
     allocations = await getAllocations(vaultMock, allProtocols);
     vaultBalance = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
@@ -367,7 +378,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     .to.be.revertedWith('Protocol is on the blacklist');
   });
 
-  it("Should not be able to rebalance in blacklisted protocol", async function() {
+  it.only("Should not be able to rebalance in blacklisted protocol", async function() {
     await router.addVault(dao.getAddress()); // use dao signer as vault signer
     await setDeltaAllocations(user, vaultMock, allProtocols);
     await vaultMock.connect(dao).blacklistProtocol(0);
