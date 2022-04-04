@@ -121,7 +121,7 @@ contract ETFGame {
     /// @param _user User address from which the xaver tokens are locked inside this contract.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
-    function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) private {
+    function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
@@ -136,7 +136,7 @@ contract ETFGame {
     /// @param _user User address to which the xaver tokens are transferred from this contract.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
-    function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) private {
+    function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal {
         require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
         require(baskets[_basketId].nrOfAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
 
@@ -148,26 +148,26 @@ contract ETFGame {
         baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
     }
 
-    // rebalances an existing Basket
-    function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
-        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+    // // rebalances an existing Basket
+    // function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
+    //     require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
-        addToTotalRewards(_basketId);
-        baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+    //     addToTotalRewards(_basketId);
+    //     baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
-        uint256 totalNewAllocatedTokens = 0;
-        int256 deltaAllocation;
-        for (uint256 i = 0; i < _allocations.length; i++) {
-            totalNewAllocatedTokens += _allocations[i];
-            if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
-            deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
-            IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
-            baskets[_basketId].allocations[i] = _allocations[i];
-        }
+    //     uint256 totalNewAllocatedTokens = 0;
+    //     int256 deltaAllocation;
+    //     for (uint256 i = 0; i < _allocations.length; i++) {
+    //         totalNewAllocatedTokens += _allocations[i];
+    //         if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
+    //         deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
+    //         IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
+    //         baskets[_basketId].allocations[i] = _allocations[i];
+    //     }
 
-        if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
-        else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
-    }
+    //     if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
+    //     else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+    // }
 
     // // redeem funds from basket
     // function redeemRewards(uint256 _basketId, uint256 _amount) public {
@@ -184,12 +184,12 @@ contract ETFGame {
 
     // }
 
-    // add to total rewards, formula of calculating the game rewards here
-    function addToTotalRewards(uint256 _basketId) private {
-        baskets[_basketId].lastBasketPrice = 1;
-        uint256 amount = 0;
+    // // add to total rewards, formula of calculating the game rewards here
+    // function addToTotalRewards(uint256 _basketId) private {
+    //     baskets[_basketId].lastBasketPrice = 1;
+    //     uint256 amount = 0;
 
 
-        baskets[_basketId].totalUnRedeemedRewards += amount;
-    }
+    //     baskets[_basketId].totalUnRedeemedRewards += amount;
+    // }
 }

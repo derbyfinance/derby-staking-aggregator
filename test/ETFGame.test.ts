@@ -4,10 +4,10 @@
 import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC, parseEther } from './helpers/helpers';
-import { ETFVaultMock, ETFGame, XaverToken, BasketToken } from '../typechain-types';
+import { ETFVaultMock, ETFGame, XaverToken, BasketToken, ETFGameMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
-import { deployETFGame, deployBasketToken, deployXaverToken } from "./helpers/deploy";
+import { deployETFGameMock, deployBasketToken, deployXaverToken } from "./helpers/deploy";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
@@ -32,7 +32,7 @@ describe("Deploy Contracts and interact with Game", async () => {
   protocolYearn: Protocol,
   allProtocols: Protocol[],
   router: Contract,
-  game: ETFGame,
+  game: ETFGameMock,
   xaverToken: XaverToken,
   basketToken: BasketToken;
 
@@ -50,7 +50,7 @@ describe("Deploy Contracts and interact with Game", async () => {
 
     const daoAddr = await dao.getAddress();
     xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
-    game = await deployETFGame(user, xaverToken.address, daoAddr);  
+    game = await deployETFGameMock(user, xaverToken.address, daoAddr);  
     basketToken = await deployBasketToken(user, game.address, nftName, nftSymbol);
     await game.connect(dao).setupBasketContractAddress(basketToken.address);
   });
@@ -82,7 +82,7 @@ describe("Deploy Contracts and interact with Game", async () => {
     expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
   });
 
-  it("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+  it.only("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
     // minting
     await game.connect(dao).addETF(vaultMock.address);
     await game.mintNewBasket(0);
@@ -94,20 +94,20 @@ describe("Deploy Contracts and interact with Game", async () => {
     const amountToLock = 1000;
     const balanceBefore = await xaverToken.balanceOf(userAddr);
     await xaverToken.approve(game.address, amountToLock),
-    await expect(game.connect(dao).lockTokensToBasket(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
-    await game.lockTokensToBasket(userAddr, 0, amountToLock);
+    await expect(game.connect(dao).lockTokensToBasketTEST(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
+    await game.lockTokensToBasketTEST(userAddr, 0, amountToLock);
     const balanceDiff = balanceBefore.sub(await xaverToken.balanceOf(userAddr));
-    await expect(game.connect(dao).basketTotalUnAllocatedTokens(0)).to.be.revertedWith("Not the owner of the Basket.");
-    let unAllocatedTokens = await game.basketTotalUnAllocatedTokens(0);
+    await expect(game.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Not the owner of the Basket.");
+    let unAllocatedTokens = await game.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(amountToLock);
     expect(balanceDiff).to.be.equal(amountToLock.toString());
 
     // unlocking
-    await expect(game.connect(dao).unlockTokensFromBasket(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
-    await expect(game.unlockTokensFromBasket(userAddr, 0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
-    await game.unlockTokensFromBasket(userAddr, 0, amountToLock);
+    await expect(game.connect(dao).unlockTokensFromBasketTEST(userAddr, 0, amountToLock)).to.be.revertedWith("Not the owner of the Basket.");
+    await expect(game.unlockTokensFromBasketTEST(userAddr, 0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
+    await game.unlockTokensFromBasketTEST(userAddr, 0, amountToLock);
     await expect(game.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Not the owner of the Basket.");
-    unAllocatedTokens = await game.basketTotalUnAllocatedTokens(0);
+    unAllocatedTokens = await game.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(0);
     expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
   });
