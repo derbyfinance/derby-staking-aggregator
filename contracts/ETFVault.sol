@@ -341,8 +341,8 @@ contract ETFVault is VaultToken {
   /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public onlyETFgame {
     require(!router.getProtocolBlacklist(ETFnumber, _protocolNum), "Protocol is on the blacklist");
-    int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
-    deltaAllocations[_protocolNum] = deltaAllocation;
+    int256 newDeltaAllocation = deltaAllocations[_protocolNum] + _allocation;
+    deltaAllocations[_protocolNum] = newDeltaAllocation;
     deltaAllocatedTokens += _allocation; 
   }
 

@@ -17,7 +17,7 @@ contract ETFGame {
     // xaver token address
     address public xaverTokenAddress;
 
-    // basket token address
+    // basket token address (NFT)
     address public basketTokenAddress;
 
     // address of DAO governance contract
@@ -43,7 +43,8 @@ contract ETFGame {
     mapping(uint256 => address) public ETFVaults;
 
     // stores the total value locked per active locked derby token in the game. Stored per ETFvault per period.
-    mapping(uint256 => mapping(uint256 => uint256)) public TVLperToken;
+    // first index is ETFvault, second is rebalancing period.
+    mapping(uint256 => mapping(uint256 => uint256)) public cumTVLperToken;
 
     // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
     mapping(uint256 => Basket) private baskets;
@@ -167,20 +168,19 @@ contract ETFGame {
         baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
         uint256 totalNewAllocatedTokens = 0;
-        uint256 deltaAllocation;
+        int256 deltaAllocation;
         uint256 totalOldTokens = baskets[_basketId].nrOfUnAllocatedTokens + baskets[_basketId].nrOfAllocatedTokens;
         for (uint256 i = 0; i < _allocations.length; i++) {
             totalNewAllocatedTokens += _allocations[i];
             if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
-            else if (baskets[_basketId].allocations[i] < _allocations[i]) deltaAllocation = _allocations[i] - baskets[_basketId].allocations[i];
-            else deltaAllocation = baskets[_basketId].allocations[i] - _allocations[i];
-            adjustDeltaAllocations(_ETFnumber, i, deltaAllocation);
+            deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
+            IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
             baskets[_basketId].allocations[i] = _allocations[i];
         }
 
         if (totalNewAllocatedTokens > totalOldTokens) {
-            uint256 lockedTokenAmount = totalNewAllocatedTokens - totalOldTokens;
-            lockTokensToBasket(_user, _basketId, lockedTokenAmount);
+            uint256 lockExtraTokens = totalNewAllocatedTokens - totalOldTokens;
+            lockTokensToBasket(_user, _basketId, lockExtraTokens);
             baskets[_basketId].nrOfUnAllocatedTokens = 0;
             
         } else baskets[_basketId].nrOfUnAllocatedTokens = totalOldTokens - totalNewAllocatedTokens;
@@ -209,11 +209,6 @@ contract ETFGame {
 
 
         baskets[_basketId].totalUnRedeemedRewards += amount;
-    }
-
-    // adjusts the deltaAllocations in the ETF vault
-    function adjustDeltaAllocations(uint256 _ETFnumber, uint256 _protocolId, uint256 _deltaAllocation) private {
-
     }
 
 }
