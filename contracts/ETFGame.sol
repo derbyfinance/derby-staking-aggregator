@@ -106,7 +106,7 @@ contract ETFGame is ERC721 {
     /// @param _ETFnumber Number of the vault. Same as in Router.
     function mintNewBasket(uint256 _ETFnumber) public {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
-        _mint(msg.sender, latestBasketId);
+        _safeMint(msg.sender, latestBasketId);
         baskets[latestBasketId].ETFnumber = _ETFnumber;
         baskets[latestBasketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         latestBasketId++;
