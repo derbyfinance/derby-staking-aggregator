@@ -152,8 +152,8 @@ library Swap {
     }
 
     // console.log("pool %s", pool);
-    // console.log("token0 %s", token0);
-    // console.log("token1 %s", token1);
+    console.log("token0 %s", token0);
+    console.log("token1 %s", token1);
     // console.log("sqrtPriceX96 %s", sqrtPriceX96);
     console.log("amountOut pool %s", amountOut);
 
