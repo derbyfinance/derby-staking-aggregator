@@ -54,7 +54,7 @@ const uScale = 1E6;
 const amount = 10000000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Test gas", async () => {
+describe.skip("Test gas", async () => {
   let feeTestContract: FeeTestContract, dao: Signer;
   
   beforeEach(async function() {
@@ -69,7 +69,7 @@ describe("Test gas", async () => {
     feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale)
   });
 
-  it.skip("set and read array", async function() {
+  it("set and read array", async function() {
     await feeTestContract.deleteArray();
 
     for (const protocol of protocols) {

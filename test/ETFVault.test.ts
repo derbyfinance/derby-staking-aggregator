@@ -108,13 +108,14 @@ describe("Deploy Contracts and interact with Vault", async () => {
       IUSDc.balanceOf(vaultMock.address)
     ]);
 
-    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    let expectedBalances = [12000, 26400, 39600];
+    let expectedVaultLiquidity = 10_000;
+
     allProtocols.forEach((protocol, i) => {
-      expect(balances2[i].div(uScale))
-      .to.be.closeTo(allocations2[i].mul(amountUSDC.sub(balanceVault2).sub(amountToWithdraw)).div(totalAllocatedTokens2).div(uScale), 5)
-    })
+      expect(Number(balances2[i].div(uScale))).to.be.closeTo(expectedBalances[i], 2)
+    });
     // liquidity vault should be 100k - 12k * 10% = 8.8k
-    expect(Number(formatUSDC(balanceVault2))).to.be.closeTo((100_000 - 12_000)  * liquidityPerc / 100, 1)
+    expect(Number(formatUSDC(balanceVault2))).to.be.closeTo(expectedVaultLiquidity, 1)
 
     console.log('--------------rebalancing with amount 50k and Yearn to 0 ----------------')
     protocolYearn.allocation = -60;
