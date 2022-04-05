@@ -69,7 +69,7 @@ describe("Test gas", async () => {
     feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale)
   });
 
-  it("set and read array", async function() {
+  it.skip("set and read array", async function() {
     await feeTestContract.deleteArray();
 
     for (const protocol of protocols) {

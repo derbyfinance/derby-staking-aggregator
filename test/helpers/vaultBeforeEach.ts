@@ -22,6 +22,7 @@ const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;
 const decimals = 6;
 const uScale = 1E6;
+const gasFeeLiquidity = 10_000 * uScale;
 
 export async function beforeEachETFVault(
   amountUSDC: BigNumber,
@@ -47,7 +48,7 @@ export async function beforeEachETFVault(
     user.getAddress(),
   ]);
   const router = await deployRouter(dao, daoAddr);
-  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale);
+  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale, gasFeeLiquidity);
   
   // Deploy all providers and Vault
   if (!providerMocks) {

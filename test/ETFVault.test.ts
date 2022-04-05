@@ -220,8 +220,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
     balances = await getAndLogBalances(vaultMock, allProtocols);
-    expectedBalances = [20000, 45000, 0];
-    expectedVaultLiquidity = 0;
+    expectedBalances = [10000, 45000, 0];
+    expectedVaultLiquidity = 10000;
 
     allProtocols.forEach((protocol, i) => {
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
@@ -242,8 +242,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
     balances = await getAndLogBalances(vaultMock, allProtocols);
-    expectedBalances = [20000, 15600, 29400];
-    expectedVaultLiquidity = 0;
+    expectedBalances = [400, 15600, 39000];
+    expectedVaultLiquidity = 10000;
 
     allProtocols.forEach((protocol, i) => {
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
@@ -264,8 +264,8 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log("allocations: 0: %s, 1: %s, 2: %s", allocations[0], allocations[1], allocations[2]);
     console.log("liquidity vault: %s", vaultBalance);
     balances = await getAndLogBalances(vaultMock, allProtocols);
-    expectedBalances = [20000, 15600, 1300];
-    expectedVaultLiquidity = 28100;
+    expectedBalances = [28600, 15600, 1300];
+    expectedVaultLiquidity = 19500;
 
     allProtocols.forEach((protocol, i) => {
       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 1)
