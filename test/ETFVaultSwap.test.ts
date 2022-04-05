@@ -198,6 +198,44 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
+  it("Should always have some liquidity to pay for Rebalance fee", async function() {
+    const gasFeeLiquidity = 10_000;
+    const amountToDeposit = parseUSDC('100000');
+    let amountToWithdraw = parseUSDC('50000');
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    // Deposit and rebalance with 100k 
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await vaultMock.rebalanceETF();
+
+    let balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity)
+
+    console.log("-----------------withdraw 50k-----------------")
+    protocolCompound.allocation = -40;
+    protocolAave.allocation = -60;
+    protocolYearn.allocation = 120;
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
+    await vaultMock.rebalanceETF();
+
+    balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity)
+
+    console.log("-----------------withdraw another 40k = 92k total-----------------")
+    amountToWithdraw = parseUSDC('42000');
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
+    await vaultMock.rebalanceETF();
+
+    balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000)
+  });
+
   // it("Calc USDC to COMP", async function() {
   //   const swapAmount = parseUSDC('10000');
 

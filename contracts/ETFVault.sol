@@ -40,6 +40,8 @@ contract ETFVault is VaultToken {
   uint256 public blockRebalanceInterval = 1;
   uint256 public lastTimeStamp;
 
+  uint256 public gasFeeLiquidity;
+
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
@@ -74,7 +76,8 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    uint256 _gasFeeLiquidity
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
@@ -89,6 +92,7 @@ contract ETFVault is VaultToken {
     ETFgame = _ETFGame;
     routerAddr = _router;
     uScale = _uScale;
+    gasFeeLiquidity = _gasFeeLiquidity;
 
     lastTimeStamp = block.timestamp;
   }
@@ -186,6 +190,7 @@ contract ETFVault is VaultToken {
     executeDeposits(protocolToDeposit);
 
     lastTimeStamp = block.timestamp;
+    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
     uint256 gasUsed = gasStart - gasleft();
     swapAndPayGasFee(gasUsed);
@@ -445,6 +450,12 @@ contract ETFVault is VaultToken {
     require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
     performancePerc = _performancePerc;
   } 
+
+  /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
+  /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
+  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
+    gasFeeLiquidity = _gasFeeLiquidity;
+  }  
 
   /// @notice Set minimum block interval for the rebalance function
   /// @param _blockInterval number of blocks
