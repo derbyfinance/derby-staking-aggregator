@@ -3,22 +3,19 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import "./Interfaces/IETFVault.sol";
-
-import "./Interfaces/IETFGame.sol";
-import "./Interfaces/IBasketToken.sol";
-import "./Interfaces/IGoverned.sol";
 import "./XaverToken.sol";
 
-contract ETFGame {
+import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IETFGame.sol";
+import "./Interfaces/IGoverned.sol";
+
+contract ETFGame is ERC721 {
     using SafeERC20 for IERC20;
 
     // xaver token address
     address public xaverTokenAddress;
-
-    // basket token address (NFT)
-    address public basketTokenAddress;
 
     // address of DAO governance contract
     address public governed;
@@ -28,7 +25,13 @@ contract ETFGame {
         _;
     }
 
-    constructor(address _xaverTokenAddress, address _governed){
+    constructor(
+        string memory name_, 
+        string memory symbol_, 
+        address _xaverTokenAddress, 
+        address _governed
+    ) 
+        ERC721(name_, symbol_) {
         xaverTokenAddress = _xaverTokenAddress;
         governed = _governed;
     }
@@ -72,19 +75,11 @@ contract ETFGame {
         mapping(uint256 => uint256) allocations;
     }
 
-    /// @notice Setup the basket contract address.
-    /// @dev Not in the constructor because basket token needs to set game address first.
-    /// @dev This function is ran in the deploy script.
-    /// @param  _basketTokenAddress The address of te basketToken (NFT).
-    function setupBasketContractAddress(address _basketTokenAddress) public onlyDao {
-        basketTokenAddress = _basketTokenAddress;
-    }
-
     /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @return uint256 Number of xaver tokens that are allocated towards protocols. 
     function basketTotalAllocatedTokens(uint256 _basketId) public view returns(uint256){
-        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         return baskets[_basketId].nrOfAllocatedTokens;
     }
@@ -94,7 +89,7 @@ contract ETFGame {
     /// @param _protocolId Id of the protocol of which the allocation is queried.
     /// @return uint256 Number of xaver tokens that are allocated towards this specific protocol. 
     function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) public view returns(uint256){
-        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         return baskets[_basketId].allocations[_protocolId];
     }
@@ -111,7 +106,7 @@ contract ETFGame {
     /// @param _ETFnumber Number of the vault. Same as in Router.
     function mintNewBasket(uint256 _ETFnumber) public {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
-        IBasketToken(basketTokenAddress).mint(msg.sender, latestBasketId);
+        _mint(msg.sender, latestBasketId);
         baskets[latestBasketId].ETFnumber = _ETFnumber;
         baskets[latestBasketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         latestBasketId++;
@@ -122,7 +117,7 @@ contract ETFGame {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
     function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal {
-        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransferFrom(_user, address(this), _lockedTokenAmount);
@@ -137,7 +132,7 @@ contract ETFGame {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
     function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal {
-        require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
         require(baskets[_basketId].nrOfAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
@@ -148,26 +143,26 @@ contract ETFGame {
         baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
     }
 
-    // // rebalances an existing Basket
-    // function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
-    //     require(IBasketToken(basketTokenAddress).ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
+    // rebalances an existing Basket
+    function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
+        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
-    //     addToTotalRewards(_basketId);
-    //     baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+        addToTotalRewards(_basketId);
+        baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
-    //     uint256 totalNewAllocatedTokens = 0;
-    //     int256 deltaAllocation;
-    //     for (uint256 i = 0; i < _allocations.length; i++) {
-    //         totalNewAllocatedTokens += _allocations[i];
-    //         if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
-    //         deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
-    //         IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
-    //         baskets[_basketId].allocations[i] = _allocations[i];
-    //     }
+        uint256 totalNewAllocatedTokens = 0;
+        int256 deltaAllocation;
+        for (uint256 i = 0; i < _allocations.length; i++) {
+            totalNewAllocatedTokens += _allocations[i];
+            if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
+            deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
+            IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
+            baskets[_basketId].allocations[i] = _allocations[i];
+        }
 
-    //     if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
-    //     else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
-    // }
+        if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
+        else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+    }
 
     // // redeem funds from basket
     // function redeemRewards(uint256 _basketId, uint256 _amount) public {
@@ -184,12 +179,16 @@ contract ETFGame {
 
     // }
 
-    // // add to total rewards, formula of calculating the game rewards here
-    // function addToTotalRewards(uint256 _basketId) private {
-    //     baskets[_basketId].lastBasketPrice = 1;
-    //     uint256 amount = 0;
+    function calculateBasketPrice() internal {
+        uint256 price = 0;
+        
+    }
 
+    // add to total rewards, formula of calculating the game rewards here
+    function addToTotalRewards(uint256 _basketId) internal {
+        baskets[_basketId].lastBasketPrice = 1;
+        uint256 amount = 0;
 
-    //     baskets[_basketId].totalUnRedeemedRewards += amount;
-    // }
+        baskets[_basketId].totalUnRedeemedRewards += amount;
+    }
 }
