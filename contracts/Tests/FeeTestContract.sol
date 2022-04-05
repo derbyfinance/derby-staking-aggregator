@@ -15,7 +15,8 @@ contract FeeTestContract is ETFVault {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    uint256 _gasFeeLiquidity
   ) ETFVault(
     _name,
     _symbol,
@@ -26,7 +27,8 @@ contract FeeTestContract is ETFVault {
     _ETFGame,
     _router,
     _vaultCurrency,
-    _uScale
+    _uScale,
+    _gasFeeLiquidity
   ) {}
 
   uint256 public latestProtocol;
