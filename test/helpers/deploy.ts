@@ -12,7 +12,8 @@ import type {
   XaverToken, 
   IGoverned,
   ETFVaultMock,
-  CompoundProviderMock
+  CompoundProviderMock,
+  ETFGameMock
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -24,6 +25,7 @@ import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.s
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
 import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
+import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol/ETFGameMock.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
 import { curve3Pool, uniswapFactory, uniswapRouter } from "./addresses";
@@ -98,12 +100,16 @@ export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardi
     return (deployContract(deployerSign, IGovernedArtifact, [daoAddress, guardianAddress])) as Promise<IGoverned>;
 };
 
-export const deployXaverToken = (deployerSign: Signer, name: string, symbol: string): Promise<XaverToken> => {
-    return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol])) as Promise<XaverToken>;
+export const deployXaverToken = (deployerSign: Signer, name: string, symbol: string, totalXaverSupply: BigNumber): Promise<XaverToken> => {
+    return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol, totalXaverSupply])) as Promise<XaverToken>;
 };
 
 export const deployETFGame = (deployerSign: Signer, XaverTokenAddress: string, governedAddress: string): Promise<ETFGame> => {
     return (deployContract(deployerSign, ETFGameArtifact, [XaverTokenAddress, governedAddress])) as Promise<ETFGame>;
+};
+
+export const deployETFGameMock = (deployerSign: Signer, XaverTokenAddress: string, governedAddress: string): Promise<ETFGameMock> => {
+  return (deployContract(deployerSign, ETFGameMockArtifact, [XaverTokenAddress, governedAddress])) as Promise<ETFGameMock>;
 };
 
 export const deployBasketToken = (deployerSign: Signer, ETFgame: string, name: string, symbol: string): Promise<BasketToken> => {
