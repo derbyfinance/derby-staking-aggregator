@@ -26,10 +26,11 @@ const deployFeeTestContract = (
   router: string, 
   vaultCurrency: string, 
   uScale: number,
+  gasFeeLiq: number,
   ) => deployContract(
     deployerSign, 
     FeeTestContractArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale,]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<FeeTestContract>;
 
 const protocols = [
@@ -53,6 +54,7 @@ const decimals = 6;
 const uScale = 1E6;
 const amount = 10000000;
 const amountUSDC = parseUSDC(amount.toString());
+const gasFeeLiquidity = 10_000 * uScale;
 
 describe("Test gas", async () => {
   let feeTestContract: FeeTestContract, dao: Signer;
@@ -66,7 +68,7 @@ describe("Test gas", async () => {
       user.getAddress(),
     ]);
     const router = await deployRouter(dao, daoAddr);
-    feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale)
+    feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale, gasFeeLiquidity)
   });
 
   it("set and read array", async function() {

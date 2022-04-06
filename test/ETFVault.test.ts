@@ -63,7 +63,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
     expect(aave).to.be.equal(protocolAave.allocation);
   });
 
-  it.only("Should deposit and rebalance", async function() {
+  it("Should deposit and rebalance", async function() {
     console.log('--------------depositing and rebalance with 100k ----------------')
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
