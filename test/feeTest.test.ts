@@ -54,7 +54,7 @@ const uScale = 1E6;
 const amount = 10000000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Test gas", async () => {
+describe.skip("Test gas", async () => {
   let feeTestContract: FeeTestContract, dao: Signer;
   
   beforeEach(async function() {
