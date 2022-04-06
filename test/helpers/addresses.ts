@@ -27,5 +27,6 @@ export const curve3Pool = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7" // DAI / 
 export const comptroller = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
 export const compToken = "0xc00e94Cb662C3520282E6f5717214004A7f26888";
 export const WEth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+export const ChainlinkGasPrice = "0x169e633a2d1e6c10dd91238ba11c4a708dfef37c";
 
 export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';

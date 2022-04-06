@@ -37,6 +37,11 @@ contract ETFVault is VaultToken {
   uint256 public lastExchangeRate = 0;
   uint256 public rebalancingPeriod = 0;
 
+  uint256 public blockRebalanceInterval = 1;
+  uint256 public lastTimeStamp;
+
+  uint256 public gasFeeLiquidity;
+
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
@@ -48,6 +53,8 @@ contract ETFVault is VaultToken {
 
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
+
+  event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
   modifier onlyETFgame {
     require(msg.sender == ETFgame, "ETFvault: only ETFgame");
@@ -69,7 +76,8 @@ contract ETFVault is VaultToken {
     address _ETFGame, 
     address _router, 
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    uint256 _gasFeeLiquidity
     ) VaultToken (_name, _symbol, _decimals) {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
@@ -84,6 +92,8 @@ contract ETFVault is VaultToken {
     ETFgame = _ETFGame;
     routerAddr = _router;
     uScale = _uScale;
+    gasFeeLiquidity = _gasFeeLiquidity;
+    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Deposit in ETFVault
@@ -107,7 +117,7 @@ contract ETFVault is VaultToken {
     }
     
     _mint(_buyer, shares);
-    
+
     return shares;
   }
 
@@ -135,7 +145,7 @@ contract ETFVault is VaultToken {
   function pullFunds(uint256 _value) internal {
     for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
-
+      
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
 
@@ -162,20 +172,28 @@ contract ETFVault is VaultToken {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() public {
+  function rebalanceETF() public onlyDao {
+    if (!rebalanceNeeded()) return;
+    uint256 gasStart = gasleft();
+    
     lastExchangeRate = exchangeRate();
     claimTokens(); 
     
-    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
+    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this)) ;
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
     
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
-
     executeDeposits(protocolToDeposit);
+
+    lastTimeStamp = block.timestamp;
     rebalancingPeriod++;
+    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
+
+    uint256 gasUsed = gasStart - gasleft();
+    swapAndPayGasFee(gasUsed);
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -206,6 +224,39 @@ contract ETFVault is VaultToken {
     }
     
     return protocolToDeposit;
+  }
+
+  /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
+  /// @notice This way the vault will pay the gas for the RebalanceETF function
+  /// @param _gasUsed total gas used by RebalanceETF
+  function swapAndPayGasFee(uint256 _gasUsed) internal {
+    uint256 amountEtherToVaultCurrency = Swap.getPoolAmountOut(
+      (_gasUsed + Swap.gasUsedForSwap) * router.getGasPrice(),
+      Swap.WETH,
+      vaultCurrencyAddr,
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      0
+    );
+    
+    uint256 wethReceived = Swap.swapTokensSingle(
+      amountEtherToVaultCurrency, 
+      vaultCurrencyAddr, 
+      Swap.WETH,
+      router.uniswapRouter(),
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      router.uniswapSwapFee()
+    );
+    Swap.unWrapWETHtoGov(payable(governed), wethReceived);
+
+    emit GasPaidRebalanceETF(amountEtherToVaultCurrency);
+  }
+
+  /// @notice Checks if a rebalance is needed based on the set block interval 
+  /// @return bool True of rebalance is needed, false if not
+  function rebalanceNeeded() public view returns(bool) {
+    return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
   }
 
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
@@ -355,7 +406,6 @@ contract ETFVault is VaultToken {
 
       if (claim) {
         address govToken = router.getProtocolInfo(ETFnumber, i).govToken;
-        console.log("gov token %s", govToken);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         
         Swap.swapTokensMulti(
@@ -391,6 +441,18 @@ contract ETFVault is VaultToken {
   function setPerformancePerc(uint256 _performancePerc) external onlyDao {
     require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
     performancePerc = _performancePerc;
+  }
+
+  /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
+  /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
+  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
+    gasFeeLiquidity = _gasFeeLiquidity;
+  }  
+
+  /// @notice Set minimum block interval for the rebalance function
+  /// @param _blockInterval number of blocks
+  function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
+    blockRebalanceInterval = _blockInterval;
   } 
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
@@ -400,5 +462,10 @@ contract ETFVault is VaultToken {
     currentAllocations[_protocolNum] = 0;
     router.setProtocolBlacklist(ETFnumber, _protocolNum);
     withdrawFromProtocol(_protocolNum, balanceProtocol);
+  }
+
+  /// @notice callback to receive Ether from unwrapping WETH
+  receive() external payable {
+    require(msg.sender == Swap.WETH, "Not WETH");
   }
 }
