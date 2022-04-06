@@ -147,7 +147,6 @@ contract ETFGame is ERC721 {
     function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
         require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
 
-        addToTotalRewards(_basketId);
         baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
         uint256 totalNewAllocatedTokens = 0;
@@ -162,6 +161,8 @@ contract ETFGame is ERC721 {
 
         if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
         else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+
+        addToTotalRewards(_basketId);
     }
 
     // // redeem funds from basket
