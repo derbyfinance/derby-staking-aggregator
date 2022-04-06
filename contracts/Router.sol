@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
 import "./Interfaces/IRouter.sol";
+import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Router is IRouter {
@@ -22,9 +23,11 @@ contract Router is IRouter {
   address public curve3Pool;
   address public uniswapRouter;
   address public uniswapFactory;
+  address public chainlinkGasPriceOracle;
 
   uint24 public uniswapPoolFee;
-  uint256 public curve3PoolFee = 6; // 0.05%
+  uint256 public curve3PoolFee = 10; // 0.1% including slippage
+  uint256 public uniswapSwapFee = 60; // 0.6% // 0.3 plus some slippage
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -33,13 +36,15 @@ contract Router is IRouter {
     address _curve3Pool, 
     address _uniswapRouter,
     address _uniswapFactory,
-    uint24 _poolFee
+    uint24 _poolFee,
+    address _chainlinkGasPriceOracle
   ) {
     dao = _dao;
     curve3Pool = _curve3Pool;
     uniswapRouter = _uniswapRouter;
     uniswapFactory = _uniswapFactory;
     uniswapPoolFee = _poolFee;
+    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
 
   // Modifier for only vault?
@@ -271,5 +276,23 @@ contract Router is IRouter {
   /// @param _protocolNum Protocol number linked to protocol vault
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
+  }
+
+  /// @notice Gets the gas price from Chainlink oracle
+  /// @return gasPrice latest gas price from oracle
+  function getGasPrice() external override returns(uint256) {
+    return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
+  }
+
+  /// @notice Setter for the Chainlink Gas price oracle contract address in case it changes
+  /// @param _chainlinkGasPriceOracle Contract address
+  function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
+    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
+  }
+
+  /// @notice Setter for the Uniswap swap fee plus some slippage
+  /// @param _swapFee In nominals e.g 60 = 0.06%
+  function setUniswapSwapFee(uint256 _swapFee) external override onlyDao {
+    uniswapSwapFee = _swapFee;
   }
 }

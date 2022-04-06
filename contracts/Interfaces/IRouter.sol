@@ -80,10 +80,9 @@ interface IRouter {
 
   function curve3PoolFee() external view returns(uint256);
 
-  function curveIndex(
-    address _token
-  )
-    external view returns(int128);
+  function uniswapSwapFee() external view returns(uint256);
+
+  function curveIndex(address _token) external view returns(int128);
     
   function getProtocolInfo(
     uint256 _ETFnumber,
@@ -91,10 +90,7 @@ interface IRouter {
   )
     external view returns(ProtocolInfoS memory);
 
-  function latestProtocolId(
-    uint256 _ETFnumber
-  )
-    external view returns(uint256);
+  function latestProtocolId(uint256 _ETFnumber) external view returns(uint256);
 
   function addVault(address _vault) external;
 
@@ -109,4 +105,10 @@ interface IRouter {
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external view returns(bool);
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
+
+  function getGasPrice() external returns(uint256);
+
+  function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
+
+  function setUniswapSwapFee(uint256 _swapFee) external;
 }

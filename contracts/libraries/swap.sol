@@ -8,6 +8,7 @@ import "../Interfaces/ExternalInterfaces/ISwapRouter.sol";
 import "../Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
 import "../Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
+import "../Interfaces/ExternalInterfaces/IWETH.sol";
 
 import "hardhat/console.sol";
 
@@ -15,6 +16,7 @@ library Swap {
   using SafeERC20 for IERC20;
 
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  uint256 internal constant gasUsedForSwap = 210000;
 
   /// @notice Swap stable coins on Curve
   /// @param _amount Number of tokens to swap
@@ -51,6 +53,7 @@ library Swap {
     );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+
     return balanceAfter - balanceBefore;
   }
 
@@ -82,14 +85,51 @@ library Swap {
     return amountOut;
   }
 
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @return Amountout Number of tokens received
+  function swapTokensSingle(
+    uint256 _amount, 
+    address _tokenIn, 
+    address _tokenOut,
+    address _uniswapRouter,
+    address _uniswapFactory,
+    uint24 _poolFee,
+    uint256 _swapFee
+  ) internal returns(uint256) {
+    IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
+
+    uint256 amountOutMinimum = getPoolAmountOut(_amount, _tokenIn, _tokenOut, _uniswapFactory, _poolFee, _swapFee);
+
+    ISwapRouter.ExactInputSingleParams memory params =
+      ISwapRouter.ExactInputSingleParams({
+      tokenIn: _tokenIn,
+      tokenOut: _tokenOut,
+      fee: _poolFee,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: _amount,
+      amountOutMinimum: amountOutMinimum,
+      sqrtPriceLimitX96: 0
+    });
+
+    // The call to `exactInputSingle` executes the swap.
+    uint256 amountOut = ISwapRouter(_uniswapRouter).exactInputSingle(params);
+
+    return amountOut;
+  }
+
   // Not functional yet
   function getPoolAmountOut(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
     address _uniswapFactory,
-    uint24 _poolFee
-  ) public view returns(uint256) {
+    uint24 _poolFee,
+    uint256 _fee
+  ) internal view returns(uint256) {    
     uint256 amountOut = 0;
     address pool = IUniswapV3Factory(_uniswapFactory).getPool(
       _tokenIn,
@@ -103,18 +143,24 @@ library Swap {
     (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
     if (token0 == _tokenOut) {
-      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * 9970 / 10000;
+      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * (10000 - _fee) / 10000;
     }
     if (token1 == _tokenOut) {
-      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * 9970 / 10000;
+      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * (10000 - _fee) / 10000;
     }
 
-    console.log("pool %s", pool);
+    // console.log("pool %s", pool);
     console.log("token0 %s", token0);
     console.log("token1 %s", token1);
-    console.log("sqrtPriceX96 %s", sqrtPriceX96);
-    // console.log("amountOut pool %s", amountOut);
+    // console.log("sqrtPriceX96 %s", sqrtPriceX96);
+    console.log("amountOut pool %s", amountOut);
 
     return amountOut;
   }
+
+  function unWrapWETHtoGov(address payable _governed, uint256 _amount) internal {
+    IWETH9(WETH).withdraw(_amount);
+    _governed.transfer(_amount);
+  }
+
 }
