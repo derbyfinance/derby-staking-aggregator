@@ -93,7 +93,6 @@ contract ETFVault is VaultToken {
     routerAddr = _router;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
-
     lastTimeStamp = block.timestamp;
   }
 
@@ -180,7 +179,7 @@ contract ETFVault is VaultToken {
     lastExchangeRate = exchangeRate();
     claimTokens(); 
     
-    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
+    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this)) ;
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
@@ -442,7 +441,13 @@ contract ETFVault is VaultToken {
   function setPerformancePerc(uint256 _performancePerc) external onlyDao {
     require(_performancePerc <= 100, "Performance percentage cannot exceed 100%");
     performancePerc = _performancePerc;
-  } 
+  }
+
+  /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
+  /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
+  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
+    gasFeeLiquidity = _gasFeeLiquidity;
+  }  
 
   /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
   /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
