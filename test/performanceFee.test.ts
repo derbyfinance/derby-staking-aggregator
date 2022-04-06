@@ -82,16 +82,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
     ]);
     await setDeltaAllocations(user, vaultMock, allProtocols);
+    const performanceFee = Number(formatUSDC(await vaultMock.calculatePerformanceFee()));
+    console.log("performanceFee: %s", performanceFee);
     gasUsed = formatUSDC(await rebalanceETF(vaultMock));
     console.log({gasUsed})
     totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
     totalLiquidity = Number(formatUSDC(await IUSDc.balanceOf(vaultMock.address)));
     const totalAfter = totalUnderlying + totalLiquidity;
-    const performanceFee = Number(formatUSDC(await vaultMock.cummulativePerformanceFee()));
-    console.log("performanceFee: %s", performanceFee - dummyPerformanceFee);
+
     // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc
-    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo((performanceFee - dummyPerformanceFee) * uScale, 1);
+    expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100 * uScale)).to.be.closeTo((performanceFee) * uScale, 1);
   });
-  16989896
-  16951456
 });

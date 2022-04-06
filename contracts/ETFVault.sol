@@ -34,8 +34,8 @@ contract ETFVault is VaultToken {
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
   uint256 public performancePerc = 10;
-  uint256 public cummulativePerformanceFee = 0; // in VaultCurrency
   uint256 public lastExchangeRate = 0;
+  uint256 public rebalancingPeriod = 0;
 
   uint256 public blockRebalanceInterval = 1;
   uint256 public lastTimeStamp;
@@ -176,8 +176,8 @@ contract ETFVault is VaultToken {
   function rebalanceETF() public onlyDao {
     if (!rebalanceNeeded()) return;
     uint256 gasStart = gasleft();
-  
-    cummulativePerformanceFee += calculatePerformanceFee();
+    
+    lastExchangeRate = exchangeRate();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this));
@@ -190,6 +190,7 @@ contract ETFVault is VaultToken {
     executeDeposits(protocolToDeposit);
 
     lastTimeStamp = block.timestamp;
+    rebalancingPeriod++;
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
     uint256 gasUsed = gasStart - gasleft();
@@ -204,7 +205,6 @@ contract ETFVault is VaultToken {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber) + 1);
-
     for (uint i = 0; i <= router.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
@@ -213,13 +213,13 @@ contract ETFVault is VaultToken {
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
-      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens;
+      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
 
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
-
+      
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
     }
@@ -268,7 +268,7 @@ contract ETFVault is VaultToken {
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
   /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
   /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
-  function calculatePerformanceFee() internal returns(uint256) {
+  function calculatePerformanceFee() public view returns(uint256) {
     uint256 performanceFee = 0;
     uint256 currentExchangeRate = exchangeRate();
     if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
@@ -276,7 +276,6 @@ contract ETFVault is VaultToken {
       performanceFee = performancePerc * performanceFee / lastExchangeRate;
       performanceFee = performanceFee / 100;   
     }
-    lastExchangeRate = currentExchangeRate;
     return performanceFee;
   }
 

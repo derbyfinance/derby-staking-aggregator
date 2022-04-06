@@ -207,7 +207,7 @@ contract Router is IRouter {
     protocolNames[_ETFnumber][protocolNumber] = _name;
     protocolInfo[_ETFnumber][protocolNumber] = ProtocolInfoS(
       _protocolLPToken,
-      _provider,
+      _provider, 
       _underlying,
       _govToken,
       _uScale
