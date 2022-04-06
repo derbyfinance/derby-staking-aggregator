@@ -17,7 +17,8 @@ const liquidityPerc = 10;
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Deploy Contracts and interact with Vault", async () => {
+// skipping ETFVault test for now
+describe.skip("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -125,7 +126,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     let USDCBalanceVault = Number(formatUSDC(balanceVault2))
     gasUsedUSDC = Number(formatUSDC(gasUsed1))
     let totalGasUSDC = Number(formatUSDC(totalGas))
-    console.log('jmm')
+
     console.log({balanceVault2})
     console.log({allProtocols})
     console.log({gasUsedUSDC})

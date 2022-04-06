@@ -207,11 +207,14 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // Deposit and rebalance with 100k 
     await vaultMock.depositETF(userAddr, amountToDeposit);
-    await vaultMock.rebalanceETF();
+    let gasUsed = formatUSDC(await rebalanceETF(vaultMock));
 
     let balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    let USDCBalanceUser = await IUSDc.balanceOf(userAddr)
+    console.log({gasUsed})
+    console.log(USDCBalanceUser)
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity)
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed))
 
     console.log("-----------------withdraw 50k-----------------")
     protocolCompound.allocation = -40;
@@ -220,22 +223,28 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     await setDeltaAllocations(user, vaultMock, allProtocols);
     await vaultMock.withdrawETF(userAddr, amountToWithdraw);
-    await vaultMock.rebalanceETF();
+    gasUsed = formatUSDC(await rebalanceETF(vaultMock));
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    USDCBalanceUser = await IUSDc.balanceOf(userAddr)
+    console.log({gasUsed})
+    console.log(USDCBalanceUser)
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity)
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed))
 
-    console.log("-----------------withdraw another 40k = 92k total-----------------")
+    console.log("-----------------withdraw another 42k = 92k total-----------------")
     amountToWithdraw = parseUSDC('42000');
     await vaultMock.withdrawETF(userAddr, amountToWithdraw);
-    await vaultMock.rebalanceETF();
+    await rebalanceETF(vaultMock);
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000)
-  });
+    USDCBalanceUser = await IUSDc.balanceOf(userAddr)
+    console.log({gasUsed})
+    console.log(USDCBalanceUser)
 
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
+  });
   // it("Calc USDC to COMP", async function() {
   //   const swapAmount = parseUSDC('10000');
 

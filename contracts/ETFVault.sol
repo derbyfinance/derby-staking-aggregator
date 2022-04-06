@@ -413,7 +413,6 @@ contract ETFVault is VaultToken {
 
       if (claim) {
         address govToken = router.getProtocolInfo(ETFnumber, i).govToken;
-        console.log("gov token %s", govToken);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         
         Swap.swapTokensMulti(
