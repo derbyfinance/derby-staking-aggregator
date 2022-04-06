@@ -82,7 +82,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(await game.ETFVaults(0)).to.be.equal(vaultMock.address);
   });
 
-  it.only("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+  it("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
     // minting
     await game.connect(dao).addETF(vaultMock.address);
     await game.mintNewBasket(0);
