@@ -449,12 +449,6 @@ contract ETFVault is VaultToken {
     gasFeeLiquidity = _gasFeeLiquidity;
   }  
 
-  /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
-  /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
-  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
-    gasFeeLiquidity = _gasFeeLiquidity;
-  }  
-
   /// @notice Set minimum block interval for the rebalance function
   /// @param _blockInterval number of blocks
   function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
