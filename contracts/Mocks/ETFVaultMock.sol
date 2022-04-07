@@ -68,6 +68,17 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     );
   }
 
+  function minAmountOutTest(uint256 _amount, address _tokenIn, address _tokenOut) external view returns(uint256) {
+    return Swap.getPoolAmountOut(
+      _amount, 
+      _tokenIn, 
+      _tokenOut, 
+      router.uniswapFactory(), 
+      router.uniswapPoolFee(),
+      0
+    );
+  }
+
   function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
     Swap.swapStableCoins(
       _amount, 
@@ -88,4 +99,6 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       players[i] = exchangeRate;
     }
   }
+
+
 }

@@ -7,7 +7,7 @@ import { network } from "hardhat";
 import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, routerAddProtocol, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, dai, compToken as comp, compoundDAI} from "./helpers/addresses";
+import { usdc, dai, compToken as comp, compoundDAI, WEth} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 import { parseEther } from "ethers/lib/utils";
 
@@ -265,39 +265,28 @@ describe("Deploy Contracts and interact with Vault", async () => {
   //   console.log(`Weth Back to USDC: ${amountOutBacktoUSDC}`)
   // });
 
-  // it("SWap and calc COMP to USDC", async function() {
-  //   const swapAmount = parseUnits('100', 18); // 100 comp tokens
-  //   console.log(`USDC Balance vault Before: ${await IUSDc.balanceOf(vaultMock.address)}`)
+  it("Testing minAmountOut function. COMP => Weth => USDC and back USDC => WETH => COMP", async function() {
+    const swapAmount = parseUnits('100', 18); // 100 comp tokens
 
-  //   await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
-  //   console.log(`Comp Balance Vault: ${await IComp.balanceOf(vaultMock.address)}`)
+    console.log('--------------------')
+    const amountOutWeth = await vaultMock.minAmountOutTest(swapAmount, comp, WEth);
+    console.log(`100 COMP to WETH: ${amountOutWeth}`);
 
-  //   await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
+    console.log('--------------------')
+    const amountOutUSDC = await vaultMock.minAmountOutTest(amountOutWeth, WEth, usdc);
+    console.log(`Weth to USDC: ${amountOutUSDC}`);
 
-  //   console.log(`USDC Balance vault After: ${await IUSDc.balanceOf(vaultMock.address)}`)
+    console.log('--------------------');
+    const amountOutBack = await vaultMock.minAmountOutTest(amountOutUSDC, usdc, WEth);
+    console.log(`USDC to Weth: ${amountOutBack}`);
 
-  //   console.log('--------------------')
-  //   const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, comp, WEth);
-  //   console.log(`100 COMP to WETH: ${amountOutWeth}`)
-  //   console.log(amountOutWeth)
+    console.log('--------------------');
+    const amountOutBacktoComp = await vaultMock.minAmountOutTest(amountOutBack, WEth, comp);
+    console.log(`Weth Back to COMP: ${amountOutBacktoComp}`);
 
-  //   console.log('--------------------')
-  //   const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, usdc)
-  //   console.log(`Weth to USDC: ${amountOutComp}`)
-  //   console.log(amountOutComp)
-
-  //   console.log('--------------------')
-  //   const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, usdc, WEth);
-  //   console.log(`USDC to Weth: ${amountOutBack}`)
-  //   console.log(amountOutBack)
-
-  //   console.log('--------------------')
-  //   const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, comp)
-  //   console.log(`Weth Back to COMP: ${amountOutBacktoUSDC}`)
-  //   console.log(amountOutBacktoUSDC)
-
-  // });
-
+    // amountOutBacktoComp == swapAmount (100 COMP)
+    expect(Number(formatUnits(amountOutBacktoComp, 18))).to.be.closeTo(Number(formatUnits(swapAmount, 18)), 0.1);
+  });
 });
 
 // price Token0 = sqrtRatioX96 ** 2 / 2 ** 192
