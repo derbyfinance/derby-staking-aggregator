@@ -45,7 +45,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     ] = await beforeEachETFVault(amountUSDC, true);
   });
 
-  it("Should calculate performance fee correctly", async function() {
+  it.only("Should calculate performance fee correctly", async function() {
     await setCurrentAllocations(vaultMock, allProtocols); // only used to make sure getTotalUnderlying returns > 0
     await setDeltaAllocations(user, vaultMock, allProtocols); // only used to make sure the totalCurrentBalance calculation inside rebalanceETF returns > 0
     await vaultMock.depositETF(userAddr, amountUSDC); // only used to make sure totalSupply (LP tokens) returns > 0

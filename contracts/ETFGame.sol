@@ -26,7 +26,7 @@ contract ETFGame is ERC721 {
     }
 
     modifier onlyBasketOwner(uint256 _basketId) {
-        require(msg.sender == IBasketToken(basketTokenAddress).ownerOf(_basketId), "ETFGame Not the owner of the basket");
+        require(msg.sender == ownerOf(_basketId), "ETFGame Not the owner of the basket");
         _;
     }
 
@@ -142,9 +142,7 @@ contract ETFGame is ERC721 {
     }
 
     // rebalances an existing Basket
-    function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public {
-        require(ownerOf(_basketId) == msg.sender, "Not the owner of the Basket.");
-
+    function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
         baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         
         uint256 totalNewAllocatedTokens = 0;

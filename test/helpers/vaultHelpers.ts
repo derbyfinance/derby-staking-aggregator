@@ -53,9 +53,9 @@ export function deployAllProviders(dao: Signer, router: Router) {
 }
 
 export const rebalanceETF = async (vaultMock: ETFVaultMock) => {
-  const tx = await vaultMock.rebalanceETF()
-  const receipt = await tx.wait()
-  const  { gasInVaultCurrency }  = receipt.events!.at(-1)!.args as Result
+  const tx = await vaultMock.rebalanceETF();
+  const receipt = await tx.wait();
+  const  { gasInVaultCurrency }  = receipt.events!.at(-1)!.args as Result;
 
-  return gasInVaultCurrency
+  return gasInVaultCurrency;
 }

@@ -15,8 +15,6 @@ contract AaveProvider is IProvider{
   uint16 private aaveReferral;
   address public router; 
 
-  mapping(uint256 => uint256) public historicalPrices;
-
   modifier onlyRouter {
     require(msg.sender == router, "ETFProvider: only router");
     _;
@@ -124,14 +122,6 @@ contract AaveProvider is IProvider{
 
   function claim(address _aToken, address _claimer) public override returns(bool){
     
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
-
   }
 
 }

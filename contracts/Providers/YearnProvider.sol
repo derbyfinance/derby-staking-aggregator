@@ -12,7 +12,6 @@ contract YearnProvider is IProvider{
   using SafeERC20 for IERC20;
   
   address public router; 
-  mapping(uint256 => uint256) public historicalPrices;
 
   modifier onlyRouter {
     require(msg.sender == router, "ETFProvider: only router");
@@ -117,14 +116,6 @@ contract YearnProvider is IProvider{
   }
 
   function claim(address _yToken, address _claimer) public override returns(bool) {
-
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
 
   }
 }

@@ -54,6 +54,9 @@ contract ETFVault is VaultToken {
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
+  // historical prices
+  mapping(uint256 => mapping(uint256 => uint256)) historicalPrices;
+
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
   modifier onlyETFgame {
@@ -278,6 +281,7 @@ contract ETFVault is VaultToken {
   function setAllocationAndPrice(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
+    setHistoricalPrice(_i, price(_i));
     require(currentAllocations[_i] >= 0, "Current Allocation underflow");
   }
 
@@ -384,6 +388,20 @@ contract ETFVault is VaultToken {
   function price(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNum);
     return protocolPrice;
+  }
+
+  /// @notice set historical price point, needed for reward computation in game
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _protocolPrice Price of underlying share of the protocol's vault
+  function setHistoricalPrice(uint256 _protocolNum, uint256 _protocolPrice) internal {
+    historicalPrices[_protocolNum][rebalancingPeriod] = _protocolPrice;
+  }
+
+  /// @notice get historical price point, needed for reward computation in game
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _rebalancingPeriod Period linked to the time when rebalancing took place.
+  function getHistoricalPrice(uint256 _protocolNum, uint256 _rebalancingPeriod) public view returns(uint256) {
+    return historicalPrices[_protocolNum][_rebalancingPeriod];
   }
 
   /// @notice Set the delta allocated tokens by game contract
