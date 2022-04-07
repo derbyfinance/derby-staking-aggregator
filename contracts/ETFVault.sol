@@ -413,36 +413,12 @@ contract ETFVault is VaultToken {
           govToken, 
           vaultCurrencyAddr,
           router.uniswapRouter(),
-          router.uniswapPoolFee()
+          router.uniswapFactory(),
+          router.uniswapPoolFee(),
+          router.uniswapSwapFee()
         );
       }
     }
-  }
-
-  function testSwap(uint _amountIn, address _tokenIn, address _tokenOut) public view returns(uint) {
-    uint256 amountOut = Swap.getPoolAmountOut(
-      _amountIn,
-      _tokenIn,
-      _tokenOut,
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      0
-    );
-
-    console.log("amount out test %s", amountOut);
-    return amountOut;
-  }
-
-  function testSwapMulti(uint _amountIn, address _tokenIn, address _tokenOut) public {
-    uint256 amountOut = Swap.swapTokensMulti(
-          _amountIn, 
-          _tokenIn, 
-          _tokenOut,
-          router.uniswapRouter(),
-          router.uniswapPoolFee()
-        );
-
-    console.log("Received tokens %s", amountOut);
   }
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 

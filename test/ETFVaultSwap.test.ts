@@ -46,7 +46,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     IDAI = await erc20(dai);
   });
 
-  it("Claim function in vault should claim COMP and sell for USDC", async function() {
+  it("Claim function in vault should claim COMP and sell for more then minAmountOut in USDC", async function() {
     protocolYearn.allocation = 0;
     protocolCompound.allocation = 60;
     protocolAave.allocation = 0;
@@ -70,12 +70,16 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(USDCBalanceAfterClaim)).to.be.greaterThan(Number(USDCBalanceBeforeClaim))
   });
 
-  it("Swapping COMP to USDC", async function() {
+  it.only("Swapping COMP to USDC", async function() {
     const swapAmount = parseUnits('1000', 18); // 1000 comp tokens
     await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
 
     const compBalance = await IComp.balanceOf(vaultMock.address);
-    expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
+    console.log({compBalance})
+    expect(compBalance).to.be.equal(swapAmount);
+    console.log('ja equal')
+
+    await vaultMock.swapTokensSingle(swapAmount, comp, WEth);
 
     await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
     const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
@@ -245,25 +249,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
   });
-  // it("Calc USDC to COMP", async function() {
-  //   const swapAmount = parseUSDC('10000');
-
-  //   console.log('--------------------')
-  //   const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, usdc, WEth);
-  //   console.log(`10k USDC to WETH: ${amountOutWeth}`)
-
-  //   console.log('--------------------')
-  //   const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, comp)
-  //   console.log(`Weth to Comp: ${amountOutComp}`)
-
-  //   console.log('--------------------')
-  //   const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, comp, WEth);
-  //   console.log(`Comp to Weth: ${amountOutBack}`)
-
-  //   console.log('--------------------')
-  //   const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, usdc)
-  //   console.log(`Weth Back to USDC: ${amountOutBacktoUSDC}`)
-  // });
 
   it("Testing minAmountOut function. COMP => Weth => USDC and back USDC => WETH => COMP", async function() {
     const swapAmount = parseUnits('100', 18); // 100 comp tokens
@@ -288,7 +273,3 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(formatUnits(amountOutBacktoComp, 18))).to.be.closeTo(Number(formatUnits(swapAmount, 18)), 0.1);
   });
 });
-
-// price Token0 = sqrtRatioX96 ** 2 / 2 ** 192
-// price Token1 = 2 ** 192 / sqrtRatioX96 ** 2
-// 

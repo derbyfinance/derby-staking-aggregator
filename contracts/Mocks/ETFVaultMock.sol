@@ -63,8 +63,22 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _amount, 
       _tokenIn, 
       _tokenOut, 
-      router.uniswapRouter(), 
-      router.uniswapPoolFee()
+      router.uniswapRouter(),
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      router.uniswapSwapFee()
+    );
+  }
+
+  function swapTokensSingle(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+    return Swap.swapTokensSingle(
+      _amount, 
+      _tokenIn, 
+      _tokenOut,
+      router.uniswapRouter(),
+      router.uniswapFactory(),
+      router.uniswapPoolFee(),
+      router.uniswapSwapFee()
     );
   }
 
