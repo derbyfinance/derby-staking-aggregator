@@ -52,6 +52,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     console.log("Set mock functions");
     const mockedBalance = parseUSDC('10000'); // 3k in each protocol
+    const exchangeRate = 10;
 
     await Promise.all([
         // vaultMock.clearCurrencyBalance(parseUSDC('9000')),
@@ -64,6 +65,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
         yearnProvider.mock.withdraw.returns(mockedBalance),
         compoundProvider.mock.withdraw.returns(mockedBalance),
         aaveProvider.mock.withdraw.returns(mockedBalance),
+        yearnProvider.mock.exchangeRate.returns(exchangeRate),
+        compoundProvider.mock.exchangeRate.returns(exchangeRate + 10),
+        aaveProvider.mock.exchangeRate.returns(exchangeRate + 20),
     ]);
 
     let gasUsed = formatUSDC(await rebalanceETF(vaultMock));
