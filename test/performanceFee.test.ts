@@ -31,6 +31,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
   allProtocols: Protocol[],
   router: Contract;
 
+  const mockedBalance = parseUSDC('10000'); // 3k in each protocol
+  const exchangeRate = 10;
+
   beforeEach(async function() {
     [
       vaultMock,
@@ -43,16 +46,12 @@ describe("Deploy Contracts and interact with Vault", async () => {
       compoundProvider, 
       aaveProvider
     ] = await beforeEachETFVault(amountUSDC, true);
-  });
 
-  it.only("Should calculate performance fee correctly", async function() {
     await setCurrentAllocations(vaultMock, allProtocols); // only used to make sure getTotalUnderlying returns > 0
     await setDeltaAllocations(user, vaultMock, allProtocols); // only used to make sure the totalCurrentBalance calculation inside rebalanceETF returns > 0
     await vaultMock.depositETF(userAddr, amountUSDC); // only used to make sure totalSupply (LP tokens) returns > 0
 
     console.log("Set mock functions");
-    const mockedBalance = parseUSDC('10000'); // 3k in each protocol
-    const exchangeRate = 10;
 
     await Promise.all([
         // vaultMock.clearCurrencyBalance(parseUSDC('9000')),
@@ -69,7 +68,9 @@ describe("Deploy Contracts and interact with Vault", async () => {
         compoundProvider.mock.exchangeRate.returns(exchangeRate + 10),
         aaveProvider.mock.exchangeRate.returns(exchangeRate + 20),
     ]);
+  });
 
+  it("Should calculate performance fee correctly", async function() {
     let gasUsed = formatUSDC(await rebalanceETF(vaultMock));
     console.log({gasUsed})
     let totalUnderlying = Number(formatUSDC(await vaultMock.getTotalUnderlying()));
@@ -99,5 +100,25 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     // (totalAfter - totalBefore) / totalBefore x totalUnderlying x performancePerc
     expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100)).to.be.closeTo((performanceFee), 1);
+  });
+
+  it.only("Should store historical prices of protocols on each rebalance", async function() {
+    await rebalanceETF(vaultMock);
+
+    expect(await vaultMock.getHistoricalPrice(0, 0)).to.be.equal(20);
+    expect(await vaultMock.getHistoricalPrice(2, 0)).to.be.equal(30);
+    expect(await vaultMock.getHistoricalPrice(4, 0)).to.be.equal(10);
+
+    await setDeltaAllocations(user, vaultMock, allProtocols); // only used to make sure the totalCurrentBalance calculation inside rebalanceETF returns > 0
+    await Promise.all([
+      yearnProvider.mock.exchangeRate.returns(exchangeRate * 2),
+      compoundProvider.mock.exchangeRate.returns((exchangeRate + 10) * 2),
+      aaveProvider.mock.exchangeRate.returns((exchangeRate + 20) * 2)
+    ]);
+    await rebalanceETF(vaultMock);
+
+    expect(await vaultMock.getHistoricalPrice(0, 1)).to.be.equal(40);
+    expect(await vaultMock.getHistoricalPrice(2, 1)).to.be.equal(60);
+    expect(await vaultMock.getHistoricalPrice(4, 1)).to.be.equal(20);
   });
 });

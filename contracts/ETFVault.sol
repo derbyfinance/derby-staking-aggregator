@@ -259,7 +259,7 @@ contract ETFVault is VaultToken {
   /// @notice Checks if a rebalance is needed based on the set block interval 
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns(bool) {
-    return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
+    return (block.timestamp - lastTimeStamp) >= blockRebalanceInterval;
   }
 
   /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 

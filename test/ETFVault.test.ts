@@ -18,7 +18,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
 // skipping ETFVault test for now
-describe.skip("Deploy Contracts and interact with Vault", async () => {
+describe("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -63,7 +63,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
     expect(aave).to.be.equal(protocolAave.allocation);
   });
 
-  it("Should deposit and rebalance", async function() {
+  it.skip("Should deposit and rebalance", async function() {
     console.log('--------------depositing and rebalance with 100k ----------------')
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
@@ -218,7 +218,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
     await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
   });
 
-  it("Should not deposit and withdraw when hitting the marginScale", async function() {
+  it.skip("Should not deposit and withdraw when hitting the marginScale", async function() {
     console.log('-------------- deposit 100k, but for the 3rd protocol (yearn) the margin gets hit ----------------');
     await setDeltaAllocations(user, vaultMock, allProtocols); 
 
