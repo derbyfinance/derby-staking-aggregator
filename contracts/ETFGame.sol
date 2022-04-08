@@ -17,6 +17,9 @@ contract ETFGame is ERC721 {
     // xaver token address
     address public xaverTokenAddress;
 
+    // router address
+    address public routerAddress;
+
     // address of DAO governance contract
     address public governed;
 
@@ -34,10 +37,12 @@ contract ETFGame is ERC721 {
         string memory name_, 
         string memory symbol_, 
         address _xaverTokenAddress, 
+        address _routerAddress,
         address _governed
     ) 
         ERC721(name_, symbol_) {
         xaverTokenAddress = _xaverTokenAddress;
+        routerAddress = _routerAddress;
         governed = _governed;
     }
 
@@ -63,9 +68,6 @@ contract ETFGame is ERC721 {
 
         // last period when this Basket got rebalanced
         uint256 latestAdjustmentPeriod;
-
-        // last basket price
-        uint256 lastBasketPrice;
 
         // nr of total allocated tokens 
         uint256 nrOfAllocatedTokens;
@@ -142,8 +144,8 @@ contract ETFGame is ERC721 {
     }
 
     // rebalances an existing Basket
-    function rebalanceBasket(uint256 _ETFnumber, uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
-        baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+    function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
+        baskets[_basketId].latestAdjustmentPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
         
         uint256 totalNewAllocatedTokens = 0;
         int256 deltaAllocation;
@@ -151,7 +153,7 @@ contract ETFGame is ERC721 {
             totalNewAllocatedTokens += _allocations[i];
             if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
             deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
-            IETFVault(ETFVaults[_ETFnumber]).setDeltaAllocations(i, deltaAllocation);
+            IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).setDeltaAllocations(i, deltaAllocation);
             baskets[_basketId].allocations[i] = _allocations[i];
         }
 
@@ -176,14 +178,15 @@ contract ETFGame is ERC721 {
 
     // }
 
-    function calculateBasketPrice() internal {
-        uint256 price = 0;
+    function calculateBasketgrowth(uint256 _basketId) internal {
+        for (uint256 i = 0; i < baskets[_basketId].ETFnumber; i++) {
+            baskets[_basketId].nrOfAllocatedTokens;
+        }
         
     }
 
     // add to total rewards, formula of calculating the game rewards here
     function addToTotalRewards(uint256 _basketId) internal {
-        baskets[_basketId].lastBasketPrice = 1;
         uint256 amount = 0;
 
         baskets[_basketId].totalUnRedeemedRewards += amount;

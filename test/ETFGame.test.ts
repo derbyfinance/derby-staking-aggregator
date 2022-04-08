@@ -49,7 +49,7 @@ describe("Deploy Contracts and interact with Game", async () => {
 
     const daoAddr = await dao.getAddress();
     xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
-    game = await deployETFGameMock(user, name, symbol, xaverToken.address, daoAddr);  
+    game = await deployETFGameMock(user, name, symbol, xaverToken.address, router.address, daoAddr);  
   });
 
   it("XaverToken should have name, symbol and totalSupply set", async function() {

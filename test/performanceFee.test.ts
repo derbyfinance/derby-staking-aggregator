@@ -102,7 +102,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Math.floor((totalAfter - totalBefore) / totalBefore * totalUnderlying * performancePerc/100)).to.be.closeTo((performanceFee), 1);
   });
 
-  it.only("Should store historical prices of protocols on each rebalance", async function() {
+  it("Should store historical prices of protocols on each rebalance", async function() {
     await rebalanceETF(vaultMock);
 
     expect(await vaultMock.getHistoricalPrice(0, 0)).to.be.equal(20);

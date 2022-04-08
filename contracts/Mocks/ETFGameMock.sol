@@ -8,11 +8,13 @@ contract ETFGameMock is ETFGame {
     constructor(string memory name_, 
         string memory symbol_, 
         address _xaverTokenAddress, 
+        address _routerAddress,
         address _governed
     ) ETFGame (
         name_, 
         symbol_,
         xaverTokenAddress = _xaverTokenAddress,
+        routerAddress = _routerAddress,
         governed = _governed
     ) {}
 
