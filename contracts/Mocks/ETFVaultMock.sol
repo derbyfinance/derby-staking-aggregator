@@ -64,9 +64,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _tokenIn, 
       _tokenOut, 
       router.uniswapRouter(),
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      router.uniswapSwapFee()
+      router.uniswapQuoter(),
+      router.uniswapPoolFee()
     );
   }
 
@@ -76,20 +75,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _tokenIn, 
       _tokenOut,
       router.uniswapRouter(),
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      router.uniswapSwapFee()
-    );
-  }
-
-  function minAmountOutTest(uint256 _amount, address _tokenIn, address _tokenOut) external view returns(uint256) {
-    return Swap.getPoolAmountOut(
-      _amount, 
-      _tokenIn, 
-      _tokenOut, 
-      router.uniswapFactory(), 
-      router.uniswapPoolFee(),
-      0
+      router.uniswapQuoter(),
+      router.uniswapPoolFee()
     );
   }
 
@@ -113,6 +100,4 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       players[i] = exchangeRate;
     }
   }
-
-
 }

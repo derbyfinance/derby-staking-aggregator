@@ -70,23 +70,22 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(USDCBalanceAfterClaim)).to.be.greaterThan(Number(USDCBalanceBeforeClaim))
   });
 
-  it.only("Swapping COMP to USDC", async function() {
-    const swapAmount = parseUnits('1000', 18); // 1000 comp tokens
+  it("Swapping COMP to USDC and calc minAmountOut with swapTokensMulti", async function() {
+    const swapAmount = parseUnits('100', 18); // 1000 comp tokens 
     await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
 
-    const compBalance = await IComp.balanceOf(vaultMock.address);
-    console.log({compBalance})
-    expect(compBalance).to.be.equal(swapAmount);
-    console.log('ja equal')
+    let compBalance = await IComp.balanceOf(vaultMock.address);
+    let usdcBalance = await IUSDc.balanceOf(vaultMock.address);
 
-    await vaultMock.swapTokensSingle(swapAmount, comp, WEth);
+    expect(compBalance).to.be.equal(swapAmount);
+    expect(usdcBalance).to.be.equal(0);
 
     await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
-    const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
-    const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
+    compBalance = await IComp.balanceOf(vaultMock.address);
+    usdcBalance = await IUSDc.balanceOf(vaultMock.address);
 
-    expect(Number(formatUSDC(usdcBalanceEnd))).to.be.greaterThan(0);
-    expect(compBalanceEnd).to.be.equal(0);
+    expect(Number(formatUSDC(usdcBalance))).to.be.greaterThan(0);
+    expect(compBalance).to.be.equal(0);
   });
 
   it("Swapping USDC to COMP and COMP back to USDC", async function() {
@@ -198,7 +197,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
     console.log({ETHBalanceReceived});
 
-    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether back after the rebalance function
+    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether (0.03) back after the rebalance function
     expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
@@ -248,28 +247,5 @@ describe("Deploy Contracts and interact with Vault", async () => {
     console.log(USDCBalanceUser)
 
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
-  });
-
-  it("Testing minAmountOut function. COMP => Weth => USDC and back USDC => WETH => COMP", async function() {
-    const swapAmount = parseUnits('100', 18); // 100 comp tokens
-
-    console.log('--------------------')
-    const amountOutWeth = await vaultMock.minAmountOutTest(swapAmount, comp, WEth);
-    console.log(`100 COMP to WETH: ${amountOutWeth}`);
-
-    console.log('--------------------')
-    const amountOutUSDC = await vaultMock.minAmountOutTest(amountOutWeth, WEth, usdc);
-    console.log(`Weth to USDC: ${amountOutUSDC}`);
-
-    console.log('--------------------');
-    const amountOutBack = await vaultMock.minAmountOutTest(amountOutUSDC, usdc, WEth);
-    console.log(`USDC to Weth: ${amountOutBack}`);
-
-    console.log('--------------------');
-    const amountOutBacktoComp = await vaultMock.minAmountOutTest(amountOutBack, WEth, comp);
-    console.log(`Weth Back to COMP: ${amountOutBacktoComp}`);
-
-    // amountOutBacktoComp == swapAmount (100 COMP)
-    expect(Number(formatUnits(amountOutBacktoComp, 18))).to.be.closeTo(Number(formatUnits(swapAmount, 18)), 0.1);
   });
 });
