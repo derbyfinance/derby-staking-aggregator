@@ -36,6 +36,7 @@ contract ETFVault is VaultToken {
   uint256 public performancePerc = 10;
   uint256 public lastExchangeRate = 0;
   uint256 public rebalancingPeriod = 0;
+  uint256 public currentTotalUnderlying = 0;
 
   uint256 public blockRebalanceInterval = 1;
   uint256 public lastTimeStamp;
@@ -111,7 +112,7 @@ contract ETFVault is VaultToken {
     uint256 shares = 0;
 
     if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / (getTotalUnderlying() + balanceBefore);
+      shares = ( amount * totalSupply ) / (currentTotalUnderlying + balanceBefore);
     } else {
       shares = amount; 
     }
@@ -163,6 +164,8 @@ contract ETFVault is VaultToken {
     if (totalSupply() == 0) return 1;
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
+    console.log("exchange rate totaludnerlying %s", getTotalUnderlying());
+    console.log("exchange rate saved underlying %s", currentTotalUnderlying);
 
     return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
@@ -191,6 +194,9 @@ contract ETFVault is VaultToken {
     lastTimeStamp = block.timestamp;
     rebalancingPeriod++;
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
+
+    console.log("rebalance total underlying %s", getTotalUnderlying());
+    currentTotalUnderlying = getTotalUnderlying();
 
     uint256 gasUsed = gasStart - gasleft();
     swapAndPayGasFee(gasUsed);
