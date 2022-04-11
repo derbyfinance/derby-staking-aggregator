@@ -3,15 +3,15 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import type { FeeTestContract} from '../typechain-types';
-import { routerAddProtocol, erc20, getUSDCSigner } from "./helpers/helpers";
-import { deployRouter, deployAaveProvider, deployCompoundProvider, deployYearnProvider } from "./helpers/deploy";
+import { controllerAddProtocol, erc20, getUSDCSigner } from "./helpers/helpers";
+import { deployController, deployAaveProvider, deployCompoundProvider, deployYearnProvider } from "./helpers/deploy";
 import { usdc, comptroller, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "./helpers/addresses";
 import { setDeltaAllocations, getAllocations, getAndLogBalances } from "./helpers/vaultHelpers";
 import FeeTestContractArtifact from '../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock, Router } from '../typechain-types';
+import type { ETFVaultMock, Controller } from '../typechain-types';
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const deployFeeTestContract = (
@@ -23,14 +23,14 @@ const deployFeeTestContract = (
   ETFnumber: number,
   daoAddress: string,
   ETFGame: string, 
-  router: string, 
+  controller: string, 
   vaultCurrency: string, 
   uScale: number,
   gasFeeLiq: number,
   ) => deployContract(
     deployerSign, 
     FeeTestContractArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<FeeTestContract>;
 
 const protocols = [
@@ -67,8 +67,8 @@ describe.skip("Test gas", async () => {
       dao.getAddress(),
       user.getAddress(),
     ]);
-    const router = await deployRouter(dao, daoAddr);
-    feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale, gasFeeLiquidity)
+    const controller = await deployController(dao, daoAddr);
+    feeTestContract = await deployFeeTestContract(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity)
   });
 
   it("set and read array", async function() {
@@ -113,7 +113,7 @@ describe.skip("Simulate looping through game players and calculating weighted av
   protocolCompoundDAI: Protocol,
   protocolAaveUSDT: Protocol,
   allProtocols: Protocol[],
-  router: Router;
+  controller: Controller;
 
   beforeEach(async function() {
     [
@@ -123,7 +123,7 @@ describe.skip("Simulate looping through game players and calculating weighted av
       [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT],
       allProtocols,
       IUSDc,,,,,
-      router,,,,,,,
+      controller,,,,,,,
       dao
     ] = await beforeEachETFVault(amountUSDC)
   });
@@ -132,9 +132,9 @@ describe.skip("Simulate looping through game players and calculating weighted av
     let yearnProvider, compoundProvider, aaveProvider;
 
     [compoundProvider, aaveProvider, yearnProvider] = await Promise.all([
-      deployCompoundProvider(dao, router.address, comptroller),
-      deployAaveProvider(dao, router.address),
-      deployYearnProvider(dao, router.address),
+      deployCompoundProvider(dao, controller.address, comptroller),
+      deployAaveProvider(dao, controller.address),
+      deployYearnProvider(dao, controller.address),
     ]);
 
     // loop 9 times, so in total there are 25 protocols in the vault
@@ -142,11 +142,11 @@ describe.skip("Simulate looping through game players and calculating weighted av
     let p: Protocol;
     for (let i = 1; i < 5; i++) {
       await Promise.all([
-        routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
-        routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
-        routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
-        routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
-        routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
+        controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
+        controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
+        controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
+        controllerAddProtocol(controller, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
+        controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
       ]);
       for (let j = i*5; j < i*5+5; j++){
         p = { number: j, allocation: j*10, address:  compoundProvider.address };
@@ -154,7 +154,7 @@ describe.skip("Simulate looping through game players and calculating weighted av
       }
     }
 
-    console.log("Number of protocols in vault: %s", await router.latestProtocolId(ETFnumber));
+    console.log("Number of protocols in vault: %s", await controller.latestProtocolId(ETFnumber));
 
     await setDeltaAllocations(user, vaultMock, protocols);
     await vaultMock.depositETF(userAddr, amountUSDC);

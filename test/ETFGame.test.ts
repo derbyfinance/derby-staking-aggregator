@@ -31,7 +31,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
   protocolAave: Protocol,
   protocolYearn: Protocol,
   allProtocols: Protocol[],
-  router: Contract,
+  controller: Contract,
   game: ETFGameMock,
   xaverToken: XaverToken,
   basketToken: BasketToken;
@@ -44,7 +44,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
       [protocolCompound, protocolAave, protocolYearn],
       allProtocols,
       IUSDc,,,,,
-      router,,,,,,,
+      controller,,,,,,,
       dao
     ] = await beforeEachETFVault(amountUSDC)
 

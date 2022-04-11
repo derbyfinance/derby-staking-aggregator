@@ -3,7 +3,7 @@ import { BigNumber } from "ethers";
 import { ethers, network, waffle } from "hardhat";
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
-import { Router } from "typechain-types";
+import { Controller } from "typechain-types";
 import { Result } from "ethers/lib/utils";
 
 const provider = waffle.provider;
@@ -36,8 +36,8 @@ export const getWhale = async (address: string) => {
   return ethers.provider.getSigner(address);
 }
 
-export const routerAddProtocol = async (
-  router: Router, 
+export const controllerAddProtocol = async (
+  controller: Controller, 
   name: string, 
   ETFnumber: number,
   provider: string, 
@@ -46,7 +46,7 @@ export const routerAddProtocol = async (
   govToken: string,
   uScale: string,
 ) => {
-  const tx = await router.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken, uScale)
+  const tx = await controller.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken, uScale)
   const receipt = await tx.wait()
   const { protocolNumber } = receipt.events![0].args as Result
   

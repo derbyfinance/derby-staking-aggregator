@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock, Router } from '../typechain-types';
+import type { ETFVaultMock } from '../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { setCurrentAllocations } from "./helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";

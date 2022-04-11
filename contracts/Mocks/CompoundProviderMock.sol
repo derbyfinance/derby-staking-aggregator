@@ -5,8 +5,8 @@ import "../Providers/CompoundProvider.sol";
 
 contract CompoundProviderMock is CompoundProvider { 
 
-  constructor(address _router, address _comptroller) CompoundProvider(
-    _router,
+  constructor(address _controller, address _comptroller) CompoundProvider(
+    _controller,
     _comptroller
   ) {}
 

@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
-import type { ETFVaultMock, Router } from '../../typechain-types';
+import type { ETFVaultMock, Controller } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { comptroller } from "./addresses";
 import { Result } from 'ethers/lib/utils';
@@ -44,11 +44,11 @@ export function setCurrentAllocations(vault: ETFVaultMock, protocols: Protocol[]
     vault.setCurrentAllocation(protocol.number, protocol.allocation))
 )}
 
-export function deployAllProviders(dao: Signer, router: Router) {
+export function deployAllProviders(dao: Signer, controller: Controller) {
   return Promise.all([
-    deployYearnProvider(dao, router.address),
-    deployCompoundProvider(dao, router.address, comptroller),
-    deployAaveProvider(dao, router.address),
+    deployYearnProvider(dao, controller.address),
+    deployCompoundProvider(dao, controller.address, comptroller),
+    deployAaveProvider(dao, controller.address),
   ]);
 }
 

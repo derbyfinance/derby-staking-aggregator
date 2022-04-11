@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock, Router } from '../typechain-types';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock } from '../typechain-types';
 import { rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
 import {  yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";

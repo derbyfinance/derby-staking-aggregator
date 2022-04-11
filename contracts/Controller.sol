@@ -2,11 +2,11 @@
 pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
-import "./Interfaces/IRouter.sol";
+import "./Interfaces/IController.sol";
 import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
-contract Router is IRouter {
+contract Controller is IController {
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
@@ -48,12 +48,12 @@ contract Router is IRouter {
 
   // Modifier for only vault?
   modifier onlyDao {
-    require(msg.sender == dao, "Router: only DAO");
+    require(msg.sender == dao, "Controller: only DAO");
     _;
   }
 
   modifier onlyVault {
-    require(vaultWhitelist[msg.sender] == true, "Router: only Vault");
+    require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
     _;
   }
 
@@ -185,7 +185,7 @@ contract Router is IRouter {
       claimable[_provider] = _bool;
   }
 
-  /// @notice Add protocol and vault to router
+  /// @notice Add protocol and vault to Controller
   /// @param _name Name of the protocol vault combination
   /// @param _ETFnumber Number of the ETF
   /// @param _provider Address of the protocol provider
@@ -219,7 +219,7 @@ contract Router is IRouter {
     return protocolNumber;
   }
 
-  /// @notice Add protocol and vault to router
+  /// @notice Add protocol and vault to Controller
   /// @param _vault ETFVault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;

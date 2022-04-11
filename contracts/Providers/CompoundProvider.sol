@@ -13,18 +13,18 @@ contract CompoundProvider is IProvider {
   using SafeERC20 for IERC20;
 
   IComptroller public comptroller;
-  address public router; 
+  address public controller; 
   
   mapping(uint256 => uint256) public historicalPrices;
 
-  modifier onlyRouter {
-    require(msg.sender == router, "ETFProvider: only router");
+  modifier onlyController {
+    require(msg.sender == controller, "ETFProvider: only controller");
     _;
   }
 
-  constructor(address _router, address _comptroller) {
+  constructor(address _controller, address _comptroller) {
     comptroller = IComptroller(_comptroller);
-    router = _router;
+    controller = _controller;
   }
 
   /// @notice Deposit the underlying asset in Compound
@@ -39,7 +39,7 @@ contract CompoundProvider is IProvider {
     uint256 _amount, 
     address _cToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -70,7 +70,7 @@ contract CompoundProvider is IProvider {
     uint256 _amount, 
     address _cToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 

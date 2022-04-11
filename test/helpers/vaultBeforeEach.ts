@@ -6,9 +6,9 @@ import { BigNumber, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
 import { AaveProvider, CompoundProvider, YearnProvider } from "typechain-types";
 import { aave, aaveUSDC, aaveUSDT, compoundDAI, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, usdc, usdt, yearn, yearnUSDC } from "./addresses";
-import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployRouter, deployYearnProvider } from "./deploy";
+import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployController, deployYearnProvider } from "./deploy";
 import { deployAaveProviderMock, deployYearnProviderMock, deployCompoundProviderMock } from "./deployMocks";
-import { getUSDCSigner, erc20, routerAddProtocol, getWhale, } from './helpers';
+import { getUSDCSigner, erc20, controllerAddProtocol, getWhale, } from './helpers';
 
 export interface Protocol {
   number: number;
@@ -47,24 +47,24 @@ export async function beforeEachETFVault(
     dao.getAddress(),
     user.getAddress(),
   ]);
-  const router = await deployRouter(dao, daoAddr);
-  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, router.address, usdc, uScale, gasFeeLiquidity);
+  const controller = await deployController(dao, daoAddr);
+  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
   
   // Deploy all providers and Vault
   if (!providerMocks) {
     [compoundProvider, aaveProvider, yearnProvider] = await Promise.all([
-      deployCompoundProvider(dao, router.address, comptroller),
-      deployAaveProvider(dao, router.address),
-      deployYearnProvider(dao, router.address),
+      deployCompoundProvider(dao, controller.address, comptroller),
+      deployAaveProvider(dao, controller.address),
+      deployYearnProvider(dao, controller.address),
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
-      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
-      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
-      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
-      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
-      router.setClaimable(compoundProvider.address, true),
+      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
+      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
+      controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
+      controllerAddProtocol(controller, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
+      controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
+      controller.setClaimable(compoundProvider.address, true),
     ]);
   }
 
@@ -76,11 +76,11 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      routerAddProtocol(router, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, 1E6.toString()),
-      routerAddProtocol(router, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, 1E18.toString()),
-      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave, 1E6.toString()),
-      routerAddProtocol(router, 'aave_usdt_01', ETFnumber, aaveProviderMock.address, aaveUSDT, usdt, aave, 1E6.toString()),
-      routerAddProtocol(router, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn, 1E6.toString()),
+      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, 1E6.toString()),
+      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, 1E18.toString()),
+      controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave, 1E6.toString()),
+      controllerAddProtocol(controller, 'aave_usdt_01', ETFnumber, aaveProviderMock.address, aaveUSDT, usdt, aave, 1E6.toString()),
+      controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn, 1E6.toString()),
     ]);
   }
 
@@ -93,13 +93,13 @@ export async function beforeEachETFVault(
     erc20(compoundUSDC)
   ]);
 
-  // Transfer USDC to User address, add Vault address to router, set Curve pool index
+  // Transfer USDC to User address, add Vault address to controller, set Curve pool index
   await Promise.all([
-    router.addVault(vaultMock.address),
-    router.addVault(userAddr),
-    router.addCurveIndex(dai, 0),
-    router.addCurveIndex(usdc, 1),
-    router.addCurveIndex(usdt, 2),
+    controller.addVault(vaultMock.address),
+    controller.addVault(userAddr),
+    controller.addCurveIndex(dai, 0),
+    controller.addCurveIndex(usdc, 1),
+    controller.addCurveIndex(usdt, 2),
     IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
     IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
   ]);
@@ -115,7 +115,7 @@ export async function beforeEachETFVault(
     compoundProviderMock as MockContract, 
     aaveProviderMock as MockContract,
     USDCSigner,
-    router,
+    controller,
     IcUSDC,
     IComp,
     compSigner,
@@ -123,6 +123,6 @@ export async function beforeEachETFVault(
     compoundProvider as CompoundProvider,
     aaveProvider as AaveProvider,
     dao
-  ])
+  ]);
 };
 

@@ -5,7 +5,7 @@ import type {
   YearnProvider,
   CompoundProvider, 
   AaveProvider,
-  Router,
+  Controller,
   ETFVault,
   BasketToken, 
   ETFGame, 
@@ -27,24 +27,24 @@ import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverTo
 import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
 import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol/ETFGameMock.json';
 import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
-import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
+import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
 
-export const deployYearnProvider = (deployerSign: Signer, router: string): Promise<YearnProvider> => {
-  return (deployContract(deployerSign, YearnProviderArtifact, [router])) as Promise<YearnProvider>;
+export const deployYearnProvider = (deployerSign: Signer, controller: string): Promise<YearnProvider> => {
+  return (deployContract(deployerSign, YearnProviderArtifact, [controller])) as Promise<YearnProvider>;
 };
 
-export const deployCompoundProvider = (deployerSign: Signer, router: string, comptroller: string): Promise<CompoundProvider> => {
-  return (deployContract(deployerSign, CompoundProviderArtifact, [router, comptroller])) as Promise<CompoundProvider>;
+export const deployCompoundProvider = (deployerSign: Signer, controller: string, comptroller: string): Promise<CompoundProvider> => {
+  return (deployContract(deployerSign, CompoundProviderArtifact, [controller, comptroller])) as Promise<CompoundProvider>;
 };
 
-export const deployCompoundProviderMock = (deployerSign: Signer, router: string, comptroller: string): Promise<CompoundProviderMock> => {
-  return (deployContract(deployerSign, CompoundProviderMockArtifact, [router, comptroller])) as Promise<CompoundProviderMock>;
+export const deployCompoundProviderMock = (deployerSign: Signer, controller: string, comptroller: string): Promise<CompoundProviderMock> => {
+  return (deployContract(deployerSign, CompoundProviderMockArtifact, [controller, comptroller])) as Promise<CompoundProviderMock>;
 };
 
-export const deployAaveProvider = (deployerSign: Signer, router: string): Promise<AaveProvider> => {
-  return (deployContract(deployerSign, AaveProviderArtifact, [router])) as Promise<AaveProvider>;
+export const deployAaveProvider = (deployerSign: Signer, controller: string): Promise<AaveProvider> => {
+  return (deployContract(deployerSign, AaveProviderArtifact, [controller])) as Promise<AaveProvider>;
 };
 
 export const deployETFVault = (
@@ -56,14 +56,14 @@ export const deployETFVault = (
   ETFnumber: number,
   daoAddress: string,
   ETFGame: string, 
-  router: string, 
+  controller: string, 
   vaultCurrency: string, 
   uScale: number,
   gasFeeLiq: number
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<ETFVaultMock>;
 
 export const deployETFVaultMock = (
@@ -75,25 +75,25 @@ export const deployETFVaultMock = (
   ETFnumber: number,
   daoAddress: string, 
   ETFGame: string,
-  router: string, 
+  controller: string, 
   vaultCurrency: string,
   uScale: number, 
   gasFeeLiq: number
   ) => deployContract(
     deployerSign, 
     ETFVaultArtifactMock, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, router, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<ETFVaultMock>;
 
-export const deployRouter = (
+export const deployController = (
   deployerSign: Signer, 
   daoAddress: string, 
-): Promise<Router> => {
+): Promise<Controller> => {
   return (deployContract(
     deployerSign, 
-    RouterArtifact, 
+    ControllerArtifact, 
     [daoAddress, curve3Pool, uniswapRouter, uniswapQuoter, 3000, ChainlinkGasPrice]
-  ) as Promise<Router>);
+  ) as Promise<Controller>);
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {

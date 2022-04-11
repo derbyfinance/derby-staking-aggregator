@@ -5,7 +5,7 @@ import { Signer } from "ethers";
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
-import RouterArtifact from '../../artifacts/contracts/Router.sol/Router.json';
+import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import erc20ABI from '../../abis/erc20.json';
 
 export const deployYearnProviderMock = (
@@ -32,12 +32,12 @@ export const deployAaveProviderMock = (
     AaveProviderArtifact.abi, 
 )) as Promise<MockContract>};
 
-export const deployRouterMock = (
+export const deployControllerMock = (
   deployerSign: Signer, 
   ): Promise<MockContract> => {
   return (deployMockContract(
     deployerSign, 
-    RouterArtifact.abi, 
+    ControllerArtifact.abi, 
 )) as Promise<MockContract>};
 
 export const deployERC20Mock = (
