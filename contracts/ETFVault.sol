@@ -176,7 +176,6 @@ contract ETFVault is VaultToken {
     if (!rebalanceNeeded()) return;
     uint256 gasStart = gasleft();
     
-    lastExchangeRate = exchangeRate();
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this)) ;
@@ -255,20 +254,6 @@ contract ETFVault is VaultToken {
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns(bool) {
     return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
-  }
-
-  /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
-  /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
-  /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
-  function calculatePerformanceFee() public view returns(uint256) {
-    uint256 performanceFee = 0;
-    uint256 currentExchangeRate = exchangeRate();
-    if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
-      performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
-      performanceFee = performancePerc * performanceFee / lastExchangeRate;
-      performanceFee = performanceFee / 100;   
-    }
-    return performanceFee;
   }
 
   /// @notice Helper function to set allocations and last price from protocols
