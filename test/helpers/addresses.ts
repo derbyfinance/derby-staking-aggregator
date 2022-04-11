@@ -19,6 +19,7 @@ export const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
 // Uniswap
 export const uniswapFactory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
 export const uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+export const uniswapQuoter = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 
 // Curve Finance
 export const curve3Pool = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7" // DAI / USDC / USDT

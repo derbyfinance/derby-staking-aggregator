@@ -7,9 +7,9 @@ import { network } from "hardhat";
 import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, routerAddProtocol, } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, dai, compToken as comp, compoundDAI} from "./helpers/addresses";
+import { usdc, dai, compToken as comp, compoundDAI, WEth} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther, Result } from "ethers/lib/utils";
 
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
@@ -46,7 +46,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     IDAI = await erc20(dai);
   });
 
-  it("Claim function in vault should claim COMP and sell for USDC", async function() {
+  it("Claim function in vault should claim COMP and sell for more then minAmountOut in USDC", async function() {
     protocolYearn.allocation = 0;
     protocolCompound.allocation = 60;
     protocolAave.allocation = 0;
@@ -70,19 +70,26 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(Number(USDCBalanceAfterClaim)).to.be.greaterThan(Number(USDCBalanceBeforeClaim))
   });
 
-  it("Swapping COMP to USDC", async function() {
-    const swapAmount = parseUnits('1000', 18); // 1000 comp tokens
+  it("Swapping COMP to USDC and calc minAmountOut with swapTokensMulti", async function() {
+    const swapAmount = parseUnits('100', 18); // 1000 comp tokens 
     await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
 
-    const compBalance = await IComp.balanceOf(vaultMock.address);
-    expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
+    let compBalance = await IComp.balanceOf(vaultMock.address);
+    let usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+
+    expect(compBalance).to.be.equal(swapAmount);
+    expect(usdcBalance).to.be.equal(0);
+
+    const tx = await vaultMock.swapMinAmountOutMultiTest(swapAmount, comp, usdc);
+    const receipt = await tx.wait();
+    const  { minAmountOut }  = receipt.events!.at(-1)!.args as Result;
 
     await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
-    const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
-    const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
+    compBalance = await IComp.balanceOf(vaultMock.address);
+    usdcBalance = await IUSDc.balanceOf(vaultMock.address);
 
-    expect(Number(formatUSDC(usdcBalanceEnd))).to.be.greaterThan(0);
-    expect(compBalanceEnd).to.be.equal(0);
+    expect(usdcBalance).to.be.equal(minAmountOut);
+    expect(compBalance).to.be.equal(0);
   });
 
   it("Swapping USDC to COMP and COMP back to USDC", async function() {
@@ -194,7 +201,7 @@ describe("Deploy Contracts and interact with Vault", async () => {
     const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
     console.log({ETHBalanceReceived});
 
-    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether back after the rebalance function
+    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether (0.03) back after the rebalance function
     expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
@@ -245,61 +252,4 @@ describe("Deploy Contracts and interact with Vault", async () => {
 
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
   });
-  // it("Calc USDC to COMP", async function() {
-  //   const swapAmount = parseUSDC('10000');
-
-  //   console.log('--------------------')
-  //   const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, usdc, WEth);
-  //   console.log(`10k USDC to WETH: ${amountOutWeth}`)
-
-  //   console.log('--------------------')
-  //   const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, comp)
-  //   console.log(`Weth to Comp: ${amountOutComp}`)
-
-  //   console.log('--------------------')
-  //   const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, comp, WEth);
-  //   console.log(`Comp to Weth: ${amountOutBack}`)
-
-  //   console.log('--------------------')
-  //   const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, usdc)
-  //   console.log(`Weth Back to USDC: ${amountOutBacktoUSDC}`)
-  // });
-
-  // it("SWap and calc COMP to USDC", async function() {
-  //   const swapAmount = parseUnits('100', 18); // 100 comp tokens
-  //   console.log(`USDC Balance vault Before: ${await IUSDc.balanceOf(vaultMock.address)}`)
-
-  //   await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
-  //   console.log(`Comp Balance Vault: ${await IComp.balanceOf(vaultMock.address)}`)
-
-  //   await vaultMock.swapTokensMulti(swapAmount, comp, usdc);
-
-  //   console.log(`USDC Balance vault After: ${await IUSDc.balanceOf(vaultMock.address)}`)
-
-  //   console.log('--------------------')
-  //   const amountOutWeth = await vaultMock.getPoolAmountOut(swapAmount, comp, WEth);
-  //   console.log(`100 COMP to WETH: ${amountOutWeth}`)
-  //   console.log(amountOutWeth)
-
-  //   console.log('--------------------')
-  //   const amountOutComp = await vaultMock.getPoolAmountOut(amountOutWeth, WEth, usdc)
-  //   console.log(`Weth to USDC: ${amountOutComp}`)
-  //   console.log(amountOutComp)
-
-  //   console.log('--------------------')
-  //   const amountOutBack = await vaultMock.getPoolAmountOut(amountOutComp, usdc, WEth);
-  //   console.log(`USDC to Weth: ${amountOutBack}`)
-  //   console.log(amountOutBack)
-
-  //   console.log('--------------------')
-  //   const amountOutBacktoUSDC = await vaultMock.getPoolAmountOut(amountOutBack, WEth, comp)
-  //   console.log(`Weth Back to COMP: ${amountOutBacktoUSDC}`)
-  //   console.log(amountOutBacktoUSDC)
-
-  // });
-
 });
-
-// price Token0 = sqrtRatioX96 ** 2 / 2 ** 192
-// price Token1 = 2 ** 192 / sqrtRatioX96 ** 2
-// 

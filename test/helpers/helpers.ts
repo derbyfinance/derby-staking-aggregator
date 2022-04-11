@@ -63,8 +63,8 @@ export const cToken = async (tokenAddress: string) => {
 
 // FORMATTING
 export const parseEther = (amount: string) => ethers.utils.parseEther(amount)
-export const formatEther = (amount: string) => ethers.utils.formatEther(amount)
+export const formatEther = (amount: string | BigNumber) => ethers.utils.formatEther(amount)
 export const parseUnits = (amount: string, number: number) => ethers.utils.parseUnits(amount, number)
-export const formatUnits = (amount: string, number: number) => ethers.utils.formatUnits(amount, number)
+export const formatUnits = (amount: string | BigNumber, number: number) => ethers.utils.formatUnits(amount, number)
 export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6)
 export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6)

@@ -9,13 +9,14 @@ import "../Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
 import "../Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
+import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
 import "hardhat/console.sol";
 
 library Swap {
   using SafeERC20 for IERC20;
 
-  address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+  address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   uint256 internal constant gasUsedForSwap = 210000;
 
   /// @notice Swap stable coins on Curve
@@ -61,23 +62,32 @@ library Swap {
   /// @param _amount Number of tokens to sell
   /// @param _tokenIn Token to sell
   /// @param _tokenOut Token to receive
+  /// @param _uniswapRouter Address of uniswapRouter
+  /// @param _uniswapQuoter Address of uniswapQuoter
+  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
   /// @return Amountout Number of tokens received
   function swapTokensMulti(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
     address _uniswapRouter,
+    address _uniswapQuoter,
     uint24 _poolFee
   ) internal returns(uint256) {
     IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
 
+    uint256 amountOutMinimum = IQuoter(_uniswapQuoter).quoteExactInput(
+      abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
+      _amount
+    );
+    
     ISwapRouter.ExactInputParams memory params =
       ISwapRouter.ExactInputParams({
         path: abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
         recipient: address(this),
         deadline: block.timestamp,
         amountIn: _amount,
-        amountOutMinimum: 0
+        amountOutMinimum: amountOutMinimum 
       });
 
     uint256 amountOut = ISwapRouter(_uniswapRouter).exactInput(params);
@@ -89,19 +99,21 @@ library Swap {
   /// @param _amount Number of tokens to sell
   /// @param _tokenIn Token to sell
   /// @param _tokenOut Token to receive
+  /// @param _uniswapRouter Address of uniswapRouter
+  /// @param _uniswapQuoter Address of uniswapQuoter
+  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
   /// @return Amountout Number of tokens received
   function swapTokensSingle(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
     address _uniswapRouter,
-    address _uniswapFactory,
-    uint24 _poolFee,
-    uint256 _swapFee
+    address _uniswapQuoter,
+    uint24 _poolFee
   ) internal returns(uint256) {
     IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
 
-    uint256 amountOutMinimum = getPoolAmountOut(_amount, _tokenIn, _tokenOut, _uniswapFactory, _poolFee, _swapFee);
+    uint256 amountOutMinimum = amountOutSingleSwap(_amount, _tokenIn, _tokenOut, _uniswapQuoter, _poolFee);
 
     ISwapRouter.ExactInputSingleParams memory params =
       ISwapRouter.ExactInputSingleParams({
@@ -121,46 +133,54 @@ library Swap {
     return amountOut;
   }
 
-  // Not functional yet
-  function getPoolAmountOut(
+  /// @notice Swap tokens on Uniswap
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @param _uniswapQuoter Address of uniswapQuoter
+  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
+  /// @return amountOutMin minimum amount out of tokens to receive when executing swap
+  function amountOutSingleSwap(
     uint256 _amount, 
     address _tokenIn, 
     address _tokenOut,
-    address _uniswapFactory,
-    uint24 _poolFee,
-    uint256 _fee
-  ) internal view returns(uint256) {    
-    uint256 amountOut = 0;
-    address pool = IUniswapV3Factory(_uniswapFactory).getPool(
-      _tokenIn,
-      _tokenOut,
-      _poolFee
+    address _uniswapQuoter,
+    uint24 _poolFee
+  ) internal returns(uint256) {
+    return IQuoter(_uniswapQuoter).quoteExactInputSingle(
+      _tokenIn, 
+      _tokenOut, 
+      _poolFee, 
+      _amount,
+      0
     );
-
-    address token0 = IUniswapV3Pool(pool).token0();
-    address token1 = IUniswapV3Pool(pool).token1();
-
-    (uint256 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
-
-    if (token0 == _tokenOut) {
-      amountOut =  (_amount * 2 ** 192 / sqrtPriceX96 ** 2) * (10000 - _fee) / 10000;
-    }
-    if (token1 == _tokenOut) {
-      amountOut =  (_amount * sqrtPriceX96 ** 2 / 2 ** 192) * (10000 - _fee) / 10000;
-    }
-
-    // console.log("pool %s", pool);
-    console.log("token0 %s", token0);
-    console.log("token1 %s", token1);
-    // console.log("sqrtPriceX96 %s", sqrtPriceX96);
-    console.log("amountOut pool %s", amountOut);
-
-    return amountOut;
   }
 
+  /// @notice Swap tokens on Uniswap Multi route
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @param _uniswapQuoter Address of uniswapQuoter
+  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
+  /// @return amountOutMin minimum amount out of tokens to receive when executing swap
+  function amountOutMultiSwap(
+    uint256 _amount, 
+    address _tokenIn, 
+    address _tokenOut,
+    address _uniswapQuoter,
+    uint24 _poolFee
+  ) internal returns(uint256) {
+    return IQuoter(_uniswapQuoter).quoteExactInput(
+      abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
+      _amount
+    );
+  }
+
+  /// @notice Will unwrap WETH and send to DAO / governed address
+  /// @param _governed DAO / governed address
+  /// @param _amount amount to unwrap and transfer
   function unWrapWETHtoGov(address payable _governed, uint256 _amount) internal {
     IWETH9(WETH).withdraw(_amount);
     _governed.transfer(_amount);
   }
-
 }

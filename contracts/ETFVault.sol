@@ -230,23 +230,21 @@ contract ETFVault is VaultToken {
   /// @notice This way the vault will pay the gas for the RebalanceETF function
   /// @param _gasUsed total gas used by RebalanceETF
   function swapAndPayGasFee(uint256 _gasUsed) internal {
-    uint256 amountEtherToVaultCurrency = Swap.getPoolAmountOut(
+    uint256 amountEtherToVaultCurrency = Swap.amountOutSingleSwap(
       (_gasUsed + Swap.gasUsedForSwap) * router.getGasPrice(),
       Swap.WETH,
       vaultCurrencyAddr,
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      0
+      router.uniswapQuoter(),
+      router.uniswapPoolFee()
     );
-    
+
     uint256 wethReceived = Swap.swapTokensSingle(
       amountEtherToVaultCurrency, 
       vaultCurrencyAddr, 
       Swap.WETH,
       router.uniswapRouter(),
-      router.uniswapFactory(),
-      router.uniswapPoolFee(),
-      router.uniswapSwapFee()
+      router.uniswapQuoter(),
+      router.uniswapPoolFee()
     );
     Swap.unWrapWETHtoGov(payable(governed), wethReceived);
 
@@ -413,6 +411,7 @@ contract ETFVault is VaultToken {
           govToken, 
           vaultCurrencyAddr,
           router.uniswapRouter(),
+          router.uniswapQuoter(),
           router.uniswapPoolFee()
         );
       }
