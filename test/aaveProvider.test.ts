@@ -12,7 +12,7 @@ const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
-describe("Deploy Contract and interact with Aave", async () => {
+describe("Testing Aave provider", async () => {
   let aaveProvider: AaveProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {

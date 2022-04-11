@@ -14,7 +14,7 @@ import { parseEther } from "ethers/lib/utils";
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Testing ETFVaultSwap", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,

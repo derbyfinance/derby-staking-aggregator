@@ -11,7 +11,7 @@ import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000'); // 100k
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Testing ETFVaultDeposit", async () => {
   let yearnProvider: MockContract, 
   compoundProvider: MockContract, 
   aaveProvider: MockContract, 
