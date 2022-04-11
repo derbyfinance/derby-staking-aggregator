@@ -78,7 +78,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
     ]);
  
-    const exchangeRate = await vaultMock.exchangeRate();
     await vaultMock.withdrawETF(userAddr, parseUSDC('2000')); 
 
     expect(await vaultMock.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k
