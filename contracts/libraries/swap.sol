@@ -156,6 +156,26 @@ library Swap {
     );
   }
 
+  /// @notice Swap tokens on Uniswap Multi route
+  /// @param _amount Number of tokens to sell
+  /// @param _tokenIn Token to sell
+  /// @param _tokenOut Token to receive
+  /// @param _uniswapQuoter Address of uniswapQuoter
+  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
+  /// @return amountOutMin minimum amount out of tokens to receive when executing swap
+  function amountOutMultiSwap(
+    uint256 _amount, 
+    address _tokenIn, 
+    address _tokenOut,
+    address _uniswapQuoter,
+    uint24 _poolFee
+  ) internal returns(uint256) {
+    return IQuoter(_uniswapQuoter).quoteExactInput(
+      abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
+      _amount
+    );
+  }
+
   /// @notice Will unwrap WETH and send to DAO / governed address
   /// @param _governed DAO / governed address
   /// @param _amount amount to unwrap and transfer

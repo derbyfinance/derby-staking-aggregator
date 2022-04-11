@@ -8,6 +8,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
 
   mapping(uint256 => uint256) private players;
 
+  event MinAmountOut(uint256 minAmountOut);
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -78,6 +80,18 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       router.uniswapQuoter(),
       router.uniswapPoolFee()
     );
+  }
+
+  function swapMinAmountOutMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+    uint256 minAmountOut = Swap.amountOutMultiSwap(
+      _amount,
+      _tokenIn,
+      _tokenOut,
+      router.uniswapQuoter(),
+      router.uniswapPoolFee()
+    );
+
+    emit MinAmountOut(minAmountOut);
   }
 
   function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {

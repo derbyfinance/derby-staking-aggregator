@@ -9,7 +9,7 @@ import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, dai, compToken as comp, compoundDAI, WEth} from "./helpers/addresses";
 import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther, Result } from "ethers/lib/utils";
 
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
@@ -80,11 +80,15 @@ describe("Deploy Contracts and interact with Vault", async () => {
     expect(compBalance).to.be.equal(swapAmount);
     expect(usdcBalance).to.be.equal(0);
 
+    const tx = await vaultMock.swapMinAmountOutMultiTest(swapAmount, comp, usdc);
+    const receipt = await tx.wait();
+    const  { minAmountOut }  = receipt.events!.at(-1)!.args as Result;
+
     await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
     compBalance = await IComp.balanceOf(vaultMock.address);
     usdcBalance = await IUSDc.balanceOf(vaultMock.address);
 
-    expect(Number(formatUSDC(usdcBalance))).to.be.greaterThan(0);
+    expect(usdcBalance).to.be.equal(minAmountOut);
     expect(compBalance).to.be.equal(0);
   });
 
