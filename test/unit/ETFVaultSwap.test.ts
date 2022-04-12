@@ -4,11 +4,11 @@
 import { expect } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20 } from './helpers/helpers';
-import type { ETFVaultMock } from '../typechain-types';
-import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { usdc, dai, compToken as comp, compoundDAI, WEth} from "./helpers/addresses";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20 } from '../helpers/helpers';
+import type { ETFVaultMock } from '../../typechain-types';
+import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { usdc, dai, compToken as comp, compoundDAI, WEth} from "../helpers/addresses";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 import { parseEther, Result } from "ethers/lib/utils";
 
 const amountUSDC = parseUSDC('100000');

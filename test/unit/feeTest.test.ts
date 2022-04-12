@@ -2,17 +2,17 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import type { FeeTestContract} from '../typechain-types';
-import { controllerAddProtocol, erc20, getUSDCSigner } from "./helpers/helpers";
-import { deployController, deployAaveProvider, deployCompoundProvider, deployYearnProvider } from "./helpers/deploy";
-import { usdc, comptroller, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "./helpers/addresses";
-import { setDeltaAllocations, getAllocations, getAndLogBalances } from "./helpers/vaultHelpers";
-import FeeTestContractArtifact from '../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
+import type { FeeTestContract} from '../../typechain-types';
+import { controllerAddProtocol, erc20, getUSDCSigner } from "../helpers/helpers";
+import { deployController, deployAaveProvider, deployCompoundProvider, deployYearnProvider } from "../helpers/deploy";
+import { usdc, comptroller, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "../helpers/addresses";
+import { setDeltaAllocations, getAllocations, getAndLogBalances } from "../helpers/vaultHelpers";
+import FeeTestContractArtifact from '../../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock, Controller } from '../typechain-types';
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import type { ETFVaultMock, Controller } from '../../typechain-types';
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const deployFeeTestContract = (
   deployerSign: Signer, 

@@ -3,11 +3,11 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock } from '../typechain-types';
-import { rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
-import {  yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "./helpers/addresses";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import type { YearnProvider, CompoundProvider, AaveProvider, ETFVaultMock } from '../../typechain-types';
+import { rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
+import {  yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc} from "../helpers/addresses";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
 

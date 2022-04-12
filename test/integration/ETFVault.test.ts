@@ -3,10 +3,10 @@
 /* eslint-disable prettier/prettier */
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock } from '../typechain-types';
-import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import type { ETFVaultMock } from '../../typechain-types';
+import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';

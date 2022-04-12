@@ -87,8 +87,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _amount,
       _tokenIn,
       _tokenOut,
-      router.uniswapQuoter(),
-      router.uniswapPoolFee()
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
     );
 
     emit MinAmountOut(minAmountOut);

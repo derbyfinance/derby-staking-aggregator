@@ -3,11 +3,11 @@
 /* eslint-disable prettier/prettier */
 import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { formatUSDC, parseUSDC, parseEther } from './helpers/helpers';
-import { ETFVaultMock, ETFGame, XaverToken, BasketToken, ETFGameMock } from '../typechain-types';
-import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
-import { deployETFGameMock, deployBasketToken, deployXaverToken } from "./helpers/deploy";
+import { formatUSDC, parseUSDC, parseEther } from '../helpers/helpers';
+import { ETFVaultMock, ETFGame, XaverToken, BasketToken, ETFGameMock } from '../../typechain-types';
+import { getAllocations, getAndLogBalances, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
+import { deployETFGameMock, deployBasketToken, deployXaverToken } from "../helpers/deploy";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
