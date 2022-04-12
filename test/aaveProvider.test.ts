@@ -3,45 +3,45 @@
 import chai, { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, routerAddProtocol, } from './helpers/helpers';
-import type { AaveProvider, Router } from '../typechain-types';
-import { deployAaveProvider, deployRouter } from './helpers/deploy';
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from './helpers/helpers';
+import type { AaveProvider, Controller } from '../typechain-types';
+import { deployAaveProvider, deployController } from './helpers/deploy';
 import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
-describe("Deploy Contract and interact with Aave", async () => {
-  let aaveProvider: AaveProvider, router: Router, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
+describe("Testing Aave provider", async () => {
+  let aaveProvider: AaveProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
-    router = await deployRouter(dao, daoAddr);
+    controller = await deployController(dao, daoAddr);
 
     [vaultAddr, aaveProvider, USDCSigner, IUSDc, aToken] = await Promise.all([
       vault.getAddress(),
-      deployAaveProvider(dao, router.address),
+      deployAaveProvider(dao, controller.address),
       getUSDCSigner(),
       erc20(usdc),
       erc20(ausdc),
     ]);
     
-    // Transfer and approve USDC to vault AND add protocol to router contract
+    // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumber] = await Promise.all([
-      routerAddProtocol(router, 'aave_usdc_01', ETFnumber, aaveProvider.address, ausdc, usdc, aave, 1E6.toString()),
-      router.addVault(vaultAddr),
+      controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProvider.address, ausdc, usdc, aave, 1E6.toString()),
+      controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC)
     ])
   });
 
-  it("Should deposit and withdraw to Aave through Router", async function() {
+  it("Should deposit and withdraw to Aave through controller", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
-    await router.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
+    await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
 
     const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
     expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
@@ -51,24 +51,24 @@ describe("Deploy Contract and interact with Aave", async () => {
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);
-    await router.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, aTokenbalance);
+    await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, aTokenbalance);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
   });
 
-  it("Should fail when !Router is calling the Provider", async function() {
+  it("Should fail when !controller is calling the Provider", async function() {
     await expect(aaveProvider.connect(vault).deposit(vaultAddr, amountUSDC, ausdc, usdc))
-    .to.be.revertedWith('ETFProvider: only router');
+    .to.be.revertedWith('ETFProvider: only controller');
   });
 
-  it("Should fail when !Vault is calling the Router", async function() {
-    await expect(router.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
-    .to.be.revertedWith('Router: only Vault');
+  it("Should fail when !Vault is calling the controller", async function() {
+    await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Controller: only Vault');
   });
 
-  it("Should get exchangeRate through Router", async function() {
-    const exchangeRate = await router.connect(vault).exchangeRate(ETFnumber, protocolNumber)
+  it("Should get exchangeRate through controller", async function() {
+    const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
 });

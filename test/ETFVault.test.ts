@@ -18,7 +18,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
 // skipping ETFVault test for now
-describe.skip("Deploy Contracts and interact with Vault", async () => {
+describe.skip("Testing ETFVault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -28,7 +28,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
   protocolAave: Protocol,
   protocolYearn: Protocol,
   allProtocols: Protocol[],
-  router: Contract;
+  controller: Contract;
 
   beforeEach(async function() {
     [
@@ -38,7 +38,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
       [protocolCompound, protocolAave, protocolYearn],
       allProtocols,
       IUSDc,,,,,
-      router,,,,,,,
+      controller,,,,,,,
       dao
     ] = await beforeEachETFVault(amountUSDC)
   });
@@ -375,7 +375,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
   });
 
   it("Should be able to blacklist protocol and pull all funds", async function() {
-    await router.addVault(dao.getAddress()); // use dao signer as vault signer
+    await controller.addVault(dao.getAddress()); // use dao signer as vault signer
     await setDeltaAllocations(user, vaultMock, allProtocols);
 
     await vaultMock.depositETF(userAddr, amountUSDC);
@@ -396,18 +396,18 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
     
-    expect(await router.connect(dao).getProtocolBlacklist(0, 0)).to.be.true;
+    expect(await controller.connect(dao).getProtocolBlacklist(0, 0)).to.be.true;
   });
 
   it("Should not be able to set delta on blacklisted protocol", async function() {
-    await router.addVault(dao.getAddress()); // use dao signer as vault signer
+    await controller.addVault(dao.getAddress()); // use dao signer as vault signer
     await vaultMock.connect(dao).blacklistProtocol(0);
     await expect(vaultMock.connect(user).setDeltaAllocations(0, 30))
     .to.be.revertedWith('Protocol is on the blacklist');
   });
 
   it("Should not be able to rebalance in blacklisted protocol", async function() {
-    await router.addVault(dao.getAddress()); // use dao signer as vault signer
+    await controller.addVault(dao.getAddress()); // use dao signer as vault signer
     await setDeltaAllocations(user, vaultMock, allProtocols);
     await vaultMock.connect(dao).blacklistProtocol(0);
     await vaultMock.depositETF(userAddr, amountUSDC);
@@ -425,7 +425,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
     });
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
-    const result = await router.connect(dao).getProtocolBlacklist(0, 0);
+    const result = await controller.connect(dao).getProtocolBlacklist(0, 0);
     expect(result).to.be.true;
   });
 });

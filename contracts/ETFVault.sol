@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFVault.sol";
-import "./Interfaces/IRouter.sol";
+import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
 
 import "./VaultToken.sol";
@@ -23,10 +23,10 @@ contract ETFVault is VaultToken {
   uint256 public ETFnumber;
 
   IERC20 public vaultCurrency;
-  IRouter public router;
+  IController public controller;
 
   address public vaultCurrencyAddr; 
-  address public routerAddr;
+  address public controllerAddr;
   address public ETFgame;
   address public governed;
 
@@ -74,7 +74,7 @@ contract ETFVault is VaultToken {
     uint256 _ETFnumber,
     address _governed,
     address _ETFGame, 
-    address _router, 
+    address _controller, 
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
@@ -85,12 +85,12 @@ contract ETFVault is VaultToken {
     ETFname = _ETFname;
     ETFnumber = _ETFnumber;
 
-    router = IRouter(_router);
-    routerAddr = _router;
+    controller = IController(_controller);
+    controllerAddr = _controller;
 
     governed = _governed;
     ETFgame = _ETFGame;
-    routerAddr = _router;
+    controllerAddr = _controller;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
@@ -143,7 +143,7 @@ contract ETFVault is VaultToken {
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
   /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
-    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
@@ -202,9 +202,9 @@ contract ETFVault is VaultToken {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
-    uint256[] memory protocolToDeposit = new uint[](router.latestProtocolId(ETFnumber));
-    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
-      bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
+    uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(ETFnumber));
+    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocationAndPrice(i);
@@ -230,20 +230,20 @@ contract ETFVault is VaultToken {
   /// @param _gasUsed total gas used by RebalanceETF
   function swapAndPayGasFee(uint256 _gasUsed) internal {
     uint256 amountEtherToVaultCurrency = Swap.amountOutSingleSwap(
-      (_gasUsed + Swap.gasUsedForSwap) * router.getGasPrice(),
+      (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
       Swap.WETH,
       vaultCurrencyAddr,
-      router.uniswapQuoter(),
-      router.uniswapPoolFee()
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
     );
 
     uint256 wethReceived = Swap.swapTokensSingle(
       amountEtherToVaultCurrency, 
       vaultCurrencyAddr, 
       Swap.WETH,
-      router.uniswapRouter(),
-      router.uniswapQuoter(),
-      router.uniswapPoolFee()
+      controller.uniswapRouter(),
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
     );
     Swap.unWrapWETHtoGov(payable(governed), wethReceived);
 
@@ -268,7 +268,7 @@ contract ETFVault is VaultToken {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
 
@@ -281,7 +281,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    IRouter.ProtocolInfoS memory protocol = router.getProtocolInfo(ETFnumber, _protocolNum);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(ETFnumber, _protocolNum);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
   
@@ -292,15 +292,15 @@ contract ETFVault is VaultToken {
         protocol.underlying,
         uScale,
         protocol.uScale,
-        router.curveIndex(vaultCurrencyAddr), 
-        router.curveIndex(protocol.underlying),
-        router.curve3Pool(),
-        router.curve3PoolFee()
+        controller.curveIndex(vaultCurrencyAddr), 
+        controller.curveIndex(protocol.underlying),
+        controller.curve3Pool(),
+        controller.curve3PoolFee()
       );
     }
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    router.deposit(ETFnumber, _protocolNum, address(this), _amount);
+    controller.deposit(ETFnumber, _protocolNum, address(this), _amount);
 
     console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
@@ -311,14 +311,14 @@ contract ETFVault is VaultToken {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
-      IRouter.ProtocolInfoS memory protocol = router.getProtocolInfo(ETFnumber, _protocolNum);
+      IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(ETFnumber, _protocolNum);
 
       _amount = _amount * protocol.uScale / uScale;
 
-      uint256 shares = router.calcShares(ETFnumber, _protocolNum, _amount);
+      uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount);
       IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
 
-      uint256 amountReceived = router.withdraw(ETFnumber, _protocolNum, address(this), shares);
+      uint256 amountReceived = controller.withdraw(ETFnumber, _protocolNum, address(this), shares);
 
       if (protocol. underlying != vaultCurrencyAddr) {
         _amount = Swap.swapStableCoins(
@@ -327,10 +327,10 @@ contract ETFVault is VaultToken {
           vaultCurrencyAddr, 
           protocol.uScale,
           uScale,
-          router.curveIndex(protocol.underlying), 
-          router.curveIndex(vaultCurrencyAddr),
-          router.curve3Pool(),
-          router.curve3PoolFee()
+          controller.curveIndex(protocol.underlying), 
+          controller.curveIndex(vaultCurrencyAddr),
+          controller.curve3Pool(),
+          controller.curve3PoolFee()
         );
       }
     }
@@ -342,7 +342,7 @@ contract ETFVault is VaultToken {
   function getTotalUnderlying() public view returns(uint256) {
     uint256 balance;
     
-    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       uint256 balanceProtocol = balanceUnderlying(i);
       balance += balanceProtocol;
@@ -355,8 +355,8 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
-    uint256 protocolUScale = router.getProtocolInfo(ETFnumber, _protocolNum).uScale;
-    uint256 underlyingBalance = router.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
+    uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
+    uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
 
     return underlyingBalance;
   }
@@ -365,7 +365,7 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Price per share
   function price(uint256 _protocolNum) public view returns(uint256) {
-    uint256 protocolPrice = router.exchangeRate(ETFnumber, _protocolNum);
+    uint256 protocolPrice = controller.exchangeRate(ETFnumber, _protocolNum);
     return protocolPrice;
   }
 
@@ -374,30 +374,30 @@ contract ETFVault is VaultToken {
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) public onlyETFgame {
-    require(!router.getProtocolBlacklist(ETFnumber, _protocolNum), "Protocol is on the blacklist");
+    require(!controller.getProtocolBlacklist(ETFnumber, _protocolNum), "Protocol is on the blacklist");
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
   }
 
   /// @notice Harvest extra tokens from underlying protocols
-  /// @dev Loops over protocols in ETF and check if they are claimable in router contract
+  /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    for (uint i = 0; i < router.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
-      bool claim = router.claim(ETFnumber, i);
+      bool claim = controller.claim(ETFnumber, i);
 
       if (claim) {
-        address govToken = router.getProtocolInfo(ETFnumber, i).govToken;
+        address govToken = controller.getProtocolInfo(ETFnumber, i).govToken;
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         
         Swap.swapTokensMulti(
           tokenBalance, 
           govToken, 
           vaultCurrencyAddr,
-          router.uniswapRouter(),
-          router.uniswapQuoter(),
-          router.uniswapPoolFee()
+          controller.uniswapRouter(),
+          controller.uniswapQuoter(),
+          controller.uniswapPoolFee()
         );
       }
     }
@@ -444,7 +444,7 @@ contract ETFVault is VaultToken {
   function blacklistProtocol(uint256 _protocolNum) external onlyDao {
     uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
-    router.setProtocolBlacklist(ETFnumber, _protocolNum);
+    controller.setProtocolBlacklist(ETFnumber, _protocolNum);
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 

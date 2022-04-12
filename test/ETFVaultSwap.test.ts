@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20, routerAddProtocol, } from './helpers/helpers';
+import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20 } from './helpers/helpers';
 import type { ETFVaultMock } from '../typechain-types';
 import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "./helpers/vaultHelpers";
 import { usdc, dai, compToken as comp, compoundDAI, WEth} from "./helpers/addresses";
@@ -14,7 +14,7 @@ import { parseEther, Result } from "ethers/lib/utils";
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Testing ETFVaultSwap", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
