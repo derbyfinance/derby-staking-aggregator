@@ -18,7 +18,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
 // skipping ETFVault test for now
-describe.skip("Testing ETFVault", async () => {
+describe("Testing ETFVault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -63,7 +63,155 @@ describe.skip("Testing ETFVault", async () => {
     expect(aave).to.be.equal(protocolAave.allocation);
   });
 
-  it("Should deposit and rebalance", async function() {
+  it.only("Should deposit / withdraw and rebalance with += 200k", async function() {
+    const amount = 200_000;
+    const amountUSDC = parseUSDC(amount.toString());
+
+    console.log('--------------depositing and rebalance with 200k ----------------');
+    let totalAllocatedTokens = 120;
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    let gasUsed = await rebalanceETF(vaultMock);
+    let gasUsedUSDC = Number(formatUSDC(gasUsed));
+    let totalGasUsed = gasUsedUSDC;
+
+    let [balances, balanceVault, LPBalanceUser] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      IUSDc.balanceOf(vaultMock.address),
+      vaultMock.balanceOf(userAddr)
+    ]);
+
+    let totalUnderlying = amount;
+    let liquidityVault = totalUnderlying * liquidityPerc / 100; // 10% liq vault
+    let underlyingProtocols = totalUnderlying - liquidityVault;
+    let expectedBalances = [
+      40 / totalAllocatedTokens * underlyingProtocols, // Compound
+      60 / totalAllocatedTokens * underlyingProtocols, // Aave
+      20 / totalAllocatedTokens * underlyingProtocols // Yearn
+    ]
+
+    console.log({balanceVault})
+    console.log({balances})
+    console.log({expectedBalances})
+    console.log({liquidityVault})
+    console.log({underlyingProtocols})
+    
+    expect(LPBalanceUser).to.be.equal(amountUSDC); // 200k
+    // liquidity vault should be 200k * 10% = 20k
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(liquidityVault - gasUsedUSDC, 3); 
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((_, i) => {
+      expect(Number(formatUSDC(balances[i]))).to.be.closeTo(expectedBalances[i], 2);
+    });
+
+    console.log('--------------rebalancing after withdrawing 40k----------------');
+    protocolCompound.allocation = -20; // = 20
+    protocolAave.allocation = -20; // = 40
+    protocolYearn.allocation = 40; // = 60
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    const amountToWithdrawUSDC = 40_000
+    const amountToWithdraw = parseUSDC(amountToWithdrawUSDC.toString());
+
+    let exchangeRate = await vaultMock.exchangeRate();
+    let USDCWithdrawed = Number(formatUSDC(exchangeRate)) * amountToWithdrawUSDC
+    
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
+
+    gasUsed = await rebalanceETF(vaultMock);
+    gasUsedUSDC = Number(formatUSDC(gasUsed));
+
+    [balances, balanceVault, LPBalanceUser] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      IUSDc.balanceOf(vaultMock.address),
+      vaultMock.balanceOf(userAddr)
+    ]);
+
+    totalUnderlying = amount - USDCWithdrawed - totalGasUsed;
+    liquidityVault = totalUnderlying * liquidityPerc / 100; // 10% liq vault 
+    underlyingProtocols = totalUnderlying - liquidityVault;
+    expectedBalances = [
+      20 / totalAllocatedTokens * underlyingProtocols, // Compound
+      40 / totalAllocatedTokens * underlyingProtocols, // Aave
+      60 / totalAllocatedTokens * underlyingProtocols // Yearn
+    ]
+    
+
+    console.log({exchangeRate})
+    console.log({LPBalanceUser})
+    console.log({totalGasUsed})
+    console.log({balanceVault})
+    console.log({expectedBalances})
+    console.log({liquidityVault}) 
+    console.log({underlyingProtocols}) 
+    console.log({USDCWithdrawed}) 
+
+    expect(LPBalanceUser).to.be.equal(amountUSDC.sub(amountToWithdraw)); // 200k - 40k = 160k
+    // liquidity vault should be 200k - 40k = 160k * 10%
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(liquidityVault - gasUsedUSDC, 3); 
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((_, i) => {
+      expect(Number(formatUSDC(balances[i]))).to.be.closeTo(expectedBalances[i], 3);
+    });
+
+    totalGasUsed += gasUsedUSDC;
+
+    console.log('--------------rebalancing with deposit of 60k and Yearn to 0 ----------------');
+    protocolCompound.allocation = 80; // = 100
+    protocolAave.allocation = 40; // = 80
+    protocolYearn.allocation = -60; // = 0
+    totalAllocatedTokens = 180;
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+
+    const amountToDepositUSDC = 60_000
+    const amountToDeposit = parseUSDC(amountToDepositUSDC.toString());
+
+    exchangeRate = await vaultMock.exchangeRate();
+    let totalSupply = amount - amountToWithdrawUSDC;
+    let LPtokensReceived = (amountToDepositUSDC * totalSupply) / (totalUnderlying - gasUsedUSDC);
+    
+    await vaultMock.depositETF(userAddr, amountToDeposit);
+
+    gasUsed = await rebalanceETF(vaultMock);
+    gasUsedUSDC = Number(formatUSDC(gasUsed));
+
+    [balances, balanceVault, LPBalanceUser] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      IUSDc.balanceOf(vaultMock.address),
+      vaultMock.balanceOf(userAddr)
+    ]);
+
+    totalUnderlying = amount - USDCWithdrawed + amountToDepositUSDC - totalGasUsed;
+    liquidityVault = totalUnderlying * liquidityPerc / 100; // 10% liq vault 
+    underlyingProtocols = totalUnderlying - liquidityVault;
+    expectedBalances = [
+      100 / totalAllocatedTokens * underlyingProtocols, // Compound
+      80 / totalAllocatedTokens * underlyingProtocols, // Aave
+      0 / totalAllocatedTokens * underlyingProtocols // Yearn
+    ]
+
+    console.log({exchangeRate})
+    console.log({LPBalanceUser})
+    console.log({LPtokensReceived})
+    console.log({totalGasUsed})
+    console.log({balanceVault})
+    console.log({expectedBalances})
+    console.log({liquidityVault}) 
+    console.log({underlyingProtocols}) 
+    // console.log({totalunderlyingVault})
+
+    expect(Number(formatUSDC(LPBalanceUser))).to.be.closeTo(amount - amountToWithdrawUSDC + LPtokensReceived, 1); // 200k - 40k + 60k
+    // liquidity vault should be 200k - 40k = 160k * 10%
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(liquidityVault - gasUsedUSDC, 3); 
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((_, i) => {
+      expect(Number(formatUSDC(balances[i]))).to.be.closeTo(expectedBalances[i], 3);
+    });
+ 
+  });
+
+  it("Should deposit / withdraw and rebalance with += 100k", async function() {
     console.log('--------------depositing and rebalance with 100k ----------------')
     await setDeltaAllocations(user, vaultMock, allProtocols);
 

@@ -100,8 +100,8 @@ export async function beforeEachETFVault(
     controller.addCurveIndex(dai, 0),
     controller.addCurveIndex(usdc, 1),
     controller.addCurveIndex(usdt, 2),
-    IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(2)),
-    IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(2)),
+    IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(4)),
+    IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(4)),
   ]);
 
   return Promise.all([
