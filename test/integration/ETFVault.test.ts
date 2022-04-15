@@ -63,7 +63,7 @@ describe("Testing ETFVault", async () => {
     expect(aave).to.be.equal(protocolAave.allocation);
   });
 
-  it.only("Should deposit / withdraw and rebalance with += 200k", async function() {
+  it("Should deposit / withdraw and rebalance with += 200k", async function() {
     const amount = 200_000;
     const amountUSDC = parseUSDC(amount.toString());
 
@@ -236,6 +236,77 @@ describe("Testing ETFVault", async () => {
   it("Should not be able to set the liquidityPerc higher than 100%", async function() {
     const lp = Math.floor(Math.random() * 100) * 1000;
     await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
+  });
+
+  it.only("Should not deposit and withdraw when hitting the marginScale", async function() {
+    const amount = 100_000;
+    const amountUSDC = parseUSDC(amount.toString());
+    let totalAllocatedTokens = 120;
+
+    console.log('-------deposit 100k, but for the 3rd protocol (yearn) the margin gets hit--------');
+    await setDeltaAllocations(user, vaultMock, allProtocols); 
+
+    await vaultMock.connect(dao).setMarginScale(26000*uScale);
+
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    let gasUsed = await rebalanceETF(vaultMock);
+    let gasUsedUSDC = Number(formatUSDC(gasUsed));
+    let totalGasUsed = gasUsedUSDC;
+
+    let [balances, balanceVault, LPBalanceUser] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      IUSDc.balanceOf(vaultMock.address),
+      vaultMock.balanceOf(userAddr)
+    ]);
+
+    let expectedBalances = [
+      30_000, // Compound
+      45_000, // Aave
+      0 // Yearn
+    ]
+    let liquidityVault = 25000 - gasUsedUSDC; // 10% liq vault
+
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(liquidityVault, 2); 
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((_, i) => {
+      expect(Number(formatUSDC(balances[i]))).to.be.closeTo(expectedBalances[i], 2);
+    });
+
+    console.log('--------withdraw 35k, withdrawal should always be possible also when < marginScale---------');
+    const amountToWithdrawUSDC = 35_000;
+    const amountToWithdraw = parseUSDC(amountToWithdrawUSDC.toString());
+
+    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
+
+    let exchangeRate = await vaultMock.exchangeRate();
+    let USDCWithdrawed = Number(formatUSDC(exchangeRate)) * amountToWithdrawUSDC;
+
+    [balances, balanceVault, LPBalanceUser] = await Promise.all([
+      getAndLogBalances(vaultMock, allProtocols),
+      IUSDc.balanceOf(vaultMock.address),
+      vaultMock.balanceOf(userAddr)
+    ]);
+
+    expectedBalances = [
+      30_000 - (USDCWithdrawed - liquidityVault), // Compound // withdraw from first protocol
+      45_000, // Aave
+      0 // Yearn
+    ]
+    liquidityVault = 0; 
+
+    // console.log({exchangeRate})
+    console.log({LPBalanceUser})
+    console.log({USDCWithdrawed})
+    console.log({totalGasUsed})
+    console.log({balanceVault})
+    console.log({expectedBalances})
+    console.log({liquidityVault}) 
+
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(liquidityVault, 2); 
+    // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
+    allProtocols.forEach((_, i) => {
+      expect(Number(formatUSDC(balances[i]))).to.be.closeTo(expectedBalances[i], 2);
+    });
   });
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
