@@ -1,64 +1,67 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import chai, { expect } from "chai";
+import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from './helpers/helpers';
-import type { AaveProvider, Controller } from '../typechain-types';
-import { deployAaveProvider, deployController } from './helpers/deploy';
-import { usdc, aaveUSDC as ausdc, aave} from "./helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../helpers/helpers';
+import type { YearnProvider, Controller } from '../../typechain-types';
+import { deployYearnProvider, deployController } from '../helpers/deploy';
+import { usdc, yearnUSDC as yusdc, yearn} from "../helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
-describe("Testing Aave provider", async () => {
-  let aaveProvider: AaveProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, aToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
+describe("Testing Yearn provider", async () => {
+  let yearnProvider: YearnProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
     controller = await deployController(dao, daoAddr);
 
-    [vaultAddr, aaveProvider, USDCSigner, IUSDc, aToken] = await Promise.all([
+    [vaultAddr, yearnProvider, USDCSigner, IUSDc, yToken] = await Promise.all([
       vault.getAddress(),
-      deployAaveProvider(dao, controller.address),
+      deployYearnProvider(dao, controller.address),
       getUSDCSigner(),
       erc20(usdc),
-      erc20(ausdc),
+      erc20(yusdc),
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumber] = await Promise.all([
-      controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProvider.address, ausdc, usdc, aave, 1E6.toString()),
+      controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yusdc, usdc, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC)
+      IUSDc.connect(vault).approve(yearnProvider.address, amountUSDC),
     ])
   });
 
-  it("Should deposit and withdraw to Aave through controller", async function() {
+  it("Should deposit and withdraw to Yearn through controller", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
-
-    const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
-    expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
+    const balanceShares = Number(await yearnProvider.balance(vaultAddr, yusdc));
+    const price = Number(await yearnProvider.exchangeRate(yusdc));
+    const amount = (balanceShares * price) / 1E12
+    
+    expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
 
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.be.closeTo(aTokenbalance, 1E6);
+
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
-    await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, aTokenbalance);
+    await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
+    await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
   });
 
   it("Should fail when !controller is calling the Provider", async function() {
-    await expect(aaveProvider.connect(vault).deposit(vaultAddr, amountUSDC, ausdc, usdc))
+    await expect(yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC, yusdc, usdc))
     .to.be.revertedWith('ETFProvider: only controller');
   });
 
@@ -71,4 +74,5 @@ describe("Testing Aave provider", async () => {
     const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumber)
     console.log(`Exchange rate ${exchangeRate}`)
   });
+  
 });
