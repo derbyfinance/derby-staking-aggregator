@@ -90,9 +90,7 @@ library Swap {
         amountOutMinimum: amountOutMinimum 
       });
 
-    uint256 amountOut = ISwapRouter(_uniswapRouter).exactInput(params);
-
-    return amountOut;
+    return ISwapRouter(_uniswapRouter).exactInput(params);
   }
 
   /// @notice Swap tokens on Uniswap
@@ -128,9 +126,7 @@ library Swap {
     });
 
     // The call to `exactInputSingle` executes the swap.
-    uint256 amountOut = ISwapRouter(_uniswapRouter).exactInputSingle(params);
-
-    return amountOut;
+    return ISwapRouter(_uniswapRouter).exactInputSingle(params);
   }
 
   /// @notice Swap tokens on Uniswap

@@ -82,7 +82,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     );
   }
 
-  function swapMinAmountOutMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+  function swapMinAmountOutMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
     uint256 minAmountOut = Swap.amountOutMultiSwap(
       _amount,
       _tokenIn,
