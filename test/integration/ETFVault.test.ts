@@ -5,13 +5,12 @@ import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock } from '../../typechain-types';
-import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
-const marginScale = 1E9;
 const uScale = 1E6;
 const liquidityPerc = 10;
 const amount = 100_000;
@@ -234,7 +233,7 @@ describe("Testing ETFVault", async () => {
 
   it("Should not be able to set the liquidityPerc higher than 100%", async function() {
     const lp = Math.floor(Math.random() * 100) * 1000;
-    await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Liquidity percentage cannot exceed 100%');
+    await expect(vaultMock.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Percentage cannot exceed 100%');
   });
 
   it("Should not deposit and withdraw when hitting the marginScale", async function() {
@@ -385,7 +384,7 @@ describe("Testing ETFVault", async () => {
     await controller.addVault(dao.getAddress()); // use dao signer as vault signer
     await vaultMock.connect(dao).blacklistProtocol(0);
     await expect(vaultMock.connect(user).setDeltaAllocations(0, 30))
-    .to.be.revertedWith('Protocol is on the blacklist');
+    .to.be.revertedWith('Protocol on blacklist');
   });
 
   it("Should not be able to rebalance in blacklisted protocol", async function() {
