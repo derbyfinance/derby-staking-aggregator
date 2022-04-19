@@ -5,13 +5,12 @@ import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock } from '../../typechain-types';
-import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
 const decimals = 6;
-const marginScale = 1E9;
 const uScale = 1E6;
 const liquidityPerc = 10;
 const amount = 100_000;
