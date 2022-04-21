@@ -8,7 +8,8 @@ import type { TruefiProvider, Controller } from '../../typechain-types';
 import { deployTruefiProvider, deployController } from '../helpers/deploy';
 import { usdc, truefiUSDC as tusdc, truefi} from "../helpers/addresses";
 
-const amount = Math.floor(Math.random() * 100000);
+// const amount = Math.floor(Math.random() * 100000);
+const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
@@ -42,21 +43,24 @@ describe("Testing TrueFi provider", async () => {
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
-    // const balanceShares = Number(await truefiProvider.balance(vaultAddr, tusdc));
+    const balanceShares = await truefiProvider.balance(vaultAddr, tusdc);
     // const price = Number(await truefiProvider.exchangeRate(tusdc));
     // const amount = (balanceShares * price) / 1E12
+    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
 
     console.log({vaultBalanceStart})
-    
+    console.log({vaultBalanceEnd})
+    console.log({balanceShares})
+
     // expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
 
     // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
     // expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
-    // console.log(`-------------------------Withdraw-------------------------`); 
-    // await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
-    // await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
+    console.log(`-------------------------Withdraw-------------------------`); 
+    await tToken.connect(vault).approve(truefiProvider.address, balanceShares);
+    await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
     // const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     // expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
