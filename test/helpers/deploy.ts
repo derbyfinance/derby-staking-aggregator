@@ -5,6 +5,7 @@ import type {
   YearnProvider,
   CompoundProvider, 
   AaveProvider,
+  TruefiProvider,
   Controller,
   ETFVault,
   BasketToken, 
@@ -17,6 +18,7 @@ import type {
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
+import TruefiProviderArtifact from '../../artifacts/contracts/Providers/TruefiProvider.sol/TruefiProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
@@ -33,6 +35,10 @@ import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./a
 
 export const deployYearnProvider = (deployerSign: Signer, controller: string): Promise<YearnProvider> => {
   return (deployContract(deployerSign, YearnProviderArtifact, [controller])) as Promise<YearnProvider>;
+};
+
+export const deployTruefiProvider = (deployerSign: Signer, controller: string): Promise<TruefiProvider> => {
+  return (deployContract(deployerSign, TruefiProviderArtifact, [controller])) as Promise<TruefiProvider>;
 };
 
 export const deployCompoundProvider = (deployerSign: Signer, controller: string, comptroller: string): Promise<CompoundProvider> => {

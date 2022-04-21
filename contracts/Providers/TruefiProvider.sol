@@ -8,7 +8,7 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract CompoundProvider is IProvider {
+contract TruefiProvider is IProvider {
   using SafeERC20 for IERC20;
 
   address public controller; 
@@ -28,28 +28,33 @@ contract CompoundProvider is IProvider {
   /// @dev Pulls underlying asset from ETFVault, deposit them in Compound, send cTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
-  /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
     address _vault, 
     uint256 _amount, 
-    address _cToken,
+    address _tToken,
     address _uToken
   ) external override onlyController returns(uint256) {
+    console.log("true provider");
     // uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    // IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
-    // IERC20(_uToken).safeIncreaseAllowance(_cToken, _amount);
+    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeIncreaseAllowance(_tToken, _amount);
 
     // uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
     // require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
-    // uint256 cTokenBefore = ICToken(_cToken).balanceOf(address(this));
+    uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
+    console.log("tTokenBefore %s", tTokenBefore);
+    ITruefi(_tToken).join(_amount);
     // require(ICToken(_cToken).mint(_amount) == 0, "Error minting Compound");
-    // uint256 cTokenAfter = ICToken(_cToken).balanceOf(address(this));
+    uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
 
-    // uint cTokensReceived = cTokenAfter - cTokenBefore;
+    uint tTokensReceived = tTokenAfter - tTokenBefore;
+
+    console.log("tTokensReceived %s", tTokensReceived);
     // ICToken(_cToken).transfer(_vault, cTokensReceived);
 
     // return cTokensReceived;

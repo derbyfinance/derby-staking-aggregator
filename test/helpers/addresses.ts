@@ -17,6 +17,7 @@ export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
 export const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
+export const truefi = "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784";
 
 // Uniswap
 export const uniswapFactory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
