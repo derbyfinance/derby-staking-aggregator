@@ -13,15 +13,17 @@ contract AaveProvider is IProvider{
   using SafeERC20 for IERC20;
 
   uint16 private aaveReferral;
-  address public router; 
+  address public controller; 
 
-  modifier onlyRouter {
-    require(msg.sender == router, "ETFProvider: only router");
+  mapping(uint256 => uint256) public historicalPrices;
+
+  modifier onlyController {
+    require(msg.sender == controller, "ETFProvider: only controller");
     _;
   }
 
-  constructor(address _router) {    
-    router = _router;
+  constructor(address _controller) {    
+    controller = _controller;
     aaveReferral = 0;
   }
 
@@ -42,7 +44,7 @@ contract AaveProvider is IProvider{
     uint256 _amount, 
     address _aToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -69,7 +71,7 @@ contract AaveProvider is IProvider{
     uint256 _amount, 
     address _aToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");

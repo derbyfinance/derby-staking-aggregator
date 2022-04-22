@@ -2,11 +2,11 @@
 pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
-import "./Interfaces/IRouter.sol";
+import "./Interfaces/IController.sol";
 import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
-contract Router is IRouter {
+contract Controller is IController {
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
@@ -22,12 +22,11 @@ contract Router is IRouter {
   address public dao;
   address public curve3Pool;
   address public uniswapRouter;
-  address public uniswapFactory;
+  address public uniswapQuoter;
   address public chainlinkGasPriceOracle;
 
   uint24 public uniswapPoolFee;
   uint256 public curve3PoolFee = 10; // 0.1% including slippage
-  uint256 public uniswapSwapFee = 60; // 0.6% // 0.3 plus some slippage
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -35,26 +34,26 @@ contract Router is IRouter {
     address _dao, 
     address _curve3Pool, 
     address _uniswapRouter,
-    address _uniswapFactory,
+    address _uniswapQuoter,
     uint24 _poolFee,
     address _chainlinkGasPriceOracle
   ) {
     dao = _dao;
     curve3Pool = _curve3Pool;
     uniswapRouter = _uniswapRouter;
-    uniswapFactory = _uniswapFactory;
+    uniswapQuoter = _uniswapQuoter;
     uniswapPoolFee = _poolFee;
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
 
   // Modifier for only vault?
   modifier onlyDao {
-    require(msg.sender == dao, "Router: only DAO");
+    require(msg.sender == dao, "Controller: only DAO");
     _;
   }
 
   modifier onlyVault {
-    require(vaultWhitelist[msg.sender] == true, "Router: only Vault");
+    require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
     _;
   }
 
@@ -186,7 +185,7 @@ contract Router is IRouter {
       claimable[_provider] = _bool;
   }
 
-  /// @notice Add protocol and vault to router
+  /// @notice Add protocol and vault to Controller
   /// @param _name Name of the protocol vault combination
   /// @param _ETFnumber Number of the ETF
   /// @param _provider Address of the protocol provider
@@ -220,7 +219,7 @@ contract Router is IRouter {
     return protocolNumber;
   }
 
-  /// @notice Add protocol and vault to router
+  /// @notice Add protocol and vault to Controller
   /// @param _vault ETFVault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;
@@ -233,9 +232,9 @@ contract Router is IRouter {
   }
 
   /// @notice Set the Uniswap Factory address
-  /// @param _uniswapFactory New Uniswap Factory address
-  function setUniswapFactory(address _uniswapFactory) external onlyDao {
-    uniswapFactory = _uniswapFactory;
+  /// @param _uniswapQuoter New Uniswap Quoter address
+  function setUniswapQuoter(address _uniswapQuoter) external onlyDao {
+    uniswapQuoter = _uniswapQuoter;
   }
 
   /// @notice Set the Uniswap Pool fee
@@ -288,11 +287,5 @@ contract Router is IRouter {
   /// @param _chainlinkGasPriceOracle Contract address
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
-  }
-
-  /// @notice Setter for the Uniswap swap fee plus some slippage
-  /// @param _swapFee In nominals e.g 60 = 0.06%
-  function setUniswapSwapFee(uint256 _swapFee) external override onlyDao {
-    uniswapSwapFee = _swapFee;
   }
 }

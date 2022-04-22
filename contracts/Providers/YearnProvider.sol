@@ -11,15 +11,16 @@ import "hardhat/console.sol";
 contract YearnProvider is IProvider{
   using SafeERC20 for IERC20;
   
-  address public router; 
+  address public controller; 
+  mapping(uint256 => uint256) public historicalPrices;
 
-  modifier onlyRouter {
-    require(msg.sender == router, "ETFProvider: only router");
+  modifier onlyController {
+    require(msg.sender == controller, "ETFProvider: only controller");
     _;
   }
 
-  constructor(address _router) {
-    router = _router;
+  constructor(address _controller) {
+    controller = _controller;
   }
 
   /// @notice Deposit the underlying asset in Yearn
@@ -34,7 +35,7 @@ contract YearnProvider is IProvider{
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -61,7 +62,7 @@ contract YearnProvider is IProvider{
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyRouter returns(uint256) {
+  ) external override onlyController returns(uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     require(IYearn(_yToken).transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");

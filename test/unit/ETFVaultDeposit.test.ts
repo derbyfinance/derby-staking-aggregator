@@ -3,15 +3,15 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock, Router } from '../typechain-types';
+import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import type { ETFVaultMock } from '../../typechain-types';
 import { MockContract } from "ethereum-waffle";
-import { setCurrentAllocations } from "./helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { setCurrentAllocations } from "../helpers/vaultHelpers";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000'); // 100k
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Testing ETFVaultDeposit", async () => {
   let yearnProvider: MockContract, 
   compoundProvider: MockContract, 
   aaveProvider: MockContract, 

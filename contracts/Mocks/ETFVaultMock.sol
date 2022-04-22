@@ -10,6 +10,8 @@ contract ETFVaultMock is ETFVault { // is VaultToken
 
   mapping(uint256 => uint256) private players;
 
+  event MinAmountOut(uint256 minAmountOut);
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -18,7 +20,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     uint256 _ETFnumber,
     address _governed,
     address _ETFGame, 
-    address _router, 
+    address _controller, 
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
@@ -30,7 +32,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     _ETFnumber,
     _governed,
     _ETFGame,
-    _router,
+    _controller,
     _vaultCurrency,
     _uScale,
     _gasFeeLiquidity
@@ -65,9 +67,33 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _amount, 
       _tokenIn, 
       _tokenOut, 
-      router.uniswapRouter(), 
-      router.uniswapPoolFee()
+      controller.uniswapRouter(),
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
     );
+  }
+
+  function swapTokensSingle(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
+    return Swap.swapTokensSingle(
+      _amount, 
+      _tokenIn, 
+      _tokenOut,
+      controller.uniswapRouter(),
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
+    );
+  }
+
+  function swapMinAmountOutMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
+    uint256 minAmountOut = Swap.amountOutMultiSwap(
+      _amount,
+      _tokenIn,
+      _tokenOut,
+      controller.uniswapQuoter(),
+      controller.uniswapPoolFee()
+    );
+
+    emit MinAmountOut(minAmountOut);
   }
 
   function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
@@ -77,10 +103,10 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       _tokenOut,
       uScale,
       1000000000000000000,
-      router.curveIndex(_tokenIn),
-      router.curveIndex(_tokenOut),
-      router.curve3Pool(),
-      router.curve3PoolFee()
+      controller.curveIndex(_tokenIn),
+      controller.curveIndex(_tokenOut),
+      controller.curve3Pool(),
+      controller.curve3PoolFee()
     );
   }
 

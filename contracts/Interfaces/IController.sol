@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-interface IRouter {
+interface IController {
   struct ProtocolInfoS {
     address LPToken;
     address provider;
@@ -74,13 +74,11 @@ interface IRouter {
 
   function uniswapRouter() external view returns(address);
 
-  function uniswapFactory() external view returns(address);
+  function uniswapQuoter() external view returns(address);
 
   function uniswapPoolFee() external view returns(uint24);
 
   function curve3PoolFee() external view returns(uint256);
-
-  function uniswapSwapFee() external view returns(uint256);
 
   function curveIndex(address _token) external view returns(int128);
     
@@ -98,7 +96,7 @@ interface IRouter {
 
   function setUniswapRouter(address _uniswapRouter) external;
 
-  function setUniswapFactory(address _uniswapFactory) external;
+  function setUniswapQuoter(address _uniswapQuoter) external;
 
   function setUniswapPoolFee(uint24 _poolFee) external;
 
@@ -109,6 +107,4 @@ interface IRouter {
   function getGasPrice() external returns(uint256);
 
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
-
-  function setUniswapSwapFee(uint256 _swapFee) external;
 }

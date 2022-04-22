@@ -3,11 +3,11 @@
 /* eslint-disable prettier/prettier */
 import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { formatUSDC, parseUSDC, parseEther } from './helpers/helpers';
-import { ETFVaultMock, ETFGame, XaverToken, ETFGameMock } from '../typechain-types';
-import { getAllocations, getAndLogBalances, setDeltaAllocations } from "./helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
-import { deployETFGameMock, deployXaverToken } from "./helpers/deploy";
+import { formatUSDC, parseUSDC, parseEther } from '../helpers/helpers';
+import { ETFVaultMock, ETFGame, XaverToken, BasketToken, ETFGameMock } from '../../typechain-types';
+import { getAllocations, getAndLogBalances, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
+import { deployETFGameMock, deployBasketToken, deployXaverToken } from "../helpers/deploy";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
@@ -21,7 +21,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalXaverSupply = parseEther(1E8.toString()); 
 
-describe("Deploy Contracts and interact with Game", async () => {
+describe("Testing ETFGame", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -31,7 +31,7 @@ describe("Deploy Contracts and interact with Game", async () => {
   protocolAave: Protocol,
   protocolYearn: Protocol,
   allProtocols: Protocol[],
-  router: Contract,
+  controller: Contract,
   game: ETFGameMock,
   xaverToken: XaverToken
 
@@ -43,7 +43,7 @@ describe("Deploy Contracts and interact with Game", async () => {
       [protocolCompound, protocolAave, protocolYearn],
       allProtocols,
       IUSDc,,,,,
-      router,,,,,,,
+      controller,,,,,,,
       dao
     ] = await beforeEachETFVault(amountUSDC)
 

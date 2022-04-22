@@ -3,15 +3,15 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Contract } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock } from '../typechain-types';
+import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import type { ETFVaultMock } from '../../typechain-types';
 import { MockContract } from "ethereum-waffle";
-import { setCurrentAllocations } from "./helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "./helpers/vaultBeforeEach";
+import { setCurrentAllocations } from "../helpers/vaultHelpers";
+import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000'); // 100k
 
-describe("Deploy Contracts and interact with Vault", async () => {
+describe("Testing ETFVaultWithdraw", async () => {
   let yearnProvider: MockContract, 
   compoundProvider: MockContract, 
   aaveProvider: MockContract, 
@@ -78,7 +78,6 @@ describe("Deploy Contracts and interact with Vault", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
     ]);
  
-    const exchangeRate = await vaultMock.exchangeRate();
     await vaultMock.withdrawETF(userAddr, parseUSDC('2000')); 
 
     expect(await vaultMock.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k
