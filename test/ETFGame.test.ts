@@ -55,7 +55,7 @@ describe("Deploy Contracts and interact with Game", async () => {
   it("XaverToken should have name, symbol and totalSupply set", async function() {
     expect(await xaverToken.name()).to.be.equal(name);
     expect(await xaverToken.symbol()).to.be.equal(symbol);
-    expect(await xaverToken.totalSupply()).to.be.equal(totalXaverSupply);
+    expect(await xaverToken.totalSupply()).to.be.equal(totalXaverSupply); 
   });
 
   it("ETFGame should have xaverToken contract addresses set", async function() {

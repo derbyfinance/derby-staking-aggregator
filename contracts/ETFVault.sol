@@ -34,7 +34,6 @@ contract ETFVault is VaultToken {
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
   uint256 public performancePerc = 10;
-  uint256 public lastExchangeRate = 0;
   uint256 public rebalancingPeriod = 0;
 
   uint256 public blockRebalanceInterval = 1;
@@ -55,7 +54,10 @@ contract ETFVault is VaultToken {
   mapping(uint256 => int256) internal deltaAllocations;
 
   // historical prices
-  mapping(uint256 => mapping(uint256 => uint256)) historicalPrices;
+  mapping(uint256 => uint256) public historicalUnderlying;
+
+  // historical total locked tokens
+  mapping(uint256 => int256) public historicalLockedTokens;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
@@ -114,7 +116,8 @@ contract ETFVault is VaultToken {
     uint256 shares = 0;
 
     if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / (getTotalUnderlying() + balanceBefore);
+      // using historicalUnderlying[rebalancingPeriod] instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
+      shares = ( amount * totalSupply ) / (historicalUnderlying[rebalancingPeriod] + balanceBefore); 
     } else {
       shares = amount; 
     }
@@ -130,6 +133,7 @@ contract ETFVault is VaultToken {
   /// @param _amount Amount to withdraw in LP tokens
   /// @return Amount received by seller in vaultCurrency
   function withdrawETF(address _seller, uint256 _amount) external returns(uint256) {
+    // using historicalUnderlying[rebalancingPeriod] in exchangeRate() instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
     uint256 value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
 
@@ -167,7 +171,7 @@ contract ETFVault is VaultToken {
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
 
-    return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
+    return (historicalUnderlying[rebalancingPeriod] + balanceSelf)  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -179,13 +183,14 @@ contract ETFVault is VaultToken {
     if (!rebalanceNeeded()) return;
     uint256 gasStart = gasleft();
     
-    lastExchangeRate = exchangeRate();
     claimTokens(); 
     
-    uint256 totalUnderlying = getTotalUnderlying() + vaultCurrency.balanceOf(address(this)) ;
+    historicalUnderlying[rebalancingPeriod] = getTotalUnderlying(); 
+    uint256 totalUnderlying = historicalUnderlying[rebalancingPeriod] + vaultCurrency.balanceOf(address(this)) ;
     uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
+    historicalLockedTokens[rebalancingPeriod] = totalAllocatedTokens;
     deltaAllocatedTokens = 0;
     
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
@@ -211,7 +216,7 @@ contract ETFVault is VaultToken {
       bool isBlacklisted = router.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
-      setAllocationAndPrice(i);
+      setAllocation(i);
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
@@ -262,26 +267,11 @@ contract ETFVault is VaultToken {
     return (block.timestamp - lastTimeStamp) >= blockRebalanceInterval;
   }
 
-  /// @notice Calculates the performance fee, the fee in VaultCurrency that should be reserved for compensation of the game players. 
-  /// @dev Is calculated before the rebalancing of the vault over the period since the last rebalance took place.
-  /// @return performanceFee calulated in units of VaultCurrency over the period since last rebalance.
-  function calculatePerformanceFee() public view returns(uint256) {
-    uint256 performanceFee = 0;
-    uint256 currentExchangeRate = exchangeRate();
-    if (lastExchangeRate != 0 && currentExchangeRate > lastExchangeRate) { //TODO what to do when the currenExchangeRate < lastExchangeRate
-      performanceFee = getTotalUnderlying() * (currentExchangeRate - lastExchangeRate);
-      performanceFee = performancePerc * performanceFee / lastExchangeRate;
-      performanceFee = performanceFee / 100;   
-    }
-    return performanceFee;
-  }
-
   /// @notice Helper function to set allocations and last price from protocols
   /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
-  function setAllocationAndPrice(uint256 _i) internal {
+  function setAllocation(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
-    setHistoricalPrice(_i, price(_i));
     require(currentAllocations[_i] >= 0, "Current Allocation underflow");
   }
 
@@ -390,18 +380,16 @@ contract ETFVault is VaultToken {
     return protocolPrice;
   }
 
-  /// @notice set historical price point, needed for reward computation in game
-  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
-  /// @param _protocolPrice Price of underlying share of the protocol's vault
-  function setHistoricalPrice(uint256 _protocolNum, uint256 _protocolPrice) internal {
-    historicalPrices[_protocolNum][rebalancingPeriod] = _protocolPrice;
+  /// @notice set historical total underlying
+  /// @param _totalUnderlying Price of underlying share of the protocol's vault
+  function setHistoricalUnderlying(uint256 _totalUnderlying) internal {
+    historicalUnderlying[rebalancingPeriod] = _totalUnderlying;
   }
 
-  /// @notice get historical price point, needed for reward computation in game
-  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @notice get historical total underlying
   /// @param _rebalancingPeriod Period linked to the time when rebalancing took place.
-  function getHistoricalPrice(uint256 _protocolNum, uint256 _rebalancingPeriod) public view returns(uint256) {
-    return historicalPrices[_protocolNum][_rebalancingPeriod];
+  function getHistoricalUnderlying(uint256 _rebalancingPeriod) external view returns(uint256) {
+    return historicalUnderlying[_rebalancingPeriod];
   }
 
   /// @notice Set the delta allocated tokens by game contract

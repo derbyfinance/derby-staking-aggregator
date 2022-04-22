@@ -4,6 +4,8 @@ pragma solidity ^0.8.11;
 import "../ETFVault.sol";
 import "hardhat/console.sol";
 
+import "../libraries/ABDKMath64x64.sol";
+
 contract ETFVaultMock is ETFVault { // is VaultToken
 
   mapping(uint256 => uint256) private players;
@@ -87,5 +89,11 @@ contract ETFVaultMock is ETFVault { // is VaultToken
       uint256 exchangeRate = exchangeRate();
       players[i] = exchangeRate;
     }
+  }
+
+  function testFormulaWithNRoot(int128 _g, int128 _n) public view returns(int128) {
+    int128 log2 = ABDKMath64x64.log_2(_g);
+    int128 endResult = ABDKMath64x64.exp_2(log2 / _n);
+    return endResult;
   }
 }
