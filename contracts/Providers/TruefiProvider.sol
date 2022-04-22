@@ -24,8 +24,8 @@ contract TruefiProvider is IProvider {
     controller = _controller;
   }
 
-  /// @notice Deposit the underlying asset in Compound
-  /// @dev Pulls underlying asset from ETFVault, deposit them in Compound, send cTokens back.
+  /// @notice Deposit the underlying asset in TrueFi
+  /// @dev Pulls underlying asset from ETFVault, deposit them in TrueFi, send tTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _tToken Address of protocol LP Token eg cUSDC
@@ -56,8 +56,8 @@ contract TruefiProvider is IProvider {
     return tTokensReceived;
   }
 
-  /// @notice Withdraw the underlying asset from Compound
-  /// @dev Pulls cTokens from ETFVault, redeem them from Compound, send underlying back.
+  /// @notice Withdraw the underlying asset from TrueFi
+  /// @dev Pulls tTokens from ETFVault, redeem them from TrueFi, send underlying back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _tToken Address of protocol LP Token eg cUSDC
