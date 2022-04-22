@@ -8,8 +8,8 @@ import type { TruefiProvider, Controller } from '../../../typechain-types';
 import { deployTruefiProvider, deployController } from '../../helpers/deploy';
 import { usdc, truefiUSDC as tusdc, truefi} from "../../helpers/addresses";
 
-// const amount = Math.floor(Math.random() * 100000);
-const amount = 100_000;
+const amount = Math.floor(Math.random() * 100000);
+// const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
@@ -58,7 +58,7 @@ describe("Testing TrueFi provider", async () => {
     await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), amount * 0.02) // 2% fee on withdraw Truefi
+    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), amount * 0.022) // 2% fee on withdraw Truefi
   });
 
   it("Should fail when !controller is calling the Provider", async function() {
