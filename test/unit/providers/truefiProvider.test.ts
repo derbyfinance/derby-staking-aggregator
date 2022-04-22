@@ -3,10 +3,10 @@
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../helpers/helpers';
-import type { TruefiProvider, Controller } from '../../typechain-types';
-import { deployTruefiProvider, deployController } from '../helpers/deploy';
-import { usdc, truefiUSDC as tusdc, truefi} from "../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../../helpers/helpers';
+import type { TruefiProvider, Controller } from '../../../typechain-types';
+import { deployTruefiProvider, deployController } from '../../helpers/deploy';
+import { usdc, truefiUSDC as tusdc, truefi} from "../../helpers/addresses";
 
 // const amount = Math.floor(Math.random() * 100000);
 const amount = 100_000;
@@ -38,47 +38,37 @@ describe("Testing TrueFi provider", async () => {
     ]);
   });
 
-  it.only("Should deposit and withdraw to Truefi through controller", async function() {
+  it("Should deposit and withdraw to Truefi through controller", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
     const balanceShares = await truefiProvider.balance(vaultAddr, tusdc);
-    // const price = Number(await truefiProvider.exchangeRate(tusdc));
-    // const amount = (balanceShares * price) / 1E12
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
+    const balanceUnderlying = await truefiProvider.balanceUnderlying(vaultAddr, tusdc);
+    const calcShares = await truefiProvider.calcShares(balanceUnderlying, tusdc);
 
-    console.log({vaultBalanceStart})
-    console.log({vaultBalanceEnd})
-    console.log({balanceShares})
+    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    // expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
-
-    // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-
-    // expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+    expect(calcShares).to.be.closeTo(balanceShares, 2);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await tToken.connect(vault).approve(truefiProvider.address, balanceShares);
     await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
 
-    // const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    // expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
+    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
+    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), amount * 0.02) // 2% fee on withdraw Truefi
   });
 
-  // it("Should fail when !controller is calling the Provider", async function() {
-  //   await expect(yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC, yusdc, usdc))
-  //   .to.be.revertedWith('ETFProvider: only controller');
-  // });
+  it("Should fail when !controller is calling the Provider", async function() {
+    await expect(truefiProvider.connect(vault).deposit(vaultAddr, amountUSDC, tusdc, usdc))
+    .to.be.revertedWith('ETFProvider: only controller');
+  });
 
-  // it("Should fail when !Vault is calling the controller", async function() {
-  //   await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
-  //   .to.be.revertedWith('Controller: only Vault');
-  // });
-
-  // it("Should get exchangeRate through controller", async function() {
-  //   const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumber)
-  //   console.log(`Exchange rate ${exchangeRate}`)
-  // });
+  it("Should fail when !Vault is calling the controller", async function() {
+    await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Controller: only Vault');
+  });
   
 });

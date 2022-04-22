@@ -37,7 +37,6 @@ contract TruefiProvider is IProvider {
     address _tToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    console.log("true provider");
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -49,19 +48,12 @@ contract TruefiProvider is IProvider {
     uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
     ITruefi(_tToken).join(_amount);
     uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
+
     uint tTokensReceived = tTokenAfter - tTokenBefore;
-  
-    console.log("tTokensReceived %s", tTokensReceived);
-
-    uint256 poolValue = ITruefi(_tToken).poolValue();
-    uint256 totalSupply = ITruefi(_tToken).totalSupply();
-
-    uint256 shares = totalSupply * _amount / poolValue;
-    console.log("shares %s", shares);
 
     ITruefi(_tToken).transfer(_vault, tTokensReceived);
     
-    // return cTokensReceived;
+    return tTokensReceived;
   }
 
   /// @notice Withdraw the underlying asset from Compound
@@ -77,13 +69,11 @@ contract TruefiProvider is IProvider {
     address _tToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    console.log("withdraw sol");
-    // uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
     require(ITruefi(_tToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    // Compound redeem: 0 on success, otherwise an Error code
     ITruefi(_tToken).liquidExit(_amount); 
     
     uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
@@ -91,28 +81,31 @@ contract TruefiProvider is IProvider {
 
     IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
 
-    // uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    // require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
-
-    console.log("uTokensReceived %s", uTokensReceived);
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
+    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
 
     return uTokensReceived;
   }
 
   /// @notice Get balance from address in underlying token
+  /// @dev balance = poolvalue * shares / totalsupply
   /// @param _address Address to request balance from, most likely an ETFVault
-  /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _cToken) public view override returns(uint256) {
-
+  function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {
+    uint256 shares = balance(_address, _tToken);
+    uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
+    return balance;
   }
 
   /// @notice Calculates how many shares are equal to the amount
-  /// @dev returned price from compound is scaled by 1e18
+  /// @dev shares = totalsupply * balance / poolvalue
   /// @param _amount Amount in underyling token e.g USDC
-  /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _cToken) external view override returns(uint256) {
+  function calcShares(uint256 _amount, address _tToken) external view override returns(uint256) {
+    uint256 shares = ITruefi(_tToken).totalSupply() * _amount / ITruefi(_tToken).poolValue();
+    return shares;
   }
 
   /// @notice Get balance of cToken from address
@@ -121,20 +114,13 @@ contract TruefiProvider is IProvider {
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _tToken) public view override returns(uint256) {
     return ITruefi(_tToken).balanceOf(_address);
-    // console.log("balance %s", balance);
-    // return balance;
   }
 
-  /// @notice Exchange rate of underyling protocol token
-  /// @dev returned price from compound is scaled by 1e18
-  /// @param _tToken Address of protocol LP Token eg cUSDC
-  /// @return price of LP token
+  // not used by truefi, can maybe deleted everywhere?
   function exchangeRate(address _tToken) public view override returns(uint256) {
 
   }
 
-  /// @notice Claims/harvest COMP tokens from the Comptroller
-  /// @param _tToken Address of protocol LP Token eg cUSDC
   function claim(address _tToken, address _claimer) external override returns(bool) {
 
   }
