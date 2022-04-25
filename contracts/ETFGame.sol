@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./XaverToken.sol";
 
 import "./Interfaces/IETFVault.sol";
-import "./Interfaces/IRouter.sol";
+import "./Interfaces/IController.sol";
 import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IGoverned.sol";
 
@@ -146,7 +146,7 @@ contract ETFGame is ERC721 {
 
     // rebalances an existing Basket
     function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
-        require(_allocations.length == IRouter(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
+        require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
         baskets[_basketId].lastAdjustmentPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
         
         uint256 totalNewAllocatedTokens = 0;
@@ -183,7 +183,7 @@ contract ETFGame is ERC721 {
     function calculateBasketgrowthNominator(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(uint256) {
         uint256 basketGrowthNominator = 0;
         uint256 ETFnumber = baskets[_basketId].ETFnumber;
-        for (uint256 i = 0; i < IRouter(routerAddress).latestProtocolId(ETFnumber); i++) {
+        for (uint256 i = 0; i < IController(routerAddress).latestProtocolId(ETFnumber); i++) {
             if (baskets[_basketId].allocations[i] == 0) continue;
             basketGrowthNominator += baskets[_basketId].allocations[i] * 
                 IETFVault(ETFVaults[ETFnumber]).price() - 
@@ -195,7 +195,7 @@ contract ETFGame is ERC721 {
     function calculateBasketgrowthDenominator(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(uint256) {
         uint256 basketGrowthDenominator = 0;
         uint256 ETFnumber = baskets[_basketId].ETFnumber;
-        for (uint256 i = 0; i < IRouter(routerAddress).latestProtocolId(ETFnumber); i++) {
+        for (uint256 i = 0; i < IController(routerAddress).latestProtocolId(ETFnumber); i++) {
             if (baskets[_basketId].allocations[i] == 0) continue;
             basketGrowthDenominator += baskets[_basketId].nrOfAllocatedTokens - 
                 IETFVault(ETFVaults[ETFnumber]).getHistoricalPrice(i, baskets[_basketId].lastAdjustmentPeriod);
@@ -206,7 +206,7 @@ contract ETFGame is ERC721 {
     // add to total rewards, formula of calculating the game rewards here
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
         uint256 amount = 0;
-        
+        uint256 g = calculateBasketgrowthNominator(_basketId) * 2**64 / calculateBasketgrowthDenominator(_basketId) + 2**64;
         baskets[_basketId].totalUnRedeemedRewards += amount;
     }
 }

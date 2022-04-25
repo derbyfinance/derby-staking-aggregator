@@ -4,10 +4,9 @@
 import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC, parseEther } from '../helpers/helpers';
-import { ETFVaultMock, ETFGame, XaverToken, BasketToken, ETFGameMock } from '../../typechain-types';
-import { getAllocations, getAndLogBalances, setDeltaAllocations } from "../helpers/vaultHelpers";
+import { ETFVaultMock, ETFGame, XaverToken, ETFGameMock } from '../../typechain-types';
 import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
-import { deployETFGameMock, deployBasketToken, deployXaverToken } from "../helpers/deploy";
+import { deployETFGameMock, deployXaverToken } from "../helpers/deploy";
 
 const name = 'XaverUSDC';
 const symbol = 'dUSDC';
@@ -49,7 +48,7 @@ describe("Testing ETFGame", async () => {
 
     const daoAddr = await dao.getAddress();
     xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
-    game = await deployETFGameMock(user, name, symbol, xaverToken.address, router.address, daoAddr);  
+    game = await deployETFGameMock(user, name, symbol, xaverToken.address, controller.address, daoAddr);  
   });
 
   it("XaverToken should have name, symbol and totalSupply set", async function() {

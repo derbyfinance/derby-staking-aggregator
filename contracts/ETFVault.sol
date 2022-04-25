@@ -111,7 +111,7 @@ contract ETFVault is VaultToken {
 
     if (totalSupply > 0) {
       // using historicalUnderlying[rebalancingPeriod] instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
-      shares = ( amount * totalSupply ) / (historicalUnderlying[rebalancingPeriod] + balanceBefore); 
+      shares = ( amount * totalSupply ) / (getTotalUnderlying() + balanceBefore); 
     } else {
       shares = amount; 
     }
@@ -160,7 +160,8 @@ contract ETFVault is VaultToken {
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
 
-    return (historicalUnderlying[rebalancingPeriod] + balanceSelf)  * uScale / totalSupply();
+    // using historicalUnderlying[rebalancingPeriod] instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
+    return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -360,18 +361,6 @@ contract ETFVault is VaultToken {
   /// @return protocolPrice Price per share
   function price(uint256 _protocolNum) public view returns(uint256) {
     return controller.exchangeRate(ETFnumber, _protocolNum);
-  }
-
-  /// @notice set historical total underlying
-  /// @param _totalUnderlying Price of underlying share of the protocol's vault
-  function setHistoricalUnderlying(uint256 _totalUnderlying) internal {
-    historicalUnderlying[rebalancingPeriod] = _totalUnderlying;
-  }
-
-  /// @notice get historical total underlying
-  /// @param _rebalancingPeriod Period linked to the time when rebalancing took place.
-  function getHistoricalUnderlying(uint256 _rebalancingPeriod) external view returns(uint256) {
-    return historicalUnderlying[_rebalancingPeriod];
   }
 
   /// @notice Set the delta allocated tokens by game contract

@@ -173,11 +173,14 @@ describe("Testing ETFVault", async () => {
     ];
     totalGasUsed += gasUsedUSDC;
     
-    console.log({exchangeRate})
-    console.log({LPBalanceUser})
+    let exchangeRate_toNumber = Number(exchangeRate);
+    let LPBalanceUser_toNumber = Number(LPBalanceUser);
+    let balanceVault_toNumber = Number(balanceVault);
+    console.log({exchangeRate_toNumber})
+    console.log({LPBalanceUser_toNumber})
     console.log({LPtokensReceived})
     console.log({totalGasUsed})
-    console.log({balanceVault})
+    console.log({balanceVault_toNumber})
     console.log({expectedBalances})
     console.log({liquidityVault}) 
     console.log({underlyingProtocols}) 
@@ -342,7 +345,7 @@ describe("Testing ETFVault", async () => {
     expectedBalances = [
       359, // Compound  400 - totalGasUsed
       15539, // Aave  15600 - totalGasUsed
-      38849 // Yearn  39000 - totalGasUsed
+      38844 // Yearn  39000 - totalGasUsed
     ];
     totalGasUsed += gasUsedUSDC; 
     

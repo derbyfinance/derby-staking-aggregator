@@ -25,7 +25,6 @@ import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.so
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
 import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
 import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol/ETFGameMock.json';
-import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/BasketToken.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
