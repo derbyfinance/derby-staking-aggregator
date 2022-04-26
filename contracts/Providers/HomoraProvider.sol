@@ -34,25 +34,25 @@ contract HomoraProvider is IProvider {
   function deposit(
     address _vault, 
     uint256 _amount, 
-    address _tToken,
+    address _hToken,
     address _uToken
   ) external override onlyController returns(uint256) {
     console.log("hello homora");
-    // uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    // IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
-    // IERC20(_uToken).safeIncreaseAllowance(_tToken, _amount);
+    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeIncreaseAllowance(_hToken, _amount);
 
-    // uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    // require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
-    // uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
-    // ITruefi(_tToken).join(_amount);
-    // uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
+    uint256 tTokenBefore = IHomora(_hToken).balanceOf(address(this));
+    IHomora(_hToken).deposit(_amount);
+    uint256 tTokenAfter = IHomora(_hToken).balanceOf(address(this));
 
-    // uint tTokensReceived = tTokenAfter - tTokenBefore;
+    uint tTokensReceived = tTokenAfter - tTokenBefore;
 
-    // ITruefi(_tToken).transfer(_vault, tTokensReceived);
+    // IHomora(_hToken).transfer(_vault, tTokensReceived);
     
     // return tTokensReceived;
     return 1;
