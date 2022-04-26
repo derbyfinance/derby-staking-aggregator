@@ -3,12 +3,12 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../Interfaces/ExternalInterfaces/ITruefi.sol";
+import "../Interfaces/ExternalInterfaces/IHomora.sol";
 import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract TruefiProvider is IProvider {
+contract HomoraProvider is IProvider {
   using SafeERC20 for IERC20;
 
   address public controller; 
@@ -37,23 +37,25 @@ contract TruefiProvider is IProvider {
     address _tToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
+    console.log("hello homora");
+    // uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
-    IERC20(_uToken).safeIncreaseAllowance(_tToken, _amount);
+    // IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    // IERC20(_uToken).safeIncreaseAllowance(_tToken, _amount);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
+    // uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
+    // require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
-    uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
-    ITruefi(_tToken).join(_amount);
-    uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
+    // uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
+    // ITruefi(_tToken).join(_amount);
+    // uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
 
-    uint tTokensReceived = tTokenAfter - tTokenBefore;
+    // uint tTokensReceived = tTokenAfter - tTokenBefore;
 
-    ITruefi(_tToken).transfer(_vault, tTokensReceived);
+    // ITruefi(_tToken).transfer(_vault, tTokensReceived);
     
-    return tTokensReceived;
+    // return tTokensReceived;
+    return 1;
   }
 
   /// @notice Withdraw the underlying asset from TrueFi
@@ -69,22 +71,22 @@ contract TruefiProvider is IProvider {
     address _tToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
+    // uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
-    uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
+    // uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
-    require(ITruefi(_tToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    ITruefi(_tToken).liquidExit(_amount); 
+    // require(ITruefi(_tToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
+    // ITruefi(_tToken).liquidExit(_amount); 
     
-    uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
-    uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
+    // uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
+    // uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
+    // IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
+    // uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
+    // require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
 
-    return uTokensReceived;
+    // return uTokensReceived;
   }
 
   /// @notice Get balance from address in underlying token
@@ -93,9 +95,9 @@ contract TruefiProvider is IProvider {
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {
-    uint256 shares = balance(_address, _tToken);
-    uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
-    return balance;
+    // uint256 shares = balance(_address, _tToken);
+    // uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
+    // return balance;
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -104,8 +106,8 @@ contract TruefiProvider is IProvider {
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _tToken) external view override returns(uint256) {
-    uint256 shares = ITruefi(_tToken).totalSupply() * _amount / ITruefi(_tToken).poolValue();
-    return shares;
+    // uint256 shares = ITruefi(_tToken).totalSupply() * _amount / ITruefi(_tToken).poolValue();
+    // return shares;
   }
 
   /// @notice Get balance of cToken from address
@@ -113,14 +115,12 @@ contract TruefiProvider is IProvider {
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _tToken) public view override returns(uint256) {
-    return ITruefi(_tToken).balanceOf(_address);
+    // return ITruefi(_tToken).balanceOf(_address);
   }
 
-  // not used by truefi,.
+  // not used by truefi, can maybe deleted everywhere?
   function exchangeRate(address _tToken) public view override returns(uint256) {
-    uint256 poolValue = ITruefi(_tToken).poolValue();
-    uint256 totalSupply = ITruefi(_tToken).totalSupply();
-    return poolValue * 1E6 / totalSupply;
+
   }
 
   function claim(address _tToken, address _claimer) external override returns(bool) {

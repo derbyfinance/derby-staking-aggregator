@@ -14,6 +14,12 @@ export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
 export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742";
 export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
 
+// Homora not really used
+export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2";
+export const homoraUSDT = "0x020eDC614187F9937A1EfEeE007656C6356Fb13A";
+export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439";
+
+
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
 export const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
