@@ -8,8 +8,9 @@ import { Result } from "ethers/lib/utils";
 
 const provider = waffle.provider;
 
-const DAIWhale = "0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0";
+const DAIWhale = '0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
+const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
 
 // SIGNERS
 export const getDAISigner = async () => {
@@ -18,6 +19,14 @@ export const getDAISigner = async () => {
     params: [DAIWhale],
   });
   return ethers.provider.getSigner(DAIWhale);
+}
+
+export const getUSDTSigner = async () => {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [USDTWhale],
+  });
+  return ethers.provider.getSigner(USDTWhale);
 }
 
 export const getUSDCSigner = async () => {
@@ -68,3 +77,5 @@ export const parseUnits = (amount: string, number: number) => ethers.utils.parse
 export const formatUnits = (amount: string | BigNumber, number: number) => ethers.utils.formatUnits(amount, number)
 export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6)
 export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6)
+export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18)
+export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18)

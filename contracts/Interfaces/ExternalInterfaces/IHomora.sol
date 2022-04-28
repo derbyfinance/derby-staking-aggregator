@@ -3,9 +3,9 @@ pragma solidity ^0.8.11;
 
 interface IHomora {
 
-  function deposit(uint _amount) external returns(uint);
+  function deposit(uint _amount) external;
 
-  function withdraw(uint _amount) external returns(uint);
+  function withdraw(uint _amount) external;
 
   // function pricePerShare() external view returns(uint);
 
