@@ -24,8 +24,8 @@ contract HomoraProvider is IProvider {
     controller = _controller;
   }
 
-  /// @notice Deposit the underlying asset in TrueFi
-  /// @dev Pulls underlying asset from ETFVault, deposit them in TrueFi, send tTokens back.
+  /// @notice Deposit the underlying asset in Homora
+  /// @dev Pulls underlying asset from ETFVault, deposit them in Homora, send tTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _hToken Address of protocol LP Token eg cUSDC
@@ -55,8 +55,8 @@ contract HomoraProvider is IProvider {
     return hTokensReceived;
   }
 
-  /// @notice Withdraw the underlying asset from TrueFi
-  /// @dev Pulls tTokens from ETFVault, redeem them from TrueFi, send underlying back.
+  /// @notice Withdraw the underlying asset from Homora
+  /// @dev Pulls tTokens from ETFVault, redeem them from Homora, send underlying back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _hToken Address of protocol LP Token eg cUSDC
@@ -89,21 +89,21 @@ contract HomoraProvider is IProvider {
   /// @notice Get balance from address in underlying token
   /// @dev balance = poolvalue * shares / totalsupply
   /// @param _address Address to request balance from, most likely an ETFVault
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {
-    // uint256 shares = balance(_address, _tToken);
-    // uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
+  function balanceUnderlying(address _address, address _hToken) public view override returns(uint256) {
+    // uint256 shares = balance(_address, _hToken);
+    // uint256 balance = IHomora(_hToken).poolValue() * shares / IHomora(_hToken).totalSupply();
     // return balance;
   }
 
   /// @notice Calculates how many shares are equal to the amount
   /// @dev shares = totalsupply * balance / poolvalue
   /// @param _amount Amount in underyling token e.g USDC
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _tToken) external view override returns(uint256) {
-    // uint256 shares = ITruefi(_tToken).totalSupply() * _amount / ITruefi(_tToken).poolValue();
+  function calcShares(uint256 _amount, address _hToken) external view override returns(uint256) {
+    // uint256 shares = IHomora(_hToken).totalSupply() * _amount / IHomora(_hToken).poolValue();
     // return shares;
   }
 
@@ -115,7 +115,7 @@ contract HomoraProvider is IProvider {
     return IHomora(_hToken).balanceOf(_address);
   }
 
-  // not used by truefi, can maybe deleted everywhere?
+  // not used by Homora, can maybe deleted everywhere?
   function exchangeRate(address _tToken) public view override returns(uint256) {
 
   }
