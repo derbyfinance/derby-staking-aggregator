@@ -54,6 +54,10 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     return liquidityPerc;
   }
 
+  function getPerformanceFee() external view returns(uint256) {
+    return performanceFee;
+  }
+
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }

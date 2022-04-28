@@ -32,6 +32,7 @@ contract ETFVault is VaultToken {
   int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
   uint256 public liquidityPerc = 10;
+  uint256 public performanceFee = 10;
   uint256 public rebalancingPeriod = 0;
 
   uint256 public blockRebalanceInterval = 1;
@@ -52,10 +53,13 @@ contract ETFVault is VaultToken {
   mapping(uint256 => int256) internal deltaAllocations;
 
   // historical prices
-  mapping(uint256 => uint256) public historicalUnderlying;
+  mapping(uint256 => uint256) public cumUnderlying;
 
   // historical total locked tokens
-  mapping(uint256 => int256) public historicalLockedTokens;
+  mapping(uint256 => int256) public cumLockedTokens;
+
+  // historical prices
+  mapping(uint256 => mapping(uint256 => uint256)) public historicalPrices;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
@@ -94,6 +98,9 @@ contract ETFVault is VaultToken {
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
+    cumLockedTokens[rebalancingPeriod] = 0; // to ensure cumLockedTokens[rebalancingPeriod - 1] always works
+    cumUnderlying[rebalancingPeriod] = 0; // to ensure cumUnderlying[rebalancingPeriod - 1] always works
+    rebalancingPeriod++; // so rebalancing period starts with 1, and it will be increased by one "after" each rebalancing. 
   }
 
   /// @notice Deposit in ETFVault
@@ -175,15 +182,16 @@ contract ETFVault is VaultToken {
     
     claimTokens(); 
     
-    historicalUnderlying[rebalancingPeriod] = getTotalUnderlying(); 
-    uint256 totalUnderlying = historicalUnderlying[rebalancingPeriod] + vaultCurrency.balanceOf(address(this)) ;
-    uint256 liquidityVault = totalUnderlying * liquidityPerc / 100;
+    uint256 totalUnderlying = getTotalUnderlying();
+    cumUnderlying[rebalancingPeriod] = cumUnderlying[rebalancingPeriod - 1] + totalUnderlying; 
+    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this)) ;
+    uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
-    historicalLockedTokens[rebalancingPeriod] = totalAllocatedTokens;
+    cumLockedTokens[rebalancingPeriod] = cumLockedTokens[rebalancingPeriod - 1] + totalAllocatedTokens;
     deltaAllocatedTokens = 0;
     
-    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlying - liquidityVault);
+    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlyingInclVaultBalance - liquidityVault);
     executeDeposits(protocolToDeposit);
 
     lastTimeStamp = block.timestamp;
@@ -197,7 +205,7 @@ contract ETFVault is VaultToken {
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),  
-  /// @dev the performancePerc and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault. 
+  /// @dev the performanceFee and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault. 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
@@ -206,7 +214,7 @@ contract ETFVault is VaultToken {
       bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
-      setAllocation(i);
+      setAllocationAndPrice(i);
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
@@ -257,9 +265,10 @@ contract ETFVault is VaultToken {
 
   /// @notice Helper function to set allocations and last price from protocols
   /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
-  function setAllocation(uint256 _i) internal {
+  function setAllocationAndPrice(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
+    historicalPrices[rebalancingPeriod][_i] = price(_i);
     require(currentAllocations[_i] >= 0, "Current Allocation underflow");
   }
 
@@ -422,6 +431,14 @@ contract ETFVault is VaultToken {
     require(_liquidityPerc <= 100, "Percentage cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
   } 
+
+  /// @notice Set the performanceFee, the percentage of the yield that goes to the game players.
+  /// @dev The actual performanceFee could be a bit more or a bit less than the performanceFee set here due to approximations in the game. 
+  /// @param _performanceFee Value at which to set the performanceFee.
+  function setPerformanceFee(uint256 _performanceFee) external onlyDao {
+    require(_performanceFee <= 100, "Percentage cannot exceed 100%");
+    performanceFee = _performanceFee;
+  }
 
   /// @notice Set the governance address
   /// @param _governed New address of the governance / DAO

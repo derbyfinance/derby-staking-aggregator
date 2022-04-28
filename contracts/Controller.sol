@@ -7,7 +7,7 @@ import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Controller is IController {
-  mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
+  mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;  // first index is ETFNumber, second index is protocolNumber
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
   mapping(address => bool) public vaultWhitelist;
