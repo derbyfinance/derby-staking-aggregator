@@ -3,78 +3,136 @@
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../../helpers/helpers';
-import type { YearnProvider, Controller } from '../../../typechain-types';
-import { deployYearnProvider, deployController } from '../../helpers/deploy';
-import { usdc, yearnUSDC as yusdc, yearn} from "../../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, } from '../../helpers/helpers';
+import type { HomoraProvider, Controller } from '../../../typechain-types';
+import { deployHomoraProvider, deployController } from '../../helpers/deploy';
+import { usdc, homoraUSDC as husdc, homoraDAI as hdai, homoraUSDT as husdt, yearn, dai, usdt} from "../../helpers/addresses";
 
 const amount = 100_000;
 // const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
+const amountDAI = parseDAI(amount.toString());
+const amountUSDT = parseUSDC(amount.toString());
+
 const ETFnumber = 0;
 
-// change naming
-describe("Testing Yearn provider", async () => {
-  let yearnProvider: YearnProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
+describe("Testing Homora provider", async () => {
+  let homoraProvider: HomoraProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, hToken: Contract, daoAddr: string, vaultAddr: string, protocolNumberUSDC: number, protocolNumberDAI: number, protocolNumberUSDT: number;
 
   beforeEach(async function() {
     [dao, vault] = await ethers.getSigners();
     daoAddr = await dao.getAddress();
     controller = await deployController(dao, daoAddr);
 
-    [vaultAddr, yearnProvider, USDCSigner, IUSDc, yToken] = await Promise.all([
+    [vaultAddr, homoraProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] = await Promise.all([
       vault.getAddress(),
-      deployYearnProvider(dao, controller.address),
+      deployHomoraProvider(dao, controller.address),
       getUSDCSigner(),
+      getDAISigner(),
+      getUSDTSigner(),
       erc20(usdc),
-      erc20(yusdc),
+      erc20(dai),
+      erc20(usdt),
     ]);
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
-    [protocolNumber] = await Promise.all([
-      controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yusdc, usdc, yearn, 1E6.toString()),
+    [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
+      controllerAddProtocol(controller, 'homora_usdc_01', ETFnumber, homoraProvider.address, husdc, usdc, yearn, 1E6.toString()),
+      controllerAddProtocol(controller, 'homora_dai_01', ETFnumber, homoraProvider.address, hdai, dai, yearn, 1E18.toString()),
+      controllerAddProtocol(controller, 'homora_usdt_01', ETFnumber, homoraProvider.address, husdt, usdt, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(yearnProvider.address, amountUSDC),
+      IDai.connect(DAISigner).transfer(vaultAddr, amountDAI),
+      IUSDt.connect(USDTSigner).transfer(vaultAddr, amountUSDT),
+      IUSDc.connect(vault).approve(homoraProvider.address, amountUSDC),
+      IDai.connect(vault).approve(homoraProvider.address, amountDAI),
+      IUSDt.connect(vault).approve(homoraProvider.address, amountUSDT),
     ])
   });
 
-  // YEARN EXAMPLE
-  // it("Should deposit and withdraw to Yearn through controller", async function() {
+  // it("Should deposit and withdraw USDC to Homora through controller", async function() {
+  //   hToken = await erc20(husdc);
   //   console.log(`-------------------------Deposit-------------------------`); 
   //   const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
-  //   await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
-  //   const balanceShares = Number(await yearnProvider.balance(vaultAddr, yusdc));
-  //   const price = Number(await yearnProvider.exchangeRate(yusdc));
-  //   const amount = (balanceShares * price) / 1E12
-    
-  //   expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
+  //   await controller.connect(vault).deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC);
+  //   const balanceShares = await homoraProvider.balance(vaultAddr, husdc);
+  //   // const balanceUnderlying = await homoraProvider.balanceUnderlying(vaultAddr, husdc);
+  //   // const calcShares = await homoraProvider.calcShares(balanceUnderlying, husdc);
 
-  //   const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+  //   // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-  //   expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+  //   console.log({balanceShares});
+
+  //   // expect(calcShares).to.be.closeTo(balanceShares, 2);
+  //   // expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
+  //   // expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
   //   console.log(`-------------------------Withdraw-------------------------`); 
-  //   await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
-  //   await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
+  //   await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
+  //   await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
 
   //   const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-  //   expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10)
+  //   console.log({vaultBalanceStart})
+  //   console.log({vaultBalanceEnd})
+
+  //   expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), 2)
+  // });
+
+  // it("Should deposit and withdraw DAI to Homora through controller", async function() {
+  //   hToken = await erc20(hdai);
+  //   console.log(`-------------------------Deposit-------------------------`); 
+  //   const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
+
+  //   await controller.connect(vault).deposit(ETFnumber, protocolNumberDAI, vaultAddr, amountDAI);
+  //   const balanceShares = await homoraProvider.balance(vaultAddr, hdai);
+  //   console.log({balanceShares});
+
+  //   expect(Number(balanceShares)).to.be.greaterThan(0);
+
+  //   console.log(`-------------------------Withdraw-------------------------`); 
+  //   await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
+  //   await controller.connect(vault).withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
+
+  //   const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
+  //   console.log({vaultBalanceEnd})
+
+  //   expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2)
+  // });
+
+  // it("Should deposit and withdraw USDT to Homora through controller", async function() {
+  //   hToken = await erc20(husdt);
+  //   console.log(`-------------------------Deposit-------------------------`); 
+  //   const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
+
+  //   await controller.connect(vault).deposit(ETFnumber, protocolNumberUSDT, vaultAddr, amountUSDT);
+  //   const balanceShares = await homoraProvider.balance(vaultAddr, husdt);
+  //   console.log({balanceShares});
+
+  //   expect(Number(balanceShares)).to.be.greaterThan(0);
+
+  //   console.log(`-------------------------Withdraw-------------------------`); 
+  //   await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
+  //   await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
+
+  //   const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
+  //   console.log({vaultBalanceEnd})
+
+  //   expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2)
   // });
 
   // it("Should fail when !controller is calling the Provider", async function() {
-  //   await expect(yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC, yusdc, usdc))
+  //   await expect(homoraProvider.connect(vault).deposit(vaultAddr, amountUSDC, husdc, usdc))
   //   .to.be.revertedWith('ETFProvider: only controller');
   // });
 
   // it("Should fail when !Vault is calling the controller", async function() {
-  //   await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC))
+  //   await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC))
   //   .to.be.revertedWith('Controller: only Vault');
   // });
 
   // it("Should get exchangeRate through controller", async function() {
-  //   const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumber)
+  //   const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
   //   console.log(`Exchange rate ${exchangeRate}`)
   // });
   
