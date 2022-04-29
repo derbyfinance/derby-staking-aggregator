@@ -6,10 +6,10 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, } from '../../helpers/helpers';
 import type { HomoraProvider, Controller } from '../../../typechain-types';
 import { deployHomoraProvider, deployController } from '../../helpers/deploy';
-import { usdc, homoraUSDC as husdc, homoraDAI as hdai, homoraUSDT as husdt, yearn, dai, usdt} from "../../helpers/addresses";
+import { usdc, homoraUSDC as husdc, homoraDAI as hdai, homoraUSDT as husdt, alpha, dai, usdt} from "../../helpers/addresses";
 
-const amount = 100_000;
-// const amount = Math.floor(Math.random() * 100000);
+// const amount = 100_000;
+const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const amountDAI = parseDAI(amount.toString());
 const amountUSDT = parseUSDC(amount.toString());
@@ -37,9 +37,9 @@ describe("Testing Homora provider", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
-      controllerAddProtocol(controller, 'homora_usdc_01', ETFnumber, homoraProvider.address, husdc, usdc, yearn, 1E6.toString()),
-      controllerAddProtocol(controller, 'homora_dai_01', ETFnumber, homoraProvider.address, hdai, dai, yearn, 1E18.toString()),
-      controllerAddProtocol(controller, 'homora_usdt_01', ETFnumber, homoraProvider.address, husdt, usdt, yearn, 1E6.toString()),
+      controllerAddProtocol(controller, 'homora_usdc_01', ETFnumber, homoraProvider.address, husdc, usdc, alpha, 1E6.toString()),
+      controllerAddProtocol(controller, 'homora_dai_01', ETFnumber, homoraProvider.address, hdai, dai, alpha, 1E18.toString()),
+      controllerAddProtocol(controller, 'homora_usdt_01', ETFnumber, homoraProvider.address, husdt, usdt, alpha, 1E6.toString()),
       controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IDai.connect(DAISigner).transfer(vaultAddr, amountDAI),
@@ -63,6 +63,7 @@ describe("Testing Homora provider", async () => {
     // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
     console.log({balanceShares});
+    expect(Number(balanceShares)).to.be.greaterThan(0);
 
     // expect(calcShares).to.be.closeTo(balanceShares, 2);
     // expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
