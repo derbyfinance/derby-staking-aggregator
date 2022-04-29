@@ -2,9 +2,9 @@
 
 ## Find and add vault addresses and Gov token address to helpers/addresses.ts file.
 
-## Create Provider contract from Provider.sol.
-
 ## Create Interface contract from IProtocolName.sol
+
+## Create Provider contract from Provider.sol.
 
 ## Add deployment script from the scripts.ts file to helpers/deploy.ts.
 
