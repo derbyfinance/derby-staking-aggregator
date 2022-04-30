@@ -138,12 +138,4 @@ contract CompoundProvider is IProvider {
     return true;
   }
 
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
-
-  }
-
 }

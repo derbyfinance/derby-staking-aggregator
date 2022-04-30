@@ -8,7 +8,7 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract TruefiProvider is IProvider {
+contract NameProvider is IProvider {
   using SafeERC20 for IERC20;
 
   address public controller; 
@@ -122,14 +122,6 @@ contract TruefiProvider is IProvider {
   }
 
   function claim(address _tToken, address _claimer) external override returns(bool) {
-
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
 
   }
 

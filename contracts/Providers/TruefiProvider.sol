@@ -116,7 +116,10 @@ contract TruefiProvider is IProvider {
     return ITruefi(_tToken).balanceOf(_address);
   }
 
-  // not used by truefi,.
+  /// @notice Exchange rate of underyling protocol token
+  /// @dev returned price from compound is scaled by 1e18
+  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @return price of LP token
   function exchangeRate(address _tToken) public view override returns(uint256) {
     uint256 poolValue = ITruefi(_tToken).poolValue();
     uint256 totalSupply = ITruefi(_tToken).totalSupply();
@@ -124,14 +127,6 @@ contract TruefiProvider is IProvider {
   }
 
   function claim(address _tToken, address _claimer) external override returns(bool) {
-
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
 
   }
 
