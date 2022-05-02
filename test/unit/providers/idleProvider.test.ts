@@ -8,8 +8,8 @@ import type { IdleProvider, Controller } from '../../../typechain-types';
 import { deployIdleProvider, deployController } from '../../helpers/deploy';
 import { usdc, idleUSDC as iusdc, idleDAI as idai, idleUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
 
-const amount = 100_000;
-// const amount = Math.floor(Math.random() * 100000);
+// const amount = 100_000;
+const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const amountDAI = parseDAI(amount.toString());
 const amountUSDT = parseUSDC(amount.toString());
@@ -37,7 +37,7 @@ describe("Testing Idle provider", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
-      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E18.toString()),
+      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E6.toString()),
       controllerAddProtocol(controller, 'idle_dai_01', ETFnumber, idleProvider.address, idai, dai, yearn, 1E18.toString()),
       controllerAddProtocol(controller, 'idle_usdt_01', ETFnumber, idleProvider.address, iusdt, usdt, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
@@ -61,8 +61,8 @@ describe("Testing Idle provider", async () => {
     const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdc);
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -85,8 +85,8 @@ describe("Testing Idle provider", async () => {
     const calcShares = await idleProvider.calcShares(balanceUnderlying, idai);
     const vaultBalance = await IDai.balanceOf(vaultAddr);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountDAI, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountDAI, 5);
     expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountDAI);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -109,8 +109,8 @@ describe("Testing Idle provider", async () => {
     const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdt);
     const vaultBalance = await IUSDt.balanceOf(vaultAddr);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 5);
     expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountUSDT);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -136,5 +136,4 @@ describe("Testing Idle provider", async () => {
     const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
     console.log(`Exchange rate ${exchangeRate}`)
   });
-  
 });

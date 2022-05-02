@@ -46,11 +46,11 @@ contract IdleProvider is IProvider {
     require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     uint256 tTokenBefore = IIdle(_iToken).balanceOf(address(this));
+    // expensive mint 
     IIdle(_iToken).mintIdleToken(_amount, true, address(0));
     uint256 tTokenAfter = IIdle(_iToken).balanceOf(address(this));
 
     uint tTokensReceived = tTokenAfter - tTokenBefore;
-
     IIdle(_iToken).transfer(_vault, tTokensReceived);
 
     return tTokensReceived;
