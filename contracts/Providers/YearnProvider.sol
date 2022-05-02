@@ -93,7 +93,6 @@ contract YearnProvider is IProvider{
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _yToken) external view override returns (uint256) {
     uint256 shares = _amount  * 1E6 / exchangeRate(_yToken);
-
     return shares;
   }
 
@@ -117,14 +116,6 @@ contract YearnProvider is IProvider{
   }
 
   function claim(address _yToken, address _claimer) public override returns(bool) {
-
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
 
   }
 }

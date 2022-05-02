@@ -37,8 +37,6 @@ contract IdleProvider is IProvider {
     address _iToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    uint price = IIdle(_iToken).tokenPrice();
-    console.log("price %s", price);
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -54,8 +52,7 @@ contract IdleProvider is IProvider {
     uint tTokensReceived = tTokenAfter - tTokenBefore;
 
     IIdle(_iToken).transfer(_vault, tTokensReceived);
-    console.log("tTokensReceived %s", tTokensReceived);
-    
+
     return tTokensReceived;
   }
 
@@ -72,22 +69,22 @@ contract IdleProvider is IProvider {
     address _iToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    // uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
-    // uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
+    uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
-    // require(IIdle(_iToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    // IIdle(_iToken).liquidExit(_amount); 
+    require(IIdle(_iToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
+    IIdle(_iToken).redeemIdleToken(_amount); 
     
-    // uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
-    // uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
+    uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
+    uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    // IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
+    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
 
-    // uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    // require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
+    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
 
-    // return uTokensReceived;
+    return uTokensReceived;
   }
 
   /// @notice Get balance from address in underlying token
@@ -96,9 +93,9 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _iToken) public view override returns(uint256) {
-    // uint256 shares = balance(_address, _iToken);
-    // uint256 balance = IIdle(_iToken).poolValue() * shares / IIdle(_iToken).totalSupply();
-    // return balance;
+    uint256 balanceShares = balance(_address, _iToken);
+    uint256 price = exchangeRate(_iToken);
+    return balanceShares * price / 1E18;
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -107,8 +104,8 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _iToken) external view override returns(uint256) {
-    // uint256 shares = IIdle(_iToken).totalSupply() * _amount / IIdle(_iToken).poolValue();
-    // return shares;
+    uint256 shares = _amount  * 1E18 / exchangeRate(_iToken);
+    return shares;
   }
 
   /// @notice Get balance of cToken from address
@@ -127,7 +124,7 @@ contract IdleProvider is IProvider {
   }
 
   function claim(address _iToken, address _claimer) external override returns(bool) {
-
+    
   }
 
 }

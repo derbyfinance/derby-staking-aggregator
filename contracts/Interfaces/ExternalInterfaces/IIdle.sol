@@ -9,7 +9,7 @@ interface IIdle {
     address _referral
   ) external returns(uint);
 
-  // function withdraw(uint _amount) external returns(uint);
+  function redeemIdleToken(uint _amount) external returns(uint);
 
   function tokenPrice() external view returns(uint);
 
