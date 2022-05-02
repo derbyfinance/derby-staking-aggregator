@@ -37,7 +37,7 @@ describe("Testing Idle provider", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
-      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E6.toString()),
+      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E18.toString()),
       controllerAddProtocol(controller, 'idle_dai_01', ETFnumber, idleProvider.address, idai, dai, yearn, 1E18.toString()),
       controllerAddProtocol(controller, 'idle_usdt_01', ETFnumber, idleProvider.address, iusdt, usdt, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
@@ -61,7 +61,7 @@ describe("Testing Idle provider", async () => {
     // const calcShares = await idleProvider.calcShares(balanceUnderlying, husdc);
 
     // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-
+    92563_966328931608187838
     console.log({balanceShares});
 
     // expect(calcShares).to.be.closeTo(balanceShares, 2);

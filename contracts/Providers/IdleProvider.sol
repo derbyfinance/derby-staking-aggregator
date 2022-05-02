@@ -24,57 +24,60 @@ contract IdleProvider is IProvider {
     controller = _controller;
   }
 
-  /// @notice Deposit the underlying asset in TrueFi
-  /// @dev Pulls underlying asset from ETFVault, deposit them in TrueFi, send tTokens back.
+  /// @notice Deposit the underlying asset in Idle
+  /// @dev Pulls underlying asset from ETFVault, deposit them in Idle, send tTokens back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to deposit
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
     address _vault, 
     uint256 _amount, 
-    address _tToken,
+    address _iToken,
     address _uToken
   ) external override onlyController returns(uint256) {
-    // uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
+    uint price = IIdle(_iToken).tokenPrice();
+    console.log("price %s", price);
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    // IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
-    // IERC20(_uToken).safeIncreaseAllowance(_tToken, _amount);
+    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeIncreaseAllowance(_iToken, _amount);
 
-    // uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
-    // require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
+    require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
-    // uint256 tTokenBefore = ITruefi(_tToken).balanceOf(address(this));
-    // ITruefi(_tToken).join(_amount);
-    // uint256 tTokenAfter = ITruefi(_tToken).balanceOf(address(this));
+    uint256 tTokenBefore = IIdle(_iToken).balanceOf(address(this));
+    IIdle(_iToken).mintIdleToken(_amount, true, address(0));
+    uint256 tTokenAfter = IIdle(_iToken).balanceOf(address(this));
 
-    // uint tTokensReceived = tTokenAfter - tTokenBefore;
+    uint tTokensReceived = tTokenAfter - tTokenBefore;
 
-    // ITruefi(_tToken).transfer(_vault, tTokensReceived);
+    IIdle(_iToken).transfer(_vault, tTokensReceived);
+    console.log("tTokensReceived %s", tTokensReceived);
     
-    // return tTokensReceived;
+    return tTokensReceived;
   }
 
-  /// @notice Withdraw the underlying asset from TrueFi
-  /// @dev Pulls tTokens from ETFVault, redeem them from TrueFi, send underlying back.
+  /// @notice Withdraw the underlying asset from Idle
+  /// @dev Pulls tTokens from ETFVault, redeem them from Idle, send underlying back.
   /// @param _vault Address from ETFVault contract i.e buyer
   /// @param _amount Amount to withdraw
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
     address _vault, 
     uint256 _amount, 
-    address _tToken,
+    address _iToken,
     address _uToken
   ) external override onlyController returns(uint256) {
     // uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
 
     // uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
-    // require(ITruefi(_tToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    // ITruefi(_tToken).liquidExit(_amount); 
+    // require(IIdle(_iToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
+    // IIdle(_iToken).liquidExit(_amount); 
     
     // uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
     // uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
@@ -90,21 +93,21 @@ contract IdleProvider is IProvider {
   /// @notice Get balance from address in underlying token
   /// @dev balance = poolvalue * shares / totalsupply
   /// @param _address Address to request balance from, most likely an ETFVault
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {
-    // uint256 shares = balance(_address, _tToken);
-    // uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
+  function balanceUnderlying(address _address, address _iToken) public view override returns(uint256) {
+    // uint256 shares = balance(_address, _iToken);
+    // uint256 balance = IIdle(_iToken).poolValue() * shares / IIdle(_iToken).totalSupply();
     // return balance;
   }
 
   /// @notice Calculates how many shares are equal to the amount
   /// @dev shares = totalsupply * balance / poolvalue
   /// @param _amount Amount in underyling token e.g USDC
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
-  function calcShares(uint256 _amount, address _tToken) external view override returns(uint256) {
-    // uint256 shares = ITruefi(_tToken).totalSupply() * _amount / ITruefi(_tToken).poolValue();
+  function calcShares(uint256 _amount, address _iToken) external view override returns(uint256) {
+    // uint256 shares = IIdle(_iToken).totalSupply() * _amount / IIdle(_iToken).poolValue();
     // return shares;
   }
 
@@ -116,20 +119,14 @@ contract IdleProvider is IProvider {
     return IIdle(_iToken).balanceOf(_address);
   }
 
-  // not used by truefi, can maybe deleted everywhere?
-  function exchangeRate(address _tToken) public view override returns(uint256) {
-
+  /// @notice Exchange rate of underyling protocol token
+  /// @param _iToken Address of protocol LP Token eg yUSDC
+  /// @return price of LP token
+  function exchangeRate(address _iToken) public view override returns(uint256) {
+    return IIdle(_iToken).tokenPrice();
   }
 
-  function claim(address _tToken, address _claimer) external override returns(bool) {
-
-  }
-
-  function getHistoricalPrice(uint256 _period) external view returns(uint256) {
-
-  }
-
-  function addPricePoint() external override {
+  function claim(address _iToken, address _claimer) external override returns(bool) {
 
   }
 

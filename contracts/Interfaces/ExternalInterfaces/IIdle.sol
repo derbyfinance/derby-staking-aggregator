@@ -3,11 +3,15 @@ pragma solidity ^0.8.11;
 
 interface IIdle {
 
-  // function deposit(uint _amount) external returns(uint);
+  function mintIdleToken(
+    uint _amount, 
+    bool _skipRebalance, 
+    address _referral
+  ) external returns(uint);
 
   // function withdraw(uint _amount) external returns(uint);
 
-  // function pricePerShare() external view returns(uint);
+  function tokenPrice() external view returns(uint);
 
   function balanceOf(address _address) external view returns(uint);
 
