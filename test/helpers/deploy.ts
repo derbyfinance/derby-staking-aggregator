@@ -3,6 +3,7 @@ import { deployContract } from "ethereum-waffle";
 import { Signer, BigNumber } from "ethers";
 import type { 
   YearnProvider,
+  HomoraProvider,
   CompoundProvider, 
   AaveProvider,
   TruefiProvider,
@@ -18,6 +19,7 @@ import type {
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
+import HomoraProviderArtifact from '../../artifacts/contracts/Providers/HomoraProvider.sol/HomoraProvider.json';
 import TruefiProviderArtifact from '../../artifacts/contracts/Providers/TruefiProvider.sol/TruefiProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
@@ -32,6 +34,9 @@ import BasketTokenArtifact from '../../artifacts/contracts/BasketToken.sol/Baske
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
+export const deployHomoraProvider = (deployerSign: Signer, controller: string): Promise<HomoraProvider> => {
+  return (deployContract(deployerSign, HomoraProviderArtifact, [controller])) as Promise<HomoraProvider>;
+};
 
 export const deployYearnProvider = (deployerSign: Signer, controller: string): Promise<YearnProvider> => {
   return (deployContract(deployerSign, YearnProviderArtifact, [controller])) as Promise<YearnProvider>;

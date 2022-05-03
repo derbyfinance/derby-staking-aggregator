@@ -14,10 +14,17 @@ export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
 export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742";
 export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
 
+// Homora not really used
+export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2";
+export const homoraUSDT = "0x020eDC614187F9937A1EfEeE007656C6356Fb13A";
+export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439";
+
+
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
 export const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
 export const truefi = "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784";
+export const alpha = "0xa1faa113cbE53436Df28FF0aEe54275c13B40975";
 
 // Uniswap
 export const uniswapFactory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
@@ -25,7 +32,7 @@ export const uniswapRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 export const uniswapQuoter = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6";
 
 // Curve Finance
-export const curve3Pool = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7" // DAI / USDC / USDT
+export const curve3Pool = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"; // DAI / USDC / USDT
 
 // others
 export const comptroller = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
