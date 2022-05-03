@@ -4,6 +4,7 @@
 import { expect, assert, use } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC, parseEther } from '../helpers/helpers';
+import { setDeltaAllocations, getAllocations, rebalanceETF } from '../helpers/vaultHelpers';
 import { ETFVaultMock, ETFGame, XaverToken, ETFGameMock } from '../../typechain-types';
 import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 import { deployETFGameMock, deployXaverToken } from "../helpers/deploy";
@@ -20,7 +21,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalXaverSupply = parseEther(1E8.toString()); 
 
-describe("Testing ETFGame", async () => {
+describe.only("Testing ETFGame", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -99,6 +100,30 @@ describe("Testing ETFGame", async () => {
     unAllocatedTokens = await game.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(0);
     expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
+  });
+
+  it.only("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
+    // minting
+    await game.connect(dao).addETF(vaultMock.address);
+    await game.mintNewBasket(0);
+
+    const amount = 200_000;
+    const amountUSDC = parseUSDC(amount.toString());
+
+    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await vaultMock.depositETF(userAddr, amountUSDC);
+    await rebalanceETF(vaultMock);
+
+    let allocs = await getAllocations(vaultMock, allProtocols);
+    allocs.forEach((protocol) => {
+      console.log("alloc: %s", Number(protocol)) // 0: 40, 1: 60, 2: 20
+    });
+
+    console.log("balance user: %s", await xaverToken.balanceOf(userAddr));
+    
+    let newAllocations = [10, 10, 10, 10, 10];
+    await game.rebalanceBasket(0, newAllocations);
+    
   });
 
 });

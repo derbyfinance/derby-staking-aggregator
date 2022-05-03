@@ -9,4 +9,5 @@ interface IETFVault {
   function historicalPrices(uint256 _rebalancingPeriod, uint256 _protocolNum) external view returns(uint256);
   function cummulativeUnderlying(uint256) external view returns(uint256);
   function cummulativeLockedTokens(uint256) external view returns(int256);
+  function performanceFee() external view returns(uint256);
 }

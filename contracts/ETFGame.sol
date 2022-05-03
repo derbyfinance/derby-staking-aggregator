@@ -14,6 +14,8 @@ import "./Interfaces/IGoverned.sol";
 
 import "./libraries/ABDKMath64x64.sol";
 
+import "hardhat/console.sol";
+
 contract ETFGame is ERC721 {
     using SafeERC20 for IERC20;
 
@@ -215,15 +217,15 @@ contract ETFGame is ERC721 {
         int128 n = ABDKMath64x64.fromUInt(
             currentRebalancingPeriod - baskets[_basketId].lastAdjustmentPeriod
         );
-        int128 growthPerPeriod = ABDKMath64x64.exp_2(log2 / n) - 2**64; // (g + 1) ** (1/n) - 1 in 64.64-bit fixed point number
+        uint256 growthPerPeriod = ABDKMath64x64.toUInt(ABDKMath64x64.exp_2(log2 / n) - 2**64); // (g + 1) ** (1/n) - 1 in 64.64-bit fixed point number
 
         uint256 cumTVLPerTokenEnd = IETFVault(ETFVaults[ETFnumber]).cummulativeUnderlying(currentRebalancingPeriod) / 
             uint256(IETFVault(ETFVaults[ETFnumber]).cummulativeLockedTokens(currentRebalancingPeriod));
         uint256 cumTVLPerTokenBegin = IETFVault(ETFVaults[ETFnumber]).cummulativeUnderlying(baskets[_basketId].lastAdjustmentPeriod) / 
             uint256(IETFVault(ETFVaults[ETFnumber]).cummulativeLockedTokens(baskets[_basketId].lastAdjustmentPeriod));
 
-        // TODO store historical prices in vault, remove historical prices in providers
-        // TODO store feePerc
+        amount = baskets[_basketId].nrOfAllocatedTokens * (cumTVLPerTokenEnd - cumTVLPerTokenBegin) * growthPerPeriod * 
+            IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).performanceFee();
         baskets[_basketId].totalUnRedeemedRewards += amount;
     }
 }

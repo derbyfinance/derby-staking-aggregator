@@ -98,9 +98,6 @@ contract ETFVault is VaultToken {
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
-    cumLockedTokens[rebalancingPeriod] = 0; // to ensure cumLockedTokens[rebalancingPeriod - 1] always works
-    cumUnderlying[rebalancingPeriod] = 0; // to ensure cumUnderlying[rebalancingPeriod - 1] always works
-    rebalancingPeriod++; // so rebalancing period starts with 1, and it will be increased by one "after" each rebalancing. 
   }
 
   /// @notice Deposit in ETFVault
@@ -179,6 +176,8 @@ contract ETFVault is VaultToken {
   function rebalanceETF() external onlyDao {
     if (!rebalanceNeeded()) return;
     uint256 gasStart = gasleft();
+
+    rebalancingPeriod++;
     
     claimTokens(); 
     
@@ -195,7 +194,7 @@ contract ETFVault is VaultToken {
     executeDeposits(protocolToDeposit);
 
     lastTimeStamp = block.timestamp;
-    rebalancingPeriod++;
+    
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
     uint256 gasUsed = gasStart - gasleft();

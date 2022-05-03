@@ -4,7 +4,7 @@
 import { MockContract, MockProvider } from "ethereum-waffle";
 import { BigNumber, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
-import { AaveProvider, CompoundProvider, YearnProvider } from "typechain-types";
+import { AaveProvider, CompoundProvider, YearnProvider, ETFGame } from "typechain-types";
 import { aave, aaveUSDC, aaveUSDT, compoundDAI, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, usdc, usdt, yearn, yearnUSDC } from "./addresses";
 import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployController, deployYearnProvider } from "./deploy";
 import { deployAaveProviderMock, deployYearnProviderMock, deployCompoundProviderMock } from "./deployMocks";
@@ -26,7 +26,8 @@ const gasFeeLiquidity = 10_000 * uScale;
 
 export async function beforeEachETFVault(
   amountUSDC: BigNumber,
-  providerMocks: boolean = false
+  providerMocks: boolean = false,
+  // gameContract: ETFGame
 ) {
   // stock protocols
   const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
