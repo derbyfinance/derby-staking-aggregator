@@ -8,8 +8,8 @@ import type { IdleProvider, Controller } from '../../../typechain-types';
 import { deployIdleProvider, deployController } from '../../helpers/deploy';
 import { usdc, idleUSDC as iusdc, idleDAI as idai, idleUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
 
-const amount = 100_000;
-// const amount = Math.floor(Math.random() * 100000);
+// const amount = 100_000;
+const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const amountDAI = parseDAI(amount.toString());
 const amountUSDT = parseUSDC(amount.toString());
@@ -37,7 +37,7 @@ describe("Testing Idle provider", async () => {
     
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
-      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E18.toString()),
+      controllerAddProtocol(controller, 'idle_usdc_01', ETFnumber, idleProvider.address, iusdc, usdc, yearn, 1E6.toString()),
       controllerAddProtocol(controller, 'idle_dai_01', ETFnumber, idleProvider.address, idai, dai, yearn, 1E18.toString()),
       controllerAddProtocol(controller, 'idle_usdt_01', ETFnumber, idleProvider.address, iusdt, usdt, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
@@ -59,14 +59,10 @@ describe("Testing Idle provider", async () => {
     const balanceShares = await idleProvider.balance(vaultAddr, iusdc);
     const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, iusdc);
     const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdc);
-
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-    console.log({balanceShares});
-    console.log({balanceUnderlying});
-    console.log({calcShares});
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -74,8 +70,6 @@ describe("Testing Idle provider", async () => {
     await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    console.log({vaultBalanceStart})
-    console.log({vaultBalanceEnd})
 
     expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), 2)
   });
@@ -89,11 +83,10 @@ describe("Testing Idle provider", async () => {
     const balanceShares = await idleProvider.balance(vaultAddr, idai);
     const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, idai);
     const calcShares = await idleProvider.calcShares(balanceUnderlying, idai);
-
     const vaultBalance = await IDai.balanceOf(vaultAddr);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountDAI, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountDAI, 5);
     expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountDAI);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -101,12 +94,11 @@ describe("Testing Idle provider", async () => {
     await controller.connect(vault).withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
-    console.log({vaultBalanceEnd})
 
     expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2)
   });
 
-  it.only("Should deposit and withdraw USDT to idle through controller", async function() {
+  it("Should deposit and withdraw USDT to idle through controller", async function() {
     iToken = await erc20(iusdt);
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
@@ -115,14 +107,10 @@ describe("Testing Idle provider", async () => {
     const balanceShares = await idleProvider.balance(vaultAddr, iusdt);
     const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, iusdt);
     const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdt);
-
     const vaultBalance = await IUSDt.balanceOf(vaultAddr);
-    console.log({balanceShares});
-    console.log({balanceUnderlying});
-    console.log({calcShares});
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 2);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 2);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 5);
     expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountUSDT);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -130,24 +118,22 @@ describe("Testing Idle provider", async () => {
     await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
-    console.log({vaultBalanceEnd})
 
     expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2)
   });
 
-  // it("Should fail when !controller is calling the Provider", async function() {
-  //   await expect(idleProvider.connect(vault).deposit(vaultAddr, amountUSDC, husdc, usdc))
-  //   .to.be.revertedWith('ETFProvider: only controller');
-  // });
+  it("Should fail when !controller is calling the Provider", async function() {
+    await expect(idleProvider.connect(vault).deposit(vaultAddr, amountUSDC, iusdc, usdc))
+    .to.be.revertedWith('ETFProvider: only controller');
+  });
 
-  // it("Should fail when !Vault is calling the controller", async function() {
-  //   await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC))
-  //   .to.be.revertedWith('Controller: only Vault');
-  // });
+  it("Should fail when !Vault is calling the controller", async function() {
+    await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Controller: only Vault');
+  });
 
-  // it("Should get exchangeRate through controller", async function() {
-  //   const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
-  //   console.log(`Exchange rate ${exchangeRate}`)
-  // });
-  
+  it("Should get exchangeRate through controller", async function() {
+    const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
+    console.log(`Exchange rate ${exchangeRate}`)
+  });
 });
