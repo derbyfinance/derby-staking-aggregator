@@ -6,7 +6,7 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, formatEther, } from '../../helpers/helpers';
 import type { BetaProvider, Controller } from '../../../typechain-types';
 import { deployBetaProvider, deployController } from '../../helpers/deploy';
-import { usdc, betaUSDC as busdc, betaDAI as idai, betaUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
+import { usdc, betaUSDC as busdc, betaDAI as bdai, betaUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
 
 const amount = 100_000;
 // const amount = Math.floor(Math.random() * 1000000);
@@ -38,7 +38,7 @@ describe("Testing Beta provider", async () => {
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
       controllerAddProtocol(controller, 'beta_usdc_01', ETFnumber, betaProvider.address, busdc, usdc, yearn, 1E6.toString()),
-      controllerAddProtocol(controller, 'beta_dai_01', ETFnumber, betaProvider.address, idai, dai, yearn, 1E18.toString()),
+      controllerAddProtocol(controller, 'beta_dai_01', ETFnumber, betaProvider.address, bdai, dai, yearn, 1E18.toString()),
       controllerAddProtocol(controller, 'beta_usdt_01', ETFnumber, betaProvider.address, iusdt, usdt, yearn, 1E6.toString()),
       controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
@@ -50,22 +50,20 @@ describe("Testing Beta provider", async () => {
     ])
   });
 
-  it.only("Should deposit and withdraw USDC to beta through controller", async function() {
+  it("Should deposit and withdraw USDC to beta through controller", async function() {
     bToken = await erc20(busdc);
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC);
     const balanceShares = await betaProvider.balance(vaultAddr, busdc);
-    console.log({balanceShares});
     const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, busdc);
-    console.log({balanceUnderlying});
-    // const calcShares = await betaProvider.calcShares(balanceUnderlying, busdc);
-    // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    const calcShares = await betaProvider.calcShares(balanceUnderlying, busdc);
+    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    // expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    // expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
-    // expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
+    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
+    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
     await bToken.connect(vault).approve(betaProvider.address, balanceShares);
@@ -78,14 +76,14 @@ describe("Testing Beta provider", async () => {
   });
 
   it("Should deposit and withdraw DAI to beta through controller", async function() {
-    bToken = await erc20(idai);
+    bToken = await erc20(bdai);
     console.log(`-------------------------Deposit-------------------------`); 
     const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumberDAI, vaultAddr, amountDAI);
-    const balanceShares = await betaProvider.balance(vaultAddr, idai);
-    const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, idai);
-    const calcShares = await betaProvider.calcShares(balanceUnderlying, idai);
+    const balanceShares = await betaProvider.balance(vaultAddr, bdai);
+    const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, bdai);
+    const calcShares = await betaProvider.calcShares(balanceUnderlying, bdai);
     const vaultBalance = await IDai.balanceOf(vaultAddr);
 
     expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
