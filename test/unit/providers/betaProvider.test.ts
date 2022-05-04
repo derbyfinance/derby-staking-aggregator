@@ -8,8 +8,8 @@ import type { BetaProvider, Controller } from '../../../typechain-types';
 import { deployBetaProvider, deployController } from '../../helpers/deploy';
 import { usdc, betaUSDC as busdc, betaDAI as bdai, betaUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
 
-const amount = 100_000;
-// const amount = Math.floor(Math.random() * 1000000);
+// const amount = 100_000;
+const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const amountDAI = parseDAI(amount.toString());
 const amountUSDT = parseUSDC(amount.toString());
@@ -123,18 +123,18 @@ describe("Testing Beta provider", async () => {
     expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2)
   });
 
-  // it("Should fail when !controller is calling the Provider", async function() {
-  //   await expect(betaProvider.connect(vault).deposit(vaultAddr, amountUSDC, iusdc, usdc))
-  //   .to.be.revertedWith('ETFProvider: only controller');
-  // });
+  it("Should fail when !controller is calling the Provider", async function() {
+    await expect(betaProvider.connect(vault).deposit(vaultAddr, amountUSDC, busdc, usdc))
+    .to.be.revertedWith('ETFProvider: only controller');
+  });
 
-  // it("Should fail when !Vault is calling the controller", async function() {
-  //   await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC))
-  //   .to.be.revertedWith('Controller: only Vault');
-  // });
+  it("Should fail when !Vault is calling the controller", async function() {
+    await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC))
+    .to.be.revertedWith('Controller: only Vault');
+  });
 
-  // it("Should get exchangeRate through controller", async function() {
-  //   const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
-  //   console.log(`Exchange rate ${exchangeRate}`)
-  // });
+  it("Should get exchangeRate through controller", async function() {
+    const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC)
+    console.log(`Exchange rate ${exchangeRate}`)
+  });
 });
