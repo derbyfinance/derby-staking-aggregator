@@ -46,8 +46,7 @@ contract BetaProvider is IProvider {
     require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     uint256 tTokenBefore = IBeta(_bToken).balanceOf(address(this));
-    // expensive mint 
-    // IBeta(_bToken).mintIdleToken(_amount, true, address(0));
+    IBeta(_bToken).mint(address(this), _amount);
     uint256 tTokenAfter = IBeta(_bToken).balanceOf(address(this));
 
     uint tTokensReceived = tTokenAfter - tTokenBefore;
@@ -74,7 +73,7 @@ contract BetaProvider is IProvider {
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this)); 
 
     require(IBeta(_bToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    // IBeta(_bToken).redeemIdleToken(_amount); 
+    IBeta(_bToken).burn(address(this), _amount); 
     
     uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this)); 
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
@@ -94,8 +93,10 @@ contract BetaProvider is IProvider {
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _bToken) public view override returns(uint256) {
     uint256 balanceShares = balance(_address, _bToken);
-    uint256 price = exchangeRate(_bToken);
-    return balanceShares * price / 1E18;
+    uint256 supply = IBeta(_bToken).totalSupply();
+    uint256 totalLoanable  = IBeta(_bToken).totalLoanable();
+    uint256 totalLoan = IBeta(_bToken).totalLoan();
+    return (balanceShares * (totalLoanable + totalLoan)) / supply;
   }
 
   /// @notice Calculates how many shares are equal to the amount

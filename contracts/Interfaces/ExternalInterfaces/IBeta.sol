@@ -7,7 +7,11 @@ interface IBeta {
 
   function burn(address _to, uint _amount) external returns(uint);
 
-  // function pricePerShare() external view returns(uint);
+  function totalSupply() external view returns(uint);
+
+  function totalLoanable() external view returns(uint);
+
+  function totalLoan() external view returns(uint);
 
   function balanceOf(address _address) external view returns(uint);
 
