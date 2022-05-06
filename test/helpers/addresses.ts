@@ -11,8 +11,8 @@ export const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 export const compoundDAI = "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643";
 // Aave
 export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
-export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
 export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
+export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
 // TrueFi
 export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742";
 export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
@@ -24,6 +24,10 @@ export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439";
 export const idleUSDC = "0x5274891bEC421B39D23760c04A6755eCB444797C"; // 18 decimals
 export const idleUSDT = "0xF34842d05A1c888Ca02769A633DF37177415C2f8";
 export const idleDAI = "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4";
+// beta
+export const betaUSDC = "0xC02392336420bb54CE2Da8a8aa4B118F2dceeB04"; // 6
+export const betaUSDT = "0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC"; // 6
+export const betaDAI = "0x70540A3178290498B0C6d843Fa7ED97cAe69B86c"; // 18
 
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
