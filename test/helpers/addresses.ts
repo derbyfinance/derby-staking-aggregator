@@ -1,4 +1,7 @@
 /* eslint-disable prettier/prettier */
+
+import { Interface } from "ethers/lib/utils";
+
 // Stable coins
 export const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 export const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
@@ -21,7 +24,7 @@ export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2";
 export const homoraUSDT = "0x020eDC614187F9937A1EfEeE007656C6356Fb13A";
 export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439";
 // Idle
-export const idleUSDC = "0x5274891bEC421B39D23760c04A6755eCB444797C"; // 18 decimals
+export const idleUSDC = "0x5274891bEC421B39D23760c04A6755eCB444797C"; // 18 
 export const idleUSDT = "0xF34842d05A1c888Ca02769A633DF37177415C2f8";
 export const idleDAI = "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4";
 // beta
@@ -35,6 +38,7 @@ export const yearn = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e";
 export const truefi = "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784";
 export const alpha = "0xa1faa113cbE53436Df28FF0aEe54275c13B40975";
 export const idle = "0x875773784Af8135eA0ef43b5a374AaD105c5D39e";
+export const beta = '0xBe1a001FE942f96Eea22bA08783140B9Dcc09D28';
 
 // Uniswap
 export const uniswapFactory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
@@ -51,3 +55,35 @@ export const WEth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 export const ChainlinkGasPrice = "0x169e633a2d1e6c10dd91238ba11c4a708dfef37c";
 
 export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
+
+export interface ProtocolVault {
+  name: string;
+  protocolToken: string;
+  underlyingToken: string;
+  govToken: string;
+  decimals: number;
+}
+
+export const allProtocolVaults = [
+  {
+    name: 'beta_usdc_01',
+    protocolToken: betaUSDC,
+    underlyingToken: usdc,
+    govToken: beta, 
+    decimals: 1E6
+  },
+  {
+    name: 'beta_dai_01',
+    protocolToken: betaDAI,
+    underlyingToken: dai,
+    govToken: beta, 
+    decimals: 1E18
+  },
+  {
+    name: 'beta_usdt_01',
+    protocolToken: betaUSDT,
+    underlyingToken: usdt,
+    govToken: beta, 
+    decimals: 1E6
+  },
+]
