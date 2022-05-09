@@ -5,7 +5,6 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from "typechain-types";
 import { Result } from "ethers/lib/utils";
-import { ProtocolVault } from "./addresses";
 
 const provider = waffle.provider;
 

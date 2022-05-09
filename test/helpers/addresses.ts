@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-constructor */
 /* eslint-disable prettier/prettier */
 
 import { BigNumber, Signer } from "ethers";
@@ -61,98 +62,76 @@ export const ChainlinkGasPrice = "0x169e633a2d1e6c10dd91238ba11c4a708dfef37c";
 
 export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
 
-export interface ProtocolVault {
+export interface IProtocolVault {
   name: string;
   protocolToken: string;
   underlyingToken: string;
   govToken: string;
   decimals: number;
-  number: number;
-  allocation: number;
-  setAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void>;
-  getDeltaAllocationTEST(vault: ETFVaultMock) : Promise<BigNumber>;
-  getAllocation(vault: ETFVaultMock) : Promise<BigNumber>;
+}
+
+class ProtocolVault {
+  name: string;
+  protocolToken: string;
+  underlyingToken: string;
+  govToken: string;
+  decimals: number;
+  number: number = 0;
+  allocation: number = 0;
+
+  constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
+    this.name = name;
+    this.protocolToken = protocolToken;
+    this.underlyingToken = underlyingToken;
+    this.govToken = govToken;
+    this.decimals = decimals;
+  }
+
+  async setAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
+    this.allocation = allocation;
+    await vault.connect(game).setDeltaAllocations(this.number, allocation)
+  };
+
+  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<BigNumber> {
+    return await vault.getDeltaAllocationTEST(this.number);
+  };
+
+  async getAllocation(vault: ETFVaultMock): Promise<BigNumber> {
+    return await vault.getDeltaAllocationTEST(this.number);
+  };
 }
 
 export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols
-.set('beta_usdc_01', {
+.set('beta_usdc_01', new ProtocolVault({
   name: 'beta_usdc_01',
   protocolToken: betaUSDC,
   underlyingToken: usdc,
   govToken: beta, 
   decimals: 1E6,
-  number: 0,
-  allocation: 0,
-  async setAllocation(vault, game, allocation) {
-    this.allocation = allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation)
-  },
-  async getDeltaAllocationTEST(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  },
-  async getAllocation(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  }
-})
-.set('beta_dai_01', {
+}))
+.set('beta_dai_01', new ProtocolVault({
   name: 'beta_dai_01',
   protocolToken: betaDAI,
   underlyingToken: dai,
   govToken: beta, 
   decimals: 1E18,
-  number: 0,
-  allocation: 0,
-  async setAllocation(vault, game, allocation) {
-    this.allocation = allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation)
-  },
-  async getDeltaAllocationTEST(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  },
-  async getAllocation(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  }
-})
-.set('beta_usdt_01', {
+}))
+.set('beta_usdt_01', new ProtocolVault({
   name: 'beta_usdt_01',
   protocolToken: betaUSDT,
   underlyingToken: usdt,
   govToken: beta, 
   decimals: 1E6,
-  number: 0,
-  allocation: 0,
-  async setAllocation(vault, game, allocation) {
-    this.allocation = allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation)
-  },
-  async getDeltaAllocationTEST(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  },
-  async getAllocation(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  }
-})
-.set('idle_usdc_01', {
+}))
+.set('idle_usdc_01', new ProtocolVault({
   name: 'idle_usdc_01',
   protocolToken: idleUSDC,
   underlyingToken: usdc,
   govToken: idle, 
   decimals: 1E6, /////// check
-  number: 0,
-  allocation: 0,
-  async setAllocation(vault, game, allocation) {
-    this.allocation = allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation)
-  },
-  async getDeltaAllocationTEST(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  },
-  async getAllocation(vault) {
-    return await vault.getDeltaAllocationTEST(this.number);
-  }
-});
+}));
 
 
 // export const allProtocols = [

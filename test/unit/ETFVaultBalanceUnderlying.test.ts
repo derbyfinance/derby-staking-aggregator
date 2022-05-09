@@ -46,6 +46,7 @@ describe("Testing balanceUnderlying for every single protocol", async () => {
 
     for (const protocol of allProtocols.values()) {
       const {name, protocolToken, underlyingToken, govToken, decimals} = protocol;
+      console.log(protocol)
       protocol.number = await controllerAddProtocol(
         controller, 
         name, 
@@ -69,12 +70,12 @@ describe("Testing balanceUnderlying for every single protocol", async () => {
   it("Should", async function() {
     bToken = erc20(busdc);
     console.log(`-------------------------Deposit-------------------------`); 
+    console.log(allProtocols.get('beta_usdc_01')?.name)
+    console.log(allProtocols.get('beta_usdc_01')?.govToken)
     await allProtocols.get('beta_usdc_01')?.setAllocation(vault, game, 150);
     const allocationTester = await allProtocols.get('beta_usdc_01')?.getDeltaAllocationTEST(vault);
     console.log(allProtocols.get('beta_usdc_01'))
     console.log({allocationTester})
 
   });
-
-
 });
