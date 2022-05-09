@@ -11,8 +11,12 @@ export const usdt = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 /// Protocols
 // Yearn
 export const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE";
+export const yearnDAI = "0xdA816459F1AB5631232FE5e97a05BBBb94970c95";
+export const yearnUSDT = "0x7Da96a3891Add058AdA2E826306D812C638D87a7";
+// compound
 export const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 export const compoundDAI = "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643";
+export const compoundUSDT = "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9"; // 8
 // Aave
 export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
 export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
