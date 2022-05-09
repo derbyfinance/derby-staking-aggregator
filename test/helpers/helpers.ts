@@ -5,6 +5,7 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from "typechain-types";
 import { Result } from "ethers/lib/utils";
+import { ProtocolVault } from "./addresses";
 
 const provider = waffle.provider;
 
@@ -49,33 +50,34 @@ export const controllerAddProtocol = async (
   controller: Controller, 
   name: string, 
   ETFnumber: number,
-  provider: string, 
+  providerAddr: string, 
   protocolToken: string,
   protocolUnderlying: string,
   govToken: string,
   uScale: string,
 ) => {
-  const tx = await controller.addProtocol(name, ETFnumber, provider, protocolToken, protocolUnderlying, govToken, uScale)
+  const tx = await controller.addProtocol(name, ETFnumber, providerAddr, protocolToken, protocolUnderlying, govToken, uScale)
   const receipt = await tx.wait()
   const { protocolNumber } = receipt.events![0].args as Result
-  
+
   return Number(protocolNumber)
 }
 
-export const erc20 = async (tokenAddress: string) => {
+
+export const erc20 = (tokenAddress: string) => {
   return new ethers.Contract(tokenAddress, erc20ABI, provider);
 }
 
-export const cToken = async (tokenAddress: string) => {
+export const cToken = (tokenAddress: string) => {
   return new ethers.Contract(tokenAddress, cTokenABI, provider);
 }
 
 // FORMATTING
-export const parseEther = (amount: string) => ethers.utils.parseEther(amount)
-export const formatEther = (amount: string | BigNumber) => ethers.utils.formatEther(amount)
-export const parseUnits = (amount: string, number: number) => ethers.utils.parseUnits(amount, number)
-export const formatUnits = (amount: string | BigNumber, number: number) => ethers.utils.formatUnits(amount, number)
-export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6)
-export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6)
-export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18)
-export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18)
+export const parseEther = (amount: string) => ethers.utils.parseEther(amount);
+export const formatEther = (amount: string | BigNumber) => ethers.utils.formatEther(amount);
+export const parseUnits = (amount: string, number: number) => ethers.utils.parseUnits(amount, number);
+export const formatUnits = (amount: string | BigNumber, number: number) => ethers.utils.formatUnits(amount, number);
+export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6);
+export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6);
+export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18);
+export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18);

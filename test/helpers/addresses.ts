@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 
-import { Interface } from "ethers/lib/utils";
+import { BigNumber, Signer } from "ethers";
+import { ETFVaultMock } from "typechain-types";
 
 // Stable coins
 export const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
@@ -62,28 +63,98 @@ export interface ProtocolVault {
   underlyingToken: string;
   govToken: string;
   decimals: number;
+  number: number;
+  allocation: number;
+  setAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void>;
+  getDeltaAllocationTEST(vault: ETFVaultMock) : Promise<BigNumber>;
+  getAllocation(vault: ETFVaultMock) : Promise<BigNumber>;
 }
 
-export const allProtocolVaults = [
-  {
-    name: 'beta_usdc_01',
-    protocolToken: betaUSDC,
-    underlyingToken: usdc,
-    govToken: beta, 
-    decimals: 1E6
+export const allProtocols = new Map<string, ProtocolVault>();
+
+allProtocols
+.set('beta_usdc_01', {
+  name: 'beta_usdc_01',
+  protocolToken: betaUSDC,
+  underlyingToken: usdc,
+  govToken: beta, 
+  decimals: 1E6,
+  number: 0,
+  allocation: 0,
+  async setAllocation(vault, game, allocation) {
+    this.allocation = allocation;
+    await vault.connect(game).setDeltaAllocations(this.number, allocation)
   },
-  {
-    name: 'beta_dai_01',
-    protocolToken: betaDAI,
-    underlyingToken: dai,
-    govToken: beta, 
-    decimals: 1E18
+  async getDeltaAllocationTEST(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
   },
-  {
-    name: 'beta_usdt_01',
-    protocolToken: betaUSDT,
-    underlyingToken: usdt,
-    govToken: beta, 
-    decimals: 1E6
+  async getAllocation(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  }
+})
+.set('beta_dai_01', {
+  name: 'beta_dai_01',
+  protocolToken: betaDAI,
+  underlyingToken: dai,
+  govToken: beta, 
+  decimals: 1E18,
+  number: 0,
+  allocation: 0,
+  async setAllocation(vault, game, allocation) {
+    this.allocation = allocation;
+    await vault.connect(game).setDeltaAllocations(this.number, allocation)
   },
-]
+  async getDeltaAllocationTEST(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  },
+  async getAllocation(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  }
+})
+.set('beta_usdt_01', {
+  name: 'beta_usdt_01',
+  protocolToken: betaUSDT,
+  underlyingToken: usdt,
+  govToken: beta, 
+  decimals: 1E6,
+  number: 0,
+  allocation: 0,
+  async setAllocation(vault, game, allocation) {
+    this.allocation = allocation;
+    await vault.connect(game).setDeltaAllocations(this.number, allocation)
+  },
+  async getDeltaAllocationTEST(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  },
+  async getAllocation(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  }
+})
+.set('idle_usdc_01', {
+  name: 'idle_usdc_01',
+  protocolToken: idleUSDC,
+  underlyingToken: usdc,
+  govToken: idle, 
+  decimals: 1E6, /////// check
+  number: 0,
+  allocation: 0,
+  async setAllocation(vault, game, allocation) {
+    this.allocation = allocation;
+    await vault.connect(game).setDeltaAllocations(this.number, allocation)
+  },
+  async getDeltaAllocationTEST(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  },
+  async getAllocation(vault) {
+    return await vault.getDeltaAllocationTEST(this.number);
+  }
+});
+
+
+// export const allProtocols = [
+//   betaUSDC01,
+//   betaDAI01,
+//   betaUSDT01,
+//   idleUSDC01
+// ]
+
