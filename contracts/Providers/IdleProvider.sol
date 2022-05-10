@@ -95,7 +95,7 @@ contract IdleProvider is IProvider {
   function balanceUnderlying(address _address, address _iToken) public view override returns(uint256) {
     uint256 balanceShares = balance(_address, _iToken);
     uint256 price = exchangeRate(_iToken);
-    return balanceShares * price;
+    return balanceShares * price / 1E18;
   }
 
   /// @notice Calculates how many shares are equal to the amount

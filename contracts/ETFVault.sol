@@ -342,7 +342,6 @@ contract ETFVault is VaultToken {
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
-    console.log("protocolUScale %s", protocolUScale);
     uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
     console.log("balanceUnderlying %s", underlyingBalance);
     return underlyingBalance;

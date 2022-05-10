@@ -9,7 +9,7 @@ import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployC
 import { allProtocols, usdc, betaUSDC as busdc, dai, usdt, comptroller} from "../helpers/addresses";
 import { rebalanceETF } from "../helpers/vaultHelpers";
 
-const amount = 1_000_000;
+const amount = 10_000_000;
 // const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const name = 'DerbyUSDC';
@@ -20,7 +20,9 @@ const decimals = 6;
 const uScale = 1E6;
 const gasFeeLiquidity = 10_000 * uScale;
 
-describe("Testing balanceUnderlying for every single protocol", async () => {
+const getRandomAllocation = () => Math.floor(Math.random() * 10_000);
+
+describe("Testing balanceUnderlying for every single protocol vault", async () => {
   let vault: ETFVaultMock, yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, homoraProvider: HomoraProvider, betaProvider: BetaProvider, idleProvider: IdleProvider, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, bToken: Contract, daoAddr: string, gameAddr: string, protocols: any;
 
   beforeEach(async function() {
@@ -78,25 +80,22 @@ describe("Testing balanceUnderlying for every single protocol", async () => {
   });
 
   it("Should", async function() {
-    bToken = erc20(busdc);
     console.log(`-------------------------Deposit-------------------------`); 
-    await vault.depositETF(gameAddr, amountUSDC);
-
     for (const protocol of allProtocols.values()) {
-      const randomAllocation = Math.floor(Math.random() * 100);
-      await protocol.setDeltaAllocation(vault, game, randomAllocation);
+      await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     }
+    
+    await vault.depositETF(gameAddr, amountUSDC);
+    const gasUsed = await rebalanceETF(vault);
 
-    await rebalanceETF(vault);
-
+    console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
+    
     // for (const protocol of allProtocols.values()) {
     //   const balance = await protocol.balanceUnderlying(vault);
-    //   console.log({balance})
     // }
-
-    // for (const protocol of allProtocols.values()) {
-    //   console.log(await protocol.getDeltaAllocationTEST(vault));
-    // }
+    
+    const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
+    console.log(totalAllocatedTokens);
 
   });
 });

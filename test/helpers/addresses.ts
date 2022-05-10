@@ -1,8 +1,6 @@
 /* eslint-disable no-useless-constructor */
 /* eslint-disable prettier/prettier */
-
-import { BigNumber, Signer } from "ethers";
-import { ETFVaultMock } from "typechain-types";
+import { ProtocolVault } from "./protocolVaultClass";
 
 // Stable coins
 export const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
@@ -62,48 +60,6 @@ export const ChainlinkGasPrice = "0x169e633a2d1e6c10dd91238ba11c4a708dfef37c";
 
 export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
 
-export interface IProtocolVault {
-  name: string;
-  protocolToken: string;
-  underlyingToken: string;
-  govToken: string;
-  decimals: number;
-}
-
-class ProtocolVault {
-  name: string;
-  protocolToken: string;
-  underlyingToken: string;
-  govToken: string;
-  decimals: number;
-  number: number = 0;
-  allocation: number = 0;
-
-  constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
-    this.name = name;
-    this.protocolToken = protocolToken;
-    this.underlyingToken = underlyingToken;
-    this.govToken = govToken;
-    this.decimals = decimals;
-  }
-
-  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
-    this.allocation = allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation)
-  };
-
-  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<BigNumber> {
-    return await vault.getDeltaAllocationTEST(this.number);
-  };
-
-  async getAllocation(vault: ETFVaultMock): Promise<BigNumber> {
-    return await vault.getDeltaAllocationTEST(this.number);
-  };
-
-  async balanceUnderlying(vault: ETFVaultMock): Promise<BigNumber> {
-    return await vault.balanceUnderlying(this.number);
-  };
-}
 
 export const allProtocols = new Map<string, ProtocolVault>();
 
