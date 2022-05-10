@@ -197,6 +197,7 @@ contract ETFVault is VaultToken {
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocationAndPrice(i);
+      console.log("allocation %s", uint(currentAllocations[i]));
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
@@ -280,7 +281,7 @@ contract ETFVault is VaultToken {
         vaultCurrencyAddr, 
         protocol.underlying,
         uScale,
-        protocol.uScale,
+        controller.underlyingUScale(protocol.underlying),
         controller.curveIndex(vaultCurrencyAddr), 
         controller.curveIndex(protocol.underlying),
         controller.curve3Pool(),
@@ -309,12 +310,12 @@ contract ETFVault is VaultToken {
 
       uint256 amountReceived = controller.withdraw(ETFnumber, _protocolNum, address(this), shares);
 
-      if (protocol. underlying != vaultCurrencyAddr) {
+      if (protocol.underlying != vaultCurrencyAddr) {
         _amount = Swap.swapStableCoins(
           amountReceived, 
           protocol.underlying,
           vaultCurrencyAddr, 
-          protocol.uScale,
+          controller.underlyingUScale(protocol.underlying),
           uScale,
           controller.curveIndex(protocol.underlying), 
           controller.curveIndex(vaultCurrencyAddr),
@@ -341,8 +342,9 @@ contract ETFVault is VaultToken {
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
+    console.log("protocolUScale %s", protocolUScale);
     uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
-
+    console.log("balanceUnderlying %s", underlyingBalance);
     return underlyingBalance;
   }
 

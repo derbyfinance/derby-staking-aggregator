@@ -11,32 +11,32 @@ export const usdt = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
 
 /// Protocols
 // Yearn
-export const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE";
-export const yearnDAI = "0xdA816459F1AB5631232FE5e97a05BBBb94970c95";
-export const yearnUSDT = "0x7Da96a3891Add058AdA2E826306D812C638D87a7";
+export const yearnUSDC = "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE"; // 6
+export const yearnDAI = "0xdA816459F1AB5631232FE5e97a05BBBb94970c95"; // 18
+export const yearnUSDT = "0x7Da96a3891Add058AdA2E826306D812C638D87a7"; // 6
 // compound
-export const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
-export const compoundDAI = "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643";
+export const compoundUSDC = "0x39AA39c021dfbaE8faC545936693aC917d5E7563"; // 8
+export const compoundDAI = "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"; // 8
 export const compoundUSDT = "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9"; // 8
 // Aave
-export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
-export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811";
-export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
+export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C"; // 6
+export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3"; // 18
+export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811"; // 6
 // TrueFi
 export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742";
 export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
 // Homora not really used
-export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2";
-export const homoraUSDT = "0x020eDC614187F9937A1EfEeE007656C6356Fb13A";
-export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439";
+export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2"; // 8
+export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439"; // 8
+export const homoraUSDT = "0x020eDC614187F9937A1EfEeE007656C6356Fb13A"; // 8
 // Idle
 export const idleUSDC = "0x5274891bEC421B39D23760c04A6755eCB444797C"; // 18 
-export const idleUSDT = "0xF34842d05A1c888Ca02769A633DF37177415C2f8";
-export const idleDAI = "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4";
+export const idleDAI = "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4"; // 18
+export const idleUSDT = "0xF34842d05A1c888Ca02769A633DF37177415C2f8"; // 18
 // beta
 export const betaUSDC = "0xC02392336420bb54CE2Da8a8aa4B118F2dceeB04"; // 6
-export const betaUSDT = "0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC"; // 6
 export const betaDAI = "0x70540A3178290498B0C6d843Fa7ED97cAe69B86c"; // 18
+export const betaUSDT = "0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC"; // 6
 
 // Gov Tokens
 export const aave = "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
@@ -87,7 +87,7 @@ class ProtocolVault {
     this.decimals = decimals;
   }
 
-  async setAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
+  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
     this.allocation = allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation)
   };
@@ -99,38 +99,140 @@ class ProtocolVault {
   async getAllocation(vault: ETFVaultMock): Promise<BigNumber> {
     return await vault.getDeltaAllocationTEST(this.number);
   };
+
+  async balanceUnderlying(vault: ETFVaultMock): Promise<BigNumber> {
+    return await vault.balanceUnderlying(this.number);
+  };
 }
 
 export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols
-.set('beta_usdc_01', new ProtocolVault({
-  name: 'beta_usdc_01',
-  protocolToken: betaUSDC,
+.set('yearn_usdc_01', new ProtocolVault({
+  name: 'yearn_usdc_01',
+  protocolToken: yearnUSDC,
   underlyingToken: usdc,
-  govToken: beta, 
+  govToken: yearn, 
   decimals: 1E6,
 }))
-.set('beta_dai_01', new ProtocolVault({
-  name: 'beta_dai_01',
-  protocolToken: betaDAI,
+.set('yearn_dai_01', new ProtocolVault({
+  name: 'yearn_dai_01',
+  protocolToken: yearnDAI,
   underlyingToken: dai,
-  govToken: beta, 
+  govToken: yearn, 
   decimals: 1E18,
 }))
-.set('beta_usdt_01', new ProtocolVault({
-  name: 'beta_usdt_01',
-  protocolToken: betaUSDT,
+.set('yearn_usdt_01', new ProtocolVault({
+  name: 'yearn_usdt_01',
+  protocolToken: yearnUSDT,
   underlyingToken: usdt,
-  govToken: beta, 
+  govToken: yearn, 
   decimals: 1E6,
+}))
+.set('compound_usdc_01', new ProtocolVault({
+  name: 'compound_usdc_01',
+  protocolToken: compoundUSDC,
+  underlyingToken: usdc,
+  govToken: compToken, 
+  decimals: 1E8, 
+}))
+.set('compound_dai_01', new ProtocolVault({
+  name: 'compound_dai_01',
+  protocolToken: compoundDAI,
+  underlyingToken: dai,
+  govToken: compToken, 
+  decimals: 1E8, 
+}))
+.set('compound_usdt_01', new ProtocolVault({
+  name: 'compound_usdt_01',
+  protocolToken: compoundUSDT,
+  underlyingToken: usdt,
+  govToken: compToken, 
+  decimals: 1E8, 
+}))
+.set('aave_usdc_01', new ProtocolVault({
+  name: 'aave_usdc_01',
+  protocolToken: aaveUSDC,
+  underlyingToken: usdc,
+  govToken: aave, 
+  decimals: 1E6, 
+}))
+.set('aave_dai_01', new ProtocolVault({
+  name: 'aave_dai_01',
+  protocolToken: aaveDAI,
+  underlyingToken: dai,
+  govToken: aave, 
+  decimals: 1E18, 
+}))
+.set('aave_usdt_01', new ProtocolVault({
+  name: 'aave_usdt_01',
+  protocolToken: aaveUSDT,
+  underlyingToken: usdt,
+  govToken: aave, 
+  decimals: 1E6, 
+}))
+.set('homora_usdc_01', new ProtocolVault({
+  name: 'homora_usdc_01',
+  protocolToken: homoraUSDC,
+  underlyingToken: usdc,
+  govToken: alpha, 
+  decimals: 1E8, 
+}))
+.set('homora_dai_01', new ProtocolVault({
+  name: 'homora_dai_01',
+  protocolToken: homoraDAI,
+  underlyingToken: dai,
+  govToken: alpha, 
+  decimals: 1E8, 
+}))
+.set('homora_usdt_01', new ProtocolVault({
+  name: 'homora_usdt_01',
+  protocolToken: homoraUSDT,
+  underlyingToken: usdt,
+  govToken: alpha, 
+  decimals: 1E8, 
 }))
 .set('idle_usdc_01', new ProtocolVault({
   name: 'idle_usdc_01',
   protocolToken: idleUSDC,
   underlyingToken: usdc,
   govToken: idle, 
-  decimals: 1E6, /////// check
+  decimals: 1E18, 
+}))
+.set('idle_dai_01', new ProtocolVault({
+  name: 'idle_dai_01',
+  protocolToken: idleDAI,
+  underlyingToken: dai,
+  govToken: idle, 
+  decimals: 1E18, 
+}))
+.set('idle_usdt_01', new ProtocolVault({
+  name: 'idle_usdt_01',
+  protocolToken: idleUSDT,
+  underlyingToken: usdt,
+  govToken: idle, 
+  decimals: 1E18, 
+}))
+.set('beta_usdc_01', new ProtocolVault({
+  name: 'beta_usdc_01',
+  protocolToken: betaUSDC,
+  underlyingToken: usdc,
+  govToken: beta, 
+  decimals: 1E6, 
+}))
+.set('beta_dai_01', new ProtocolVault({
+  name: 'beta_dai_01',
+  protocolToken: betaDAI,
+  underlyingToken: dai,
+  govToken: beta, 
+  decimals: 1E18, 
+}))
+.set('beta_usdt_01', new ProtocolVault({
+  name: 'beta_usdt_01',
+  protocolToken: betaUSDT,
+  underlyingToken: usdt,
+  govToken: beta, 
+  decimals: 1E6, 
 }));
 
 

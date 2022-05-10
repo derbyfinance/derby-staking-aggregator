@@ -11,6 +11,8 @@ import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
+import "hardhat/console.sol";
+
 library Swap {
   using SafeERC20 for IERC20;
 
@@ -37,9 +39,8 @@ library Swap {
     int128 _indexTokenOut,
     address _curve3Pool,
     uint256 _curvePoolFee
-  ) internal returns(uint256) {        
+  ) internal returns(uint256) {  
     uint256 amountOutMin = (_amount * (10000 - _curvePoolFee) / 10000) * _tokenOutUScale / _tokenInUScale;
-
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));

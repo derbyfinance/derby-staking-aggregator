@@ -52,7 +52,7 @@ describe("Testing Idle provider", async () => {
 
   it("Should deposit and withdraw USDC to idle through controller", async function() {
     iToken = await erc20(iusdc);
-    console.log(`-------------------------Deposit-------------------------`); 
+    console.log(`-------------------------Deposit-------------------  ------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC);

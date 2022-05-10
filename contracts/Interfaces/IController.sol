@@ -94,6 +94,8 @@ interface IController {
 
   function addCurveIndex(address _token, int128 _index) external;
 
+  function underlyingUScale(address _stable) external view returns(uint256);
+
   function setUniswapRouter(address _uniswapRouter) external;
 
   function setUniswapQuoter(address _uniswapQuoter) external;
