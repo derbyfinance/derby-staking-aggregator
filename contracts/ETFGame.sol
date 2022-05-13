@@ -28,6 +28,9 @@ contract ETFGame is ERC721 {
     // address of DAO governance contract
     address public governed;
 
+    // controller
+    IController public controller;
+
     modifier onlyDao {
         require(msg.sender == governed, "ETFGame: only DAO");
         _;
@@ -43,12 +46,14 @@ contract ETFGame is ERC721 {
         string memory symbol_, 
         address _xaverTokenAddress, 
         address _routerAddress,
-        address _governed
+        address _governed,
+        address _controller
     ) 
         ERC721(name_, symbol_) {
         xaverTokenAddress = _xaverTokenAddress;
         routerAddress = _routerAddress;
         governed = _governed;
+        controller = IController(_controller);
     }
 
     // latest basket id
@@ -72,16 +77,16 @@ contract ETFGame is ERC721 {
         uint256 ETFnumber;
 
         // last period when this Basket got rebalanced
-        uint256 lastAdjustmentPeriod;
+        uint256 lastRebalancingPeriod;
 
         // nr of total allocated tokens 
         uint256 nrOfAllocatedTokens;
 
         // total build up rewards
-        uint256 totalUnRedeemedRewards;
+        int256 totalUnRedeemedRewards;
 
         // total redeemed rewards
-        uint256 totalRedeemedRewards;
+        int256 totalRedeemedRewards;
 
         // allocations per period
         mapping(uint256 => uint256) allocations;
@@ -102,6 +107,20 @@ contract ETFGame is ERC721 {
         return baskets[_basketId].allocations[_protocolId];
     }
 
+    /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @return int256 Total unredeemed rewards. 
+    function basketUnredeemedRewards(uint256 _basketId) public onlyBasketOwner(_basketId) view returns(int256){
+        return baskets[_basketId].totalUnRedeemedRewards;
+    }
+
+    /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this. 
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @return int256 Total redeemed rewards. 
+    function basketRedeemedRewards(uint256 _basketId) public onlyBasketOwner(_basketId) view returns(int256){
+        return baskets[_basketId].totalRedeemedRewards;
+    }
+
     /// @notice Adding a vault to the game.
     /// @param _ETFVaultAddress Address of the vault which is added.
     function addETF(address _ETFVaultAddress) public onlyDao {
@@ -116,14 +135,14 @@ contract ETFGame is ERC721 {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
         _safeMint(msg.sender, latestBasketId);
         baskets[latestBasketId].ETFnumber = _ETFnumber;
-        baskets[latestBasketId].lastAdjustmentPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+        baskets[latestBasketId].lastRebalancingPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
         latestBasketId++;
     }
 
     /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated. 
     /// @param _user User address from which the xaver tokens are locked inside this contract.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
+    /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract. 
     function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransferFrom(_user, address(this), _lockedTokenAmount);
@@ -132,6 +151,7 @@ contract ETFGame is ERC721 {
 
         baskets[_basketId].nrOfAllocatedTokens += _lockedTokenAmount;
     }
+    
 
     /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.  
     /// @param _user User address to which the xaver tokens are transferred from this contract.
@@ -151,7 +171,9 @@ contract ETFGame is ERC721 {
     // rebalances an existing Basket
     function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
         require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
-        
+
+        addToTotalRewards(_basketId);
+
         uint256 totalNewAllocatedTokens = 0;
         int256 deltaAllocation;
         for (uint256 i = 0; i < _allocations.length; i++) {
@@ -162,11 +184,14 @@ contract ETFGame is ERC721 {
             baskets[_basketId].allocations[i] = _allocations[i];
         }
 
-        if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
-        else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+        if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) {
+            unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
+        }
+        else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) {
+            lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+        }
 
-        addToTotalRewards(_basketId);
-        baskets[_basketId].lastAdjustmentPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
+        baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
     }
 
     // // redeem funds from basket
@@ -184,48 +209,47 @@ contract ETFGame is ERC721 {
 
     // }
 
-    function calculateBasketgrowthNominator(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(int256) {
+    /// @notice calculates the growth of the basket
+    /// @dev actual formula: (sum(over i) (lockedTokens(i)/totalLockedTokensUser * (price(i, t) - price(i, t-1))/(price(i, t-1))) + 1
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @return int256 the actual growth factor.
+    function calculateBasketgrowth(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(int256) {
         int256 basketGrowthNominator = 0;
+        int256 basketGrowth = 0;
         uint256 ETFnumber = baskets[_basketId].ETFnumber;
         for (uint256 i = 0; i < IController(routerAddress).latestProtocolId(ETFnumber); i++) {
             if (baskets[_basketId].allocations[i] == 0) continue;
-            basketGrowthNominator += int256(baskets[_basketId].allocations[i]) * 
-                int256(IETFVault(ETFVaults[ETFnumber]).price() - 
-                IETFVault(ETFVaults[ETFnumber]).historicalPrices(i, baskets[_basketId].lastAdjustmentPeriod));
+            basketGrowthNominator = int256(baskets[_basketId].allocations[i] * 
+                (controller.exchangeRate(ETFnumber, i) - 
+                IETFVault(ETFVaults[ETFnumber]).historicalPrices(baskets[_basketId].lastRebalancingPeriod, i)) * 2**64);
+            basketGrowth += basketGrowthNominator / 
+                int256(IETFVault(ETFVaults[ETFnumber]).historicalPrices(baskets[_basketId].lastRebalancingPeriod, i) * 
+                baskets[_basketId].nrOfAllocatedTokens);
         }
-        return basketGrowthNominator;
-    }
-
-    function calculateBasketgrowthDenominator(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(int256) {
-        int256 basketGrowthDenominator = 0;
-        uint256 ETFnumber = baskets[_basketId].ETFnumber;
-        for (uint256 i = 0; i < IController(routerAddress).latestProtocolId(ETFnumber); i++) {
-            if (baskets[_basketId].allocations[i] == 0) continue;
-            basketGrowthDenominator += int256(baskets[_basketId].nrOfAllocatedTokens) - 
-                int256(IETFVault(ETFVaults[ETFnumber]).historicalPrices(i, baskets[_basketId].lastAdjustmentPeriod));
-        }
-        return basketGrowthDenominator;       
+        return basketGrowth + 2**64;
     }
 
     // add to total rewards, formula of calculating the game rewards here
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
-        uint256 amount = 0;
-        uint256 ETFnumber = baskets[_basketId].ETFnumber;
-        uint256 currentRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod();
-        int128 g = int128(calculateBasketgrowthNominator(_basketId) * 2**64 / calculateBasketgrowthDenominator(_basketId) + 2**64);
+        if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
+        int256 amount = 0;
+        address ETFaddress = ETFVaults[baskets[_basketId].ETFnumber];
+        uint256 currentRebalancingPeriod = IETFVault(ETFaddress).rebalancingPeriod();
+        uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
+
+        if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
+        int128 g = int128(calculateBasketgrowth(_basketId));
         int128 log2 = ABDKMath64x64.log_2(g);
-        int128 n = ABDKMath64x64.fromUInt(
-            currentRebalancingPeriod - baskets[_basketId].lastAdjustmentPeriod
-        );
-        uint256 growthPerPeriod = ABDKMath64x64.toUInt(ABDKMath64x64.exp_2(log2 / n) - 2**64); // (g + 1) ** (1/n) - 1 in 64.64-bit fixed point number
+        int128 n = ABDKMath64x64.fromUInt(currentRebalancingPeriod - baskets[_basketId].lastRebalancingPeriod);
+        int256 growthPerPeriod = int256(ABDKMath64x64.exp_2(log2 * 2**64 / n) - 2**64); // (g + 1) ** (1/n) - 1 in 64.64-bit fixed point number
+        uint256 cumTVLPerTokenEnd = IETFVault(ETFaddress).cumUnderlying(currentRebalancingPeriod) / 
+            uint256(IETFVault(ETFaddress).cumLockedTokens(currentRebalancingPeriod));
+        uint256 cumTVLPerTokenBegin = IETFVault(ETFaddress).cumUnderlying(lastRebalancingPeriod) / 
+            uint256(IETFVault(ETFaddress).cumLockedTokens(lastRebalancingPeriod));
 
-        uint256 cumTVLPerTokenEnd = IETFVault(ETFVaults[ETFnumber]).cummulativeUnderlying(currentRebalancingPeriod) / 
-            uint256(IETFVault(ETFVaults[ETFnumber]).cummulativeLockedTokens(currentRebalancingPeriod));
-        uint256 cumTVLPerTokenBegin = IETFVault(ETFVaults[ETFnumber]).cummulativeUnderlying(baskets[_basketId].lastAdjustmentPeriod) / 
-            uint256(IETFVault(ETFVaults[ETFnumber]).cummulativeLockedTokens(baskets[_basketId].lastAdjustmentPeriod));
-
-        amount = baskets[_basketId].nrOfAllocatedTokens * (cumTVLPerTokenEnd - cumTVLPerTokenBegin) * growthPerPeriod * 
-            IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).performanceFee();
+        amount = int256(baskets[_basketId].nrOfAllocatedTokens);
+        amount = amount * int256(cumTVLPerTokenEnd - cumTVLPerTokenBegin);
+        amount = amount * growthPerPeriod * int256(IETFVault(ETFaddress).performanceFee()) / 100;
         baskets[_basketId].totalUnRedeemedRewards += amount;
     }
 }

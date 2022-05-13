@@ -58,7 +58,7 @@ contract ETFVault is VaultToken {
   // historical total locked tokens
   mapping(uint256 => int256) public cumLockedTokens;
 
-  // historical prices
+  // historical prices, first index is rebalancing period, second index is protocol id.
   mapping(uint256 => mapping(uint256 => uint256)) public historicalPrices;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
@@ -120,7 +120,7 @@ contract ETFVault is VaultToken {
       shares = amount; 
     }
     
-    _mint(_buyer, shares);
+    _mint(_buyer, shares); 
   }
 
   /// @notice Withdraw from ETFVault
@@ -211,9 +211,10 @@ contract ETFVault is VaultToken {
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(ETFnumber));
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
+      historicalPrices[rebalancingPeriod][i] = price(i);
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
-      setAllocationAndPrice(i);
+      setAllocation(i);
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
@@ -262,12 +263,11 @@ contract ETFVault is VaultToken {
     return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
   }
 
-  /// @notice Helper function to set allocations and last price from protocols
+  /// @notice Helper function to set allocations
   /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
-  function setAllocationAndPrice(uint256 _i) internal {
+  function setAllocation(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
-    historicalPrices[rebalancingPeriod][_i] = price(_i);
     require(currentAllocations[_i] >= 0, "Current Allocation underflow");
   }
 

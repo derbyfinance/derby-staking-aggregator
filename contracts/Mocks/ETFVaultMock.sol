@@ -58,6 +58,14 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     return performanceFee;
   }
 
+  function getETFGame() external view returns(address) {
+    return ETFgame;
+  }
+
+  function getETFnumber() external view returns(uint256) {
+    return ETFnumber;
+  }
+  
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }

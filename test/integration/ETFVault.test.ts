@@ -4,7 +4,7 @@
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
-import type { ETFVaultMock } from '../../typechain-types';
+import type { ETFVaultMock, ETFGameMock } from '../../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
 import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
@@ -19,6 +19,7 @@ const amountUSDC = parseUSDC(amount.toString());
 
 describe("Testing ETFVault, integration test", async () => {
   let vaultMock: ETFVaultMock,
+  gameMock: ETFGameMock,
   user: Signer,
   dao: Signer,
   userAddr: string,
@@ -41,7 +42,8 @@ describe("Testing ETFVault, integration test", async () => {
       allProtocols,
       IUSDc,,,,,
       controller,,,,,,,
-      dao
+      dao,
+      gameMock
     ] = await beforeEachETFVault(amountUSDC)
   });
 

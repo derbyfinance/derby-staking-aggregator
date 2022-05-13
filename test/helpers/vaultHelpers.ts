@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
-import type { ETFVaultMock, Controller } from '../../typechain-types';
+import type { ETFVaultMock, Controller, ETFGameMock } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { comptroller } from "./addresses";
 import { Result } from 'ethers/lib/utils';
@@ -28,6 +28,11 @@ export function setDeltaAllocations(signer: Signer, vault: ETFVaultMock, protoco
   return Promise.all(protocols.map((protocol: Protocol) => 
     vault.connect(signer).setDeltaAllocations(protocol.number, protocol.allocation))
 )}
+
+export function setDeltaAllocationsWithGame(vault: ETFVaultMock, game: ETFGameMock, protocols: Protocol[]) {
+  return Promise.all(protocols.map((protocol: Protocol) => 
+    game.setDeltaAllocations(vault.address, protocol.number, protocol.allocation)))
+}
 
 export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) =>

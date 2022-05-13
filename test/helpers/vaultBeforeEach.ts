@@ -6,9 +6,9 @@ import { BigNumber, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
 import { AaveProvider, CompoundProvider, YearnProvider, ETFGame } from "typechain-types";
 import { aave, aaveUSDC, aaveUSDT, compoundDAI, compoundUSDC, compToken, comptroller, CompWhale, curve3Pool, dai, usdc, usdt, yearn, yearnUSDC } from "./addresses";
-import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployController, deployYearnProvider } from "./deploy";
+import { deployAaveProvider, deployCompoundProvider, deployETFVaultMock, deployController, deployYearnProvider, deployETFGameMock, deployXaverToken } from "./deploy";
 import { deployAaveProviderMock, deployYearnProviderMock, deployCompoundProviderMock } from "./deployMocks";
-import { getUSDCSigner, erc20, controllerAddProtocol, getWhale, } from './helpers';
+import { getUSDCSigner, erc20, controllerAddProtocol, getWhale, parseEther } from './helpers';
 
 export interface Protocol {
   number: number;
@@ -23,11 +23,12 @@ const ETFnumber = 0;
 const decimals = 6;
 const uScale = 1E6;
 const gasFeeLiquidity = 10_000 * uScale;
+const totalXaverSupply = parseEther(1E8.toString()); 
 
 export async function beforeEachETFVault(
   amountUSDC: BigNumber,
   providerMocks: boolean = false,
-  // gameContract: ETFGame
+  gameMockAsSigner: boolean = false
 ) {
   // stock protocols
   const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
@@ -49,7 +50,15 @@ export async function beforeEachETFVault(
     user.getAddress(),
   ]);
   const controller = await deployController(dao, daoAddr);
-  const vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+  const xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
+  const gameMock = await deployETFGameMock(user, name, symbol, xaverToken.address, controller.address, daoAddr, controller.address);  
+  await controller.connect(dao).addGame(gameMock.address);
+  let vaultMock = undefined;
+  if (gameMockAsSigner) {
+    vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
+  } else {
+    vaultMock = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+  }
   
   // Deploy all providers and Vault
   if (!providerMocks) {
@@ -101,8 +110,8 @@ export async function beforeEachETFVault(
     controller.addCurveIndex(dai, 0),
     controller.addCurveIndex(usdc, 1),
     controller.addCurveIndex(usdt, 2),
-    IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(4)),
-    IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(4)),
+    IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
+    IUSDc.connect(user).approve(vaultMock.address, amountUSDC.mul(10)),
   ]);
 
   return Promise.all([
@@ -123,7 +132,9 @@ export async function beforeEachETFVault(
     yearnProvider as YearnProvider,
     compoundProvider as CompoundProvider,
     aaveProvider as AaveProvider,
-    dao
+    dao,
+    gameMock,
+    xaverToken
   ]);
 };
 

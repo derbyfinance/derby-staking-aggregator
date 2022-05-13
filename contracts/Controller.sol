@@ -20,6 +20,7 @@ contract Controller is IController {
   mapping(address => int128) public curveIndex;
 
   address public dao;
+  address public game;
   address public curve3Pool;
   address public uniswapRouter;
   address public uniswapQuoter;
@@ -54,6 +55,11 @@ contract Controller is IController {
 
   modifier onlyVault {
     require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
+    _;
+  }
+
+  modifier onlyVaultOrGame {
+    require(vaultWhitelist[msg.sender] == true || msg.sender == game, "Controller: only Vault or Game");
     _;
   }
 
@@ -106,7 +112,7 @@ contract Controller is IController {
   function exchangeRate(
     uint256 _ETFnumber,
     uint256 _protocolNumber
-  ) external override onlyVault view returns(uint256) {
+  ) external override onlyVaultOrGame view returns(uint256) {
       return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
               .exchangeRate(protocolInfo[_ETFnumber][_protocolNumber].LPToken);
   }
@@ -223,6 +229,12 @@ contract Controller is IController {
   /// @param _vault ETFVault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;
+  }
+
+  /// @notice Add game address to Controller
+  /// @param _game game address
+  function addGame(address _game) external onlyDao {
+    game = _game;
   }
 
   /// @notice Set the Uniswap Router address

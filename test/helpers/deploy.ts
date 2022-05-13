@@ -102,10 +102,10 @@ export const deployXaverToken = (deployerSign: Signer, name: string, symbol: str
     return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol, totalXaverSupply])) as Promise<XaverToken>;
 };
 
-export const deployETFGame = (deployerSign: Signer, XaverTokenAddress: string, routerAddress: string, governedAddress: string): Promise<ETFGame> => {
-    return (deployContract(deployerSign, ETFGameArtifact, [XaverTokenAddress, routerAddress, governedAddress])) as Promise<ETFGame>;
+export const deployETFGame = (deployerSign: Signer, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGame> => {
+    return (deployContract(deployerSign, ETFGameArtifact, [XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<ETFGame>;
 };
 
-export const deployETFGameMock = (deployerSign: Signer, name: string, symbol: string, XaverTokenAddress: string, routerAddress: string, governedAddress: string): Promise<ETFGameMock> => {
-  return (deployContract(deployerSign, ETFGameMockArtifact, [name, symbol, XaverTokenAddress, routerAddress, governedAddress])) as Promise<ETFGameMock>;
+export const deployETFGameMock = (deployerSign: Signer, name: string, symbol: string, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGameMock> => {
+  return (deployContract(deployerSign, ETFGameMockArtifact, [name, symbol, XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<ETFGameMock>;
 };
