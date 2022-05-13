@@ -3,8 +3,12 @@ import { deployContract } from "ethereum-waffle";
 import { Signer, BigNumber } from "ethers";
 import type { 
   YearnProvider,
+  BetaProvider,
+  IdleProvider,
+  HomoraProvider,
   CompoundProvider, 
   AaveProvider,
+  TruefiProvider,
   Controller,
   ETFVault,
   ETFGame, 
@@ -16,6 +20,10 @@ import type {
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
+import BetaProviderArtifact from '../../artifacts/contracts/Providers/BetaProvider.sol/BetaProvider.json';
+import IdleProviderArtifact from '../../artifacts/contracts/Providers/IdleProvider.sol/IdleProvider.json';
+import HomoraProviderArtifact from '../../artifacts/contracts/Providers/HomoraProvider.sol/HomoraProvider.json';
+import TruefiProviderArtifact from '../../artifacts/contracts/Providers/TruefiProvider.sol/TruefiProvider.json';
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
@@ -29,8 +37,24 @@ import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Control
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
 
+export const deployBetaProvider = (deployerSign: Signer, controller: string): Promise<BetaProvider> => {
+  return (deployContract(deployerSign, BetaProviderArtifact, [controller])) as Promise<BetaProvider>;
+};
+
+export const deployIdleProvider = (deployerSign: Signer, controller: string): Promise<IdleProvider> => {
+  return (deployContract(deployerSign, IdleProviderArtifact, [controller])) as Promise<IdleProvider>;
+};
+
+export const deployHomoraProvider = (deployerSign: Signer, controller: string): Promise<HomoraProvider> => {
+  return (deployContract(deployerSign, HomoraProviderArtifact, [controller])) as Promise<HomoraProvider>;
+};
+
 export const deployYearnProvider = (deployerSign: Signer, controller: string): Promise<YearnProvider> => {
   return (deployContract(deployerSign, YearnProviderArtifact, [controller])) as Promise<YearnProvider>;
+};
+
+export const deployTruefiProvider = (deployerSign: Signer, controller: string): Promise<TruefiProvider> => {
+  return (deployContract(deployerSign, TruefiProviderArtifact, [controller])) as Promise<TruefiProvider>;
 };
 
 export const deployCompoundProvider = (deployerSign: Signer, controller: string, comptroller: string): Promise<CompoundProvider> => {

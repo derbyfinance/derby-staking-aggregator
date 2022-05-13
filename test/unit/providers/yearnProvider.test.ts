@@ -3,10 +3,10 @@
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../helpers/helpers';
-import type { YearnProvider, Controller } from '../../typechain-types';
-import { deployYearnProvider, deployController } from '../helpers/deploy';
-import { usdc, yearnUSDC as yusdc, yearn} from "../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../../helpers/helpers';
+import type { YearnProvider, Controller } from '../../../typechain-types';
+import { deployYearnProvider, deployController } from '../../helpers/deploy';
+import { usdc, yearnUSDC as yusdc, yearn} from "../../helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());

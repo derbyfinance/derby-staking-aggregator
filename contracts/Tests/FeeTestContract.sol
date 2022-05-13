@@ -70,3 +70,4 @@ contract FeeTestContract is ETFVault {
     delete protocolsInETF;
   }
 }
+

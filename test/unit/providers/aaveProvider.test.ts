@@ -3,10 +3,10 @@
 import chai, { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../helpers/helpers';
-import type { AaveProvider, Controller } from '../../typechain-types';
-import { deployAaveProvider, deployController } from '../helpers/deploy';
-import { usdc, aaveUSDC as ausdc, aave} from "../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../../helpers/helpers';
+import type { AaveProvider, Controller } from '../../../typechain-types';
+import { deployAaveProvider, deployController } from '../../helpers/deploy';
+import { usdc, aaveUSDC as ausdc, aave} from "../../helpers/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
