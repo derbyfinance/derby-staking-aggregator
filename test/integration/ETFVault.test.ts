@@ -312,7 +312,7 @@ describe("Testing ETFVault, integration test", async () => {
 
     liquidityVault = 10_000 - gasUsedUSDC;
     expectedBalances = [
-      356, // Compound  400 - totalGasUsed
+      353, // Compound  400 - totalGasUsed
       15534, // Aave  15600 - totalGasUsed
       38836 // Yearn  39000 - totalGasUsed
     ];
