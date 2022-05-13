@@ -168,7 +168,11 @@ contract ETFGame is ERC721 {
         baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
     }
 
-    // rebalances an existing Basket
+    /// @notice rebalances an existing Basket
+    /// @dev First calculates the rewards the basket has built up, then sets the new allocations and communicates the deltas to the vault
+    /// @dev Finally it locks or unlocks tokens
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @param _allocations allocations set by the user of the basket. Allocations are real (not deltas) and scaled (so * 1E18).
     function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
         require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
 
@@ -229,7 +233,9 @@ contract ETFGame is ERC721 {
         return basketGrowth + 2**64;
     }
 
-    // add to total rewards, formula of calculating the game rewards here
+    /// @notice rewards are calculated here
+    /// @dev Note that we use the ABDKMath64x64 library to calculate the n-root in (g + 1)^(1/n) - 1, this library needs scaling to int128
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
         if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
         int256 amount = 0;

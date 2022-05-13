@@ -111,7 +111,7 @@ describe("Testing ETFgameMock", async () => {
     expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
   });
 
-  it.only("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
+  it("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
     // minting
     await gameMock.connect(dao).addETF(vaultMock.address);
     await gameMock.mintNewBasket(0);
