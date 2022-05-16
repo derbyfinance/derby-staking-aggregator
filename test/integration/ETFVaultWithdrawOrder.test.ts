@@ -11,7 +11,7 @@ import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
 
 const amountUSDC = parseUSDC('100000');
 
-describe("Testing ETFVaultWithdrawOrder", async () => {
+describe.skip("Testing ETFVaultWithdrawOrder", async () => {
   let yearnProvider: YearnProvider, 
   compoundProvider: CompoundProvider, 
   aaveProvider: AaveProvider, 
