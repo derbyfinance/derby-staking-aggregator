@@ -19,7 +19,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
 // skipping ETFVault test for now
-describe("Deploy Contracts and interact with Vault", async () => {
+describe.skip("Deploy Contracts and interact with Vault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
