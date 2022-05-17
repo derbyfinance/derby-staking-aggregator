@@ -133,19 +133,18 @@ contract ETFGame is ERC721 {
     /// @param _ETFnumber Number of the vault. Same as in Router.
     function mintNewBasket(uint256 _ETFnumber) public {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
-        _safeMint(msg.sender, latestBasketId);
         baskets[latestBasketId].ETFnumber = _ETFnumber;
         baskets[latestBasketId].lastRebalancingPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+        _safeMint(msg.sender, latestBasketId);
         latestBasketId++;
     }
 
     /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated. 
-    /// @param _user User address from which the xaver tokens are locked inside this contract.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract. 
-    function lockTokensToBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
+    function lockTokensToBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
-        IERC20(xaverTokenAddress).safeTransferFrom(_user, address(this), _lockedTokenAmount);
+        IERC20(xaverTokenAddress).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
         require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
 
@@ -154,14 +153,13 @@ contract ETFGame is ERC721 {
     
 
     /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.  
-    /// @param _user User address to which the xaver tokens are transferred from this contract.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
-    function unlockTokensFromBasket(address _user, uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
+    function unlockTokensFromBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
         require(baskets[_basketId].nrOfAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
-        IERC20(xaverTokenAddress).safeTransfer(_user, _lockedTokenAmount);
+        IERC20(xaverTokenAddress).safeTransfer(msg.sender, _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
         require((balanceBefore - balanceAfter - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
 
@@ -189,10 +187,10 @@ contract ETFGame is ERC721 {
         }
 
         if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) {
-            unlockTokensFromBasket(msg.sender, _basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
+            unlockTokensFromBasket(_basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
         }
         else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) {
-            lockTokensToBasket(msg.sender, _basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+            lockTokensToBasket(_basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
         }
 
         baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;

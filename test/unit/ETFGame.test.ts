@@ -93,8 +93,8 @@ describe("Testing ETFgameMock", async () => {
     const amountToLock = 1000;
     const balanceBefore = await xaverToken.balanceOf(userAddr);
     await xaverToken.approve(gameMock.address, amountToLock),
-    await expect(gameMock.connect(dao).lockTokensToBasketTEST(userAddr, 0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
-    await gameMock.lockTokensToBasketTEST(userAddr, 0, amountToLock);
+    await expect(gameMock.connect(dao).lockTokensToBasketTEST(0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    await gameMock.lockTokensToBasketTEST(0, amountToLock);
     const balanceDiff = balanceBefore.sub(await xaverToken.balanceOf(userAddr));
     await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("ETFGame Not the owner of the basket");
     let unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
@@ -102,9 +102,9 @@ describe("Testing ETFgameMock", async () => {
     expect(balanceDiff).to.be.equal(amountToLock.toString());
 
     // unlocking
-    await expect(gameMock.connect(dao).unlockTokensFromBasketTEST(userAddr, 0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
-    await expect(gameMock.unlockTokensFromBasketTEST(userAddr, 0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
-    await gameMock.unlockTokensFromBasketTEST(userAddr, 0, amountToLock);
+    await expect(gameMock.connect(dao).unlockTokensFromBasketTEST(0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    await expect(gameMock.unlockTokensFromBasketTEST(0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
+    await gameMock.unlockTokensFromBasketTEST(0, amountToLock);
     await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("ETFGame Not the owner of the basket");
     unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(0);

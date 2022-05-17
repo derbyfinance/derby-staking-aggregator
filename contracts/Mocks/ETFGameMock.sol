@@ -20,12 +20,12 @@ contract ETFGameMock is ETFGame {
         _controller
     ) {}
 
-    function lockTokensToBasketTEST(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
-        lockTokensToBasket(_user, _basketId, _lockedTokenAmount);
+    function lockTokensToBasketTEST(uint256 _basketId, uint256 _lockedTokenAmount) public {
+        lockTokensToBasket(_basketId, _lockedTokenAmount);
     }
 
-    function unlockTokensFromBasketTEST(address _user, uint256 _basketId, uint256 _lockedTokenAmount) public {
-        unlockTokensFromBasket(_user, _basketId, _lockedTokenAmount);
+    function unlockTokensFromBasketTEST(uint256 _basketId, uint256 _lockedTokenAmount) public {
+        unlockTokensFromBasket(_basketId, _lockedTokenAmount);
     }
 
     function addToTotalRewardsTEST(uint256 _basketId) public {
