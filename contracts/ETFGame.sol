@@ -163,7 +163,7 @@ contract ETFGame is ERC721 {
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransfer(msg.sender, _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
-        
+
         require((balanceBefore - balanceAfter - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
     }
 
@@ -212,28 +212,7 @@ contract ETFGame is ERC721 {
 
     // }
 
-    /// @notice calculates the growth of the basket
-    /// @dev actual formula: (sum(over i) (lockedTokens(i)/totalLockedTokensUser * (price(i, t) - price(i, t-1))/(price(i, t-1))) + 1
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @return int256 the actual growth factor.
-    function calculateBasketgrowth(uint256 _basketId) internal view onlyBasketOwner(_basketId) returns(int256) {
-        int256 basketGrowthNominator = 0;
-        int256 basketGrowth = 0;
-        uint256 ETFnumber = baskets[_basketId].ETFnumber;
-        for (uint256 i = 0; i < IController(routerAddress).latestProtocolId(ETFnumber); i++) {
-            if (baskets[_basketId].allocations[i] == 0) continue;
-            basketGrowthNominator = int256(baskets[_basketId].allocations[i] * 
-                (controller.exchangeRate(ETFnumber, i) - 
-                IETFVault(ETFVaults[ETFnumber]).historicalPrices(baskets[_basketId].lastRebalancingPeriod, i)) * 2**64);
-            basketGrowth += basketGrowthNominator / 
-                int256(IETFVault(ETFVaults[ETFnumber]).historicalPrices(baskets[_basketId].lastRebalancingPeriod, i) * 
-                baskets[_basketId].nrOfAllocatedTokens);
-        }
-        return basketGrowth + 2**64;
-    }
-
     /// @notice rewards are calculated here
-    /// @dev Note that we use the ABDKMath64x64 library to calculate the n-root in (g + 1)^(1/n) - 1, this library needs scaling to int128
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
         if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
@@ -243,18 +222,14 @@ contract ETFGame is ERC721 {
         uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
         if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
-        int128 g = int128(calculateBasketgrowth(_basketId));
-        int128 log2 = ABDKMath64x64.log_2(g);
-        int128 n = ABDKMath64x64.fromUInt(currentRebalancingPeriod - baskets[_basketId].lastRebalancingPeriod);
-        int256 growthPerPeriod = int256(ABDKMath64x64.exp_2(log2 * 2**64 / n) - 2**64); // (g + 1) ** (1/n) - 1 in 64.64-bit fixed point number
-        uint256 cumTVLPerTokenEnd = IETFVault(ETFaddress).cumUnderlying(currentRebalancingPeriod) / 
-            uint256(IETFVault(ETFaddress).cumLockedTokens(currentRebalancingPeriod));
-        uint256 cumTVLPerTokenBegin = IETFVault(ETFaddress).cumUnderlying(lastRebalancingPeriod) / 
-            uint256(IETFVault(ETFaddress).cumLockedTokens(lastRebalancingPeriod));
 
-        amount = int256(baskets[_basketId].nrOfAllocatedTokens);
-        amount = amount * int256(cumTVLPerTokenEnd - cumTVLPerTokenBegin);
-        amount = amount * growthPerPeriod * int256(IETFVault(ETFaddress).performanceFee()) / 100;
-        baskets[_basketId].totalUnRedeemedRewards += amount;
+        for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
+
+            for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].ETFnumber); i++) {
+                if (baskets[_basketId].allocations[i] == 0) continue;
+                console.log("reward time: %s, protocol: %s", j, i, uint(IETFVault(ETFaddress).rewardPerLockedToken(j, i)));
+                baskets[_basketId].totalUnRedeemedRewards += IETFVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
+            }
+        }
     }
 }

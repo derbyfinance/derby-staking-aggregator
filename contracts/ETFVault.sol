@@ -52,11 +52,9 @@ contract ETFVault is VaultToken {
   // delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
-  // historical prices
-  mapping(uint256 => uint256) public cumUnderlying;
-
-  // historical total locked tokens
-  mapping(uint256 => int256) public cumLockedTokens;
+  // historical reward per protocol per token, formula: TVL * yield * perfFee / totalLockedTokens
+  // first index is rebalancing period, second index is protocol id.
+  mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken;
 
   // historical prices, first index is rebalancing period, second index is protocol id.
   mapping(uint256 => mapping(uint256 => uint256)) public historicalPrices;
@@ -182,12 +180,10 @@ contract ETFVault is VaultToken {
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying();
-    cumUnderlying[rebalancingPeriod] = cumUnderlying[rebalancingPeriod - 1] + totalUnderlying; 
     uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this)) ;
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
-    cumLockedTokens[rebalancingPeriod] = cumLockedTokens[rebalancingPeriod - 1] + totalAllocatedTokens;
     deltaAllocatedTokens = 0;
     
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlyingInclVaultBalance - liquidityVault);
@@ -211,7 +207,9 @@ contract ETFVault is VaultToken {
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(ETFnumber));
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
-      historicalPrices[rebalancingPeriod][i] = price(i);
+
+      storePriceAndRewards(_totalUnderlying, i);
+
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocation(i);
@@ -230,6 +228,20 @@ contract ETFVault is VaultToken {
     }
     
     return protocolToDeposit;
+  }
+
+  /// @notice Stores the historical price and the reward per locked token.
+  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
+  /// @param protocolId Protocol id number.
+  function storePriceAndRewards(uint256 _totalUnderlying, uint256 protocolId) internal {
+      uint256 price = price(protocolId);
+      historicalPrices[rebalancingPeriod][protocolId] = price;
+      if (historicalPrices[rebalancingPeriod - 1][protocolId] == 0) return;
+      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
+      int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
+      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100;
+      console.log("nominator: %s, denominator: %s", uint(nominator), uint(denominator));
+      rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao

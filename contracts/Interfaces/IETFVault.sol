@@ -7,7 +7,6 @@ interface IETFVault {
   function price(uint256) external view returns(uint256);
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external;
   function historicalPrices(uint256 _rebalancingPeriod, uint256 _protocolNum) external view returns(uint256);
-  function cumUnderlying(uint256) external view returns(uint256);
-  function cumLockedTokens(uint256) external view returns(int256);
+  function rewardPerLockedToken(uint256 _rebalancingPeriod, uint256 _protocolNum) external view returns(int256);
   function performanceFee() external view returns(uint256);
 }
