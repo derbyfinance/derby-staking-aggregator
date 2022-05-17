@@ -20,7 +20,7 @@ const decimals = 6;
 const uScale = 1E6;
 const gasFeeLiquidity = 10_000 * uScale;
 
-const getRandomAllocation = () => Math.floor(Math.random() * 10_000);
+const getRandomAllocation = () => Math.floor(Math.random() * 100_000_000);
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
   let vault: ETFVaultMock, yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, homoraProvider: HomoraProvider, betaProvider: BetaProvider, idleProvider: IdleProvider, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, bToken: Contract, daoAddr: string, gameAddr: string, protocols: any;
