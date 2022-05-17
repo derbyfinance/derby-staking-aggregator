@@ -79,11 +79,11 @@ contract YearnProvider is IProvider{
   /// @notice Get balance from address in shares i.e LP tokens
   /// @param _address Address to request balance from, most likely an ETFVault
   /// @param _yToken Address of protocol LP Token eg yUSDC
-  /// @return number of shares i.e LP tokens
+  /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(address _address, address _yToken) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _yToken);
     uint256 price = exchangeRate(_yToken);
-    return balanceShares * price / 1E6;
+    return balanceShares * price / 10 ** IYearn(_yToken).decimals();
   }
 
   /// @notice Calculates how many shares are equal to the amount

@@ -6,10 +6,10 @@ import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, formatEther, } from '../helpers/helpers';
 import type { AaveProvider, BetaProvider, CompoundProvider, Controller, ETFVaultMock, HomoraProvider, IdleProvider, YearnProvider } from '../../typechain-types';
 import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployController, deployETFVaultMock, deployHomoraProvider, deployIdleProvider, deployYearnProvider } from '../helpers/deploy';
-import { allProtocols, usdc, betaUSDC as busdc, dai, usdt, comptroller} from "../helpers/addresses";
+import { allProtocols, usdc, dai, usdt, comptroller} from "../helpers/addresses";
 import { rebalanceETF } from "../helpers/vaultHelpers";
 
-const amount = 10_000_000;
+const amount = 1_000_000;
 // const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const name = 'DerbyUSDC';
@@ -18,9 +18,10 @@ const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;
 const decimals = 6;
 const uScale = 1E6;
+const liquidityPerc = 10;
 const gasFeeLiquidity = 10_000 * uScale;
 
-const getRandomAllocation = () => Math.floor(Math.random() * 100_000_000);
+const getRandomAllocation = () => Math.floor(Math.random() * 100_000);
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
   let vault: ETFVaultMock, yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, homoraProvider: HomoraProvider, betaProvider: BetaProvider, idleProvider: IdleProvider, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, bToken: Contract, daoAddr: string, gameAddr: string, protocols: any;
@@ -79,23 +80,29 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     ]);
   });
 
-  it("Should", async function() {
+  it("Should calc balanceUnderlying for all known vaults correctly", async function() {
     console.log(`-------------------------Deposit-------------------------`); 
     for (const protocol of allProtocols.values()) {
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
-    }
+    };
     
     await vault.depositETF(gameAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vault);
-
     console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
-    
-    // for (const protocol of allProtocols.values()) {
-    //   const balance = await protocol.balanceUnderlying(vault);
-    // }
+    // const balanceVault = await IUSDc.balanceOf(vault.address);
     
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
-    console.log(totalAllocatedTokens);
+    const liquidityVault = amount * liquidityPerc / 100; // 10% liq vault 
 
-  });
+    for (const protocol of allProtocols.values()) {
+      const balanceUnderlying = await protocol.balanceUnderlying(vault);
+      const allocation = await protocol.getAllocation(vault);
+      const expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens)
+      
+      console.log({expectedBalance})
+
+      expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 100);
+    };
+    
+  }); 
 });

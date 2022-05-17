@@ -24,7 +24,7 @@ export class ProtocolVault {
     this.underlyingToken = underlyingToken;
     this.govToken = govToken;
     this.decimals = decimals;
-  }
+  };
 
   async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
     this.allocation = allocation;
