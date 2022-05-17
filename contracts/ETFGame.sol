@@ -158,12 +158,13 @@ contract ETFGame is ERC721 {
     function unlockTokensFromBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
         require(baskets[_basketId].nrOfAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
 
+        baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
+
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransfer(msg.sender, _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
+        
         require((balanceBefore - balanceAfter - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
-
-        baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
     }
 
     /// @notice rebalances an existing Basket
