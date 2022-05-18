@@ -3,9 +3,9 @@
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, formatEther, } from '../helpers/helpers';
-import type { AaveProvider, BetaProvider, CompoundProvider, Controller, ETFVaultMock, HomoraProvider, IdleProvider, YearnProvider } from '../../typechain-types';
-import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployController, deployETFVaultMock, deployHomoraProvider, deployIdleProvider, deployYearnProvider } from '../helpers/deploy';
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol } from '../helpers/helpers';
+import type { AaveProvider, BetaProvider, CompoundProvider, Controller, ETFVaultMock, HomoraProvider, IdleProvider, TruefiProvider, YearnProvider } from '../../typechain-types';
+import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployController, deployETFVaultMock, deployHomoraProvider, deployIdleProvider, deployTruefiProvider, deployYearnProvider } from '../helpers/deploy';
 import { allProtocols, usdc, dai, usdt, comptroller} from "../helpers/addresses";
 import { rebalanceETF } from "../helpers/vaultHelpers";
 
@@ -24,7 +24,7 @@ const gasFeeLiquidity = 10_000 * uScale;
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000);
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
-  let vault: ETFVaultMock, yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, homoraProvider: HomoraProvider, betaProvider: BetaProvider, idleProvider: IdleProvider, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, bToken: Contract, daoAddr: string, gameAddr: string, protocols: any;
+  let vault: ETFVaultMock, yearnProvider: YearnProvider, compoundProvider: CompoundProvider, aaveProvider: AaveProvider, homoraProvider: HomoraProvider, betaProvider: BetaProvider, idleProvider: IdleProvider, truefiProvider: TruefiProvider, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, daoAddr: string, gameAddr: string, protocols: any;
 
   beforeEach(async function() {
     [dao, game] = await ethers.getSigners();
@@ -34,10 +34,11 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
 
     vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
-    [yearnProvider, compoundProvider, aaveProvider, homoraProvider, idleProvider, betaProvider, USDCSigner, IUSDc] = await Promise.all([
+    [yearnProvider, compoundProvider, aaveProvider, truefiProvider, homoraProvider, idleProvider, betaProvider, USDCSigner, IUSDc] = await Promise.all([
       deployYearnProvider(dao, controller.address),
       deployCompoundProvider(dao, controller.address, comptroller),
       deployAaveProvider(dao, controller.address),
+      deployTruefiProvider(dao, controller.address),
       deployHomoraProvider(dao, controller.address),
       deployIdleProvider(dao, controller.address),
       deployBetaProvider(dao, controller.address),
@@ -49,12 +50,14 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       if (name.includes('yearn')) return yearnProvider.address;
       if (name.includes('compound')) return compoundProvider.address;
       if (name.includes('aave')) return aaveProvider.address;
+      if (name.includes('truefi')) return truefiProvider.address;
       if (name.includes('homora')) return homoraProvider.address;
       if (name.includes('beta')) return betaProvider.address;
       if (name.includes('idle')) return idleProvider.address;
       else return 'none';
-    }
+    };
 
+    // add all protocols to controller
     for (const protocol of allProtocols.values()) {
       const {name, protocolToken, underlyingToken, govToken, decimals} = protocol;
       protocol.number = await controllerAddProtocol(
@@ -66,8 +69,8 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
         underlyingToken, 
         govToken, 
         decimals.toString()
-      )     
-    }
+      );     
+    };
   
     await Promise.all([
       controller.addVault(gameAddr),
@@ -98,7 +101,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       const allocation = await protocol.getAllocation(vault);
       let expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens);
       expectedBalance = expectedBalance < 10_000 ? 0 : expectedBalance; // minimum deposit
-      
+
       console.log({expectedBalance})
 
       expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 500);

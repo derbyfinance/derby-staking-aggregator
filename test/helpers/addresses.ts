@@ -21,8 +21,8 @@ export const aaveUSDC = "0xBcca60bB61934080951369a648Fb03DF4F96263C"; // 6
 export const aaveDAI = "0x028171bCA77440897B824Ca71D1c56caC55b68A3"; // 18
 export const aaveUSDT = "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811"; // 6
 // TrueFi
-export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742";
-export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7";
+export const truefiUSDC = "0xA991356d261fbaF194463aF6DF8f0464F8f1c742"; // 6
+export const truefiUSDT = "0x6002b1dcB26E7B1AA797A17551C6F487923299d7"; // 6
 // Homora not really used
 export const homoraUSDC = "0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2"; // 8
 export const homoraDAI = "0xee8389d235E092b2945fE363e97CDBeD121A0439"; // 8
@@ -125,6 +125,20 @@ allProtocols
   protocolToken: aaveUSDT,
   underlyingToken: usdt,
   govToken: aave, 
+  decimals: 1E6, 
+}))
+.set('truefi_usdc_01', new ProtocolVault({
+  name: 'truefi_usdc_01',
+  protocolToken: truefiUSDC,
+  underlyingToken: usdc,
+  govToken: truefi, 
+  decimals: 1E6, 
+}))
+.set('truefi_usdt_01', new ProtocolVault({
+  name: 'truefi_usdt_01',
+  protocolToken: truefiUSDT,
+  underlyingToken: usdt,
+  govToken: truefi, 
   decimals: 1E6, 
 }))
 // .set('homora_usdc_01', new ProtocolVault({
