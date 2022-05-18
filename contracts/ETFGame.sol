@@ -227,7 +227,6 @@ contract ETFGame is ERC721 {
 
             for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].ETFnumber); i++) {
                 if (baskets[_basketId].allocations[i] == 0) continue;
-                console.log("reward time: %s, protocol: %s", j, i, uint(IETFVault(ETFaddress).rewardPerLockedToken(j, i)));
                 baskets[_basketId].totalUnRedeemedRewards += IETFVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
             }
         }

@@ -111,16 +111,20 @@ describe("Testing ETFgameMock", async () => {
     expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
   });
 
-  it.only("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
+  it("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
     // minting
     await gameMock.connect(dao).addETF(vaultMock.address);
     await gameMock.mintNewBasket(0);
 
-    const amount = 200_000;
+    // set liquidity vault to 0 for easy calculation 
+    await vaultMock.setLiquidityPerc(0);
+
+    const amount = 10_000;
     const amountUSDC = parseUSDC(amount.toString());
 
     // set balance before
-    let balance = 1000;
+    let balance = 1000*1E6;
+    let price = 1000;
     await Promise.all([
       yearnProvider.mock.balanceUnderlying.returns(balance),
       compoundProvider.mock.balanceUnderlying.returns(balance),
@@ -131,51 +135,46 @@ describe("Testing ETFgameMock", async () => {
       yearnProvider.mock.withdraw.returns(0),
       compoundProvider.mock.withdraw.returns(0),
       aaveProvider.mock.withdraw.returns(0),
-      yearnProvider.mock.exchangeRate.returns(balance),
-      compoundProvider.mock.exchangeRate.returns(balance),
-      aaveProvider.mock.exchangeRate.returns(balance),
+      yearnProvider.mock.exchangeRate.returns(price),
+      compoundProvider.mock.exchangeRate.returns(price),
+      aaveProvider.mock.exchangeRate.returns(price),
     ]);
 
     // set some initial allocations in the basket
-    let allocations = [10, 10, 10, 10, 10];
-    await xaverToken.increaseAllowance(gameMock.address, 50);
+    let allocations = [10, 0, 10, 0, 10];
+    await xaverToken.increaseAllowance(gameMock.address, 30);
     await gameMock.rebalanceBasket(0, allocations);
 
-    // do 5 loops to simulate time passing (and bump up rebalancingperiod).
-    for (let i = 0; i < 5; i++){
+    // do 3 loops to simulate time passing (and bump up rebalancingperiod).
+    for (let i = 0; i < 3; i++){
       await setDeltaAllocationsWithGame(vaultMock, gameMock, allProtocols);
       await vaultMock.depositETF(userAddr, amountUSDC);
 
       // set balance after
-      balance = Math.round(balance * 1.1);
+      price = Math.round(price * 1.1);
       await Promise.all([
-        yearnProvider.mock.exchangeRate.returns(balance),
-        compoundProvider.mock.exchangeRate.returns(balance),
-        aaveProvider.mock.exchangeRate.returns(balance),
+        yearnProvider.mock.exchangeRate.returns(price),
+        compoundProvider.mock.exchangeRate.returns(price),
+        aaveProvider.mock.exchangeRate.returns(price),
       ]);
 
       await rebalanceETF(vaultMock);
     }
-
-    let allocs_1 = await getAllocations(vaultMock, allProtocols);
-    allocs_1.forEach((protocol) => {
-      console.log("alloc: %s", Number(protocol)) // 0: 40, 1: 60, 2: 20
-    });
-
-    console.log("balance user: %s", await xaverToken.balanceOf(userAddr));
     
     // set new allocations in basket
-    let newAllocations = [20, 20, 20, 20, 20]; // not actually stored in vault because we didn't rebalance the vault here
+    let newAllocations = [20, 0, 20, 0, 20]; // not actually stored in vault because we didn't rebalance the vault here
     await xaverToken.increaseAllowance(gameMock.address, 50);
     await gameMock.rebalanceBasket(0, newAllocations);
 
-    // growth of the portfolio 1.1 over 4 periods --> per period (1.1)^(1/4) - 1 = 0.02411
-    // cummulative underlying at rebalancingPeriod 5: 4000 * 4 = 16000
-    // cummulative locked tokens at rebalancingPeriod 5: 120 extra per loop + 50 initial = 170 + 290 + 410 + 530 + 650 = 2050
-    // cumTVLPerToken at rebalancingPeriod 5: 16000 / 2050 (rounded down): 7
-    // locked tokens in basket: 50 (latest 100 was not stored in vault).
-    // rewards (performance fee is 0.1): 7 * 50 * 0.02411 * 0.1 * 2^64 = 1.55663E+19
+    // yield per time step: 0.1
+    // started counting basket rewards at rebalancingPeriod 1
+    // end counting basket rewards at rebalancingPeriod 3
+    // 1: rewards: 0
+    // 2: TVL: 10k + 10k +3k = 23k, y: 0.1, perfFee: 0.1, totalTokens: 30 + 120 + 120 = 270, allocations user per protocol: 10
+    // 2: rewards = 23000 * 1E6 * 0.1 * 0.1 / 270 * 10 = 8518518 per game player, 3 players total --> 25555554
+    // 3: rewards = 25555554
+    // total expected rewards = 2 * 25555554 = 51111108
     let rewards = await gameMock.basketUnredeemedRewards(0);
-    // expect(rewards).to.be.equal('15568666792481701255');
+    expect(rewards).to.be.closeTo('51111108', 500000);
   });
 });

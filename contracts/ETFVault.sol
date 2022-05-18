@@ -201,14 +201,14 @@ contract ETFVault is VaultToken {
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),  
   /// @dev the performanceFee and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault. 
-  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault 
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
-  function rebalanceCheckProtocols(uint256 _totalUnderlying) internal returns(uint256[] memory){
+  function rebalanceCheckProtocols(uint256 _newTotalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(ETFnumber));
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
 
-      storePriceAndRewards(_totalUnderlying, i);
+      storePriceAndRewards(_newTotalUnderlying, i);
 
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
@@ -216,7 +216,7 @@ contract ETFVault is VaultToken {
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
-      else amountToProtocol = int(_totalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
+      else amountToProtocol = int(_newTotalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
 
       uint256 currentBalance = balanceUnderlying(i);
 
@@ -231,6 +231,9 @@ contract ETFVault is VaultToken {
   }
 
   /// @notice Stores the historical price and the reward per locked token.
+  /// @dev formula yield protocol i at time t: y(it) = (P(it) - P(it-1)) / P(it-1).
+  /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
+  /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 protocolId) internal {
@@ -239,8 +242,7 @@ contract ETFVault is VaultToken {
       if (historicalPrices[rebalancingPeriod - 1][protocolId] == 0) return;
       int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100;
-      console.log("nominator: %s, denominator: %s", uint(nominator), uint(denominator));
+      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100; // * 100 cause perfFee is in percentages
       rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
   }
 
