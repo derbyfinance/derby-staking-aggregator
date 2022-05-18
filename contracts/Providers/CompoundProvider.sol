@@ -2,6 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/ICToken.sol";
 import "../Interfaces/ExternalInterfaces/IComptroller.sol";
@@ -96,8 +97,10 @@ contract CompoundProvider is IProvider {
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _cToken) public view override returns(uint256) {
     uint256 balanceShares = balance(_address, _cToken);
+    // The returned exchange rate from comp is scaled by 1 * 10^(18 - 8 + Underlying Token Decimals).
     uint256 price = exchangeRate(_cToken);
-    return balanceShares * price / 1E18;
+    uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
+    return balanceShares * price / 10 ** (18 - 8 + decimals);
   }
 
   /// @notice Calculates how many shares are equal to the amount

@@ -103,6 +103,5 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
 
       expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 100);
     };
-    
   }); 
 });
