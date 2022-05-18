@@ -2,6 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IIdle.sol";
 import "../Interfaces/IProvider.sol";
@@ -95,7 +96,8 @@ contract IdleProvider is IProvider {
   function balanceUnderlying(address _address, address _iToken) public view override returns(uint256) {
     uint256 balanceShares = balance(_address, _iToken);
     uint256 price = exchangeRate(_iToken);
-    return balanceShares * price / 1E18;
+    uint256 decimals = IERC20Metadata(IIdle(_iToken).token()).decimals();
+    return balanceShares * price / 10 ** decimals;
   }
 
   /// @notice Calculates how many shares are equal to the amount

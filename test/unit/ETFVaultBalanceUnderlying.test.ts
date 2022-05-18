@@ -9,7 +9,7 @@ import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployC
 import { allProtocols, usdc, dai, usdt, comptroller} from "../helpers/addresses";
 import { rebalanceETF } from "../helpers/vaultHelpers";
 
-const amount = 1_000_000;
+const amount = 5_000_000;
 // const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const name = 'DerbyUSDC';
@@ -89,19 +89,19 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     await vault.depositETF(gameAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vault);
     console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
-    // const balanceVault = await IUSDc.balanceOf(vault.address);
-    
+
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     const liquidityVault = amount * liquidityPerc / 100; // 10% liq vault 
 
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = await protocol.balanceUnderlying(vault);
       const allocation = await protocol.getAllocation(vault);
-      const expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens)
+      let expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens);
+      expectedBalance = expectedBalance < 10_000 ? 0 : expectedBalance; // minimum deposit
       
       console.log({expectedBalance})
 
-      expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 100);
+      expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 500);
     };
   }); 
 });

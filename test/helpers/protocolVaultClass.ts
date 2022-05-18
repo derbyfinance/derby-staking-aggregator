@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { ETFVaultMock } from "typechain-types";
 

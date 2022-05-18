@@ -44,7 +44,7 @@ library Swap {
     IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
 
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
-    
+
     IStableSwap3Pool(_curve3Pool).exchange(
       _indexTokenIn, 
       _indexTokenOut, 
@@ -111,7 +111,7 @@ library Swap {
     IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
 
     uint256 amountOutMinimum = amountOutSingleSwap(_amount, _tokenIn, _tokenOut, _uniswapQuoter, _poolFee);
-
+    
     ISwapRouter.ExactInputSingleParams memory params =
       ISwapRouter.ExactInputSingleParams({
       tokenIn: _tokenIn,
