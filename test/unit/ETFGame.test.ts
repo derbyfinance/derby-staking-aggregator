@@ -22,7 +22,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalXaverSupply = parseEther(1E8.toString()); 
 
-describe("Testing ETFgameMock", async () => {
+describe.only("Testing ETFgameMock", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,

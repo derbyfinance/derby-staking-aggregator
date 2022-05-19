@@ -4,6 +4,7 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./XaverToken.sol";
 
@@ -16,7 +17,7 @@ import "./libraries/ABDKMath64x64.sol";
 
 import "hardhat/console.sol";
 
-contract ETFGame is ERC721 {
+contract ETFGame is ERC721, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // xaver token address
@@ -30,6 +31,9 @@ contract ETFGame is ERC721 {
 
     // controller
     IController public controller;
+
+    // vault addresses
+    mapping(address => bool) vaultAddresses;
 
     modifier onlyDao {
         require(msg.sender == governed, "ETFGame: only DAO");
@@ -95,7 +99,7 @@ contract ETFGame is ERC721 {
     /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @return uint256 Number of xaver tokens that are allocated towards protocols. 
-    function basketTotalAllocatedTokens(uint256 _basketId) public onlyBasketOwner(_basketId) view returns(uint256){
+    function basketTotalAllocatedTokens(uint256 _basketId) external onlyBasketOwner(_basketId) view returns(uint256){
         return baskets[_basketId].nrOfAllocatedTokens;
     }
 
@@ -103,35 +107,37 @@ contract ETFGame is ERC721 {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _protocolId Id of the protocol of which the allocation is queried.
     /// @return uint256 Number of xaver tokens that are allocated towards this specific protocol. 
-    function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) public onlyBasketOwner(_basketId) view returns(uint256){
+    function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) external onlyBasketOwner(_basketId) view returns(uint256){
         return baskets[_basketId].allocations[_protocolId];
     }
 
     /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @return int256 Total unredeemed rewards. 
-    function basketUnredeemedRewards(uint256 _basketId) public onlyBasketOwner(_basketId) view returns(int256){
+    function basketUnredeemedRewards(uint256 _basketId) external onlyBasketOwner(_basketId) view returns(int256){
         return baskets[_basketId].totalUnRedeemedRewards;
     }
 
     /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @return int256 Total redeemed rewards. 
-    function basketRedeemedRewards(uint256 _basketId) public onlyBasketOwner(_basketId) view returns(int256){
+    function basketRedeemedRewards(uint256 _basketId) external onlyBasketOwner(_basketId) view returns(int256){
         return baskets[_basketId].totalRedeemedRewards;
     }
 
     /// @notice Adding a vault to the game.
     /// @param _ETFVaultAddress Address of the vault which is added.
-    function addETF(address _ETFVaultAddress) public onlyDao {
+    function addETF(address _ETFVaultAddress) external onlyDao {
+        require (!vaultAddresses[_ETFVaultAddress], "ETFGame, ETF adres already added");
         ETFVaults[latestETFNumber] = _ETFVaultAddress;
+        vaultAddresses[_ETFVaultAddress] = true;
         latestETFNumber++;
     }
 
     /// @notice Mints a new NFT with a Basket of allocations.
     /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
     /// @param _ETFnumber Number of the vault. Same as in Router.
-    function mintNewBasket(uint256 _ETFnumber) public {
+    function mintNewBasket(uint256 _ETFnumber) external {
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
         baskets[latestBasketId].ETFnumber = _ETFnumber;
         baskets[latestBasketId].lastRebalancingPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
@@ -172,7 +178,7 @@ contract ETFGame is ERC721 {
     /// @dev Finally it locks or unlocks tokens
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _allocations allocations set by the user of the basket. Allocations are real (not deltas) and scaled (so * 1E18).
-    function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) public onlyBasketOwner(_basketId) {
+    function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) external onlyBasketOwner(_basketId) nonReentrant {
         require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
 
         addToTotalRewards(_basketId);
@@ -216,7 +222,6 @@ contract ETFGame is ERC721 {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
         if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
-        int256 amount = 0;
         address ETFaddress = ETFVaults[baskets[_basketId].ETFnumber];
         uint256 currentRebalancingPeriod = IETFVault(ETFaddress).rebalancingPeriod();
         uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
