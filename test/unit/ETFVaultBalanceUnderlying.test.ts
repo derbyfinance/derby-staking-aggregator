@@ -83,8 +83,8 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     ]);
   });
 
-  it("Should calc balanceUnderlying for all known vaults correctly", async function() {
-    console.log(`-------------------------Deposit-------------------------`); 
+  it("Should calc balanceUnderlying for all known protocols correctly", async function() {
+    // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
@@ -96,15 +96,24 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     const liquidityVault = amount * liquidityPerc / 100; // 10% liq vault 
 
+    // get balance underlying for each protocol and compare with expected balance
+    // using to.be.closeTo because of the slippage from swapping USDT and DAI
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = await protocol.balanceUnderlying(vault);
       const allocation = await protocol.getAllocation(vault);
       let expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens);
       expectedBalance = expectedBalance < 10_000 ? 0 : expectedBalance; // minimum deposit
 
-      console.log({expectedBalance})
-
       expect(Number(formatUSDC(balanceUnderlying))).to.be.closeTo(expectedBalance, 500);
     };
+
+    const totalUnderlying = await vault.getTotalUnderlying();
+    const vaultBalance = Number(formatUSDC(await IUSDc.balanceOf(vault.address)));
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - vaultBalance, 500);
   }); 
+
+  it("Should calc Shares for all known protocols correctly", async function() {
+    
+  }); 
+
 });

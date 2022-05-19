@@ -330,11 +330,15 @@ contract ETFVault is VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return balance Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256 balance) {   
+    uint gasStart = gasleft();
+    
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
-      uint256 balanceProtocol = balanceUnderlying(i);
-      balance += balanceProtocol;
+      balance += balanceUnderlying(i);
     }
+
+    uint256 gasUsed = gasStart - gasleft();
+    console.log("gasUsed %s", gasUsed);
   }
 
   /// @notice Get balance in VaultCurrency in underlying protocol
