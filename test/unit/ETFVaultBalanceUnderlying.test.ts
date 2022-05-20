@@ -42,7 +42,7 @@ describe.only("Testing balanceUnderlying for every single protocol vault", async
     vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
-      allProviders.init(dao, controller),
+      allProviders.deployAllProviders(dao, controller),
       controller.addVault(gameAddr),
       controller.addVault(vault.address),
       controller.addCurveIndex(dai, 0),

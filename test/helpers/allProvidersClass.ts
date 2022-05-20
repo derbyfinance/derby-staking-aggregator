@@ -13,7 +13,7 @@ class AllProviders {
   idleProvider!: IdleProvider;
   betaProvider!: BetaProvider;
 
-  async init(dao: Signer, controller: Controller): Promise<void> {
+  async deployAllProviders(dao: Signer, controller: Controller): Promise<void> {
     [
       this.yearnProvider, 
       this.compoundProvider, 
