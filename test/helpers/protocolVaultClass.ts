@@ -8,6 +8,7 @@ export interface IProtocolVault {
   underlyingToken: string;
   govToken: string;
   decimals: number;
+  underlyingDecimals: number;
 }
 
 export class ProtocolVault {
@@ -16,15 +17,17 @@ export class ProtocolVault {
   underlyingToken: string;
   govToken: string;
   decimals: number;
+  underlyingDecimals: number;
   number: number = 0;
   allocation: number = 0;
 
-  constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
+  constructor({name, protocolToken, underlyingToken, govToken, decimals, underlyingDecimals}: IProtocolVault) {
     this.name = name;
     this.protocolToken = protocolToken;
     this.underlyingToken = underlyingToken;
     this.govToken = govToken;
     this.decimals = decimals;
+    this.underlyingDecimals = underlyingDecimals;
   };
 
   async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
@@ -42,5 +45,13 @@ export class ProtocolVault {
 
   async balanceUnderlying(vault: ETFVaultMock): Promise<BigNumber> {
     return await vault.balanceUnderlying(this.number);
+  };
+
+  async calcShares(vault: ETFVaultMock, amount: BigNumber): Promise<BigNumber> {
+    return await vault.calcShares(this.number, amount);
+  };
+
+  async balanceShares(vault: ETFVaultMock, address: string): Promise<BigNumber> {
+    return await vault.balanceSharesTEST(this.number, address);
   };
 }

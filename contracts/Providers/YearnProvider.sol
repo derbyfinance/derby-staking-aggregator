@@ -92,7 +92,8 @@ contract YearnProvider is IProvider{
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _yToken) external view override returns (uint256) {
-    uint256 shares = _amount  * 1E6 / exchangeRate(_yToken);
+    uint256 shares = (_amount  * (10 ** IYearn(_yToken).decimals())) / exchangeRate(_yToken);
+    console.log("calcShares %s", shares);
     return shares;
   }
 
@@ -101,16 +102,17 @@ contract YearnProvider is IProvider{
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _yToken) public view override returns (uint256) {
-    uint256 _balanceShares = IYearn(_yToken).balanceOf(_address);
-    return _balanceShares;
+    uint256 balanceShares = IYearn(_yToken).balanceOf(_address);
+    console.log("balance %s", balanceShares);
+    return balanceShares;
   }
 
   /// @notice Exchange rate of underyling protocol token
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return price of LP token
   function exchangeRate(address _yToken) public view override returns(uint256) {
-    uint256 _price = IYearn(_yToken).pricePerShare();
-    return _price;
+    uint256 price = IYearn(_yToken).pricePerShare();
+    return price;
   }
 
   function claim(address _yToken, address _claimer) public override returns(bool) {

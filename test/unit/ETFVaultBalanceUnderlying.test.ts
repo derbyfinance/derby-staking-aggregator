@@ -8,6 +8,7 @@ import type { AaveProvider, BetaProvider, CompoundProvider, Controller, ETFVault
 import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployController, deployETFVaultMock, deployHomoraProvider, deployIdleProvider, deployTruefiProvider, deployYearnProvider } from '../helpers/deploy';
 import { allProtocols, usdc, dai, usdt, comptroller} from "../helpers/addresses";
 import { rebalanceETF } from "../helpers/vaultHelpers";
+import { formatUnits } from "ethers/lib/utils";
 
 const amount = 5_000_000;
 // const amount = Math.floor(Math.random() * 1000000);
@@ -112,8 +113,31 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - vaultBalance, 500);
   }); 
 
-  it("Should calc Shares for all known protocols correctly", async function() {
+  it.only("Should calc Shares for all known protocols correctly", async function() {
+    // set random allocations for all protocols
+    for (const protocol of allProtocols.values()) {
+      await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
+    };
     
+    await vault.depositETF(gameAddr, amountUSDC);
+    const gasUsed = await rebalanceETF(vault);
+    console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
+
+    const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
+    const liquidityVault = amount * liquidityPerc / 100; // 10% liq vault 
+
+    for (const protocol of allProtocols.values()) {
+      const decimals = protocol.underlyingDecimals;
+      const balanceUnderlying = await protocol.balanceUnderlying(vault);
+      const calcShares = formatUnits(await protocol.calcShares(vault, balanceUnderlying), decimals);
+      const balanceShares = formatUnits(await protocol.balanceShares(vault, vault.address), decimals);
+
+      // console.log({ balanceUnderlying })
+      // console.log({ calcShares })
+      // console.log({ balanceShares })
+
+      expect(Number(calcShares)).to.be.closeTo(Number(balanceShares), 5)
+    };
   }); 
 
 });
