@@ -109,7 +109,8 @@ contract CompoundProvider is IProvider {
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _cToken) external view override returns(uint256) {
-    uint256 shares = _amount  * 1E18 / exchangeRate(_cToken);
+    uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
+    uint256 shares = _amount  * (10 ** (18 - 8 + decimals)) / exchangeRate(_cToken);
     return shares;
   }
 

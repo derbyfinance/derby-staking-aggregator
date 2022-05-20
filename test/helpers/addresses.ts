@@ -64,51 +64,48 @@ export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
 export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols
-.set('yearn_usdc_01', new ProtocolVault({
-  name: 'yearn_usdc_01',
-  protocolToken: yearnUSDC,
-  underlyingToken: usdc,
-  govToken: yearn, 
-  decimals: 1E6,
-  underlyingDecimals: 6,
-}))
-.set('yearn_dai_01', new ProtocolVault({
-  name: 'yearn_dai_01',
-  protocolToken: yearnDAI,
-  underlyingToken: dai,
-  govToken: yearn, 
-  decimals: 1E18,
-  underlyingDecimals: 18,
-}))
-.set('yearn_usdt_01', new ProtocolVault({
-  name: 'yearn_usdt_01',
-  protocolToken: yearnUSDT,
-  underlyingToken: usdt,
-  govToken: yearn, 
-  decimals: 1E6,
-  underlyingDecimals: 6,
-}))
-// .set('compound_usdc_01', new ProtocolVault({
-//   name: 'compound_usdc_01',
-//   protocolToken: compoundUSDC,
+// .set('yearn_usdc_01', new ProtocolVault({
+//   name: 'yearn_usdc_01',
+//   protocolToken: yearnUSDC,
 //   underlyingToken: usdc,
-//   govToken: compToken, 
-//   decimals: 1E8, 
+//   govToken: yearn, 
+//   decimals: 1E6,
 // }))
-// .set('compound_dai_01', new ProtocolVault({
-//   name: 'compound_dai_01',
-//   protocolToken: compoundDAI,
+// .set('yearn_dai_01', new ProtocolVault({
+//   name: 'yearn_dai_01',
+//   protocolToken: yearnDAI,
 //   underlyingToken: dai,
-//   govToken: compToken, 
-//   decimals: 1E8, 
+//   govToken: yearn, 
+//   decimals: 1E18,
 // }))
-// .set('compound_usdt_01', new ProtocolVault({
-//   name: 'compound_usdt_01',
-//   protocolToken: compoundUSDT,
+// .set('yearn_usdt_01', new ProtocolVault({
+//   name: 'yearn_usdt_01',
+//   protocolToken: yearnUSDT,
 //   underlyingToken: usdt,
-//   govToken: compToken, 
-//   decimals: 1E8, 
+//   govToken: yearn, 
+//   decimals: 1E6,
 // }))
+.set('compound_usdc_01', new ProtocolVault({
+  name: 'compound_usdc_01',
+  protocolToken: compoundUSDC,
+  underlyingToken: usdc,
+  govToken: compToken, 
+  decimals: 1E8,
+}))
+.set('compound_dai_01', new ProtocolVault({
+  name: 'compound_dai_01',
+  protocolToken: compoundDAI,
+  underlyingToken: dai,
+  govToken: compToken, 
+  decimals: 1E8,
+}))
+.set('compound_usdt_01', new ProtocolVault({
+  name: 'compound_usdt_01',
+  protocolToken: compoundUSDT,
+  underlyingToken: usdt,
+  govToken: compToken, 
+  decimals: 1E8,
+}))
 // .set('aave_usdc_01', new ProtocolVault({
 //   name: 'aave_usdc_01',
 //   protocolToken: aaveUSDC,
@@ -121,7 +118,7 @@ allProtocols
 //   protocolToken: aaveDAI,
 //   underlyingToken: dai,
 //   govToken: aave, 
-//   decimals: 1E18, 
+//   decimals: 1E18,
 // }))
 // .set('aave_usdt_01', new ProtocolVault({
 //   name: 'aave_usdt_01',
@@ -170,21 +167,21 @@ allProtocols
 //   protocolToken: idleUSDC,
 //   underlyingToken: usdc,
 //   govToken: idle, 
-//   decimals: 1E18, 
+//   decimals: 1E18,
 // }))
 // .set('idle_dai_01', new ProtocolVault({
 //   name: 'idle_dai_01',
 //   protocolToken: idleDAI,
 //   underlyingToken: dai,
 //   govToken: idle, 
-//   decimals: 1E18, 
+//   decimals: 1E18,
 // }))
 // .set('idle_usdt_01', new ProtocolVault({
 //   name: 'idle_usdt_01',
 //   protocolToken: idleUSDT,
 //   underlyingToken: usdt,
 //   govToken: idle, 
-//   decimals: 1E18, 
+//   decimals: 1E18,
 // }))
 // .set('beta_usdc_01', new ProtocolVault({
 //   name: 'beta_usdc_01',
@@ -198,7 +195,7 @@ allProtocols
 //   protocolToken: betaDAI,
 //   underlyingToken: dai,
 //   govToken: beta, 
-//   decimals: 1E18, 
+//   decimals: 1E18,
 // }))
 // .set('beta_usdt_01', new ProtocolVault({
 //   name: 'beta_usdt_01',
@@ -206,5 +203,4 @@ allProtocols
 //   underlyingToken: usdt,
 //   govToken: beta, 
 //   decimals: 1E6, 
-// }));
-
+// }))

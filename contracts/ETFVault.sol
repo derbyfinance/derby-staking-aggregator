@@ -197,7 +197,6 @@ contract ETFVault is VaultToken {
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocationAndPrice(i);
-      console.log("allocation %s", uint(currentAllocations[i]));
       
       int256 amountToProtocol;
       if (totalAllocatedTokens == 0) amountToProtocol = 0;
@@ -353,8 +352,8 @@ contract ETFVault is VaultToken {
 
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
-    uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount) * protocolUScale / uScale;
-    console.log("shares %s", shares);
+    uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount * protocolUScale / uScale);
+    // console.log("shares %s", shares);
     return shares;
   }
 

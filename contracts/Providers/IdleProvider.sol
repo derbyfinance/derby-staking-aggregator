@@ -106,7 +106,8 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _iToken) external view override returns(uint256) {
-    uint256 shares = _amount  * 1E18 / exchangeRate(_iToken);
+    uint256 decimals = IERC20Metadata(IIdle(_iToken).token()).decimals();
+    uint256 shares = _amount  * (10 ** decimals) / exchangeRate(_iToken);
     return shares;
   }
 
@@ -115,6 +116,7 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _iToken) public view override returns(uint256) {
+    // console.log("balanceShares %s", IIdle(_iToken).balanceOf(_address));
     return IIdle(_iToken).balanceOf(_address);
   }
 

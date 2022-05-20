@@ -93,8 +93,8 @@ contract TruefiProvider is IProvider {
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {
-    uint256 shares = balance(_address, _tToken);
-    uint256 balance = ITruefi(_tToken).poolValue() * shares / ITruefi(_tToken).totalSupply();
+    uint256 balanceShares = balance(_address, _tToken);
+    uint256 balance = ITruefi(_tToken).poolValue() * balanceShares / ITruefi(_tToken).totalSupply();
     return balance;
   }
 
