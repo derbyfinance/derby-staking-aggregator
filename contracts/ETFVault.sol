@@ -350,6 +350,10 @@ contract ETFVault is VaultToken {
     return underlyingBalance;
   }
 
+  /// @notice Calculates how many shares are equal to the amount in vault currency
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _amount Amount in underyling token e.g USDC
+  /// @return number of shares i.e LP tokens
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
     uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount * protocolUScale / uScale);

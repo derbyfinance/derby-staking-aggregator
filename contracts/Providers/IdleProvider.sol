@@ -116,7 +116,6 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _iToken) public view override returns(uint256) {
-    // console.log("balanceShares %s", IIdle(_iToken).balanceOf(_address));
     return IIdle(_iToken).balanceOf(_address);
   }
 

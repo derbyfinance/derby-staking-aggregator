@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
-import { ETFVaultMock } from "typechain-types";
+import { Result } from "ethers/lib/utils";
+import { Controller, ETFVaultMock } from "typechain-types";
 
 export interface IProtocolVault {
   name: string;
@@ -27,7 +28,7 @@ export class ProtocolVault {
     this.decimals = decimals;
   };
 
-  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
+  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number) {
     this.allocation = allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
@@ -51,4 +52,20 @@ export class ProtocolVault {
   async balanceShares(vault: ETFVaultMock, address: string): Promise<BigNumber> {
     return await vault.balanceSharesTEST(this.number, address);
   };
+
+  async addProtocolToController(controller: Controller, ETFnumber: number, providerAddr: string) {
+    const tx = await controller.addProtocol(
+      this.name, 
+      ETFnumber, 
+      providerAddr, 
+      this.protocolToken, 
+      this.underlyingToken, 
+      this.govToken, 
+      (10 ** this.decimals).toString()
+    )
+    const receipt = await tx.wait()
+    const { protocolNumber } = receipt.events![0].args as Result
+
+    this.number = protocolNumber
+  }
 }

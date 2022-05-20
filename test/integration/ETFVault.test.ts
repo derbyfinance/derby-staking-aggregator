@@ -16,7 +16,7 @@ const liquidityPerc = 10;
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe("Testing ETFVault", async () => {
+describe.skip("Testing ETFVault", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,

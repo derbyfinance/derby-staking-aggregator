@@ -96,7 +96,7 @@ contract BetaProvider is IProvider {
     uint256 supply = IBeta(_bToken).totalSupply();
     uint256 totalLoanable  = IBeta(_bToken).totalLoanable();
     uint256 totalLoan = IBeta(_bToken).totalLoan();
-    // console.log("balance Underlying %s", (balanceShares * (totalLoanable + totalLoan)) / supply);
+
     return (balanceShares * (totalLoanable + totalLoan)) / supply;
   }
 
@@ -109,6 +109,7 @@ contract BetaProvider is IProvider {
     uint256 supply = IBeta(_bToken).totalSupply();
     uint256 totalLoanable  = IBeta(_bToken).totalLoanable();
     uint256 totalLoan = IBeta(_bToken).totalLoan();
+    
     return (_amount * supply) / (totalLoanable + totalLoan);
   }
 
@@ -117,7 +118,6 @@ contract BetaProvider is IProvider {
   /// @param _bToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _bToken) public view override returns(uint256) {
-    // console.log("balance %s", IBeta(_bToken).balanceOf(_address));
     return IBeta(_bToken).balanceOf(_address);
   }
 
