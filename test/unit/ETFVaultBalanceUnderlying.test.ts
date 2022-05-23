@@ -25,7 +25,7 @@ const gasFeeLiquidity = 10_000 * uScale;
 
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000);
 
-describe.only("Testing balanceUnderlying for every single protocol vault", async () => {
+describe("Testing balanceUnderlying for every single protocol vault", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string, protocols: any;
 
   beforeEach(async function() {
@@ -70,7 +70,7 @@ describe.only("Testing balanceUnderlying for every single protocol vault", async
     
     await vault.depositETF(gameAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vault);
-    console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
+    console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     const liquidityVault = amount * liquidityPerc / 100; // 10% liq vault 
@@ -104,23 +104,23 @@ describe.only("Testing balanceUnderlying for every single protocol vault", async
     
     await vault.depositETF(gameAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vault);
-    console.log(`Gas Used $${Number(formatUSDC(gasUsed))}`);
+    console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 
     // Get balance of LP shares for each protocol vault
     // Compare it with calcShares with the balanceUnderlying, should match up if calculation is correct.
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = await protocol.balanceUnderlying(vault);
       const balUnderlying = Number(formatUSDC(balanceUnderlying))
-      const calculaShares = formatUnits(await protocol.calcShares(vault, balanceUnderlying), protocol.decimals);
+      const calculateShares = formatUnits(await protocol.calcShares(vault, balanceUnderlying), protocol.decimals);
       const balanceShares = formatUnits(await protocol.balanceShares(vault, vault.address), protocol.decimals);
 
       console.log(`---------------------------`)
       console.log(protocol.name)
       console.log({ balUnderlying })
-      console.log({ calculaShares })
+      console.log({ calculateShares })
       console.log({ balanceShares })
 
-      expect(Number(calculaShares)).to.be.closeTo(Number(balanceShares), 100)
+      expect(Number(calculateShares)).to.be.closeTo(Number(balanceShares), 100)
     };
   }); 
 
