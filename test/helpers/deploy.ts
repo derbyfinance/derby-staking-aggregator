@@ -29,7 +29,7 @@ import CompoundProviderArtifact from '../../artifacts/contracts/Providers/Compou
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
-import TokenTimeLockArtifact from '../../artifacts/contracts/TokenTimeLock.sol/TokenTimeLock.json';
+import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
 import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.sol/ETFVaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
@@ -42,7 +42,7 @@ export const deployTokenTimeLock = (
   deployerSign: Signer, 
   tokenAddr: string, 
 ): Promise<TokenTimelock> => {
-  return (deployContract(deployerSign, TokenTimeLockArtifact, [tokenAddr])) as Promise<TokenTimelock>;
+  return (deployContract(deployerSign, TokenTimelockArtifact, [tokenAddr])) as Promise<TokenTimelock>;
 };
 
 export const deployBetaProvider = (deployerSign: Signer, controller: string): Promise<BetaProvider> => {
