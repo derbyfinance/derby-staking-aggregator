@@ -16,7 +16,8 @@ import type {
   IGoverned,
   ETFVaultMock,
   CompoundProviderMock,
-  ETFGameMock
+  ETFGameMock,
+  TokenTimelock
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -28,6 +29,7 @@ import CompoundProviderArtifact from '../../artifacts/contracts/Providers/Compou
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
+import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
 import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.sol/ETFVaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
@@ -36,6 +38,12 @@ import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
+export const deployTokenTimeLock = (
+  deployerSign: Signer, 
+  tokenAddr: string, 
+): Promise<TokenTimelock> => {
+  return (deployContract(deployerSign, TokenTimelockArtifact, [tokenAddr])) as Promise<TokenTimelock>;
+};
 
 export const deployBetaProvider = (deployerSign: Signer, controller: string): Promise<BetaProvider> => {
   return (deployContract(deployerSign, BetaProviderArtifact, [controller])) as Promise<BetaProvider>;
