@@ -59,6 +59,34 @@ describe("Testing TokenTimeLock", async () => {
     ).to.be.revertedWith("already initialized")
   });
 
+  it("Should return 0 before startTimestamp is reached", async function() {
+    const amount = parseEther('180000'); // 180k
+    const tokensPerMonth = parseEther('10000'); // 10k
+    const numberOfMonths = 18;
+    const monthDurationUnix = 10;
+    const { timestamp } = await ethers.provider.getBlock("latest");
+
+    // setting timestamp + 50 = in the future
+    await xaverToken.increaseAllowance(tokenTimelock.address, amount)
+    await tokenTimelock.init(
+      vcAddr, 
+      amount, 
+      timestamp + 50,
+      numberOfMonths, 
+      monthDurationUnix,
+    );
+
+    await expect(tokenTimelock.connect(vc).release()).to.be.revertedWith("Nothing to claim")
+
+    let claimableTokens = await tokenTimelock.connect(vc).claimableTokens();
+    expect(claimableTokens).to.be.equal(0);
+
+    // forwarding 60 block, should be 1 month of token release 
+    for (let i = 0; i < 60; i++) await network.provider.send("evm_mine");
+    claimableTokens = await tokenTimelock.claimableTokens();
+    expect(claimableTokens).to.be.equal(tokensPerMonth.mul(1));
+  });
+
   it("Should time lock tokens and release them by schedule", async function() {
     const amount = parseEther('180000'); // 180k
     const tokensPerMonth = parseEther('10000'); // 10k

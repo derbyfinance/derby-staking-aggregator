@@ -40,7 +40,7 @@ contract TokenTimelock {
   function init(
     address _beneficiary, 
     uint256 _amount,
-    uint256 _startTimestamp,
+    uint256 _startTimestamp, // timestamp after the cliff
     uint256 _numberOfMonths,
     uint256 _monthDurationUnix
   ) external onlyAdmin {
@@ -55,20 +55,24 @@ contract TokenTimelock {
     initialized = true;
   }
 
-  function claimableTokens() public view returns (uint256 tokens) {
+  function claimableTokens() public view returns (uint256) {
     require(initialized, "!initialized");
-
+    if (startTimestamp > block.timestamp) return 0;
+    
     uint256 timePassed = block.timestamp - startTimestamp;
     uint256 monthsPassed = timePassed / monthDuration;
     uint256 tokenBalance = token.balanceOf(address(this));
     uint256 amount = (monthsPassed * tokensPerMonth) - claimed;
-    tokens = amount > tokenBalance ? tokenBalance : amount;
+    uint256 tokens = amount > tokenBalance ? tokenBalance : amount;
+
+    return tokens;
   }
 
   function release() external onlyBeneficiary {
     require(initialized, "!initialized");
-
     uint256 amount = claimableTokens();
+    require(amount > 0, "Nothing to claim");
+
     claimed += amount;
 
     token.safeTransfer(beneficiary, amount);
