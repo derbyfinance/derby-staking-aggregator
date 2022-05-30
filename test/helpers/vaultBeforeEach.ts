@@ -69,8 +69,8 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E6.toString()),
-      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E18.toString()),
+      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProvider.address, compoundUSDC, usdc, compToken, 1E8.toString()),
+      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProvider.address, compoundDAI, dai, compToken, 1E8.toString()),
       controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProvider.address, aaveUSDC, usdc, aave, 1E6.toString()),
       controllerAddProtocol(controller, 'aave_usdt_01', ETFnumber, aaveProvider.address, aaveUSDT, usdt, aave, 1E6.toString()),
       controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProvider.address, yearnUSDC, usdc, yearn, 1E6.toString()),
@@ -86,8 +86,8 @@ export async function beforeEachETFVault(
     ]);
 
     [protocolCompound.number, protocolCompoundDAI.number, protocolAave.number, protocolAaveUSDT.number, protocolYearn.number] = await Promise.all([
-      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, 1E6.toString()),
-      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, 1E18.toString()),
+      controllerAddProtocol(controller, 'compound_usdc_01', ETFnumber, compoundProviderMock.address, compoundUSDC, usdc, compToken, 1E8.toString()),
+      controllerAddProtocol(controller, 'compound_dai_01', ETFnumber, compoundProviderMock.address, compoundDAI, dai, compToken, 1E8.toString()),
       controllerAddProtocol(controller, 'aave_usdc_01', ETFnumber, aaveProviderMock.address, aaveUSDC, usdc, aave, 1E6.toString()),
       controllerAddProtocol(controller, 'aave_usdt_01', ETFnumber, aaveProviderMock.address, aaveUSDT, usdt, aave, 1E6.toString()),
       controllerAddProtocol(controller, 'yearn_usdc_01', ETFnumber, yearnProviderMock.address, yearnUSDC, usdc, yearn, 1E6.toString()),

@@ -13,6 +13,7 @@ import { parseEther, Result } from "ethers/lib/utils";
 
 const amountUSDC = parseUSDC('100000');
 const uScale = 1E6;
+const compProtocolUScale = 1E8;
 
 describe("Testing ETFVaultSwap", async () => {
   let vaultMock: ETFVaultMock,
