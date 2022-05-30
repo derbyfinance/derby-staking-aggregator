@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
 
@@ -469,6 +470,18 @@ contract ETFVault is VaultToken {
   /// @param _blockInterval number of blocks
   function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
     blockRebalanceInterval = _blockInterval;
+  }
+
+  /// @notice redeem funds from basket in the game
+  /// @dev function is implemented here because the vault holds the funds and can transfer them
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+  function redeemRewards(uint256 _basketId) external {
+      uint256 unredeemedAmount = uint256(IETFGame(ETFgame).basketUnredeemedRewardsViaVault(_basketId, msg.sender));
+      IETFGame(ETFgame).setUnredeemedToRedeemed(_basketId, msg.sender);
+
+      if (unredeemedAmount > vaultCurrency.balanceOf(address(this))) pullFunds(unredeemedAmount);
+
+      vaultCurrency.safeTransfer(msg.sender, uint256(unredeemedAmount));
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
