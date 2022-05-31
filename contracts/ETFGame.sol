@@ -45,12 +45,6 @@ contract ETFGame is ERC721, ReentrancyGuard {
         _;
     }
 
-    // not sure if this is totally safe.
-    modifier onlyBasketOwnerViaVault(uint256 _basketId, address _ownerAddr) {
-        require(_ownerAddr == ownerOf(_basketId) && msg.sender == ETFVaults[_basketId], "ETFGame: Not triggered by owner of basket via vault");
-        _;
-    }
-
     constructor(
         string memory name_, 
         string memory symbol_, 
@@ -117,14 +111,6 @@ contract ETFGame is ERC721, ReentrancyGuard {
         return baskets[_basketId].allocations[_protocolId];
     }
 
-    /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this via the vault. 
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _ownerAddr Address of the owner of the basket, triggered in vault where this param is supplied by the msg.sender.  
-    /// @return int256 Total unredeemed rewards. 
-    function basketUnredeemedRewardsViaVault(uint256 _basketId, address _ownerAddr) external onlyBasketOwnerViaVault(_basketId, _ownerAddr) view returns(int256){
-        return baskets[_basketId].totalUnRedeemedRewards;
-    }
-
     /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @return int256 Total unredeemed rewards. 
@@ -137,14 +123,6 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @return int256 Total redeemed rewards. 
     function basketRedeemedRewards(uint256 _basketId) external onlyBasketOwner(_basketId) view returns(int256){
         return baskets[_basketId].totalRedeemedRewards;
-    }
-
-    /// @notice resets the total unredeemed rewards in the basket and adds it to redeemed. Only the vault can do this. 
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _ownerAddr Address of the owner of the basket, triggered in vault where this param is supplied by the msg.sender.  
-    function setUnredeemedToRedeemed(uint256 _basketId, address _ownerAddr) external onlyBasketOwnerViaVault(_basketId, _ownerAddr){
-        baskets[_basketId].totalRedeemedRewards += baskets[_basketId].totalUnRedeemedRewards;
-        baskets[_basketId].totalUnRedeemedRewards = 0;
     }
 
     /// @notice Adding a vault to the game.
@@ -226,7 +204,7 @@ contract ETFGame is ERC721, ReentrancyGuard {
         baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
     }
 
-    /// @notice rewards are calculated here
+    /// @notice rewards are calculated here.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
         if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
@@ -242,5 +220,16 @@ contract ETFGame is ERC721, ReentrancyGuard {
                 baskets[_basketId].totalUnRedeemedRewards += IETFVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
             }
         }
+    }
+
+    /// @notice redeem funds from basket in the game.
+    /// @dev makes a call to the vault to make the actual transfer because the vault holds the funds.
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {   
+        int256 amount = baskets[_basketId].totalUnRedeemedRewards;
+        baskets[_basketId].totalRedeemedRewards += amount;
+        baskets[_basketId].totalUnRedeemedRewards = 0;
+
+        IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).redeemRewards(msg.sender, uint256(amount));
     }
 }

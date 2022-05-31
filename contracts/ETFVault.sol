@@ -472,16 +472,13 @@ contract ETFVault is VaultToken {
     blockRebalanceInterval = _blockInterval;
   }
 
-  /// @notice redeem funds from basket in the game
+  /// @notice redeem funds for basket in the game
   /// @dev function is implemented here because the vault holds the funds and can transfer them
-  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-  function redeemRewards(uint256 _basketId) external {
-      uint256 unredeemedAmount = uint256(IETFGame(ETFgame).basketUnredeemedRewardsViaVault(_basketId, msg.sender));
-      IETFGame(ETFgame).setUnredeemedToRedeemed(_basketId, msg.sender);
-
-      if (unredeemedAmount > vaultCurrency.balanceOf(address(this))) pullFunds(unredeemedAmount);
-
-      vaultCurrency.safeTransfer(msg.sender, uint256(unredeemedAmount));
+  /// @param _user user (msg.sender) that triggered the redeemRewards function on the game contract.
+  /// @param _amount the reward amount to be transferred to the user.
+  function redeemRewards(address _user, uint256 _amount) external onlyETFgame {
+      if (_amount > vaultCurrency.balanceOf(address(this))) pullFunds(_amount);
+      vaultCurrency.safeTransfer(_user, _amount);
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
