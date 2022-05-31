@@ -22,7 +22,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalXaverSupply = parseEther(1E8.toString()); 
 
-describe("Testing ETFgameMock", async () => {
+describe.only("Testing ETFgameMock", async () => {
   let vaultMock: ETFVaultMock,
   user: Signer,
   dao: Signer,
@@ -184,7 +184,21 @@ describe("Testing ETFgameMock", async () => {
     expect(rewards).to.be.closeTo('51111108', 500000);
   });
 
-  it("Should be able to redeem funds", async function() {
+  it("Should be able to redeem funds via vault function", async function() {
+    let rewards = await generateUnredeemedRewards();
+    let userBalanceBefore = await IUSDc.balanceOf(userAddr);
+    let vaultBalanceBefore = await IUSDc.balanceOf(vaultMock.address);
+
+    await gameMock.triggerRedeemedRewardsVault(vaultMock.address, userAddr, rewards);
+
+    let userBalanceAfter = await IUSDc.balanceOf(userAddr);
+    let vaultBalanceAfter = await IUSDc.balanceOf(vaultMock.address);
+
+    expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
+    expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
+  });
+
+  it("Should be able to redeem funds via game", async function() {
     let rewards = await generateUnredeemedRewards();
     let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
     let userBalanceBefore = await IUSDc.balanceOf(userAddr);

@@ -41,7 +41,7 @@ contract ETFGame is ERC721, ReentrancyGuard {
     }
 
     modifier onlyBasketOwner(uint256 _basketId) {
-        require(msg.sender == ownerOf(_basketId), "ETFGame: Not the owner of the basket");
+        require(msg.sender == ownerOf(_basketId), "ETFGame Not the owner of the basket");
         _;
     }
 
