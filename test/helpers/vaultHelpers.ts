@@ -1,9 +1,10 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
 import type { ETFVaultMock, Controller, ETFGameMock } from '../../typechain-types';
-import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
-import { comptroller } from "./addresses";
+import { deployYearnProvider, deployCompoundProvider, deployAaveProvider, deployController } from './deploy';
+import { comptroller, dai, usdc, usdt } from "./addresses";
 import { Result } from 'ethers/lib/utils';
+import { ProtocolVault } from './protocolVaultClass';
 
 interface Protocol {
   number: number;
@@ -55,6 +56,31 @@ export function deployAllProviders(dao: Signer, controller: Controller) {
     deployCompoundProvider(dao, controller.address, comptroller),
     deployAaveProvider(dao, controller.address),
   ]);
+}
+
+export function initController(controller: Controller, addVaultAddresses: string[]) {
+  const addVaultPromise = Promise.all(addVaultAddresses.map(address => controller.addVault(address)));
+  return Promise.all([
+    addVaultPromise,
+    controller.addCurveIndex(dai, 0),
+    controller.addCurveIndex(usdc, 1),
+    controller.addCurveIndex(usdt, 2),
+  ]);
+}
+
+export async function addAllProtocolsToController(
+  protocolMap: Map<string, ProtocolVault>, 
+  controller: Controller, 
+  ETFnumber: number, 
+  allProviders: any
+  ) {
+  for (const protocol of protocolMap.values()) {
+    await protocol.addProtocolToController(
+      controller,
+      ETFnumber,
+      allProviders
+    );  
+  };
 }
 
 export const rebalanceETF = async (vaultMock: ETFVaultMock) => {

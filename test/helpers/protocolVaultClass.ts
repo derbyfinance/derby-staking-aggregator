@@ -19,6 +19,7 @@ export class ProtocolVault {
   decimals: number;
   number: number = 0;
   allocation: number = 0;
+  expectedBalance: number = 0;
 
   constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
     this.name = name;
@@ -28,13 +29,19 @@ export class ProtocolVault {
     this.decimals = decimals;
   };
 
+  setExpectedBalance(balance: number) {
+    this.expectedBalance = balance;
+    return this;
+  }
+
   async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number) {
     this.allocation = allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
 
-  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<BigNumber> {
-    return await vault.getDeltaAllocationTEST(this.number);
+  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<number> {
+    const allocation = await vault.getDeltaAllocationTEST(this.number);
+    return allocation.toNumber();
   };
 
   async getAllocation(vault: ETFVaultMock): Promise<BigNumber> {
@@ -53,11 +60,11 @@ export class ProtocolVault {
     return await vault.balanceSharesTEST(this.number, address);
   };
 
-  async addProtocolToController(controller: Controller, ETFnumber: number, providerAddr: string) {
+  async addProtocolToController(controller: Controller, ETFnumber: number, allProviders: any) {
     const tx = await controller.addProtocol(
       this.name, 
       ETFnumber, 
-      providerAddr, 
+      allProviders.getProviderAddress(this.name), 
       this.protocolToken, 
       this.underlyingToken, 
       this.govToken, 

@@ -77,6 +77,6 @@ export const formatEther = (amount: string | BigNumber) => ethers.utils.formatEt
 export const parseUnits = (amount: string, number: number) => ethers.utils.parseUnits(amount, number);
 export const formatUnits = (amount: string | BigNumber, number: number) => ethers.utils.formatUnits(amount, number);
 export const parseUSDC = (amount: string) => ethers.utils.parseUnits(amount, 6);
-export const formatUSDC = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 6);
+export const formatUSDC = (amount: string | BigNumber) => Number(ethers.utils.formatUnits(amount, 6));
 export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18);
 export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18);

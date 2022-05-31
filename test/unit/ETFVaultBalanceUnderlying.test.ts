@@ -7,7 +7,7 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../helpers/helpers'
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';
 import { allProtocols, usdc, dai, usdt } from "../helpers/addresses";
-import { rebalanceETF } from "../helpers/vaultHelpers";
+import { addAllProtocolsToController, initController, rebalanceETF } from "../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
 import allProviders  from "../helpers/allProvidersClass";
 
@@ -26,40 +26,29 @@ const gasFeeLiquidity = 10_000 * uScale;
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000);
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string, protocols: any;
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
 
   beforeEach(async function() {
     [dao, game] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    gameAddr = await game.getAddress();
 
-    [USDCSigner, IUSDc, controller] = await Promise.all([
+    [USDCSigner, IUSDc, daoAddr, gameAddr] = await Promise.all([
       getUSDCSigner(),
       erc20(usdc),
-      deployController(dao, daoAddr),
+      dao.getAddress(),
+      game.getAddress()
     ]);
 
+    controller = await deployController(dao, daoAddr);
     vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
+      initController(controller, [gameAddr, vault.address]),
       allProviders.deployAllProviders(dao, controller),
-      controller.addVault(gameAddr),
-      controller.addVault(vault.address),
-      controller.addCurveIndex(dai, 0),
-      controller.addCurveIndex(usdc, 1),
-      controller.addCurveIndex(usdt, 2),
       IUSDc.connect(USDCSigner).transfer(gameAddr, amountUSDC),
       IUSDc.connect(game).approve(vault.address, amountUSDC),
     ]);
 
-    // add all protocols to controller
-    for (const protocol of allProtocols.values()) {
-      await protocol.addProtocolToController(
-        controller,
-        ETFnumber,
-        allProviders.getProviderAddress(protocol.name)
-      );  
-    };
+    await addAllProtocolsToController(allProtocols, controller, ETFnumber, allProviders);
   });
 
   it("Should calc balanceUnderlying for all known protocols correctly", async function() {
