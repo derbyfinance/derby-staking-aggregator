@@ -9,6 +9,7 @@ import { deployController, deployETFVaultMock } from '../helpers/deploy';
 import { usdc, yearn_usdc_01, compound_usdc_01, aave_usdc_01 } from "../helpers/addresses";
 import { addAllProtocolsToController, initController, rebalanceETF } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
+import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
@@ -26,40 +27,12 @@ const gasFeeLiquidity = 10_000 * uScale;
 
 
 describe("Testing ETFVault, unit test", async () => {
-  // let vaultMock: ETFVaultMock,
-  // user: Signer,
-  // dao: Signer,
-  // userAddr: string,
-  // IUSDc: Contract, 
-  // protocolCompound: Protocol,
-  // protocolAave: Protocol,
-  // protocolYearn: Protocol,
-  // allProtocols: Protocol[],
-  // controller: Contract,
-  // yearnProvider: MockContract, 
-  // compoundProvider: MockContract, 
-  // aaveProvider: MockContract;
-
-  // beforeEach(async function() {
-  //   [
-  //     vaultMock,
-  //     user,
-  //     userAddr,
-  //     [protocolCompound, protocolAave, protocolYearn],
-  //     allProtocols,
-  //     IUSDc,
-  //     yearnProvider, 
-  //     compoundProvider, 
-  //     aaveProvider,,
-  //     controller,,,,,,,
-  //     dao
-  //   ] = await beforeEachETFVault(amountUSDC)
-  // });
   let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
+
   const protocols = new Map<string, ProtocolVault>()
-  .set('yearn_usdc_01', yearn_usdc_01)
   .set('compound_usdc_01', compound_usdc_01)
-  .set('aave_usdc_01', aave_usdc_01);
+  .set('aave_usdc_01', aave_usdc_01)
+  .set('yearn_usdc_01', yearn_usdc_01);
 
   beforeEach(async function() {
     [dao, game] = await ethers.getSigners();
@@ -101,7 +74,6 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       const deltaAllocation = await protocol.getDeltaAllocationTEST(vault);
-      console.log({deltaAllocation})
       expect(deltaAllocation).to.be.greaterThan(0);
       expect(deltaAllocation).to.be.equal(protocol.allocation);
     };
@@ -132,7 +104,7 @@ describe("Testing ETFVault, unit test", async () => {
     await expect(vault.connect(dao).setPerformanceFee(pf)).to.be.revertedWith('Percentage cannot exceed 100%');
   });
 
-  it.only("Should be able to blacklist protocol and pull all funds", async function() {
+  it("Should be able to blacklist protocol and pull all funds", async function() {
     await Promise.all([
       protocols.get("compound_usdc_01")!
         .setExpectedBalance(0)
@@ -149,107 +121,137 @@ describe("Testing ETFVault, unit test", async () => {
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
 
-    await vault.connect(dao).blacklistProtocol(0);
+    // blacklist compound_usdc_01
+    await vault.connect(dao).blacklistProtocol(protocols.get("compound_usdc_01")!.number);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
     console.log("liquidity vault after blacklisting: %s", vaultBalance);
 
     let expectedVaultLiquidity = 40000 - gasUsedUSDC;
 
-    protocols.forEach(async (protocol, i, j) => {
+    for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
-      console.log({balance})
+      console.log(protocol.number, balance, protocol.name)
       expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1)
-    });
+    };
 
-    // expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
-    
-    // expect(await controller.connect(dao).getProtocolBlacklist(0, 0)).to.be.true;
+    expect(vaultBalance).to.be.closeTo(expectedVaultLiquidity, 1);
+    expect(await controller.connect(game).getProtocolBlacklist(0, 0)).to.be.true;
   });
 
-//   it("Should not be able to set delta on blacklisted protocol", async function() {
-//     await controller.addVault(dao.getAddress()); // use dao signer as vault signer
-//     await vault.connect(dao).blacklistProtocol(0);
-//     await expect(vault.connect(user).setDeltaAllocations(0, 30))
-//     .to.be.revertedWith('Protocol on blacklist');
-//   });
+  it("Should not be able to set delta on blacklisted protocol", async function() {
+    await controller.addVault(daoAddr); // use dao signer as vault signer
+    await vault.connect(dao).blacklistProtocol(0);
+    await expect(vault.connect(game).setDeltaAllocations(0, 30))
+    .to.be.revertedWith('Protocol on blacklist');
+  });
 
-//   it("Should not be able to rebalance in blacklisted protocol", async function() {
-//     await controller.addVault(dao.getAddress()); // use dao signer as vault signer
-//     await setDeltaAllocations(user, vault, allProtocols);
-//     await vault.connect(dao).blacklistProtocol(0);
-//     await vault.depositETF(userAddr, amountUSDC);
-//     const gasUsed = await rebalanceETF(vault);
-//     let gasUsedUSDC = Number(formatUSDC(gasUsed));
+  it("Should not be able to rebalance in blacklisted protocol", async function() {
+    await controller.addVault(daoAddr); // use dao signer as vault signer
 
-//     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
-//     console.log("liquidity vault after blacklisting: %s", vaultBalance);
-//     let balances = await getAndLogBalances(vault, allProtocols);
-//     let expectedBalances = [0, 45000, 15000];
-//     let expectedVaultLiquidity = 40000 - gasUsedUSDC;
+    await Promise.all([
+      protocols.get("compound_usdc_01")!
+        .setExpectedBalance(0)
+        .setDeltaAllocation(vault, game, 40),
+      protocols.get("aave_usdc_01")!
+        .setExpectedBalance(45_000)
+        .setDeltaAllocation(vault, game, 60),
+      protocols.get("yearn_usdc_01")!
+        .setExpectedBalance(15_000)
+        .setDeltaAllocation(vault, game, 20),
+    ]);
 
-//     allProtocols.forEach((protocol, i) => {
-//       expect(Number(balances[i].div(uScale))).to.be.closeTo(expectedBalances[i], 2)
-//     });
+    await vault.connect(dao).blacklistProtocol(protocols.get("compound_usdc_01")!.number);
+    await vault.depositETF(gameAddr, amountUSDC);
 
-//     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
-//     const result = await controller.connect(dao).getProtocolBlacklist(0, 0);
-//     expect(result).to.be.true;
-//   });
-// });
+    const gasUsed = await rebalanceETF(vault);
+    let gasUsedUSDC = formatUSDC(gasUsed);
 
-// describe("Testing ETFVault, unit test, mock providers", async () => {
-//     let yearnProvider: MockContract, 
-//     compoundProvider: MockContract, 
-//     aaveProvider: MockContract, 
-//     vaultMock: ETFVaultMock,
-//     userAddr: string,
-//     IUSDc: Contract,
-//     user: Signer,
-//     allProtocols: Protocol[];
+    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
+    console.log("liquidity vault after blacklisting: %s", vaultBalance);
+
+    let expectedVaultLiquidity = 40000 - gasUsedUSDC;
+
+    for (const protocol of protocols.values()) {
+      const balance = await protocol.balanceUnderlying(vault);
+      expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1)
+    };
+
+    expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
+    const result = await controller.connect(dao).getProtocolBlacklist(0, 0);
+    expect(result).to.be.true;
+  });
+});
+
+describe("Testing ETFVault, unit test, mock providers", async () => {
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
   
-//     beforeEach(async function() {
-//       [
-//         vaultMock,
-//         user,
-//         userAddr,
-//         ,
-//         allProtocols,
-//         IUSDc,
-//         yearnProvider, 
-//         compoundProvider, 
-//         aaveProvider
-//       ] = await beforeEachETFVault(amountUSDC, true);
-//     });
+  const protocols = new Map<string, ProtocolVault>()
+  .set('compound_usdc_01', compound_usdc_01)
+  .set('aave_usdc_01', aave_usdc_01)
+  .set('yearn_usdc_01', yearn_usdc_01);
+
+  beforeEach(async function() {
+    [dao, game] = await ethers.getSigners();
+
+    [USDCSigner, IUSDc, daoAddr, gameAddr] = await Promise.all([
+      getUSDCSigner(),
+      erc20(usdc),
+      dao.getAddress(),
+      game.getAddress()
+    ]);
+
+    controller = await deployController(dao, daoAddr);
+    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+
+    // With MOCK Providers
+    await Promise.all([
+      initController(controller, [gameAddr, vault.address]),
+      AllMockProviders.deployAllMockProviders(dao),
+      IUSDc.connect(USDCSigner).transfer(gameAddr, amountUSDC),
+      IUSDc.connect(game).approve(vault.address, amountUSDC),
+    ]);
+
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, ETFnumber, AllMockProviders);
+    }
+  });
   
-//     it("Should store prices on rebalance", async function() {
-//         let compoundPrice = 1;
-//         let aavePrice = 2;
-//         let yearnPrice = 3;
-//         await Promise.all([
-//           yearnProvider.mock.exchangeRate.returns(yearnPrice),
-//           compoundProvider.mock.exchangeRate.returns(compoundPrice),
-//           aaveProvider.mock.exchangeRate.returns(aavePrice), 
-//           yearnProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-//           compoundProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-//           aaveProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-//           yearnProvider.mock.deposit.returns(0), // to be able to use the rebalance function
-//           compoundProvider.mock.deposit.returns(0), // to be able to use the rebalance function
-//           aaveProvider.mock.deposit.returns(0), // to be able to use the rebalance function
-//           yearnProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
-//           compoundProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
-//           aaveProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
-//         ]);
+    it("Should store prices on rebalance", async function() {
+        const {yearnProviderMock, compoundProviderMock, aaveProviderMock} = AllMockProviders;
+        let compoundPrice = 1;
+        let aavePrice = 2;
+        let yearnPrice = 3;
+        await Promise.all([
+          compoundProviderMock.mock.exchangeRate.returns(compoundPrice),
+          aaveProviderMock.mock.exchangeRate.returns(aavePrice), 
+          yearnProviderMock.mock.exchangeRate.returns(yearnPrice),
+          compoundProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          aaveProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          yearnProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          compoundProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
+          aaveProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
+          yearnProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
+          compoundProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
+          aaveProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
+          yearnProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
+        ]);
     
-//         await setDeltaAllocations(user, vaultMock, allProtocols); 
-//         await vaultMock.depositETF(userAddr, amountUSDC);
-//         await rebalanceETF(vaultMock);
+        // await setDeltaAllocations(user, vaultMock, allProtocols); 
+        await Promise.all([
+          protocols.get("compound_usdc_01")!.setDeltaAllocation(vault, game, 40),
+          protocols.get("aave_usdc_01")!.setDeltaAllocation(vault, game, 60),
+          protocols.get("yearn_usdc_01")!.setDeltaAllocation(vault, game, 20),
+        ]);
+        await vault.depositETF(gameAddr, amountUSDC);
+        await rebalanceETF(vault);
 
-//         let compoundHistoricalPrice = await vaultMock.historicalPrices(1, 0);
-//         let aaveHistoricalPrice = await vaultMock.historicalPrices(1, 2);
-//         let yearnHistoricalPrice = await vaultMock.historicalPrices(1, 4);
-//         expect(compoundPrice).to.be.equal(compoundHistoricalPrice);
-//         expect(aavePrice).to.be.equal(aaveHistoricalPrice);
-//         expect(yearnPrice).to.be.equal(yearnHistoricalPrice);
-//       });
+        let compoundHistoricalPrice = await vault.historicalPrices(1, protocols.get("compound_usdc_01")!.number);
+        let aaveHistoricalPrice = await vault.historicalPrices(1, protocols.get("aave_usdc_01")!.number);
+        let yearnHistoricalPrice = await vault.historicalPrices(1, protocols.get("yearn_usdc_01")!.number);
+
+        expect(compoundPrice).to.be.equal(compoundHistoricalPrice);
+        expect(aavePrice).to.be.equal(aaveHistoricalPrice);
+        expect(yearnPrice).to.be.equal(yearnHistoricalPrice);
+      });
 });
