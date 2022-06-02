@@ -39,6 +39,11 @@ export class ProtocolVault {
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
 
+  async setCurrentAllocation(vault: ETFVaultMock, allocation: number): Promise<void> {
+    this.allocation = allocation;
+    await vault.setCurrentAllocation(this.number, allocation);
+  };
+
   async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<number> {
     const allocation = await vault.getDeltaAllocationTEST(this.number);
     return allocation.toNumber();
@@ -70,9 +75,9 @@ export class ProtocolVault {
       this.govToken, 
       (10 ** this.decimals).toString()
     )
-    const receipt = await tx.wait()
-    const { protocolNumber } = receipt.events![0].args as Result
-
+    const receipt = await tx.wait();
+    const { protocolNumber } = receipt.events![0].args as Result;
+    console.log({protocolNumber})
     this.number = protocolNumber
   }
 }

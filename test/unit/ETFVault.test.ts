@@ -226,23 +226,23 @@ describe("Testing ETFVault, unit test, mock providers", async () => {
   });
   
     it("Should store prices on rebalance", async function() {
-        const {yearnProviderMock, compoundProviderMock, aaveProviderMock} = AllMockProviders;
+        const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
         let compoundPrice = 1;
         let aavePrice = 2;
         let yearnPrice = 3;
         await Promise.all([
-          compoundProviderMock.mock.exchangeRate.returns(compoundPrice),
-          aaveProviderMock.mock.exchangeRate.returns(aavePrice), 
-          yearnProviderMock.mock.exchangeRate.returns(yearnPrice),
-          compoundProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-          aaveProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-          yearnProviderMock.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-          compoundProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
-          aaveProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
-          yearnProviderMock.mock.deposit.returns(0), // to be able to use the rebalance function
-          compoundProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
-          aaveProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
-          yearnProviderMock.mock.withdraw.returns(0), // to be able to use the rebalance function
+          compoundProvider.mock.exchangeRate.returns(compoundPrice),
+          aaveProvider.mock.exchangeRate.returns(aavePrice), 
+          yearnProvider.mock.exchangeRate.returns(yearnPrice),
+          compoundProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          aaveProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          yearnProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
+          compoundProvider.mock.deposit.returns(0), // to be able to use the rebalance function
+          aaveProvider.mock.deposit.returns(0), // to be able to use the rebalance function
+          yearnProvider.mock.deposit.returns(0), // to be able to use the rebalance function
+          compoundProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
+          aaveProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
+          yearnProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
         ]);
     
         // await setDeltaAllocations(user, vaultMock, allProtocols); 

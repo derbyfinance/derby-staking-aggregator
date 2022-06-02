@@ -88,6 +88,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
   it("Should calc Shares for all known protocols correctly", async function() {
     // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
+      console.log('random aloc', getRandomAllocation())
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
