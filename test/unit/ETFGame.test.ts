@@ -118,7 +118,7 @@ describe.only("Testing ETFgameMock", async () => {
 
     let allocations = [20, 30, 40, 50, 60];
     let totalAllocations = 200;
-    await xaverToken.increaseAllowance(await gameMock.address, totalAllocations);
+    await xaverToken.increaseAllowance(gameMock.address, totalAllocations);
     await gameMock.rebalanceBasket(0, allocations);
 
     expect(totalAllocations).to.be.equal(await gameMock.basketTotalAllocatedTokens(0));
