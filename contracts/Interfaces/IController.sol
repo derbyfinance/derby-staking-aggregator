@@ -5,9 +5,9 @@ interface IController {
   struct ProtocolInfoS {
     address LPToken;
     address provider;
-    address underlying;
-    address govToken;
-    uint256 uScale;
+    address underlying; // address of underlying token of the protocol eg USDC
+    address govToken; // address of protocol governance token
+    uint256 uScale; // uScale of protocol LP Token
   }
   
   function deposit(
@@ -93,6 +93,8 @@ interface IController {
   function addVault(address _vault) external;
 
   function addCurveIndex(address _token, int128 _index) external;
+
+  function underlyingUScale(address _token) external view returns(uint256);
 
   function setUniswapRouter(address _uniswapRouter) external;
 

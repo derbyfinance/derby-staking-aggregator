@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 
 import { HardhatUserConfig, task } from "hardhat/config";
-import "hardhat-gas-reporter";
+// import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
@@ -42,15 +42,15 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `${process.env.PROVIDER_FORKING}`,
-        blockNumber: 14492748,
+        blockNumber: 14748903,
       },
     },
   },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS ? true : false,
-    currency: "USD",
-    coinmarketcap: process.env.CMC,
-  },
+  // gasReporter: {
+  //   enabled: process.env.REPORT_GAS ? true : false,
+  //   currency: "USD",
+  //   coinmarketcap: process.env.CMC,
+  // },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },

@@ -124,10 +124,11 @@ describe("Testing ETFgameMock", async () => {
 
     // set balance before
     let balance = 1000*1E6;
+    let balanceComp = 1000*1E8;
     let price = 1000;
     await Promise.all([
       yearnProvider.mock.balanceUnderlying.returns(balance),
-      compoundProvider.mock.balanceUnderlying.returns(balance),
+      compoundProvider.mock.balanceUnderlying.returns(balanceComp),
       aaveProvider.mock.balanceUnderlying.returns(balance),
       yearnProvider.mock.deposit.returns(0),
       compoundProvider.mock.deposit.returns(0),

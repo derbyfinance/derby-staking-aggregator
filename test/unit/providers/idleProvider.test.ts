@@ -13,6 +13,8 @@ const amount = Math.floor(Math.random() * 1000000);
 const amountUSDC = parseUSDC(amount.toString());
 const amountDAI = parseDAI(amount.toString());
 const amountUSDT = parseUSDC(amount.toString());
+const uScale = ethers.BigNumber.from(1E6.toString());
+const protocolUScale = ethers.BigNumber.from(1E18.toString());;
 
 const ETFnumber = 0;
 
@@ -52,7 +54,7 @@ describe("Testing Idle provider", async () => {
 
   it("Should deposit and withdraw USDC to idle through controller", async function() {
     iToken = await erc20(iusdc);
-    console.log(`-------------------------Deposit-------------------------`); 
+    console.log(`-------------------------Deposit-------------------  ------`); 
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
     await controller.connect(vault).deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC);
@@ -61,8 +63,12 @@ describe("Testing Idle provider", async () => {
     const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdc);
     const vaultBalance = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
+    console.log({balanceShares})
+    console.log({balanceUnderlying})
+    console.log(Number(formatEther(calcShares)))
+
+    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 6);
+    expect(balanceUnderlying.mul(uScale).div(protocolUScale)).to.be.closeTo(amountUSDC, 5);
     expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
 
     console.log(`-------------------------Withdraw-------------------------`); 
@@ -110,7 +116,7 @@ describe("Testing Idle provider", async () => {
     const vaultBalance = await IUSDt.balanceOf(vaultAddr);
 
     expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 5);
+    expect(balanceUnderlying.mul(uScale).div(protocolUScale)).to.be.closeTo(amountUSDT, 5);
     expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountUSDT);
 
     console.log(`-------------------------Withdraw-------------------------`); 

@@ -13,6 +13,10 @@ interface IIdle {
 
   function tokenPrice() external view returns(uint);
 
+  function decimals() external view returns(uint);
+
+  function token() external view returns(address);
+
   function balanceOf(address _address) external view returns(uint);
 
   function transfer(address _receiver, uint _amount) external returns(bool);

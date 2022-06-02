@@ -3,7 +3,7 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Contract } from "ethers";
-import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import { formatUSDC, parseUnits, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock } from '../../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { setCurrentAllocations } from "../helpers/vaultHelpers";
@@ -62,7 +62,9 @@ describe("Testing ETFVaultWithdraw", async () => {
 
     console.log(`Mocking 15k balance in protocols, with 300 Profit (so 15.9k totalUnderlying in protocols) each and 5k in Vault =>`);
     const mocked2Balance = parseUSDC('5000');
+    const mockedBalanceComp = parseUnits('5000', 8);
     const profit = parseUSDC('300');
+    const profitComp = parseUnits('300', 8);
     await vaultMock.depositETF(userAddr, parseUSDC('20000'));
 
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')));
@@ -74,7 +76,7 @@ describe("Testing ETFVaultWithdraw", async () => {
     await Promise.all([
       vaultMock.clearCurrencyBalance(parseUSDC('15000')),
       yearnProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
-      compoundProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
+      compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp.add(profitComp)),
       aaveProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
     ]);
  

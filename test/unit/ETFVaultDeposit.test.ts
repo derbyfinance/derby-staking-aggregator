@@ -3,7 +3,7 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import { formatUSDC, parseUnits, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock } from '../../typechain-types';
 import { MockContract } from "ethereum-waffle";
 import { setCurrentAllocations } from "../helpers/vaultHelpers";
@@ -44,14 +44,17 @@ describe("Testing ETFVaultDeposit", async () => {
 
     console.log(`Mocking a rebalance with the 9k deposit => 3k to each protocol`);
     const mockedBalance = parseUSDC('3000'); // 3k in each protocol
+    const mockedBalanceComp = parseUnits('3000', 8); // 3k in each protocol
 
     await Promise.all([
       vaultMock.clearCurrencyBalance(parseUSDC('9000')),
       yearnProvider.mock.balanceUnderlying.returns(mockedBalance),
-      compoundProvider.mock.balanceUnderlying.returns(mockedBalance),
+      compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp),
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance),
     ]);
     await vaultMock.depositETF(userAddr, parseUSDC('1000'));
+    const exchange = await vaultMock.exchangeRate();
+    console.log({exchange})
     
     // expect LP Token balance User == 9k + 1k because Expect price == 1 i.e 1:1
     expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1'));
@@ -59,10 +62,11 @@ describe("Testing ETFVaultDeposit", async () => {
     
     console.log(`Mocking a profit of 100 in each protocol with 1k sitting in vault`);
     const profit = parseUSDC('100');
+    const profitComp = parseUnits('100', 8);
 
     await Promise.all([
       yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
-      compoundProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp.add(profitComp)),
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
     ]);
 

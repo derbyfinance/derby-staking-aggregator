@@ -101,7 +101,6 @@ contract AaveProvider is IProvider{
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _aToken) external view override returns (uint256) {
     uint256 shares = _amount / exchangeRate(_aToken);
-
     return shares;
   }
 
