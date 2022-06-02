@@ -379,9 +379,9 @@ contract ETFVault is VaultToken {
     return underlyingBalance;
   }
 
-  /// @notice Get price for underlying protocol
+  /// @notice Get price for underlying protocol lp token
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
-  /// @return protocolPrice Price per share
+  /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns(uint256) {
     return controller.exchangeRate(ETFnumber, _protocolNum);
   }
