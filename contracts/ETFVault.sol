@@ -313,7 +313,7 @@ contract ETFVault is VaultToken {
         vaultCurrencyAddr, 
         protocol.underlying,
         uScale,
-        protocol.uScale,
+        controller.underlyingUScale(protocol.underlying),
         controller.curveIndex(vaultCurrencyAddr), 
         controller.curveIndex(protocol.underlying),
         controller.curve3Pool(),
@@ -342,12 +342,12 @@ contract ETFVault is VaultToken {
 
       uint256 amountReceived = controller.withdraw(ETFnumber, _protocolNum, address(this), shares);
 
-      if (protocol. underlying != vaultCurrencyAddr) {
+      if (protocol.underlying != vaultCurrencyAddr) {
         _amount = Swap.swapStableCoins(
           amountReceived, 
           protocol.underlying,
           vaultCurrencyAddr, 
-          protocol.uScale,
+          controller.underlyingUScale(protocol.underlying),
           uScale,
           controller.curveIndex(protocol.underlying), 
           controller.curveIndex(vaultCurrencyAddr),
@@ -362,11 +362,15 @@ contract ETFVault is VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return balance Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256 balance) {   
+    uint gasStart = gasleft();
+    
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
-      uint256 balanceProtocol = balanceUnderlying(i);
-      balance += balanceProtocol;
+      balance += balanceUnderlying(i);
     }
+
+    uint256 gasUsed = gasStart - gasleft();
+    console.log("gasUsed getTotalUnderlying %s", gasUsed);
   }
 
   /// @notice Get balance in VaultCurrency in underlying protocol
@@ -375,11 +379,22 @@ contract ETFVault is VaultToken {
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
     uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
-
+    // console.log("balanceUnderlying %s", underlyingBalance);
     return underlyingBalance;
   }
 
-  /// @notice Get price for underlying protocol lp token
+  /// @notice Calculates how many shares are equal to the amount in vault currency
+  /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
+  /// @param _amount Amount in underyling token e.g USDC
+  /// @return number of shares i.e LP tokens
+  function calcShares(uint256 _protocolNum, uint256 _amount) public view returns(uint256) {
+    uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
+    uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount * protocolUScale / uScale);
+    // console.log("shares %s", shares);
+    return shares;
+  }
+
+  /// @notice Get price for underlying protocol
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns(uint256) {

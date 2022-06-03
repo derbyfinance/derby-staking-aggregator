@@ -65,6 +65,10 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   function getETFnumber() external view returns(uint256) {
     return ETFnumber;
   }
+
+  function balanceSharesTEST(uint256 _protocolNum, address _address) external view returns(uint256) {
+    return controller.balance(ETFnumber, _protocolNum, _address);
+  }
   
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;

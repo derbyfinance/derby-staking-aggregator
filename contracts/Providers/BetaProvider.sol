@@ -96,6 +96,7 @@ contract BetaProvider is IProvider {
     uint256 supply = IBeta(_bToken).totalSupply();
     uint256 totalLoanable  = IBeta(_bToken).totalLoanable();
     uint256 totalLoan = IBeta(_bToken).totalLoan();
+
     return (balanceShares * (totalLoanable + totalLoan)) / supply;
   }
 
@@ -108,6 +109,7 @@ contract BetaProvider is IProvider {
     uint256 supply = IBeta(_bToken).totalSupply();
     uint256 totalLoanable  = IBeta(_bToken).totalLoanable();
     uint256 totalLoan = IBeta(_bToken).totalLoan();
+    
     return (_amount * supply) / (totalLoanable + totalLoan);
   }
 
