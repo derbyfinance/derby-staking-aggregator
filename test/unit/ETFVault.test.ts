@@ -12,19 +12,12 @@ import allProviders  from "../helpers/allProvidersClass";
 import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
+import { vaultInfo } from "../helpers/vaultHelpers";
 
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
-const name = 'XaverUSDC';
-const symbol = 'dUSDC';
-const ETFname = 'USDC_med_risk';
-const ETFnumber = 0;
-const decimals = 6;
-const uScale = 1E6;
-const liquidityPerc = 10;
-const gasFeeLiquidity = 10_000 * uScale;
-
+const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing ETFVault, unit test", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;

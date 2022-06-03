@@ -12,6 +12,17 @@ interface Protocol {
   address: string;
 }
 
+export const vaultInfo = {
+  name: 'XaverUSDC',
+  symbol: 'xUSDC',
+  ETFname: 'USDC_med_risk',
+  ETFnumber: 0,
+  decimals: 6,
+  uScale: 1E6,
+  liquidityPerc: 10,
+  gasFeeLiquidity: 10_000 * 1E6,
+}
+
 export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol[]) {
   const promises = protocols.map((protocol: Protocol) => {
     return vault.balanceUnderlying(protocol.number)
