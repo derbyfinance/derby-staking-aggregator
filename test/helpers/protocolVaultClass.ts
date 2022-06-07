@@ -35,7 +35,7 @@ export class ProtocolVault {
   }
 
   async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
-    this.allocation = allocation;
+    this.allocation += allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
 
@@ -77,7 +77,7 @@ export class ProtocolVault {
     )
     const receipt = await tx.wait();
     const { protocolNumber } = receipt.events![0].args as Result;
-    console.log({protocolNumber})
+
     this.number = protocolNumber
   }
 }

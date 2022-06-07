@@ -7,7 +7,7 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../helpers/helpers'
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';
 import { allProtocols, usdc, dai, usdt } from "../helpers/addresses";
-import { addAllProtocolsToController, initController, rebalanceETF } from "../helpers/vaultHelpers";
+import { rebalanceETF } from "../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
 import allProviders  from "../helpers/allProvidersClass";
 
@@ -23,32 +23,43 @@ const uScale = 1E6;
 const liquidityPerc = 10;
 const gasFeeLiquidity = 10_000 * uScale;
 
-const getRandomAllocation = () => Math.floor(Math.random() * 100_000);
+const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string, protocols: any;
 
   beforeEach(async function() {
     [dao, game] = await ethers.getSigners();
+    daoAddr = await dao.getAddress();
+    gameAddr = await game.getAddress();
 
-    [USDCSigner, IUSDc, daoAddr, gameAddr] = await Promise.all([
+    [USDCSigner, IUSDc, controller] = await Promise.all([
       getUSDCSigner(),
       erc20(usdc),
-      dao.getAddress(),
-      game.getAddress()
+      deployController(dao, daoAddr),
     ]);
 
-    controller = await deployController(dao, daoAddr);
     vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
-      initController(controller, [gameAddr, vault.address]),
       allProviders.deployAllProviders(dao, controller),
+      controller.addVault(gameAddr),
+      controller.addVault(vault.address),
+      controller.addCurveIndex(dai, 0),
+      controller.addCurveIndex(usdc, 1),
+      controller.addCurveIndex(usdt, 2),
       IUSDc.connect(USDCSigner).transfer(gameAddr, amountUSDC),
       IUSDc.connect(game).approve(vault.address, amountUSDC),
     ]);
 
-    await addAllProtocolsToController(allProtocols, controller, ETFnumber, allProviders);
+    // add all protocols to controller
+    for (const protocol of allProtocols.values()) {
+      await protocol.addProtocolToController(
+        controller,
+        ETFnumber,
+        allProviders.getProviderAddress(protocol.name)
+      );  
+    };
   });
 
   it("Should calc balanceUnderlying for all known protocols correctly", async function() {
@@ -59,6 +70,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     
     await vault.depositETF(gameAddr, amountUSDC);
     const gasUsed = await rebalanceETF(vault);
+    const gasUsedUSDC = Number(formatUSDC(gasUsed))
     console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
@@ -68,27 +80,27 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     // using to.be.closeTo because of the slippage from swapping USDT and DAI
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const allocation = await protocol.getAllocation(vault);
-      let expectedBalance = (amount - liquidityVault) * (Number(allocation) / totalAllocatedTokens);
-      expectedBalance = expectedBalance < 10_000 ? 0 : expectedBalance; // minimum deposit
+      const expectedBalance = (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
 
       console.log(`---------------------------`)
       console.log(protocol.name)
       console.log({ balanceUnderlying })
       console.log({ expectedBalance })
 
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 800);
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 500);
     };
 
     const totalUnderlying = await vault.getTotalUnderlying();
-    const vaultBalance = Number(formatUSDC(await IUSDc.balanceOf(vault.address)));
-    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - vaultBalance, 800);
-  }); 
+    const balanceVault = await IUSDc.balanceOf(vault.address);
+    const expectedBalanceVault = (amount * liquidityPerc / 100) - gasUsedUSDC;
 
+    expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - liquidityVault, 500);
+    expect(Number(formatUSDC(balanceVault))).to.be.closeTo(expectedBalanceVault, 20);
+  }); 
+  
   it("Should calc Shares for all known protocols correctly", async function() {
     // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
-      console.log('random aloc', getRandomAllocation())
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
