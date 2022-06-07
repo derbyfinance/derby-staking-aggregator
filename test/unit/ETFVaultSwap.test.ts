@@ -6,13 +6,13 @@ import { Signer, Contract, BigNumber } from "ethers";
 import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../helpers/helpers';
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, yearn_usdc_01, compound_usdc_01, aave_usdc_01, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01 } from "../helpers/addresses";
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../helpers/addresses";
 import { initController, rebalanceETF } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
 import { ethers, network } from "hardhat";
-import { ProtocolVault } from "@testhelp/protocolVaultClass";
 import { vaultInfo } from "../helpers/vaultHelpers";
 import { Result } from "ethers/lib/utils";
+import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 
 const amount = 100_000;
@@ -62,9 +62,9 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       await protocol.addProtocolToController(controller, ETFnumber, allProviders);
+      await protocol.resetAllocation(vault);
     }
   });
-  
   
   it("Claim function in vault should claim COMP and sell for more then minAmountOut in USDC", async function() {
     await Promise.all([
@@ -232,9 +232,9 @@ describe("Testing ETFVault, unit test", async () => {
   it("Swapping USDC to Ether, unwrap and send to DAO to cover gas costs", async function() {
     const amountToDeposit = parseUSDC('100000')
     await Promise.all([
-      compoundVault.setCurrentAllocation(vault, 40),
-      aaveVault.setCurrentAllocation(vault, 60),
-      yearnVault.setCurrentAllocation(vault, 20),
+      compoundVault.setDeltaAllocation(vault, user, 40),
+      aaveVault.setDeltaAllocation(vault, user, 60),
+      yearnVault.setDeltaAllocation(vault, user, 20),
     ]);
     await vault.depositETF(userAddr, amountToDeposit);
 
@@ -247,15 +247,15 @@ describe("Testing ETFVault, unit test", async () => {
     expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
-  it.only("Should always have some liquidity to pay for Rebalance fee", async function() {
+  it("Should always have some liquidity to pay for Rebalance fee", async function() {
     const gasFeeLiquidity = 10_000;
     const amountToDeposit = parseUSDC('100000');
     let amountToWithdraw = parseUSDC('50000');
 
     await Promise.all([
-      compoundVault.setCurrentAllocation(vault, 40),
-      aaveVault.setCurrentAllocation(vault, 60),
-      yearnVault.setCurrentAllocation(vault, 20),
+      compoundVault.setDeltaAllocation(vault, user, 40),
+      aaveVault.setDeltaAllocation(vault, user, 60),
+      yearnVault.setDeltaAllocation(vault, user, 20),
     ]);
 
     // Deposit and rebalance with 100k 
@@ -292,8 +292,7 @@ describe("Testing ETFVault, unit test", async () => {
     await rebalanceETF(vault);
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-
-    USDCBalanceUser = await IUSDc.balanceOf(userAddr)
+    USDCBalanceUser = await IUSDc.balanceOf(userAddr);
     console.log({gasUsed})
     console.log(USDCBalanceUser)
 

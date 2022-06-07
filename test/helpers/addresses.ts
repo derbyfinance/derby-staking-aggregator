@@ -202,6 +202,13 @@ export const beta_usdt_01 = new ProtocolVault({
   decimals: 6, 
 });
 
+export const starterProtocols = new Map<string, ProtocolVault>();
+
+starterProtocols
+.set('compound_usdc_01', compound_usdc_01)
+.set('aave_usdc_01', aave_usdc_01)
+.set('yearn_usdc_01', yearn_usdc_01);
+
 export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols

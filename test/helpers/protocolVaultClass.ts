@@ -2,6 +2,7 @@
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
 import { Controller, ETFVaultMock } from "typechain-types";
+import { vaultInfo } from "./vaultHelpers";
 
 export interface IProtocolVault {
   name: string;
@@ -64,6 +65,11 @@ export class ProtocolVault {
   async balanceShares(vault: ETFVaultMock, address: string): Promise<BigNumber> {
     return await vault.balanceSharesTEST(this.number, address);
   };
+
+  async resetAllocation(vault: ETFVaultMock) {
+    this.allocation = 0;
+    await vault.resetDeltaAllocations(this.number);
+  }
 
   async addProtocolToController(controller: Controller, ETFnumber: number, allProviders: any) {
     const tx = await controller.addProtocol(

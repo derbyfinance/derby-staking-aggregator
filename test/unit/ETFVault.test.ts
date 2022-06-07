@@ -6,12 +6,11 @@ import { Signer, Contract, BigNumber } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../helpers/helpers';
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, yearn_usdc_01, compound_usdc_01, aave_usdc_01 } from "../helpers/addresses";
+import { usdc, starterProtocols as protocols } from "../helpers/addresses";
 import { initController, rebalanceETF } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
 import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
-import { ProtocolVault } from "@testhelp/protocolVaultClass";
 import { vaultInfo } from "../helpers/vaultHelpers";
 
 
@@ -21,11 +20,6 @@ const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = 
 
 describe("Testing ETFVault, unit test", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
-
-  const protocols = new Map<string, ProtocolVault>()
-  .set('compound_usdc_01', compound_usdc_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('yearn_usdc_01', yearn_usdc_01);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -53,6 +47,7 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       await protocol.addProtocolToController(controller, ETFnumber, allProviders);
+      await protocol.resetAllocation(vault);
     }
   });
 
@@ -70,6 +65,7 @@ describe("Testing ETFVault, unit test", async () => {
     ]);
 
     for (const protocol of protocols.values()) {
+      console.log(protocol.name)
       const deltaAllocation = await protocol.getDeltaAllocationTEST(vault);
       expect(deltaAllocation).to.be.greaterThan(0);
       expect(deltaAllocation).to.be.equal(protocol.allocation);
@@ -182,11 +178,6 @@ describe("Testing ETFVault, unit test", async () => {
 
 describe("Testing ETFVault, unit test, mock providers", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
-  
-  const protocols = new Map<string, ProtocolVault>()
-  .set('compound_usdc_01', compound_usdc_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('yearn_usdc_01', yearn_usdc_01);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
