@@ -11,7 +11,7 @@ import { rebalanceETF, vaultInfo } from "../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
 import allProviders  from "../helpers/allProvidersClass";
 
-// const amount = 5_000_000;
+// const amount = 5_000_000;0
 const amount = Math.floor(Math.random() * 1_000_000) + 1_000_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
