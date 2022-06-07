@@ -48,8 +48,8 @@ describe.only("Testing ETFgameMock", async () => {
     // set liquidity vault to 0 for easy calculation 
     await vaultMock.setLiquidityPerc(0);
 
-    const amount = 10_000;
-    const amountUSDC = parseUSDC(amount.toString());
+    const amt = 100_000;
+    const amntUSDC = parseUSDC(amt.toString());
 
     // set balance before
     let balance = 1000*1E6;
@@ -77,7 +77,9 @@ describe.only("Testing ETFgameMock", async () => {
     // do 3 loops to simulate time passing (and bump up rebalancingperiod).
     for (let i = 0; i < 3; i++){
       await setDeltaAllocationsWithGame(vaultMock, gameMock, allProtocols);
-      await vaultMock.depositETF(userAddr, amountUSDC);
+      await vaultMock.depositETF(userAddr, amntUSDC);
+
+      console.log("total underlying: %s", await vaultMock.getTotalUnderlying());
 
       // set balance after
       price = Math.round(price * 1.1);
@@ -98,10 +100,10 @@ describe.only("Testing ETFgameMock", async () => {
     // yield per time step: 0.1
     // started counting basket rewards at rebalancingPeriod 1
     // end counting basket rewards at rebalancingPeriod 3
-    // 1: rewards: 0
-    // 2: TVL: 10k + 10k +3k = 23k, y: 0.1, perfFee: 0.1, totalTokens: 30 + 120 + 120 = 270, allocations user per protocol: 10
-    // 2: rewards = 23000 * 1E6 * 0.1 * 0.1 / 270 * 10 = 8518518 per game player, 3 players total --> 25555554
-    // 3: rewards = 25555554
+    // 0: rewards: 0 (no historical price point to calculate a yield)
+    // 1: TVL: , y: 0.1, perfFee: 0.1, totalTokens: 30 + 120 + 120 = 270, allocations user per protocol: 10
+    // 1: rewards = 23000 * 1E6 * 0.1 * 0.1 / 270 * 10 = 8518518 per protocol, 3 protocols total --> 25555554
+    // 2: TVL: , y: 0.1, perfFee: 0.1, totalTokens: 30 + 120 + 120 + 120 = 390, allocations user per protocol: 10
     // total expected rewards = 2 * 25555554 = 51111108
     let rewards = await gameMock.basketUnredeemedRewards(0);
     return rewards;

@@ -181,7 +181,7 @@ contract ETFVault is VaultToken {
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying();
-    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this)) ;
+    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
@@ -226,6 +226,7 @@ contract ETFVault is VaultToken {
       
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
+      // console.log("protocol: %s, withdraw: %s", i, amountToWithdraw);
     }
     
     return protocolToDeposit;
@@ -236,15 +237,15 @@ contract ETFVault is VaultToken {
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
-  /// @param protocolId Protocol id number.
-  function storePriceAndRewards(uint256 _totalUnderlying, uint256 protocolId) internal {
-      uint256 price = price(protocolId);
-      historicalPrices[rebalancingPeriod][protocolId] = price;
-      if (historicalPrices[rebalancingPeriod - 1][protocolId] == 0) return;
-      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
+  /// @param _protocolId Protocol id number.
+  function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+      uint256 price = price(_protocolId);
+      historicalPrices[rebalancingPeriod][_protocolId] = price;
+      if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
+      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100; // * 100 cause perfFee is in percentages
-      rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
@@ -293,7 +294,7 @@ contract ETFVault is VaultToken {
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
-
+      // console.log("protocol: %s, deposit: %s", i, amount);
       depositInProtocol(i, amount);
     }
   }
@@ -362,15 +363,10 @@ contract ETFVault is VaultToken {
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return balance Total balance in VaultCurrency e.g USDC
   function getTotalUnderlying() public view returns(uint256 balance) {   
-    uint gasStart = gasleft();
-    
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       balance += balanceUnderlying(i);
     }
-
-    uint256 gasUsed = gasStart - gasleft();
-    console.log("gasUsed getTotalUnderlying %s", gasUsed);
   }
 
   /// @notice Get balance in VaultCurrency in underlying protocol
