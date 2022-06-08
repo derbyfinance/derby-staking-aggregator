@@ -123,9 +123,9 @@ describe.only("Testing ETFgameMock", async () => {
 
     expect(totalAllocations).to.be.equal(await gameMock.basketTotalAllocatedTokens(0));
 
-    await Promise.all(allocations.map(async (alloc, i) => {
+    allocations.map(async (alloc, i) => {
       expect(alloc).to.be.equal(await gameMock.basketAllocationInProtocol(0, i));
-    }));
+    });
   });
 
   it("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
