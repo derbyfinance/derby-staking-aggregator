@@ -13,8 +13,8 @@ interface Protocol {
 }
 
 export const vaultInfo = {
-  name: 'XaverUSDC',
-  symbol: 'xUSDC',
+  name: 'DerbyUSDC',
+  symbol: 'cUSDC',
   ETFname: 'USDC_med_risk',
   ETFnumber: 0,
   decimals: 6,

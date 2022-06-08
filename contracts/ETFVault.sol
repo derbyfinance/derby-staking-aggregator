@@ -180,7 +180,7 @@ contract ETFVault is VaultToken {
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying();
-    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this)) ;
+    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
