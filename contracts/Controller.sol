@@ -18,6 +18,8 @@ contract Controller is IController {
 
   // curve index for stable coins
   mapping(address => int128) public curveIndex;
+
+  // uScale for stable coins used for swapping
   mapping(address => uint256) public underlyingUScale;
 
   address public dao;
@@ -46,9 +48,9 @@ contract Controller is IController {
     uniswapQuoter = _uniswapQuoter;
     uniswapPoolFee = _poolFee;
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
-    underlyingUScale[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = 1E6;
-    underlyingUScale[0x6B175474E89094C44Da98b954EedeAC495271d0F] = 1E18;
-    underlyingUScale[0xdAC17F958D2ee523a2206206994597C13D831ec7] = 1E6;
+    underlyingUScale[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = 1E6; // USDC
+    underlyingUScale[0x6B175474E89094C44Da98b954EedeAC495271d0F] = 1E18; // DAI
+    underlyingUScale[0xdAC17F958D2ee523a2206206994597C13D831ec7] = 1E6; // USDT
   }
 
   // Modifier for only vault?
