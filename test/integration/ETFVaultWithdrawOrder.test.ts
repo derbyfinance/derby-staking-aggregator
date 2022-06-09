@@ -1,8 +1,8 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { expect, assert } from "chai";
-import { Signer, Contract, BigNumber } from "ethers";
+import { expect } from "chai";
+import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../helpers/helpers';
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';

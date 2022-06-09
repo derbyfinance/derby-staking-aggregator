@@ -10,7 +10,6 @@ import { usdc, starterProtocols as protocols } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
-import { ProtocolVault } from "@testhelp/protocolVaultClass";
 import { vaultInfo } from "../helpers/vaultHelpers";
 
 

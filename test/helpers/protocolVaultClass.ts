@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
-import { Controller, ETFVaultMock } from "typechain-types";
+import { Controller, ETFGameMock, ETFVaultMock } from "typechain-types";
 
 export interface IProtocolVault {
   name: string;
@@ -39,6 +39,11 @@ export class ProtocolVault {
   async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
     this.allocation += allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
+  };
+
+  async setDeltaAllocationsWithGame(game: ETFGameMock, vaultAddr:string, allocation: number): Promise<void> {
+    this.allocation += allocation;
+    await game.setDeltaAllocations(vaultAddr, this.number, allocation);
   };
 
   async setCurrentAllocation(vault: ETFVaultMock, allocation: number): Promise<void> {
