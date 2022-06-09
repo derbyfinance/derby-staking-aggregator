@@ -318,9 +318,6 @@ describe("Testing ETFVault, unit test", async () => {
     liquidityVault = 10_000 - gasUsedUSDC;
     balanceVault = await IUSDc.balanceOf(vault.address);
     totalGasUsed += gasUsedUSDC; 
-
-    console.log({gasUsedUSDC})
-    console.log({totalGasUsed})
     
     // liquidity is 0, so a minimum of 10k should be pulled from protocols
     expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault, 2); 

@@ -2,7 +2,6 @@
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
 import { Controller, ETFVaultMock } from "typechain-types";
-import { vaultInfo } from "./vaultHelpers";
 
 export interface IProtocolVault {
   name: string;
@@ -21,6 +20,7 @@ export class ProtocolVault {
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
+  scale: number;
 
   constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
     this.name = name;
@@ -28,6 +28,7 @@ export class ProtocolVault {
     this.underlyingToken = underlyingToken;
     this.govToken = govToken;
     this.decimals = decimals;
+    this.scale = 10 ** decimals;
   };
 
   setExpectedBalance(balance: number) {
