@@ -119,7 +119,7 @@ describe("Testing ETFgameMock", async () => {
 
   it("Owner of basket NFT can read out allocations", async function() {
     // minting
-    await gameMock.connect(dao).addETF(vaultMock.address);
+    await gameMock.connect(dao).addETF(vault.address);
     await gameMock.mintNewBasket(0);    
 
     let allocations = [20, 30, 40, 50, 60];
