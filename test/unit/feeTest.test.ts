@@ -12,8 +12,13 @@ import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock, Controller } from '../../typechain-types';
-import { Protocol } from "../helpers/vaultBeforeEach";
 import allProviders  from "../helpers/allProvidersClass";
+
+interface Protocol {
+  number: number;
+  allocation: number;
+  address: string;
+}
 
 const deployFeeTestContract = (
   deployerSign: Signer, 
@@ -126,9 +131,8 @@ describe.skip("Testing feeTest. Simulate looping through game players and calcul
   });
 
   it("Can loop through all game players and calculate the price of their baskets", async function() {
-    const { yearnProvider, compoundProvider, aaveProvider } = allProviders;
+  const { yearnProvider, compoundProvider, aaveProvider } = allProviders;
 
-      // stock protocols
   const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
   const protocolAave = { number: 0, allocation: 60, address: aaveUSDC };
   const protocolYearn = { number: 0, allocation: 20, address: yearnUSDC };
