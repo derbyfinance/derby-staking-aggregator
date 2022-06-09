@@ -77,7 +77,7 @@ describe("Testing ETFVault, unit test", async () => {
       console.log({ balanceUnderlying })
       console.log({ expectedBalance })
 
-      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 5);
     };
 
     let totalUnderlying = await vault.getTotalUnderlying();
@@ -123,7 +123,7 @@ describe("Testing ETFVault, unit test", async () => {
       console.log({ balanceUnderlying })
       console.log({ expectedBalance })
 
-      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 5);
     };
 
     LPBalanceUser = await vault.balanceOf(userAddr);
@@ -168,7 +168,7 @@ describe("Testing ETFVault, unit test", async () => {
       console.log({ balanceUnderlying })
       console.log({ expectedBalance })
 
-      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 5);
     };
 
     totalGasUsed += gasUsedUSDC;
@@ -177,38 +177,32 @@ describe("Testing ETFVault, unit test", async () => {
     
     expect(formatUSDC(LPBalanceUser)).to.be.closeTo(amount - amountToWithdrawUSDC + LPtokensReceived, 1); // 200k - 40k + 60k
     // liquidity vault should be 200k - 40k - gasused = 160k * 10%
-    expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault - gasUsedUSDC, 3); 
+    expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault - gasUsedUSDC, 5); 
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
 
     console.log('-------------- everything to the vault ----------------');
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, -100),
       aaveVault.setDeltaAllocation(vault, user, -80),
+      yearnVault.setDeltaAllocation(vault, user, 0),
     ]);
-
-    console.log("before rebalance")
     
     gasUsed = await rebalanceETF(vault);
     gasUsedUSDC = formatUSDC(gasUsed);
-    
-    console.log("after rebalance")
+    expectedTotalUnderlying = amount - USDCWithdrawed + amountToDepositUSDC - totalGasUsed;
+    balanceVault = await IUSDc.balanceOf(vault.address);
 
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
       const expectedBalance = 0;
-
-      console.log(`---------------------------`)
-      console.log(protocol.name)
-      console.log({ balanceUnderlying })
-      console.log({ expectedBalance })
-
-      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 10);
+      
+      expect(balanceUnderlying).to.be.closeTo(expectedBalance, 5);
     };
 
-    // expect(formatUSDC(balanceVault)).to.be.closeTo(expectedTotalUnderlying - gasUsedUSDC, 5);
+    expect(formatUSDC(balanceVault)).to.be.closeTo(expectedTotalUnderlying - gasUsedUSDC, 10);
   });
 
-  it.only("Should not deposit and withdraw when hitting the marginScale", async function() {
+  it("Should not deposit and withdraw when hitting the marginScale", async function() {
     const amount = 100_000;
     const amountUSDC = parseUSDC(amount.toString());
     console.log('-------deposit 100k, but for the 3rd protocol (yearn) the margin gets hit--------');
@@ -234,7 +228,7 @@ describe("Testing ETFVault, unit test", async () => {
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
 
-      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 5);
     };
 
     let liquidityVault = 25_000 - gasUsedUSDC; 
@@ -256,7 +250,7 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 5);
     };
 
 
@@ -285,7 +279,7 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 10);
+      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 5);
     };
     
     liquidityVault = 10_000 - gasUsedUSDC;
@@ -299,13 +293,13 @@ describe("Testing ETFVault, unit test", async () => {
     console.log('----------rebalance only has partial effect because margin-----------');
     await Promise.all([
       compoundVault
-        .setExpectedBalance(353)
+        .setExpectedBalance(374) // Compound  400 - totalGasUsed
         .setDeltaAllocation(vault, user, -55),
       aaveVault
-        .setExpectedBalance(15_529)
+        .setExpectedBalance(15_562) // Aave  15600 - totalGasUsed
         .setDeltaAllocation(vault, user, -40),
       yearnVault
-        .setExpectedBalance(38_823)
+        .setExpectedBalance(38_905) // Yearn  39000 - totalGasUsed
         .setDeltaAllocation(vault, user, 50),
     ]);
 
@@ -314,12 +308,19 @@ describe("Testing ETFVault, unit test", async () => {
 
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 10);
+      console.log(`---------------------------`)
+      console.log(protocol.name)
+      console.log({ balanceUnderlying })
+      console.log(protocol.expectedBalance)
+      expect(balanceUnderlying).to.be.closeTo(protocol.expectedBalance, 5);
     };
 
     liquidityVault = 10_000 - gasUsedUSDC;
     balanceVault = await IUSDc.balanceOf(vault.address);
     totalGasUsed += gasUsedUSDC; 
+
+    console.log({gasUsedUSDC})
+    console.log({totalGasUsed})
     
     // liquidity is 0, so a minimum of 10k should be pulled from protocols
     expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault, 2); 

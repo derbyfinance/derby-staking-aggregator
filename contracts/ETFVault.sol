@@ -243,7 +243,11 @@ contract ETFVault is VaultToken {
       int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
       int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100; // * 100 cause perfFee is in percentages
-      rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+      if (totalAllocatedTokens == 0) {
+        rewardPerLockedToken[rebalancingPeriod][protocolId] = 0;
+      } else {
+        rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+      }
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
