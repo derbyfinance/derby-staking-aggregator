@@ -182,7 +182,7 @@ describe("Testing ETFgameMock", async () => {
       ]);
 
       // await setDeltaAllocationsWithGame(vault, gameMock, allProtocols);
-      await vault.depositETF(userAddr, amountUSDC);
+      await vault.connect(user).depositETF(amountUSDC);
 
       // set balance after
       price = Math.round(price * 1.1);

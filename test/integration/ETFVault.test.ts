@@ -58,7 +58,7 @@ describe("Testing ETFVault, unit test", async () => {
       yearnVault.setDeltaAllocation(vault, user, 20),
     ]);
 
-    await vault.depositETF(userAddr, amountUSDC);
+    await vault.connect(user).depositETF(amountUSDC);
     let gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
     let totalGasUsed = gasUsedUSDC;
@@ -101,7 +101,7 @@ describe("Testing ETFVault, unit test", async () => {
     let exchangeRate = await vault.exchangeRate();
     let USDCWithdrawed = formatUSDC(exchangeRate) * amountToWithdrawUSDC
     
-    await vault.withdrawETF(userAddr, amountToWithdraw);
+    await vault.connect(user).withdrawETF(amountToWithdraw);
 
     gasUsed = await rebalanceETF(vault);
     gasUsedUSDC = formatUSDC(gasUsed);
@@ -148,7 +148,7 @@ describe("Testing ETFVault, unit test", async () => {
     let totalSupply = amount - amountToWithdrawUSDC;
     let LPtokensReceived = (amountToDepositUSDC * totalSupply) / (expectedTotalUnderlying - gasUsedUSDC);
     
-    await vault.depositETF(userAddr, amountToDeposit);
+    await vault.connect(user).depositETF(amountToDeposit);
 
     gasUsed = await rebalanceETF(vault);
     gasUsedUSDC = formatUSDC(gasUsed);
@@ -220,7 +220,7 @@ describe("Testing ETFVault, unit test", async () => {
 
     await vault.connect(dao).setMarginScale(26000*uScale);
 
-    await vault.depositETF(userAddr, amountUSDC);
+    await vault.connect(user).depositETF(amountUSDC);
     let gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
     let totalGasUsed = gasUsedUSDC;
@@ -241,7 +241,7 @@ describe("Testing ETFVault, unit test", async () => {
     const amountToWithdrawUSDC = 35_000;
     const amountToWithdraw = parseUSDC(amountToWithdrawUSDC.toString());
 
-    await vault.withdrawETF(userAddr, amountToWithdraw);
+    await vault.connect(user).withdrawETF(amountToWithdraw);
     
     let exchangeRate = await vault.exchangeRate();
     let USDCWithdrawed = formatUSDC(exchangeRate) * amountToWithdrawUSDC;
