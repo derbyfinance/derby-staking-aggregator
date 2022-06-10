@@ -3,43 +3,66 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUnits, parseUSDC } from '../helpers/helpers';
-import type { ETFVaultMock } from '../../typechain-types';
-import { MockContract } from "ethereum-waffle";
-import { setCurrentAllocations } from "../helpers/vaultHelpers";
-import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
+import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../typechain-types';
+import { deployController, deployETFVaultMock } from '../helpers/deploy';
+import { usdc, starterProtocols as protocols } from "../helpers/addresses";
+import { initController } from "../helpers/vaultHelpers";
+import AllMockProviders from "../helpers/allMockProvidersClass";
+import { ethers } from "hardhat";
+import { vaultInfo } from "../helpers/vaultHelpers";
 
-const amountUSDC = parseUSDC('100000'); // 100k
 
-describe("Testing ETFVaultDeposit", async () => {
-  let yearnProvider: MockContract, 
-  compoundProvider: MockContract, 
-  aaveProvider: MockContract, 
-  vaultMock: ETFVaultMock,
-  userAddr: string,
-  allProtocols: Protocol[];
+const amount = 100_000;
+const amountUSDC = parseUSDC(amount.toString());
+const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
+
+describe("Testing ETFVaultDeposit, unit test", async () => {
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+
+  const compoundVault = protocols.get('compound_usdc_01')!;
+  const aaveVault = protocols.get('aave_usdc_01')!;
+  const yearnVault = protocols.get('yearn_usdc_01')!;
 
   beforeEach(async function() {
-    [
-      vaultMock,
-      ,
-      userAddr,
-      ,
-      allProtocols,
-      ,
-      yearnProvider, 
-      compoundProvider, 
-      aaveProvider
-    ] = await beforeEachETFVault(amountUSDC, true);
+    [dao, user] = await ethers.getSigners();
+
+    [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
+      getUSDCSigner(),
+      erc20(usdc),
+      dao.getAddress(),
+      user.getAddress()
+    ]);
+
+    controller = await deployController(dao, daoAddr);
+    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+
+    await Promise.all([
+      initController(controller, [userAddr, vault.address]),
+      AllMockProviders.deployAllMockProviders(dao),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
+      IUSDc.connect(user).approve(vault.address, amountUSDC),
+    ]);
+
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, ETFnumber, AllMockProviders);
+      await protocol.resetAllocation(vault);
+    }
   });
 
   it("Deposit, mint and return Xaver LP tokens", async function() {
+    const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
+    
     console.log(`-------------Depositing 9k-------------`)
     const amountUSDC = parseUSDC('9000');
-    await setCurrentAllocations(vaultMock, allProtocols); 
-    await vaultMock.depositETF(userAddr, amountUSDC);
+    await Promise.all([
+      compoundVault.setCurrentAllocation(vault, 40),
+      aaveVault.setCurrentAllocation(vault, 60),
+      yearnVault.setCurrentAllocation(vault, 20),
+    ]);
+    await vault.connect(user).depositETF(amountUSDC);
 
-    const LPBalanceUser = await vaultMock.balanceOf(userAddr);
+    const LPBalanceUser = await vault.balanceOf(userAddr);
     expect(LPBalanceUser).to.be.equal(amountUSDC);
 
     console.log(`Mocking a rebalance with the 9k deposit => 3k to each protocol`);
@@ -47,38 +70,38 @@ describe("Testing ETFVaultDeposit", async () => {
     const mockedBalanceComp = parseUnits('3000', 8); // 3k in each protocol
 
     await Promise.all([
-      vaultMock.clearCurrencyBalance(parseUSDC('9000')),
-      yearnProvider.mock.balanceUnderlying.returns(mockedBalance),
+      vault.clearCurrencyBalance(parseUSDC('9000')),
       compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp),
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance),
+      yearnProvider.mock.balanceUnderlying.returns(mockedBalance),
     ]);
-    await vaultMock.depositETF(userAddr, parseUSDC('1000'));
-    const exchange = await vaultMock.exchangeRate();
-    console.log({exchange})
+
+    await vault.connect(user).depositETF(parseUSDC('1000'));
+    const exchange = await vault.exchangeRate();
     
     // expect LP Token balance User == 9k + 1k because Expect price == 1 i.e 1:1
-    expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1'));
-    expect(await vaultMock.balanceOf(userAddr)).to.be.equal(amountUSDC.add(parseUSDC('1000')));
+    expect(await vault.exchangeRate()).to.be.equal(parseUSDC('1'));
+    expect(await vault.balanceOf(userAddr)).to.be.equal(amountUSDC.add(parseUSDC('1000')));
     
     console.log(`Mocking a profit of 100 in each protocol with 1k sitting in vault`);
     const profit = parseUSDC('100');
     const profitComp = parseUnits('100', 8);
 
     await Promise.all([
-      yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
       compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp.add(profitComp)),
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
+      yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
     ]);
 
     // 300 profit on 9k + 1k = 3% => Exchange route should be 1.03
-    expect(await vaultMock.exchangeRate()).to.be.equal(parseUSDC('1.03'));
+    expect(await vault.exchangeRate()).to.be.equal(parseUSDC('1.03'));
 
     console.log(`Depositing 500 into the vault`);
-    const LPBalanceBefore = await vaultMock.balanceOf(userAddr);
-    await vaultMock.depositETF(userAddr, parseUSDC('500'));
+    const LPBalanceBefore = await vault.balanceOf(userAddr);
+    await vault.connect(user).depositETF(parseUSDC('500'));
     // Expected shares to receive = 500 / 1.03 = 485.43
     const expectedShares = 500 / 1.03;
-    const sharesReceived = formatUSDC((await vaultMock.balanceOf(userAddr)).sub(LPBalanceBefore));
+    const sharesReceived = formatUSDC((await vault.balanceOf(userAddr)).sub(LPBalanceBefore));
     expect(Number(sharesReceived)).to.be.closeTo(expectedShares, 0.01);
   });
 

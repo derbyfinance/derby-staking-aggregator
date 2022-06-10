@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { ethers } from "hardhat";
 import { MockContract } from "ethereum-waffle";
-import { Controller, YearnProvider__factory } from '../../typechain-types';
+import { Controller } from '../../typechain-types';
 import { getUSDCSigner, erc20  } from '../helpers/helpers';
 import { deployController } from '../helpers/deploy';
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from '../helpers/deployMocks';

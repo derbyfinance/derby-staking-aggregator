@@ -7,21 +7,14 @@ import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../helpers/helpers'
 import type { Controller, ETFVaultMock } from '../../typechain-types';
 import { deployController, deployETFVaultMock } from '../helpers/deploy';
 import { allProtocols, usdc, dai, usdt } from "../helpers/addresses";
-import { rebalanceETF } from "../helpers/vaultHelpers";
+import { rebalanceETF, vaultInfo } from "../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
 import allProviders  from "../helpers/allProvidersClass";
 
-const amount = 5_000_000;
-// const amount = Math.floor(Math.random() * 1000000);
+// const amount = 5_000_000;0
+const amount = Math.floor(Math.random() * 1_000_000) + 1_000_000;
 const amountUSDC = parseUSDC(amount.toString());
-const name = 'DerbyUSDC';
-const symbol = 'dUSDC';
-const ETFname = 'USDC_med_risk';
-const ETFnumber = 0;
-const decimals = 6;
-const uScale = 1E6;
-const liquidityPerc = 10;
-const gasFeeLiquidity = 10_000 * uScale;
+const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
@@ -57,8 +50,9 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       await protocol.addProtocolToController(
         controller,
         ETFnumber,
-        allProviders.getProviderAddress(protocol.name)
+        allProviders
       );  
+      await protocol.resetAllocation(vault);
     };
   });
 
@@ -68,7 +62,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
-    await vault.depositETF(gameAddr, amountUSDC);
+    await vault.connect(game).depositETF(amountUSDC);
     const gasUsed = await rebalanceETF(vault);
     const gasUsedUSDC = Number(formatUSDC(gasUsed))
     console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
@@ -104,7 +98,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
-    await vault.depositETF(gameAddr, amountUSDC);
+    await vault.connect(game).depositETF(amountUSDC);
     const gasUsed = await rebalanceETF(vault);
     console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 

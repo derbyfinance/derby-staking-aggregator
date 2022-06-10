@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
-import { Controller, ETFVaultMock } from "typechain-types";
+import { Controller, ETFGameMock, ETFVaultMock } from "typechain-types";
 
 export interface IProtocolVault {
   name: string;
@@ -19,6 +19,8 @@ export class ProtocolVault {
   decimals: number;
   number: number = 0;
   allocation: number = 0;
+  expectedBalance: number = 0;
+  scale: number;
 
   constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
     this.name = name;
@@ -26,15 +28,32 @@ export class ProtocolVault {
     this.underlyingToken = underlyingToken;
     this.govToken = govToken;
     this.decimals = decimals;
+    this.scale = 10 ** decimals;
   };
 
-  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number) {
-    this.allocation = allocation;
+  setExpectedBalance(balance: number) {
+    this.expectedBalance = balance;
+    return this;
+  }
+
+  async setDeltaAllocation(vault: ETFVaultMock, game: Signer, allocation: number): Promise<void> {
+    this.allocation += allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
 
-  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<BigNumber> {
-    return await vault.getDeltaAllocationTEST(this.number);
+  async setDeltaAllocationsWithGame(game: ETFGameMock, vaultAddr:string, allocation: number): Promise<void> {
+    this.allocation += allocation;
+    await game.setDeltaAllocations(vaultAddr, this.number, allocation);
+  };
+
+  async setCurrentAllocation(vault: ETFVaultMock, allocation: number): Promise<void> {
+    this.allocation = allocation;
+    await vault.setCurrentAllocation(this.number, allocation);
+  };
+
+  async getDeltaAllocationTEST(vault: ETFVaultMock): Promise<number> {
+    const allocation = await vault.getDeltaAllocationTEST(this.number);
+    return allocation.toNumber();
   };
 
   async getAllocation(vault: ETFVaultMock): Promise<BigNumber> {
@@ -53,18 +72,23 @@ export class ProtocolVault {
     return await vault.balanceSharesTEST(this.number, address);
   };
 
-  async addProtocolToController(controller: Controller, ETFnumber: number, providerAddr: string) {
+  async resetAllocation(vault: ETFVaultMock) {
+    this.allocation = 0;
+    await vault.resetDeltaAllocations(this.number);
+  }
+
+  async addProtocolToController(controller: Controller, ETFnumber: number, allProviders: any) {
     const tx = await controller.addProtocol(
       this.name, 
       ETFnumber, 
-      providerAddr, 
+      allProviders.getProviderAddress(this.name), 
       this.protocolToken, 
       this.underlyingToken, 
       this.govToken, 
       (10 ** this.decimals).toString()
     )
-    const receipt = await tx.wait()
-    const { protocolNumber } = receipt.events![0].args as Result
+    const receipt = await tx.wait();
+    const { protocolNumber } = receipt.events![0].args as Result;
 
     this.number = protocolNumber
   }

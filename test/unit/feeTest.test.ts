@@ -4,15 +4,21 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import type { FeeTestContract} from '../../typechain-types';
 import { controllerAddProtocol, erc20, getUSDCSigner } from "../helpers/helpers";
-import { deployController, deployAaveProvider, deployCompoundProvider, deployYearnProvider } from "../helpers/deploy";
-import { usdc, comptroller, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "../helpers/addresses";
+import { deployController, deployETFVaultMock } from "../helpers/deploy";
+import { usdc, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "../helpers/addresses";
 import { setDeltaAllocations, getAllocations, getAndLogBalances } from "../helpers/vaultHelpers";
 import FeeTestContractArtifact from '../../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
 import type { ETFVaultMock, Controller } from '../../typechain-types';
-import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
+import allProviders  from "../helpers/allProvidersClass";
+
+interface Protocol {
+  number: number;
+  allocation: number;
+  address: string;
+}
 
 const deployFeeTestContract = (
   deployerSign: Signer, 
@@ -102,40 +108,36 @@ describe.skip("Testing feeTest, gas", async () => {
 });
 
 describe.skip("Testing feeTest. Simulate looping through game players and calculating weighted average price", async () => {
-  let vaultMock: ETFVaultMock,
-  user: Signer,
-  dao: Signer,
-  userAddr: string,
-  IUSDc: Contract, 
-  protocolCompound: Protocol,
-  protocolAave: Protocol,
-  protocolYearn: Protocol,
-  protocolCompoundDAI: Protocol,
-  protocolAaveUSDT: Protocol,
-  allProtocols: Protocol[],
-  controller: Controller;
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   beforeEach(async function() {
-    [
-      vaultMock,
-      user,
-      userAddr,
-      [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT],
-      allProtocols,
-      IUSDc,,,,,
-      controller,,,,,,,
-      dao
-    ] = await beforeEachETFVault(amountUSDC)
+    [dao, user] = await ethers.getSigners();
+
+    [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
+      getUSDCSigner(),
+      erc20(usdc),
+      dao.getAddress(),
+      user.getAddress()
+    ]);
+
+    controller = await deployController(dao, daoAddr);
+    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+
+    await Promise.all([
+      allProviders.deployAllProviders(dao, controller),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
+      IUSDc.connect(user).approve(vault.address, amountUSDC),
+    ]);
   });
 
   it("Can loop through all game players and calculate the price of their baskets", async function() {
-    let yearnProvider, compoundProvider, aaveProvider;
+  const { yearnProvider, compoundProvider, aaveProvider } = allProviders;
 
-    [compoundProvider, aaveProvider, yearnProvider] = await Promise.all([
-      deployCompoundProvider(dao, controller.address, comptroller),
-      deployAaveProvider(dao, controller.address),
-      deployYearnProvider(dao, controller.address),
-    ]);
+  const protocolCompound = { number: 0, allocation: 40, address: compoundUSDC };
+  const protocolAave = { number: 0, allocation: 60, address: aaveUSDC };
+  const protocolYearn = { number: 0, allocation: 20, address: yearnUSDC };
+  const protocolCompoundDAI = { number: 0, allocation: 0, address: compoundDAI };
+  const protocolAaveUSDT = { number: 0, allocation: 0, address: aaveUSDT };
 
     // loop 9 times, so in total there are 25 protocols in the vault
     const protocols = [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT];
@@ -156,21 +158,21 @@ describe.skip("Testing feeTest. Simulate looping through game players and calcul
 
     console.log("Number of protocols in vault: %s", await controller.latestProtocolId(ETFnumber));
 
-    await setDeltaAllocations(user, vaultMock, protocols);
-    await vaultMock.depositETF(userAddr, amountUSDC);
-    await vaultMock.rebalanceETF();
-    console.log("total alloc: %s", await vaultMock.totalAllocatedTokens());
+    await setDeltaAllocations(user, vault, protocols);
+    await vault.connect(user).depositETF(amountUSDC);
+    await vault.rebalanceETF();
+    console.log("total alloc: %s", await vault.totalAllocatedTokens());
 
     const [allocations, balances] = await Promise.all([
-      getAllocations(vaultMock, protocols),
-      getAndLogBalances(vaultMock, protocols)
+      getAllocations(vault, protocols),
+      getAndLogBalances(vault, protocols)
     ]);
 
     protocols.forEach((protocol, i) => {
       console.log("allocation: %s, balance: %s", allocations[i], balances[i]);
     });
 
-    await vaultMock.testLargeGameplayerSet(1);
+    await vault.testLargeGameplayerSet(1);
 
   });
 })

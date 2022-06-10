@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IETFGame.sol";
@@ -17,7 +18,7 @@ import "hardhat/console.sol";
 // ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
 // ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
-contract ETFVault is VaultToken {
+contract ETFVault is VaultToken, ReentrancyGuard {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   string public ETFname;
@@ -101,12 +102,11 @@ contract ETFVault is VaultToken {
 
   /// @notice Deposit in ETFVault
   /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
-  /// @param _buyer Address from buyer of the tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function depositETF(address _buyer, uint256 _amount) external returns(uint256 shares) {
+  function depositETF(uint256 _amount) external nonReentrant returns(uint256 shares) {
     uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
-    vaultCurrency.safeTransferFrom(_buyer, address(this), _amount);
+    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
 
     uint256 amount = balanceAfter - balanceBefore;
@@ -119,22 +119,21 @@ contract ETFVault is VaultToken {
       shares = amount; 
     }
     
-    _mint(_buyer, shares); 
+    _mint(msg.sender, shares); 
   }
 
   /// @notice Withdraw from ETFVault
   /// @dev Withdraw VaultCurrency from ETFVault and burn LP tokens
-  /// @param _seller Address from seller of the tokens
   /// @param _amount Amount to withdraw in LP tokens
   /// @return value Amount received by seller in vaultCurrency
-  function withdrawETF(address _seller, uint256 _amount) external returns(uint256 value) {
+  function withdrawETF(uint256 _amount) external nonReentrant returns(uint256 value) {
     value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
 
-    if (value > vaultCurrency.balanceOf(address(this))) pullFunds(value);
-      
-    _burn(_seller, _amount);
-    vaultCurrency.safeTransfer(_seller, value);
+    _burn(msg.sender, _amount);
+
+    if (value > vaultCurrency.balanceOf(address(this))) pullFunds(value);  
+    vaultCurrency.safeTransfer(msg.sender, value);
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -172,7 +171,7 @@ contract ETFVault is VaultToken {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external onlyDao {
+  function rebalanceETF() external nonReentrant onlyDao {
     if (!rebalanceNeeded()) return;
     uint256 gasStart = gasleft();
 
@@ -245,7 +244,11 @@ contract ETFVault is VaultToken {
       int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
       int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      if (totalAllocatedTokens == 0) {
+        rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+      } else {
+        rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      }
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
@@ -362,7 +365,7 @@ contract ETFVault is VaultToken {
 
   /// @notice Get total balance in VaultCurrency in all underlying protocols
   /// @return balance Total balance in VaultCurrency e.g USDC
-  function getTotalUnderlying() public view returns(uint256 balance) {   
+  function getTotalUnderlying() public view returns(uint256 balance) {  
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       balance += balanceUnderlying(i);
@@ -375,7 +378,6 @@ contract ETFVault is VaultToken {
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
     uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
-    // console.log("balanceUnderlying %s", underlyingBalance);
     return underlyingBalance;
   }
 
@@ -386,7 +388,6 @@ contract ETFVault is VaultToken {
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
     uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount * protocolUScale / uScale);
-    // console.log("shares %s", shares);
     return shares;
   }
 

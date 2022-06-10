@@ -1,69 +1,89 @@
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
-import { expect } from "chai";
+import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { network } from "hardhat";
-import { formatUSDC, parseUSDC, parseUnits, formatUnits, erc20 } from '../helpers/helpers';
-import type { ETFVaultMock } from '../../typechain-types';
-import { getAllocations, getAndLogBalances, rebalanceETF, setDeltaAllocations } from "../helpers/vaultHelpers";
-import { usdc, dai, compToken as comp, compoundDAI, WEth} from "../helpers/addresses";
-import { beforeEachETFVault, Protocol } from "../helpers/vaultBeforeEach";
-import { parseEther, Result } from "ethers/lib/utils";
+import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../typechain-types';
+import { deployController, deployETFVaultMock } from '../helpers/deploy';
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../helpers/addresses";
+import { initController, rebalanceETF } from "../helpers/vaultHelpers";
+import allProviders  from "../helpers/allProvidersClass";
+import { ethers, network } from "hardhat";
+import { vaultInfo } from "../helpers/vaultHelpers";
+import { Result } from "ethers/lib/utils";
+import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
-const amountUSDC = parseUSDC('100000');
-const uScale = 1E6;
-const compProtocolUScale = 1E8;
 
-describe("Testing ETFVaultSwap", async () => {
-  let vaultMock: ETFVaultMock,
-  user: Signer,
-  dao: Signer,
-  userAddr: string,
-  IUSDc: Contract, 
-  protocolCompound: Protocol,
-  protocolCompoundDAI: Protocol,
-  protocolAave: Protocol,
-  protocolAaveUSDT: Protocol,
-  protocolYearn: Protocol,
-  allProtocols: Protocol[],
-  IComp: Contract,
-  compSigner: Signer,
-  IDAI: Contract;
+const amount = 100_000;
+const amountUSDC = parseUSDC(amount.toString());
+const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
+
+describe("Testing ETFVaultSwap, unit test", async () => {
+  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
+
+  const protocols = new Map<string, ProtocolVault>()
+  .set('compound_usdc_01', compound_usdc_01)
+  .set('aave_usdc_01', aave_usdc_01)
+  .set('yearn_usdc_01', yearn_usdc_01)
+  .set('compound_dai_01', compound_dai_01)
+  .set('aave_usdt_01', aave_usdt_01);
+
+  const compoundVault = protocols.get('compound_usdc_01')!;
+  const aaveVault = protocols.get('aave_usdc_01')!;
+  const yearnVault = protocols.get('yearn_usdc_01')!;
+  const compoundDAIVault = protocols.get('compound_dai_01')!;
+  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
   beforeEach(async function() {
-    [
-      vaultMock,
-      user,
-      userAddr,
-      [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT],
-      allProtocols,
-      IUSDc,,,,,,,
-      IComp,
-      compSigner,,,,
-      dao
-    ] = await beforeEachETFVault(amountUSDC)
+    [dao, user] = await ethers.getSigners();
 
-    IDAI = await erc20(dai);
+    [USDCSigner, compSigner, IUSDc, IDAI, IComp, daoAddr, userAddr] = await Promise.all([
+      getUSDCSigner(),
+      getWhale(CompWhale),
+      erc20(usdc),
+      erc20(dai),
+      erc20(compToken),
+      dao.getAddress(),
+      user.getAddress()
+    ]);
+
+    controller = await deployController(dao, daoAddr);
+    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+
+    await Promise.all([
+      initController(controller, [userAddr, vault.address]),
+      allProviders.deployAllProviders(dao, controller),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
+      IUSDc.connect(user).approve(vault.address, amountUSDC.mul(10)),
+    ]);
+
+    await controller.setClaimable(allProviders.compoundProvider.address, true);
+
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, ETFnumber, allProviders);
+      await protocol.resetAllocation(vault);
+    }
   });
-
+  
   it("Claim function in vault should claim COMP and sell for more then minAmountOut in USDC", async function() {
-    protocolYearn.allocation = 0;
-    protocolCompound.allocation = 60;
-    protocolAave.allocation = 0;
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, 60),
+      aaveVault.setDeltaAllocation(vault, user, 0),
+      yearnVault.setDeltaAllocation(vault, user, 0),
+    ]);
 
     const amountToDeposit = parseUSDC('100000');
-    await setDeltaAllocations(user, vaultMock, allProtocols);
 
     // Deposit and rebalance with 100k in only Compound
-    await vaultMock.depositETF(userAddr, amountToDeposit);
-    await vaultMock.rebalanceETF();
+    await vault.connect(user).depositETF(amountToDeposit);
+    await vault.rebalanceETF();
     // mine 100 blocks to gain COMP Tokens
     for (let i = 0; i <= 100; i++) await network.provider.send("evm_mine");
 
-    const USDCBalanceBeforeClaim = await IUSDc.balanceOf(vaultMock.address);
-    await vaultMock.claimTokens()
-    const USDCBalanceAfterClaim = await IUSDc.balanceOf(vaultMock.address);
+    const USDCBalanceBeforeClaim = await IUSDc.balanceOf(vault.address);
+    await vault.claimTokens()
+    const USDCBalanceAfterClaim = await IUSDc.balanceOf(vault.address);
 
     const USDCReceived = USDCBalanceAfterClaim.sub(USDCBalanceBeforeClaim);
     console.log(`USDC Received ${USDCReceived}`);
@@ -73,21 +93,21 @@ describe("Testing ETFVaultSwap", async () => {
 
   it("Swapping COMP to USDC and calc minAmountOut with swapTokensMulti", async function() {
     const swapAmount = parseUnits('100', 18); // 1000 comp tokens 
-    await IComp.connect(compSigner).transfer(vaultMock.address, swapAmount);
+    await IComp.connect(compSigner).transfer(vault.address, swapAmount);
 
-    let compBalance = await IComp.balanceOf(vaultMock.address);
-    let usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    let compBalance = await IComp.balanceOf(vault.address);
+    let usdcBalance = await IUSDc.balanceOf(vault.address);
 
     expect(compBalance).to.be.equal(swapAmount);
     expect(usdcBalance).to.be.equal(0);
 
-    const tx = await vaultMock.swapMinAmountOutMultiTest(swapAmount, comp, usdc);
+    const tx = await vault.swapMinAmountOutMultiTest(swapAmount, compToken, usdc);
     const receipt = await tx.wait();
     const  { minAmountOut }  = receipt.events!.at(-1)!.args as Result;
 
-    await vaultMock.swapTokensMultiTest(swapAmount, comp, usdc);
-    compBalance = await IComp.balanceOf(vaultMock.address);
-    usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    await vault.swapTokensMultiTest(swapAmount, compToken, usdc);
+    compBalance = await IComp.balanceOf(vault.address);
+    usdcBalance = await IUSDc.balanceOf(vault.address);
 
     expect(usdcBalance).to.be.equal(minAmountOut);
     expect(compBalance).to.be.equal(0);
@@ -95,22 +115,22 @@ describe("Testing ETFVaultSwap", async () => {
 
   it("Swapping USDC to COMP and COMP back to USDC", async function() {
     const swapAmount = parseUSDC('10000');
-    await IUSDc.connect(user).transfer(vaultMock.address, swapAmount);
-    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    await IUSDc.connect(user).transfer(vault.address, swapAmount);
+    const usdcBalance = await IUSDc.balanceOf(vault.address);
     console.log(`USDC Balance vault: ${usdcBalance}`)
 
-    await vaultMock.swapTokensMultiTest(swapAmount, usdc, comp);
+    await vault.swapTokensMultiTest(swapAmount, usdc, compToken);
 
-    const compBalance = await IComp.balanceOf(vaultMock.address);
+    const compBalance = await IComp.balanceOf(vault.address);
     console.log(`Comp Balance vault: ${compBalance}`);
 
     // Atleast receive some COMP
-    expect(Number(formatUnits(compBalance,18))).to.be.greaterThan(0);
-    await vaultMock.swapTokensMultiTest(compBalance, comp, usdc);
+    expect(formatUnits(compBalance,18)).to.be.greaterThan(0);
+    await vault.swapTokensMultiTest(compBalance, compToken, usdc);
 
-    console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vaultMock.address)}`);
-    const compBalanceEnd = await IComp.balanceOf(vaultMock.address);
-    const usdcBalanceEnd = await IUSDc.balanceOf(vaultMock.address);
+    console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vault.address)}`);
+    const compBalanceEnd = await IComp.balanceOf(vault.address);
+    const usdcBalanceEnd = await IUSDc.balanceOf(vault.address);
 
     // MultiHop swap fee is 0,6% => total fee = +- 1,2% => 10_000 * 1,2% = 120 fee
     expect(Number(formatUSDC(usdcBalanceEnd))).to.be.closeTo(10_000 - 120, 25);
@@ -119,17 +139,17 @@ describe("Testing ETFVaultSwap", async () => {
 
   it("Curve Stable coin swap USDC to DAI", async function() {
     const swapAmount = parseUSDC('10000');
-    await IUSDc.connect(user).transfer(vaultMock.address, swapAmount);
+    await IUSDc.connect(user).transfer(vault.address, swapAmount);
 
     // USDC Balance vault
-    const usdcBalance = await IUSDc.balanceOf(vaultMock.address);
+    const usdcBalance = await IUSDc.balanceOf(vault.address);
     console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`);
 
     // Curve swap USDC to DAI
-    await vaultMock.curveSwapTest(swapAmount, usdc, dai);
+    await vault.curveSwapTest(swapAmount, usdc, dai);
 
     // DAI Balance vault
-    const daiBalance = await IDAI.balanceOf(vaultMock.address);
+    const daiBalance = await IDAI.balanceOf(vault.address);
     console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
 
     // Expect DAI received to be 10_000 - fee
@@ -137,68 +157,89 @@ describe("Testing ETFVaultSwap", async () => {
   });
 
   it("Should add CompoundDAI and AaveUSDT to vault and Swap on deposit/withdraw", async function() {
-    protocolYearn.allocation = 0;
-    protocolCompound.allocation = 20;
-    protocolCompoundDAI.allocation = 40;
-    protocolAave.allocation = 0;
-    protocolAaveUSDT.allocation = 40;
+    const amount = 1_000_000;
+    const amountUSDC = parseUSDC(amount.toString());
 
-    allProtocols = [...allProtocols, protocolCompoundDAI, protocolAaveUSDT];
-
-    const amountToDeposit = parseUSDC('100000');
-    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, 20),
+      aaveVault.setDeltaAllocation(vault, user, 0),
+      yearnVault.setDeltaAllocation(vault, user, 0),
+      compoundDAIVault.setDeltaAllocation(vault, user, 40),
+      aaveUSDTVault.setDeltaAllocation(vault, user, 40),
+    ]);
 
     // Deposit and rebalance with 100k 
-    await vaultMock.depositETF(userAddr, amountToDeposit);
-    let gasUsed = await rebalanceETF(vaultMock);
+    await vault.connect(user).depositETF(amountUSDC);
+    let gasUsed = await rebalanceETF(vault);
+    let gasUsedUSDC = formatUSDC(gasUsed)
 
-    console.log(`USDC Balance vault: ${formatUSDC(await IUSDc.balanceOf(vaultMock.address))}`)
-
-    const [balances, allocations, totalAllocatedTokens, balanceVault] = await Promise.all([
-      getAndLogBalances(vaultMock, allProtocols),
-      getAllocations(vaultMock, allProtocols),
-      vaultMock.totalAllocatedTokens(),
-      IUSDc.balanceOf(vaultMock.address)
-    ]);
+    let totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
+    let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
+    console.log(`USDC Balance vault: ${balanceVault}`)
 
     // Check if balanceInProtocol === 
     // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
-    allProtocols.forEach((protocol, i) => {
-      expect(balances[i].div(uScale))
-      .to.be.closeTo((allocations[i].mul((amountUSDC.sub(balanceVault).sub(gasUsed)).div(totalAllocatedTokens))).div(uScale), 50)
-    })
+    for (const protocol of protocols.values()) {
+      const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
+      const expectedBalance = (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
 
-    console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------')
-    protocolCompoundDAI.allocation = -30;
-    protocolAaveUSDT.allocation = -40;
-    await setDeltaAllocations(user, vaultMock, allProtocols);
+      console.log(`---------------------------`)
+      console.log(protocol.name)
+      console.log(protocol.number)
+      console.log(protocol.allocation)
+      console.log({ totalAllocatedTokens })
+      console.log({ balanceUnderlying })
+      console.log({ expectedBalance })
+
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 100);
+    };
+
+    console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------');
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, 20),
+      aaveVault.setDeltaAllocation(vault, user, 0),
+      yearnVault.setDeltaAllocation(vault, user, 0),
+      compoundDAIVault.setDeltaAllocation(vault, user, -30),
+      aaveUSDTVault.setDeltaAllocation(vault, user, -40),
+    ]);
     
-    gasUsed = gasUsed.add(await rebalanceETF(vaultMock));
+    gasUsed = gasUsed.add(await rebalanceETF(vault));
+    gasUsedUSDC = formatUSDC(gasUsed)
 
-    console.log(`USDC Balance vault: ${formatUSDC(await IUSDc.balanceOf(vaultMock.address))}`)
-
-    const [balances2, allocations2, totalAllocatedTokens2, balanceVault2] = await Promise.all([
-      getAndLogBalances(vaultMock, allProtocols),
-      getAllocations(vaultMock, allProtocols),
-      vaultMock.totalAllocatedTokens(),
-      IUSDc.balanceOf(vaultMock.address)
-    ]);
+    
+    totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
+    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
+    console.log(`USDC Balance vault: ${balanceVault}`);
 
     // Check if balanceInProtocol === 
     // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
-    allProtocols.forEach((protocol, i) => {
-      expect(balances2[i].div(uScale))
-      .to.be.closeTo((allocations2[i].mul((amountUSDC.sub(balanceVault2).sub(gasUsed)).div(totalAllocatedTokens2))).div(uScale), 50) // swap fees
-    })
+    for (const protocol of protocols.values()) {
+      const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
+      const expectedBalance = (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+
+      console.log(`---------------------------`)
+      console.log(protocol.name)
+      console.log(protocol.number)
+      console.log(protocol.allocation)
+      console.log({ totalAllocatedTokens })
+      console.log({ balanceUnderlying })
+      console.log({ expectedBalance })
+
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 400);
+    };
   });
 
   it("Swapping USDC to Ether, unwrap and send to DAO to cover gas costs", async function() {
     const amountToDeposit = parseUSDC('100000')
-    await setDeltaAllocations(user, vaultMock, allProtocols);
-    await vaultMock.depositETF(userAddr, amountToDeposit);
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, 40),
+      aaveVault.setDeltaAllocation(vault, user, 60),
+      yearnVault.setDeltaAllocation(vault, user, 20),
+    ]);
+    await vault.connect(user).depositETF(amountToDeposit);
 
     const ETHBalanceBefore = await dao.getBalance();
-    await vaultMock.connect(dao).rebalanceETF();
+    await vault.connect(dao).rebalanceETF();
     const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
     console.log({ETHBalanceReceived});
 
@@ -211,13 +252,17 @@ describe("Testing ETFVaultSwap", async () => {
     const amountToDeposit = parseUSDC('100000');
     let amountToWithdraw = parseUSDC('50000');
 
-    await setDeltaAllocations(user, vaultMock, allProtocols);
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, 40),
+      aaveVault.setDeltaAllocation(vault, user, 60),
+      yearnVault.setDeltaAllocation(vault, user, 20),
+    ]);
 
     // Deposit and rebalance with 100k 
-    await vaultMock.depositETF(userAddr, amountToDeposit);
-    let gasUsed = formatUSDC(await rebalanceETF(vaultMock));
+    await vault.connect(user).depositETF(amountToDeposit);
+    let gasUsed = formatUSDC(await rebalanceETF(vault));
 
-    let balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
     let USDCBalanceUser = await IUSDc.balanceOf(userAddr)
     console.log({gasUsed})
     console.log(USDCBalanceUser)
@@ -225,15 +270,16 @@ describe("Testing ETFVaultSwap", async () => {
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed))
 
     console.log("-----------------withdraw 50k-----------------")
-    protocolCompound.allocation = -40;
-    protocolAave.allocation = -60;
-    protocolYearn.allocation = 120;
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, user, -40),
+      aaveVault.setDeltaAllocation(vault, user, -60),
+      yearnVault.setDeltaAllocation(vault, user, 120),
+    ]);
 
-    await setDeltaAllocations(user, vaultMock, allProtocols);
-    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
-    gasUsed = formatUSDC(await rebalanceETF(vaultMock));
+    await vault.connect(user).withdrawETF(amountToWithdraw);
+    gasUsed = formatUSDC(await rebalanceETF(vault));
 
-    balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
+    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
     USDCBalanceUser = await IUSDc.balanceOf(userAddr)
     console.log({gasUsed})
     console.log(USDCBalanceUser)
@@ -242,12 +288,11 @@ describe("Testing ETFVaultSwap", async () => {
 
     console.log("-----------------withdraw another 42k = 92k total-----------------")
     amountToWithdraw = parseUSDC('42000');
-    await vaultMock.withdrawETF(userAddr, amountToWithdraw);
-    await rebalanceETF(vaultMock);
+    await vault.connect(user).withdrawETF(amountToWithdraw);
+    await rebalanceETF(vault);
 
-    balanceVault = formatUSDC(await IUSDc.balanceOf(vaultMock.address));
-
-    USDCBalanceUser = await IUSDc.balanceOf(userAddr)
+    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
+    USDCBalanceUser = await IUSDc.balanceOf(userAddr);
     console.log({gasUsed})
     console.log(USDCBalanceUser)
 
