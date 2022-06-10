@@ -180,7 +180,7 @@ contract ETFVault is VaultToken {
     claimTokens(); 
     
     uint256 totalUnderlying = getTotalUnderlying();
-    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this)) ;
+    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
     totalAllocatedTokens += deltaAllocatedTokens;
@@ -243,7 +243,11 @@ contract ETFVault is VaultToken {
       int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
       int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100; // * 100 cause perfFee is in percentages
-      rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+      if (totalAllocatedTokens == 0) {
+        rewardPerLockedToken[rebalancingPeriod][protocolId] = 0;
+      } else {
+        rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+      }
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
@@ -369,7 +373,6 @@ contract ETFVault is VaultToken {
     }
 
     uint256 gasUsed = gasStart - gasleft();
-    console.log("gasUsed getTotalUnderlying %s", gasUsed);
   }
 
   /// @notice Get balance in VaultCurrency in underlying protocol
@@ -378,7 +381,6 @@ contract ETFVault is VaultToken {
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
     uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
     uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
-    // console.log("balanceUnderlying %s", underlyingBalance);
     return underlyingBalance;
   }
 

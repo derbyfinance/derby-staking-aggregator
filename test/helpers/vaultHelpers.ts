@@ -1,14 +1,26 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
-import type { ETFVaultMock, Controller, ETFGameMock } from '../../typechain-types';
+import type { ETFVaultMock, Controller } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
-import { comptroller } from "./addresses";
+import { comptroller, dai, usdc, usdt } from "./addresses";
 import { Result } from 'ethers/lib/utils';
+import { ProtocolVault } from './protocolVaultClass';
 
 interface Protocol {
   number: number;
   allocation: number;
   address: string;
+}
+
+export const vaultInfo = {
+  name: 'DerbyUSDC',
+  symbol: 'cUSDC',
+  ETFname: 'USDC_med_risk',
+  ETFnumber: 0,
+  decimals: 6,
+  uScale: 1E6,
+  liquidityPerc: 10,
+  gasFeeLiquidity: 10_000 * 1E6,
 }
 
 export async function getAndLogBalances(vault: ETFVaultMock, protocols: Protocol[]) {
@@ -28,11 +40,6 @@ export function setDeltaAllocations(signer: Signer, vault: ETFVaultMock, protoco
   return Promise.all(protocols.map((protocol: Protocol) => 
     vault.connect(signer).setDeltaAllocations(protocol.number, protocol.allocation))
 )}
-
-export function setDeltaAllocationsWithGame(vault: ETFVaultMock, game: ETFGameMock, protocols: Protocol[]) {
-  return Promise.all(protocols.map((protocol: Protocol) => 
-    game.setDeltaAllocations(vault.address, protocol.number, protocol.allocation)))
-}
 
 export function getAllocations(vault: ETFVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) =>
@@ -55,6 +62,31 @@ export function deployAllProviders(dao: Signer, controller: Controller) {
     deployCompoundProvider(dao, controller.address, comptroller),
     deployAaveProvider(dao, controller.address),
   ]);
+}
+
+export function initController(controller: Controller, addVaultAddresses: string[]) {
+  const addVaultPromise = Promise.all(addVaultAddresses.map(address => controller.addVault(address)));
+  return Promise.all([
+    addVaultPromise,
+    controller.addCurveIndex(dai, 0),
+    controller.addCurveIndex(usdc, 1),
+    controller.addCurveIndex(usdt, 2),
+  ]);
+}
+
+export async function addAllProtocolsToController(
+  protocolMap: Map<string, ProtocolVault>, 
+  controller: Controller, 
+  ETFnumber: number, 
+  allProviders: any
+  ) {
+  for (const protocol of protocolMap.values()) {
+    await protocol.addProtocolToController(
+      controller,
+      ETFnumber,
+      allProviders
+    );  
+  };
 }
 
 export const rebalanceETF = async (vaultMock: ETFVaultMock) => {
