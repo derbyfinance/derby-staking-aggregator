@@ -176,6 +176,7 @@ library Swap {
   /// @param _amount amount to unwrap and transfer
   function unWrapWETHtoGov(address payable _governed, uint256 _amount) internal {
     IWETH9(WETH).withdraw(_amount);
-    _governed.transfer(_amount);
+    (bool sent,) = _governed.call{value: _amount}("");
+    require(sent, "Ether not sent");
   }
 }
