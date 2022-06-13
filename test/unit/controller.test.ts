@@ -15,7 +15,7 @@ const compoundMock =  Math.floor(Math.random() * 100000);
 const aaveMock =  Math.floor(Math.random() * 100000);
 const ETFnumber = 0;
 
-describe.skip("Testing controller", async () => {
+describe("Testing controller", async () => {
   let yearnProviderMock: MockContract, 
   compoundProviderMock: MockContract, 
   aaveProviderMock: MockContract, 
