@@ -67,10 +67,9 @@ describe("Testing XChainController, unit test", async () => {
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
     ]);
 
-    // for (const protocol of protocols.values()) {
-    //   await protocol.addProtocolToController(controller, ETFnumber, allProviders);
-    //   await protocol.resetAllocation(vault);
-    // }
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, ETFnumber, allProviders);
+    }
   });
 
   it("Should", async function() {
@@ -101,11 +100,17 @@ describe("Testing XChainController, unit test", async () => {
     await Promise.all([
       compoundVault.setDeltaAllocation(vault1, user, 10),
       compoundDAIVault.setDeltaAllocation(vault1, user, 20),
-      aaveVault.setDeltaAllocation(vault1, user, 30),
-      aaveUSDTVault.setDeltaAllocation(vault1, user, 40),
-      yearnVault.setDeltaAllocation(vault1, user, 50),
-      yearnUSDTVault.setDeltaAllocation(vault1, user, 60),
+      aaveVault.setDeltaAllocation(vault2, user, 30),
+      aaveUSDTVault.setDeltaAllocation(vault2, user, 40),
+      yearnVault.setDeltaAllocation(vault3, user, 50),
+      yearnUSDTVault.setDeltaAllocation(vault3, user, 60),
     ]);
+
+    const testers1 = await compoundDAIVault.getDeltaAllocationTEST(vault1);
+    const testers2 = await aaveUSDTVault.getDeltaAllocationTEST(vault2);
+
+    console.log({testers1})
+    console.log({testers2})
 
     // for (const protocol of protocols.values()) {
     //   console.log(protocol.name)

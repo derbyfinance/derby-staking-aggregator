@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
-import { Controller, ETFGameMock, ETFVaultMock, XChainController } from "typechain-types";
+import { Controller, ETFGameMock, ETFVaultMock } from "typechain-types";
 
 export interface IProtocolVault {
   name: string;

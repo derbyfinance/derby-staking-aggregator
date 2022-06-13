@@ -11,6 +11,8 @@ contract XChainController {
     address chain3;
   }
 
+  uint256 public latestChainId = 3;
+
   // ETFNumber => deltaAllocation
   mapping(uint256 => int256) internal totalDeltaAllocationsETF;
 
