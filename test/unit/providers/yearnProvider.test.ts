@@ -12,7 +12,7 @@ const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
-describe("Testing Yearn provider", async () => {
+describe.skip("Testing Yearn provider", async () => {
   let yearnProvider: YearnProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, yToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {

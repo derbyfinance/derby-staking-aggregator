@@ -16,7 +16,7 @@ const amountUSDT = parseUSDC(amount.toString());
 
 const ETFnumber = 0;
 
-describe("Testing Beta provider", async () => {
+describe.skip("Testing Beta provider", async () => {
   let betaProvider: BetaProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, bToken: Contract, daoAddr: string, vaultAddr: string, protocolNumberUSDC: number, protocolNumberDAI: number, protocolNumberUSDT: number;
 
   beforeEach(async function() {

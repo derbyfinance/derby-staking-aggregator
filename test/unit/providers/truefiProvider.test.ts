@@ -13,7 +13,7 @@ const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 const ETFnumber = 0;
 
-describe("Testing TrueFi provider", async () => {
+describe.skip("Testing TrueFi provider", async () => {
   let truefiProvider: TruefiProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, tToken: Contract, daoAddr: string, vaultAddr: string, protocolNumber: number;
 
   beforeEach(async function() {

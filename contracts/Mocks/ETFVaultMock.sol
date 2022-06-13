@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 import "../ETFVault.sol";
 import "hardhat/console.sol";
 
-import "../libraries/ABDKMath64x64.sol";
+// import "../libraries/ABDKMath64x64.sol";
 
 contract ETFVaultMock is ETFVault { // is VaultToken
 
@@ -137,11 +137,11 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     }
   }
 
-  function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {
-    int128 g_casted = ABDKMath64x64.fromUInt(_g);
-    int128 n_casted = ABDKMath64x64.fromUInt(_n);
-    int128 log2 = ABDKMath64x64.log_2(g_casted);
-    int128 endResult = ABDKMath64x64.exp_2(log2 / n_casted);
-    return endResult;
-  }
+  // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {
+  //   int128 g_casted = ABDKMath64x64.fromUInt(_g);
+  //   int128 n_casted = ABDKMath64x64.fromUInt(_n);
+  //   int128 log2 = ABDKMath64x64.log_2(g_casted);
+  //   int128 endResult = ABDKMath64x64.exp_2(log2 / n_casted);
+  //   return endResult;
+  // }
 }

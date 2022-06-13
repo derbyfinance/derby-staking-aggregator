@@ -8,5 +8,7 @@ interface IETFVault {
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external;
   function historicalPrices(uint256 _rebalancingPeriod, uint256 _protocolNum) external view returns(uint256);
   function rewardPerLockedToken(uint256 _rebalancingPeriod, uint256 _protocolNum) external view returns(int256);
+  function redeemRewards(address _user, uint256 _amount) external;
   function performanceFee() external view returns(uint256);
+  function vaultCurrencyAddress() external view returns(address);
 }

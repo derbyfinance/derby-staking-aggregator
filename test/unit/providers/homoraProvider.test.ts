@@ -16,7 +16,7 @@ const amountUSDT = parseUSDC(amount.toString());
 
 const ETFnumber = 0;
 
-describe("Testing Homora provider", async () => {
+describe.skip("Testing Homora provider", async () => {
   let homoraProvider: HomoraProvider, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, DAISigner: Signer, USDTSigner: Signer, IUSDc: Contract, IDai: Contract, IUSDt: Contract, hToken: Contract, daoAddr: string, vaultAddr: string, protocolNumberUSDC: number, protocolNumberDAI: number, protocolNumberUSDT: number;
 
   beforeEach(async function() {

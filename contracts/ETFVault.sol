@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
 
@@ -224,6 +225,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
       
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
+      // console.log("protocol: %s, withdraw: %s", i, amountToWithdraw);
     }
     
     return protocolToDeposit;
@@ -234,18 +236,18 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t 
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
-  /// @param protocolId Protocol id number.
-  function storePriceAndRewards(uint256 _totalUnderlying, uint256 protocolId) internal {
-      uint256 price = price(protocolId);
-      historicalPrices[rebalancingPeriod][protocolId] = price;
-      if (historicalPrices[rebalancingPeriod - 1][protocolId] == 0) return;
-      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][protocolId]);
+  /// @param _protocolId Protocol id number.
+  function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+      uint256 price = price(_protocolId);
+      historicalPrices[rebalancingPeriod][_protocolId] = price;
+      if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
+      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
       int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][protocolId]) * 100; // * 100 cause perfFee is in percentages
+      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
       if (totalAllocatedTokens == 0) {
-        rewardPerLockedToken[rebalancingPeriod][protocolId] = 0;
+        rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
       } else {
-        rewardPerLockedToken[rebalancingPeriod][protocolId] = nominator / denominator;
+        rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
       }
   }
 
@@ -295,7 +297,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
-
+      // console.log("protocol: %s, deposit: %s", i, amount);
       depositInProtocol(i, amount);
     }
   }
@@ -391,7 +393,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
 
   /// @notice Get price for underlying protocol
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
-  /// @return protocolPrice Price per share
+  /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns(uint256) {
     return controller.exchangeRate(ETFnumber, _protocolNum);
   }
@@ -480,6 +482,15 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @param _blockInterval number of blocks
   function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
     blockRebalanceInterval = _blockInterval;
+  }
+
+  /// @notice redeem funds for basket in the game
+  /// @dev function is implemented here because the vault holds the funds and can transfer them
+  /// @param _user user (msg.sender) that triggered the redeemRewards function on the game contract.
+  /// @param _amount the reward amount to be transferred to the user.
+  function redeemRewards(address _user, uint256 _amount) external onlyETFgame {
+      if (_amount > vaultCurrency.balanceOf(address(this))) pullFunds(_amount);
+      vaultCurrency.safeTransfer(_user, _amount);
   }
 
   /// @notice callback to receive Ether from unwrapping WETH

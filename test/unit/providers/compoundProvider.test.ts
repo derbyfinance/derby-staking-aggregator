@@ -13,7 +13,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const cusdcWhaleAddr = '0xabde2f02fe84e083e1920471b54c3612456365ef';
 const ETFnumber = 0;
 
-describe("Testing Compound provider", async () => {
+describe.skip("Testing Compound provider", async () => {
   let compoundProviderMock: CompoundProviderMock, controller: Controller, dao: Signer, vault: Signer, USDCSigner: Signer, IUSDc: Contract, cToken: Contract, daoAddr: string, vaultAddr: string, cusdcWhale: Signer, compToken: Contract, protocolNumber: number;
 
   beforeEach(async function() {
