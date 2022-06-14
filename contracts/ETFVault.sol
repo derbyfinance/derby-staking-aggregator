@@ -25,6 +25,9 @@ contract ETFVault is VaultToken {
   IERC20 public vaultCurrency;
   IController public controller;
 
+  enum State { WaitingForController, RebalanceXChain, XChainDone, RebalanceVault }
+  State public state;
+
   address public vaultCurrencyAddr; 
   address public ETFgame;
   address public governed;
@@ -39,6 +42,7 @@ contract ETFVault is VaultToken {
   uint256 public lastTimeStamp;
 
   uint256 public gasFeeLiquidity;
+  uint256 public amountToSendXChain;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -134,6 +138,17 @@ contract ETFVault is VaultToken {
       
     _burn(_seller, _amount);
     vaultCurrency.safeTransfer(_seller, value);
+  }
+
+  // onlyXChainController modifier
+  function setXChainAllocation(uint256 _amountToSend) external {
+    amountToSendXChain = _amountToSend;
+  }
+
+  function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
+    underlying += getTotalUnderlying();
+    underlying += vaultCurrency.balanceOf(address(this));
+    console.log("underlying %s", underlying);
   }
 
   /// @notice Withdraw from protocols on shortage in Vault

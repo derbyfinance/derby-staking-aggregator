@@ -63,13 +63,13 @@ describe("Testing XChainController, unit test", async () => {
     await Promise.all([
       initController(controller, [userAddr, vault1.address, vault2.address, vault3.address]),
       allProviders.deployAllProviders(dao, controller),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
+      IUSDc.connect(USDCSigner).transfer(vault1.address, amountUSDC),
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
     ]);
 
     for (const protocol of protocols.values()) {
       await protocol.addProtocolToController(controller, ETFnumber, allProviders);
-    }
+    };
   });
 
   it("Should", async function() {
@@ -83,6 +83,7 @@ describe("Testing XChainController, unit test", async () => {
       [3, 50],
       [3, 60],
     ];
+
 
     await Promise.all([
       xChainController.setETFVaultChainAddress(ETFnumber, 1, vault1.address),
@@ -111,6 +112,9 @@ describe("Testing XChainController, unit test", async () => {
 
     console.log({testers1})
     console.log({testers2})
+
+    const totalUnderlying = await xChainController.rebalanceXChainAllocations(0);
+    console.log({totalUnderlying});
 
     // for (const protocol of protocols.values()) {
     //   console.log(protocol.name)
