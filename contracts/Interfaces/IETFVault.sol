@@ -13,4 +13,5 @@ interface IETFVault {
   function getTotalUnderlying() external view returns(uint256);
   function getTotalUnderlyingTEMP() external view returns(uint256);
   function vaultCurrencyAddress() external view returns(address);
+  function setAllocationXChain(uint256 _amountToSend) external;
 }

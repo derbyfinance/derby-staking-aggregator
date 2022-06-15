@@ -14,12 +14,15 @@ contract XChainController {
   }
 
   uint256 public latestChainId = 3;
-  int256 public marginScale = 1E10; // 10000 USDC
+  // int256 public marginScale = 1E10; // 10000 USDC
 
   // ETFNumber => deltaAllocation
   mapping(uint256 => int256) internal totalDeltaAllocationsETF;
 
   mapping(uint256 => int256) internal totalCurrentAllocationsETF;
+
+  // ETFNumber => chainId => address
+  mapping(uint256 => mapping(uint256 => address)) internal ETFVaultChainAddress;
 
   // ETFNumber => chainId => deltaAllocation
   mapping(uint256 => mapping(uint256 => int256)) internal deltaAllocationPerChainETF;
@@ -27,8 +30,9 @@ contract XChainController {
   // ETFNumber => chainId => currentAllocation
   mapping(uint256 => mapping(uint256 => int256)) internal currentAllocationPerChainETF;
 
-  // ETFNumber => chainId => address
-  mapping(uint256 => mapping(uint256 => address)) internal ETFVaultChainAddress;
+  // ETFNumber => chainId => amountToDeposit
+  mapping(uint256 => mapping(uint256 => uint256)) internal amountToDepositPerChain;
+
 
   constructor() {
       
@@ -42,15 +46,27 @@ contract XChainController {
 
     for (uint i = 1; i <= latestChainId; i++) {
       setXChainAllocation(_ETFNumber, i);
+
+      address vaultAddress = ETFVaultChainAddress[_ETFNumber][i];
       int256 currentAllocation = currentAllocationPerChainETF[_ETFNumber][i];
       int256 totalAllocation = totalCurrentAllocationsETF[_ETFNumber];
 
       int256 amountToChainVault = int(totalChainUnderlying) * currentAllocation / totalAllocation;
-
-      if (amountToChainVault > marginScale) {
-        
-      } 
       console.log("amountToChain %s", uint(amountToChainVault));
+
+      uint256 currentUnderlying = IETFVault(vaultAddress).getTotalUnderlyingTEMP();
+
+      int256 amountToDeposit = amountToChainVault - int256(currentUnderlying);
+      uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(amountToChainVault) : 0;
+
+      if (amountToDeposit > 0) {
+        amountToDepositPerChain[_ETFNumber][i] = uint256(amountToDeposit);
+        IETFVault(vaultAddress).setAllocationXChain(0);
+      }
+      if (amountToWithdraw > 0) {
+        IETFVault(vaultAddress).setAllocationXChain(amountToWithdraw);
+      }
+
     }
   }
 

@@ -141,8 +141,11 @@ contract ETFVault is VaultToken {
   }
 
   // onlyXChainController modifier
-  function setXChainAllocation(uint256 _amountToSend) external {
+  function setAllocationXChain(uint256 _amountToSend) external {
     amountToSendXChain = _amountToSend;
+    state = State.RebalanceXChain;
+    
+    console.log("amount to xchain from vault %s", amountToSendXChain);
   }
 
   function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
