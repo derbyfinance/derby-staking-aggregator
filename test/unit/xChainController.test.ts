@@ -15,9 +15,6 @@ import { vaultInfo } from "../helpers/vaultHelpers";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
-const nftName = 'DerbyNFT';
-const nftSymbol = 'DRBNFT';
-const totalXaverSupply = parseEther(1E8.toString()); 
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing XChainController, unit test", async () => {
@@ -82,8 +79,8 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setTotalDeltaAllocations(ETFnumber, 210),
     ]);
 
-    // Set allocation amount and state in ETFVaults with number 0
-    await xChainController.rebalanceXChainAllocations(0);
+    // Set allocation amount and state in ETFVaults with ETFnumber 0
+    await xChainController.rebalanceXChainAllocations(ETFnumber);
     
     const [state1, state2, state3] = await Promise.all([
       vault1.state(),
@@ -129,6 +126,8 @@ describe("Testing XChainController, unit test", async () => {
 
   it("Should", async function() {
     console.log(xChainController.address)
+
+    // await xChainController.rebalanceXChainAllocations2(ETFnumber);
 
     // for (const protocol of protocols.values()) {
     //   console.log(protocol.name)
