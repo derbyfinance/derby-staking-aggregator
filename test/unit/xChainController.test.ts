@@ -6,12 +6,11 @@ import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
 import type { Controller, ETFGameMock, ETFVaultMock, XaverToken, XChainController } from '../../typechain-types';
 import { deployController, deployETFGameMock, deployETFVaultMock, deployXaverToken, deployXChainController } from '../helpers/deploy';
-import { usdc, starterProtocols as protocols, compound_usdc_01, aave_usdc_01, yearn_usdc_01, compound_dai_01, aave_usdt_01, yearn_usdt_01 } from "../helpers/addresses";
+import { usdc } from "../helpers/addresses";
 import { initController, rebalanceETF } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
 import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
-import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 
 const amount = 100_000;
@@ -24,22 +23,7 @@ const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = 
 describe("Testing XChainController, unit test", async () => {
   let vault1: ETFVaultMock, vault2: ETFVaultMock, vault3: ETFVaultMock, controller: Controller, xChainController: XChainController, game: ETFGameMock, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, xaverToken: XaverToken, userAddr: string;
 
-  const protocols = new Map<string, ProtocolVault>()
-  .set('compound_usdc_01', compound_usdc_01)
-  .set('compound_dai_01', compound_dai_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('aave_usdt_01', aave_usdt_01)
-  .set('yearn_usdc_01', yearn_usdc_01)
-  .set('yearn_usdt_01', yearn_usdt_01);
-
-  const compoundVault = protocols.get('compound_usdc_01')!;
-  const compoundDAIVault = protocols.get('compound_dai_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
-  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
-  const yearnVault = protocols.get('yearn_usdc_01')!;
-  const yearnUSDTVault = protocols.get('yearn_usdt_01')!;
-
-  beforeEach(async function() {
+  before(async function() {
     [dao, user] = await ethers.getSigners();
 
     [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
@@ -67,15 +51,16 @@ describe("Testing XChainController, unit test", async () => {
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
     ]);
 
-    for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, ETFnumber, allProviders);
-    };
+    await Promise.all([
+      vault1.setxChainControllerAddress(xChainController.address),
+      vault2.setxChainControllerAddress(xChainController.address),
+      vault3.setxChainControllerAddress(xChainController.address),
+    ]);
+
   });
 
-  it("Should", async function() {
-    console.log(xChainController.address);
-
-    const allocArray = [
+  it("Should 'cross chain' rebalance vaults and update vault state", async function() {
+    const allocArrayForReference = [
       [1, 10],
       [1, 20],
       [2, 30],
@@ -84,11 +69,10 @@ describe("Testing XChainController, unit test", async () => {
       [3, 60],
     ];
 
-
     await Promise.all([
-      xChainController.setETFVaultChainAddress(ETFnumber, 1, vault1.address),
-      xChainController.setETFVaultChainAddress(ETFnumber, 2, vault2.address),
-      xChainController.setETFVaultChainAddress(ETFnumber, 3, vault3.address),
+      xChainController.setETFVaultChainAddress(ETFnumber, 1, vault1.address, usdc),
+      xChainController.setETFVaultChainAddress(ETFnumber, 2, vault2.address, usdc),
+      xChainController.setETFVaultChainAddress(ETFnumber, 3, vault3.address, usdc),
     ]);
 
     await Promise.all([
@@ -97,24 +81,54 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setDeltaAllocationPerChain(ETFnumber, 3, 50 + 60),
       xChainController.setTotalDeltaAllocations(ETFnumber, 210),
     ]);
+
+    // Set allocation amount and state in ETFVaults with number 0
+    await xChainController.rebalanceXChainAllocations(0);
     
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault1, user, 10),
-      compoundDAIVault.setDeltaAllocation(vault1, user, 20),
-      aaveVault.setDeltaAllocation(vault2, user, 30),
-      aaveUSDTVault.setDeltaAllocation(vault2, user, 40),
-      yearnVault.setDeltaAllocation(vault3, user, 50),
-      yearnUSDTVault.setDeltaAllocation(vault3, user, 60),
+    const [state1, state2, state3] = await Promise.all([
+      vault1.state(),
+      vault2.state(),
+      vault3.state(),
     ]);
 
-    const testers1 = await compoundDAIVault.getDeltaAllocationTEST(vault1);
-    const testers2 = await aaveUSDTVault.getDeltaAllocationTEST(vault2);
+    // Checking if vault states upped by atleast 1 after rebalanceXChainAllocations
+    expect(state1).to.be.greaterThanOrEqual(1)
+    expect(state2).to.be.greaterThanOrEqual(1)
+    expect(state3).to.be.greaterThanOrEqual(1)
+  });
 
-    console.log({testers1})
-    console.log({testers2})
+  it("Should 'cross chain' rebalance vaults and deposit/withdraw through xChainController", async function() {
+    await Promise.all([
+      vault1.rebalanceXChain(),
+      vault2.rebalanceXChain(),
+      vault3.rebalanceXChain(),
+    ]);
 
-    const totalUnderlying = await xChainController.rebalanceXChainAllocations(0);
-    console.log({totalUnderlying});
+    await xChainController.executeDeposits(ETFnumber);
+
+    const [balance1, balance2, balance3] = await Promise.all([
+      await IUSDc.balanceOf(vault1.address), 
+      await IUSDc.balanceOf(vault2.address), 
+      await IUSDc.balanceOf(vault3.address), 
+    ]);
+
+    const expectedBalances = [
+      30 / 210 * amount,
+      70 / 210 * amount,
+      110 / 210 * amount,
+    ]
+
+    console.log({balance1})
+    console.log({balance2})
+    console.log({balance3})
+
+    expect(formatUSDC(balance1)).to.be.closeTo(expectedBalances[0], 1)
+    expect(formatUSDC(balance2)).to.be.closeTo(expectedBalances[1], 1)
+    expect(formatUSDC(balance3)).to.be.closeTo(expectedBalances[2], 1)
+  });
+
+  it("Should", async function() {
+    console.log(xChainController.address)
 
     // for (const protocol of protocols.values()) {
     //   console.log(protocol.name)
@@ -122,6 +136,15 @@ describe("Testing XChainController, unit test", async () => {
     //   expect(deltaAllocation).to.be.greaterThan(0);
     //   expect(deltaAllocation).to.be.equal(protocol.allocation);
     // };
+
+    // await Promise.all([
+    //   compoundVault.setDeltaAllocation(vault1, user, 10),
+    //   compoundDAIVault.setDeltaAllocation(vault1, user, 20),
+    //   aaveVault.setDeltaAllocation(vault2, user, 30),
+    //   aaveUSDTVault.setDeltaAllocation(vault2, user, 40),
+    //   yearnVault.setDeltaAllocation(vault3, user, 50),
+    //   yearnUSDTVault.setDeltaAllocation(vault3, user, 60),
+    // ]);
   });
 
 });

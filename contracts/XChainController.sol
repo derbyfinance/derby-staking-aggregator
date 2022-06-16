@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "./Interfaces/IETFVault.sol";
 
 import "hardhat/console.sol";
 
 contract XChainController {
+  using SafeERC20 for IERC20;
 
   struct ETFVaultXChain {
     address chain1;
@@ -22,7 +26,8 @@ contract XChainController {
   mapping(uint256 => int256) internal totalCurrentAllocationsETF;
 
   // ETFNumber => chainId => address
-  mapping(uint256 => mapping(uint256 => address)) internal ETFVaultChainAddress;
+  mapping(uint256 => mapping(uint256 => address)) internal ETFVaultChainAddress; 
+  mapping(uint256 => mapping(uint256 => address)) internal ETFVaultUnderlyingAddress; // different for actual xChain
 
   // ETFNumber => chainId => deltaAllocation
   mapping(uint256 => mapping(uint256 => int256)) internal deltaAllocationPerChainETF;
@@ -35,7 +40,6 @@ contract XChainController {
 
 
   constructor() {
-      
   }
 
   function rebalanceXChainAllocations(uint256 _ETFNumber) external {
@@ -66,7 +70,19 @@ contract XChainController {
       if (amountToWithdraw > 0) {
         IETFVault(vaultAddress).setAllocationXChain(amountToWithdraw);
       }
+    }
+  }
 
+  function executeDeposits(uint256 _ETFNumber) external {
+    for (uint i = 0; i <= latestChainId; i++) {
+      uint256 amount = amountToDepositPerChain[_ETFNumber][i];
+      if (amount == 0) continue;
+
+      address vaultAddress = ETFVaultChainAddress[_ETFNumber][i];
+      address underlyingAddress = ETFVaultUnderlyingAddress[_ETFNumber][i];
+
+      amountToDepositPerChain[_ETFNumber][i] = 0;
+      IERC20(underlyingAddress).safeTransfer(vaultAddress, amount);
     }
   }
 
@@ -90,8 +106,14 @@ contract XChainController {
     deltaAllocationPerChainETF[_ETFNumber][_chainId] += _allocation; 
   }
 
-  function setETFVaultChainAddress(uint256 _ETFNumber, uint256 _chainId, address _address) external {
+  function setETFVaultChainAddress(
+    uint256 _ETFNumber, 
+    uint256 _chainId, 
+    address _address, 
+    address _underlying
+  ) external {
     ETFVaultChainAddress[_ETFNumber][_chainId] = _address; 
+    ETFVaultUnderlyingAddress[_ETFNumber][_chainId] = _underlying; // different for actual xChain
   }
 
 

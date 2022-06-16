@@ -31,6 +31,7 @@ contract ETFVault is VaultToken {
   address public vaultCurrencyAddr; 
   address public ETFgame;
   address public governed;
+  address public xChainController;
 
   int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
@@ -143,15 +144,30 @@ contract ETFVault is VaultToken {
   // onlyXChainController modifier
   function setAllocationXChain(uint256 _amountToSend) external {
     amountToSendXChain = _amountToSend;
-    state = State.RebalanceXChain;
-    
+
+    if (_amountToSend == 0) {
+      state = State.XChainDone;
+    } else {
+      state = State.RebalanceXChain;
+    }
+
     console.log("amount to xchain from vault %s", amountToSendXChain);
+  }
+
+  // OnlyDao modifier
+  // Will be replaced with xChain logic
+  function rebalanceXChain() external {
+    // require(state == State.RebalanceXChain, "Vault not ready");
+    if (state != State.RebalanceXChain) return;
+
+    vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
+    amountToSendXChain = 0;
+    state = State.XChainDone;
   }
 
   function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
     underlying += getTotalUnderlying();
     underlying += vaultCurrency.balanceOf(address(this));
-    console.log("underlying %s", underlying);
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -518,5 +534,11 @@ contract ETFVault is VaultToken {
   /// @notice callback to receive Ether from unwrapping WETH
   receive() external payable {
     require(msg.sender == Swap.WETH, "Not WETH");
+  }
+
+  /// @notice Temporary, will be replaced by xChain logic
+  /// @param _xChainController set controller address
+  function setxChainControllerAddress(address _xChainController) external {
+    xChainController = _xChainController;
   }
 }
