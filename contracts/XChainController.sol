@@ -27,6 +27,10 @@ contract XChainController {
   mapping(uint256 => ETFinfo) internal ETFs;
 
   constructor() {
+    // comments
+    // modifiers
+    // feedback vault state
+    // transfers via provider
   }
 
   function rebalanceXChainAllocations(uint256 _ETFNumber) external {
@@ -36,11 +40,9 @@ contract XChainController {
 
     for (uint i = 1; i <= latestChainId; i++) {
       setXChainAllocation(_ETFNumber, i);
+      address vaultAddress = getVaultAddress(_ETFNumber, i);
 
-      address vaultAddress = ETFs[_ETFNumber].vaultChainAddress[i];
-      int256 currentAllocation = ETFs[_ETFNumber].currentAllocationPerChain[i];
-
-      int256 amountToChainVault = int(totalChainUnderlying) * currentAllocation / totalAllocation;
+      int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_ETFNumber, i) / totalAllocation;
       console.log("amountToChain %s", uint(amountToChainVault));
 
       uint256 currentUnderlying = IETFVault(vaultAddress).getTotalUnderlyingTEMP();
@@ -63,15 +65,30 @@ contract XChainController {
       uint256 amount = ETFs[_ETFNumber].amountToDepositPerChain[i];
       if (amount == 0) continue;
 
-      address vaultAddress = ETFs[_ETFNumber].vaultChainAddress[i];
-      address underlyingAddress = ETFs[_ETFNumber].vaultUnderlyingAddress[i];
-
       ETFs[_ETFNumber].amountToDepositPerChain[i] = 0;
-      IERC20(underlyingAddress).safeTransfer(vaultAddress, amount);
+      IERC20(getUnderlyingAddress(_ETFNumber, i)).safeTransfer(getVaultAddress(_ETFNumber, i), amount);
     }
   }
 
-  function setInternalAllocation(uint256 _ETFNumber) internal returns (int256 totalAllocation) {
+  function getTotalChainUnderlying(uint256 _ETFNumber) public view returns(uint256 amount) {
+    for (uint i = 1; i <= latestChainId; i++) {
+      amount += IETFVault(getVaultAddress(_ETFNumber, i)).getTotalUnderlyingTEMP();
+    }
+  }
+
+  function getVaultAddress(uint256 _ETFNumber, uint256 _chainId) internal view returns(address) {
+    return ETFs[_ETFNumber].vaultChainAddress[_chainId];
+  }
+
+  function getUnderlyingAddress(uint256 _ETFNumber, uint256 _chainId) internal view returns(address) {
+    return ETFs[_ETFNumber].vaultUnderlyingAddress[_chainId];
+  }
+
+  function getCurrentAllocation(uint256 _ETFNumber, uint256 _chainId) internal view returns(int256) {
+    return ETFs[_ETFNumber].currentAllocationPerChain[_chainId];
+  }
+
+  function setInternalAllocation(uint256 _ETFNumber) internal returns(int256 totalAllocation) {
     ETFs[_ETFNumber].totalCurrentAllocation += ETFs[_ETFNumber].totalDeltaAllocation;
     ETFs[_ETFNumber].totalDeltaAllocation = 0;
 
@@ -81,13 +98,6 @@ contract XChainController {
   function setXChainAllocation(uint256 _ETFNumber, uint256 _chainId) internal {
     ETFs[_ETFNumber].currentAllocationPerChain[_chainId] += ETFs[_ETFNumber].deltaAllocationPerChain[_chainId];
     ETFs[_ETFNumber].deltaAllocationPerChain[_chainId] = 0;
-  }
-
-  function getTotalChainUnderlying(uint256 _ETFNumber) public view returns(uint256 amount) {
-    for (uint i = 1; i <= latestChainId; i++) {
-      address vaultAddress = ETFs[_ETFNumber].vaultChainAddress[i];
-      amount += IETFVault(vaultAddress).getTotalUnderlyingTEMP();
-    }
   }
 
   function setTotalDeltaAllocations(uint256 _ETFNumber, int256 _allocation) external {

@@ -32,8 +32,6 @@ describe("Testing XChainController, unit test", async () => {
 
     controller = await deployController(dao, daoAddr);
     xChainController = await deployXChainController(dao);
-    // xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
-    // game = await deployETFGameMock(user, nftName, nftSymbol, xaverToken.address, controller.address, daoAddr, controller.address);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),

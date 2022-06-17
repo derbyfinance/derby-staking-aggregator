@@ -157,7 +157,6 @@ contract ETFVault is VaultToken {
   // OnlyDao modifier
   // Will be replaced with xChain logic
   function rebalanceXChain() external {
-    // require(state == State.RebalanceXChain, "Vault not ready");
     if (state != State.RebalanceXChain) return;
 
     vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
