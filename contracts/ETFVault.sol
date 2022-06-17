@@ -25,7 +25,7 @@ contract ETFVault is VaultToken {
   IERC20 public vaultCurrency;
   IController public controller;
 
-  enum State { WaitingForController, RebalanceXChain, XChainDone, RebalanceVault }
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
   State public state;
 
   address public vaultCurrencyAddr; 
@@ -146,9 +146,9 @@ contract ETFVault is VaultToken {
     amountToSendXChain = _amountToSend;
 
     if (_amountToSend == 0) {
-      state = State.XChainDone;
+      state = State.WaitingForFunds;
     } else {
-      state = State.RebalanceXChain;
+      state = State.SendingFundsXChain;
     }
 
     console.log("amount to xchain from vault %s", amountToSendXChain);
@@ -157,11 +157,15 @@ contract ETFVault is VaultToken {
   // OnlyDao modifier
   // Will be replaced with xChain logic
   function rebalanceXChain() external {
-    if (state != State.RebalanceXChain) return;
+    if (state != State.SendingFundsXChain) return;
 
     vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
     amountToSendXChain = 0;
-    state = State.XChainDone;
+    state = State.RebalanceVault;
+  }
+
+  function setVaultStateTEMP() public {
+    state = State.RebalanceVault;
   }
 
   function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {

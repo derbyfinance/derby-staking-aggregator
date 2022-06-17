@@ -5,9 +5,9 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
 import type { Controller, ETFGameMock, ETFVaultMock, XaverToken, XChainController } from '../../typechain-types';
-import { deployController, deployETFGameMock, deployETFVaultMock, deployXaverToken, deployXChainController } from '../helpers/deploy';
+import { deployController, deployETFVaultMock, deployXChainController } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
+import { initController } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
 import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
@@ -31,7 +31,7 @@ describe("Testing XChainController, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainController(dao);
+    xChainController = await deployXChainController(dao, userAddr);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
@@ -79,17 +79,11 @@ describe("Testing XChainController, unit test", async () => {
 
     // Set allocation amount and state in ETFVaults with ETFnumber 0
     await xChainController.rebalanceXChainAllocations(ETFnumber);
-    
-    const [state1, state2, state3] = await Promise.all([
-      vault1.state(),
-      vault2.state(),
-      vault3.state(),
-    ]);
 
     // Checking if vault states upped by atleast 1 after rebalanceXChainAllocations
-    expect(state1).to.be.greaterThanOrEqual(1)
-    expect(state2).to.be.greaterThanOrEqual(1)
-    expect(state3).to.be.greaterThanOrEqual(1)
+    expect(await vault1.state()).to.be.greaterThanOrEqual(1)
+    expect(await vault2.state()).to.be.greaterThanOrEqual(1)
+    expect(await vault3.state()).to.be.greaterThanOrEqual(1)
   });
 
   it("Should 'cross chain' rebalance vaults and deposit/withdraw through xChainController", async function() {
@@ -120,6 +114,11 @@ describe("Testing XChainController, unit test", async () => {
     expect(formatUSDC(balance1)).to.be.closeTo(expectedBalances[0], 1)
     expect(formatUSDC(balance2)).to.be.closeTo(expectedBalances[1], 1)
     expect(formatUSDC(balance3)).to.be.closeTo(expectedBalances[2], 1)
+
+    // Checking if vault states upped to 3 => ready to rebalance vault itself
+    expect(await vault1.state()).to.be.equal(3)
+    expect(await vault2.state()).to.be.equal(3)
+    expect(await vault3.state()).to.be.equal(3)
   });
 
   it("Should", async function() {

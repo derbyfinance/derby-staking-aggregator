@@ -12,6 +12,7 @@ contract XChainController {
   using SafeERC20 for IERC20;
 
   uint256 public latestChainId = 3;
+  address public game;
   // int256 public marginScale = 1E10; // 10000 USDC
 
   struct ETFinfo {
@@ -26,11 +27,17 @@ contract XChainController {
 
   mapping(uint256 => ETFinfo) internal ETFs;
 
-  constructor() {
+  modifier onlyGame {
+    require(msg.sender == game, "XChainController: only Game");
+    _;
+  }
+
+  constructor(address _game) {
     // comments
     // modifiers
     // feedback vault state
     // transfers via provider
+    game = _game;
   }
 
   function rebalanceXChainAllocations(uint256 _ETFNumber) external {
@@ -53,6 +60,7 @@ contract XChainController {
       if (amountToDeposit > 0) {
         ETFs[_ETFNumber].amountToDepositPerChain[i] = uint256(amountToDeposit);
         IETFVault(vaultAddress).setAllocationXChain(0);
+        // up state for vault
       }
       if (amountToWithdraw > 0) {
         IETFVault(vaultAddress).setAllocationXChain(amountToWithdraw);
@@ -67,6 +75,8 @@ contract XChainController {
 
       ETFs[_ETFNumber].amountToDepositPerChain[i] = 0;
       IERC20(getUnderlyingAddress(_ETFNumber, i)).safeTransfer(getVaultAddress(_ETFNumber, i), amount);
+      // TEMP
+      IETFVault(getVaultAddress(_ETFNumber, i)).setVaultStateTEMP();
     }
   }
 
@@ -95,25 +105,41 @@ contract XChainController {
     totalAllocation = ETFs[_ETFNumber].totalCurrentAllocation;
   }
 
+  /// @notice Helper to add delta allocation to current allocation for particulair chainId
+  /// @param _ETFNumber number of ETFVault
+  /// @param _chainId number of chainId
   function setXChainAllocation(uint256 _ETFNumber, uint256 _chainId) internal {
     ETFs[_ETFNumber].currentAllocationPerChain[_chainId] += ETFs[_ETFNumber].deltaAllocationPerChain[_chainId];
     ETFs[_ETFNumber].deltaAllocationPerChain[_chainId] = 0;
   }
 
-  function setTotalDeltaAllocations(uint256 _ETFNumber, int256 _allocation) external {
+  /// @notice Setter for Game contract to set Total delta allocation for ETFVault
+  /// @param _ETFNumber number of ETFVault
+  /// @param _allocation total delta allocation for ETFVault (all chainIds)
+  function setTotalDeltaAllocations(uint256 _ETFNumber, int256 _allocation) external onlyGame {
     ETFs[_ETFNumber].totalDeltaAllocation += _allocation;
   }
 
-  function setDeltaAllocationPerChain(uint256 _ETFNumber, uint256 _chainId, int256 _allocation) external {
+  /// @notice Setter for Game contract to set delta allocation for a particulair chainId
+  /// @param _ETFNumber number of ETFVault
+  /// @param _chainId number of chainId
+  /// @param _allocation delta allocation
+  function setDeltaAllocationPerChain(uint256 _ETFNumber, uint256 _chainId, int256 _allocation) external onlyGame {
     ETFs[_ETFNumber].deltaAllocationPerChain[_chainId] += _allocation;
   }
 
+  /// @notice Set ETFVault address and underlying for a particulair chainId
+  /// @param _ETFNumber number of ETFVault
+  /// @param _chainId number of chainId
+  /// @param _address address of the ETFVault
+  /// @param _underlying underlying of the ETFVault eg USDC
   function setETFVaultChainAddress(
     uint256 _ETFNumber, 
     uint256 _chainId, 
     address _address, 
     address _underlying
   ) external {
+    // only dao
     ETFs[_ETFNumber].vaultChainAddress[_chainId] = _address; 
     ETFs[_ETFNumber].vaultUnderlyingAddress[_chainId] = _underlying;
   }
