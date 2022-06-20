@@ -3,13 +3,13 @@
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { allProtocols, usdc, dai, usdt } from "../helpers/addresses";
-import { rebalanceETF, vaultInfo } from "../helpers/vaultHelpers";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../../typechain-types';
+import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import { allProtocols, usdc, dai, usdt } from "../../helpers/addresses";
+import { rebalanceETF, vaultInfo } from "../../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
-import allProviders  from "../helpers/allProvidersClass";
+import allProviders  from "../../helpers/allProvidersClass";
 
 // const amount = 5_000_000;0
 const amount = Math.floor(Math.random() * 1_000_000) + 1_000_000;

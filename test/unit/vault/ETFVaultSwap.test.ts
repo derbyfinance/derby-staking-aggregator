@@ -3,14 +3,14 @@
 /* eslint-disable prettier/prettier */
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
-import allProviders  from "../helpers/allProvidersClass";
+import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../../typechain-types';
+import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
+import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
+import allProviders  from "../../helpers/allProvidersClass";
 import { ethers, network } from "hardhat";
-import { vaultInfo } from "../helpers/vaultHelpers";
+import { vaultInfo } from "../../helpers/vaultHelpers";
 import { Result } from "ethers/lib/utils";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 

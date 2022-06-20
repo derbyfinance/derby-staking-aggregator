@@ -128,8 +128,8 @@ export const deployController = (
   ) as Promise<Controller>);
 };
 
-export const deployXChainController = (deployerSign: Signer, game: string): Promise<XChainController> => {
-  return (deployContract(deployerSign, XChainControllerArtifact, [game])) as Promise<XChainController>;
+export const deployXChainController = (deployerSign: Signer, game: string, dao: string): Promise<XChainController> => {
+  return (deployContract(deployerSign, XChainControllerArtifact, [game, dao])) as Promise<XChainController>;
 };
 
 

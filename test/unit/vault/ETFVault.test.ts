@@ -3,15 +3,15 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, starterProtocols as protocols } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
-import allProviders  from "../helpers/allProvidersClass";
-import AllMockProviders from "../helpers/allMockProvidersClass";
+import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../../typechain-types';
+import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
+import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
+import allProviders  from "../../helpers/allProvidersClass";
+import AllMockProviders from "../../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
-import { vaultInfo } from "../helpers/vaultHelpers";
+import { vaultInfo } from "../../helpers/vaultHelpers";
 
 
 const amount = 100_000;

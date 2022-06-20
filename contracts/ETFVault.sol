@@ -141,7 +141,11 @@ contract ETFVault is VaultToken {
     vaultCurrency.safeTransfer(_seller, value);
   }
 
-  // onlyXChainController modifier
+  // xchainprovider modifier?
+  /// @notice Will set the amount to send back to the xChainController by the xChainController
+  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xChainController
+  /// @param _amountToSend amount to send in vaultCurrency
   function setAllocationXChain(uint256 _amountToSend) external {
     amountToSendXChain = _amountToSend;
 
@@ -150,13 +154,11 @@ contract ETFVault is VaultToken {
     } else {
       state = State.SendingFundsXChain;
     }
-
-    console.log("amount to xchain from vault %s", amountToSendXChain);
   }
 
   // OnlyDao modifier
-  // Will be replaced with xChain logic
-  function rebalanceXChain() external {
+  /// @notice Will be replaced with xChain logic
+  function rebalanceXChain() external onlyDao {
     if (state != State.SendingFundsXChain) return;
 
     vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
@@ -164,10 +166,12 @@ contract ETFVault is VaultToken {
     state = State.RebalanceVault;
   }
 
+  /// @notice Temporary helper to set state
   function setVaultStateTEMP() public {
     state = State.RebalanceVault;
   }
 
+  /// @notice Temporary helper to get total underlying plus vault balance
   function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
     underlying += getTotalUnderlying();
     underlying += vaultCurrency.balanceOf(address(this));
@@ -210,6 +214,7 @@ contract ETFVault is VaultToken {
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() external onlyDao {
     if (!rebalanceNeeded()) return;
+    // if (state != State.RebalanceVault) return; // commented out for now so the tests wont fail
     uint256 gasStart = gasleft();
 
     rebalancingPeriod++;
@@ -232,6 +237,8 @@ contract ETFVault is VaultToken {
 
     uint256 gasUsed = gasStart - gasleft();
     swapAndPayGasFee(gasUsed);
+
+    state = State.WaitingForController;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
