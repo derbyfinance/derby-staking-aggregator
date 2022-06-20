@@ -159,7 +159,7 @@ describe.skip("Testing feeTest. Simulate looping through game players and calcul
     console.log("Number of protocols in vault: %s", await controller.latestProtocolId(ETFnumber));
 
     await setDeltaAllocations(user, vault, protocols);
-    await vault.depositETF(userAddr, amountUSDC);
+    await vault.connect(user).depositETF(amountUSDC);
     await vault.rebalanceETF();
     console.log("total alloc: %s", await vault.totalAllocatedTokens());
 

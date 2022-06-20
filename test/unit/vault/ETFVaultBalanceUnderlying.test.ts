@@ -62,7 +62,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
-    await vault.depositETF(gameAddr, amountUSDC);
+    await vault.connect(game).depositETF(amountUSDC);
     const gasUsed = await rebalanceETF(vault);
     const gasUsedUSDC = Number(formatUSDC(gasUsed))
     console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
@@ -98,7 +98,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
     };
     
-    await vault.depositETF(gameAddr, amountUSDC);
+    await vault.connect(game).depositETF(amountUSDC);
     const gasUsed = await rebalanceETF(vault);
     console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 

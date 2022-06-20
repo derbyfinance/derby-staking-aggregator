@@ -19,8 +19,8 @@ contract Controller is IController {
   // curve index for stable coins
   mapping(address => int128) public curveIndex;
 
-  // uScale for stable coins used for swapping
-  mapping(address => uint256) public underlyingUScale;
+  // uScale for vault currency coins (i.e. stables) used for swapping
+  mapping(address => uint256) public underlyingUScale; // index is address of vaultcurrency erc20 contract
 
   address public dao;
   address public game;
