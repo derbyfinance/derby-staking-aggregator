@@ -47,6 +47,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   uint256 public gasFeeLiquidity;
   uint256 public amountToSendXChain;
 
+  uint256 public savedTotalUnderlying;
+
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
 
@@ -118,8 +120,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 totalSupply = totalSupply();
 
     if (totalSupply > 0) {
-      // using historicalUnderlying[rebalancingPeriod] instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
-      shares = ( amount * totalSupply ) / (getTotalUnderlying() + balanceBefore); 
+      shares = ( amount * totalSupply ) / (savedTotalUnderlying + balanceBefore); 
     } else {
       shares = amount; 
     }
@@ -172,9 +173,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   }
 
   /// @notice Temporary helper to get total underlying plus vault balance
-  function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
-    underlying += getTotalUnderlying();
-    underlying += vaultCurrency.balanceOf(address(this));
+  function getTotalUnderlyingTEMP() public view returns(uint256) {
+    return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -203,8 +203,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     
     uint256 balanceSelf = vaultCurrency.balanceOf(address(this));
 
-    // using historicalUnderlying[rebalancingPeriod] instead of getTotalUnderlying() will cause a small discrepancy but is more gas efficient
-    return (getTotalUnderlying() + balanceSelf)  * uScale / totalSupply();
+    return (savedTotalUnderlying + balanceSelf)  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -219,9 +218,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
 
     rebalancingPeriod++;
     
-    claimTokens(); 
+    claimTokens();
     
-    uint256 totalUnderlying = getTotalUnderlying();
+    uint256 totalUnderlying = savedTotalUnderlying;
     uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
 
@@ -237,6 +236,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
 
     uint256 gasUsed = gasStart - gasleft();
     swapAndPayGasFee(gasUsed);
+    setTotalUnderlying();
 
     state = State.WaitingForController;
   }
@@ -407,13 +407,14 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
   }
 
-  /// @notice Get total balance in VaultCurrency in all underlying protocols
-  /// @return balance Total balance in VaultCurrency e.g USDC
-  function getTotalUnderlying() public view returns(uint256 balance) {  
+  /// @notice Set total balance in VaultCurrency in all underlying protocols
+  function setTotalUnderlying() public {
+    uint totalUnderlying;
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
-      balance += balanceUnderlying(i);
+      totalUnderlying += balanceUnderlying(i);
     }
+    savedTotalUnderlying = totalUnderlying;
   }
 
   /// @notice Get balance in VaultCurrency in underlying protocol
