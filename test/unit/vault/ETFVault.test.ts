@@ -111,6 +111,7 @@ describe("Testing ETFVault, unit test", async () => {
     ]);
     
     await vault.connect(game).depositETF(amountUSDC);
+    await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
 
@@ -157,6 +158,7 @@ describe("Testing ETFVault, unit test", async () => {
     await vault.connect(dao).blacklistProtocol(compoundVault!.number);
     await vault.connect(game).depositETF(amountUSDC);
 
+    await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
 
@@ -236,6 +238,7 @@ describe("Testing ETFVault, unit test, mock providers", async () => {
           yearnVault.setDeltaAllocation(vault, game, 20),
         ]);
         await vault.connect(game).depositETF(amountUSDC);
+        await vault.setVaultState(3);
         await rebalanceETF(vault);
 
         let compoundHistoricalPrice = await vault.historicalPrices(1, compoundVault.number);
