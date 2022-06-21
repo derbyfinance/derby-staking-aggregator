@@ -9,6 +9,7 @@ export interface IProtocolVault {
   underlyingToken: string;
   govToken: string;
   decimals: number;
+  chainId: number;
 }
 
 export class ProtocolVault {
@@ -17,17 +18,19 @@ export class ProtocolVault {
   underlyingToken: string;
   govToken: string;
   decimals: number;
+  chainId: number;
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
   scale: number;
 
-  constructor({name, protocolToken, underlyingToken, govToken, decimals}: IProtocolVault) {
+  constructor({name, protocolToken, underlyingToken, govToken, decimals, chainId}: IProtocolVault) {
     this.name = name;
     this.protocolToken = protocolToken;
     this.underlyingToken = underlyingToken;
     this.govToken = govToken;
     this.decimals = decimals;
+    this.chainId = chainId;
     this.scale = 10 ** decimals;
   };
 

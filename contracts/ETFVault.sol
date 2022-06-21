@@ -27,9 +27,17 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   IERC20 public vaultCurrency;
   IController public controller;
 
+  // state 0 Rebalance done and ready for xChainController to rebalance again
+  // state 1 Allocation amount received and ready to send funds over to xChainController
+  // state 2 Allocation amount 0 received => will receive funds from xChainController
+  // state 3 Allocation amount sent or received and ready to rebalance the vault itself
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
+  State public state;
+
   address public vaultCurrencyAddr; 
   address public ETFgame;
   address public governed;
+  address public xChainController;
 
   int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
@@ -41,6 +49,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   uint256 public lastTimeStamp;
 
   uint256 public gasFeeLiquidity;
+  uint256 public amountToSendXChain;
 
   // total number of allocated xaver tokens currently
   int256 public totalAllocatedTokens;
@@ -136,6 +145,37 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
+  // xchainprovider modifier?
+  /// @notice Will set the amount to send back to the xChainController by the xChainController
+  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xChainController
+  /// @param _amountToSend amount to send in vaultCurrency
+  function setAllocationXChain(uint256 _amountToSend) external {
+    amountToSendXChain = _amountToSend;
+
+    if (_amountToSend == 0) {
+      state = State.WaitingForFunds;
+    } else {
+      state = State.SendingFundsXChain;
+    }
+  }
+
+  // OnlyDao modifier
+  /// @notice Will be replaced with xChain logic
+  function rebalanceXChain() external onlyDao {
+    if (state != State.SendingFundsXChain) return;
+
+    vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
+    amountToSendXChain = 0;
+    state = State.RebalanceVault;
+  }
+
+  /// @notice Temporary helper to get total underlying plus vault balance
+  function getTotalUnderlyingTEMP() public view returns(uint256 underlying) {
+    underlying += getTotalUnderlying();
+    underlying += vaultCurrency.balanceOf(address(this));
+  }
+
   /// @notice Withdraw from protocols on shortage in Vault
   /// @dev Keeps on withdrawing until the Vault balance > _value
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
@@ -172,7 +212,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() external nonReentrant onlyDao {
-    if (!rebalanceNeeded()) return;
+    require(rebalanceNeeded(), "No rebalance needed");
+    require(state == State.RebalanceVault, "Wrong state");
+
     uint256 gasStart = gasleft();
 
     rebalancingPeriod++;
@@ -195,6 +237,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
 
     uint256 gasUsed = gasStart - gasleft();
     swapAndPayGasFee(gasUsed);
+
+    state = State.WaitingForController;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -496,5 +540,11 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @notice callback to receive Ether from unwrapping WETH
   receive() external payable {
     require(msg.sender == Swap.WETH, "Not WETH");
+  }
+
+  /// @notice Temporary, will be replaced by xChain logic
+  /// @param _xChainController set controller address
+  function setxChainControllerAddress(address _xChainController) external {
+    xChainController = _xChainController;
   }
 }

@@ -95,7 +95,7 @@ describe("Testing ETFgameMock", async () => {
         compoundProvider.mock.exchangeRate.returns(price),
         aaveProvider.mock.exchangeRate.returns(price),
       ]);
-
+      await vault.setVaultState(3);
       await rebalanceETF(vault);
     }
     

@@ -17,7 +17,7 @@ const amount = 200_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
-describe("Testing ETFVault, integration test", async () => {
+describe.skip("Testing ETFVault, integration test", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;

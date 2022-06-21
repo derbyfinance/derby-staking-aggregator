@@ -67,6 +67,7 @@ export const yearn_usdc_01 = new ProtocolVault({
   underlyingToken: usdc,
   govToken: yearn, 
   decimals: 6,
+  chainId: 1,
 });
 export const yearn_dai_01 = new ProtocolVault({
   name: 'yearn_dai_01',
@@ -74,6 +75,7 @@ export const yearn_dai_01 = new ProtocolVault({
   underlyingToken: dai,
   govToken: yearn, 
   decimals: 18,
+  chainId: 1,
 });
 export const yearn_usdt_01 = new ProtocolVault({
   name: 'yearn_usdt_01',
@@ -81,6 +83,7 @@ export const yearn_usdt_01 = new ProtocolVault({
   underlyingToken: usdt,
   govToken: yearn, 
   decimals: 6,
+  chainId: 1,
 });
 export const compound_usdc_01 = new ProtocolVault({
   name: 'compound_usdc_01',
@@ -88,6 +91,7 @@ export const compound_usdc_01 = new ProtocolVault({
   underlyingToken: usdc,
   govToken: compToken, 
   decimals: 8,
+  chainId: 1,
 });
 export const compound_dai_01 = new ProtocolVault({
   name: 'compound_dai_01',
@@ -95,6 +99,7 @@ export const compound_dai_01 = new ProtocolVault({
   underlyingToken: dai,
   govToken: compToken, 
   decimals: 8,
+  chainId: 1,
 });
 export const compound_usdt_01 = new ProtocolVault({
   name: 'compound_usdt_01',
@@ -102,6 +107,7 @@ export const compound_usdt_01 = new ProtocolVault({
   underlyingToken: usdt,
   govToken: compToken, 
   decimals: 8,
+  chainId: 1,
 });
 export const aave_usdc_01 = new ProtocolVault({
   name: 'aave_usdc_01',
@@ -109,6 +115,7 @@ export const aave_usdc_01 = new ProtocolVault({
   underlyingToken: usdc,
   govToken: aave, 
   decimals: 6, 
+  chainId: 1,
 });
 export const aave_dai_01 = new ProtocolVault({
   name: 'aave_dai_01',
@@ -116,6 +123,7 @@ export const aave_dai_01 = new ProtocolVault({
   underlyingToken: dai,
   govToken: aave, 
   decimals: 18,
+  chainId: 1,
 });
 export const aave_usdt_01 = new ProtocolVault({
   name: 'aave_usdt_01',
@@ -123,6 +131,7 @@ export const aave_usdt_01 = new ProtocolVault({
   underlyingToken: usdt,
   govToken: aave, 
   decimals: 6, 
+  chainId: 1,
 });
 export const truefi_usdc_01 = new ProtocolVault({
   name: 'truefi_usdc_01',
@@ -130,13 +139,15 @@ export const truefi_usdc_01 = new ProtocolVault({
   underlyingToken: usdc,
   govToken: truefi, 
   decimals: 6, 
+  chainId: 1,
 });
 export const truefi_usdt_01 = new ProtocolVault({
   name: 'truefi_usdt_01',
   protocolToken: truefiUSDT,
   underlyingToken: usdt,
   govToken: truefi, 
-  decimals: 6, 
+  decimals: 6,
+  chainId: 1,
 });
 // export const homora_usdc_01 = new ProtocolVault({
 //   name: 'homora_usdc_01',
@@ -165,6 +176,7 @@ export const idle_usdc_01 = new ProtocolVault({
   underlyingToken: usdc,
   govToken: idle, 
   decimals: 18,
+  chainId: 1,
 });
 export const idle_dai_01 = new ProtocolVault({
   name: 'idle_dai_01',
@@ -172,6 +184,7 @@ export const idle_dai_01 = new ProtocolVault({
   underlyingToken: dai,
   govToken: idle, 
   decimals: 18,
+  chainId: 1,
 });
 export const idle_usdt_01 = new ProtocolVault({
   name: 'idle_usdt_01',
@@ -179,13 +192,15 @@ export const idle_usdt_01 = new ProtocolVault({
   underlyingToken: usdt,
   govToken: idle, 
   decimals: 18,
+  chainId: 1,
 });
 export const beta_usdc_01 = new ProtocolVault({
   name: 'beta_usdc_01',
   protocolToken: betaUSDC,
   underlyingToken: usdc,
   govToken: beta, 
-  decimals: 6, 
+  decimals: 6,
+  chainId: 1, 
 });
 export const beta_dai_01 = new ProtocolVault({
   name: 'beta_dai_01',
@@ -193,13 +208,15 @@ export const beta_dai_01 = new ProtocolVault({
   underlyingToken: dai,
   govToken: beta, 
   decimals: 18,
+  chainId: 1,
 });
 export const beta_usdt_01 = new ProtocolVault({
   name: 'beta_usdt_01',
   protocolToken: betaUSDT,
   underlyingToken: usdt,
   govToken: beta, 
-  decimals: 6, 
+  decimals: 6,
+  chainId: 1, 
 });
 
 export const starterProtocols = new Map<string, ProtocolVault>();

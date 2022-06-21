@@ -3,14 +3,14 @@
 /* eslint-disable prettier/prettier */
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
-import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
-import allProviders  from "../helpers/allProvidersClass";
+import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../../typechain-types';
+import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
+import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
+import allProviders  from "../../helpers/allProvidersClass";
 import { ethers, network } from "hardhat";
-import { vaultInfo } from "../helpers/vaultHelpers";
+import { vaultInfo } from "../../helpers/vaultHelpers";
 import { Result } from "ethers/lib/utils";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
@@ -77,6 +77,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
 
     // Deposit and rebalance with 100k in only Compound
     await vault.connect(user).depositETF(amountToDeposit);
+    await vault.setVaultState(3);
     await vault.rebalanceETF();
     // mine 100 blocks to gain COMP Tokens
     for (let i = 0; i <= 100; i++) await network.provider.send("evm_mine");
@@ -170,6 +171,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
 
     // Deposit and rebalance with 100k 
     await vault.connect(user).depositETF(amountUSDC);
+    await vault.setVaultState(3);
     let gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed)
 
@@ -202,7 +204,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
       compoundDAIVault.setDeltaAllocation(vault, user, -30),
       aaveUSDTVault.setDeltaAllocation(vault, user, -40),
     ]);
-    
+    await vault.setVaultState(3);
     gasUsed = gasUsed.add(await rebalanceETF(vault));
     gasUsedUSDC = formatUSDC(gasUsed)
 
@@ -239,6 +241,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
     await vault.connect(user).depositETF(amountToDeposit);
 
     const ETHBalanceBefore = await dao.getBalance();
+    await vault.setVaultState(3);
     await vault.connect(dao).rebalanceETF();
     const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
     console.log({ETHBalanceReceived});
@@ -260,6 +263,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
 
     // Deposit and rebalance with 100k 
     await vault.connect(user).depositETF(amountToDeposit);
+    await vault.setVaultState(3);
     let gasUsed = formatUSDC(await rebalanceETF(vault));
 
     let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
@@ -277,6 +281,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
     ]);
 
     await vault.connect(user).withdrawETF(amountToWithdraw);
+    await vault.setVaultState(3);
     gasUsed = formatUSDC(await rebalanceETF(vault));
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
@@ -289,6 +294,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
     console.log("-----------------withdraw another 42k = 92k total-----------------")
     amountToWithdraw = parseUSDC('42000');
     await vault.connect(user).withdrawETF(amountToWithdraw);
+    await vault.setVaultState(3);
     await rebalanceETF(vault);
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));

@@ -3,15 +3,15 @@
 /* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
-import { usdc, starterProtocols as protocols } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
-import allProviders  from "../helpers/allProvidersClass";
-import AllMockProviders from "../helpers/allMockProvidersClass";
+import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../../helpers/helpers';
+import type { Controller, ETFVaultMock } from '../../../typechain-types';
+import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
+import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
+import allProviders  from "../../helpers/allProvidersClass";
+import AllMockProviders from "../../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
-import { vaultInfo } from "../helpers/vaultHelpers";
+import { vaultInfo } from "../../helpers/vaultHelpers";
 
 
 const amount = 100_000;
@@ -111,6 +111,7 @@ describe("Testing ETFVault, unit test", async () => {
     ]);
     
     await vault.connect(game).depositETF(amountUSDC);
+    await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
 
@@ -157,6 +158,7 @@ describe("Testing ETFVault, unit test", async () => {
     await vault.connect(dao).blacklistProtocol(compoundVault!.number);
     await vault.connect(game).depositETF(amountUSDC);
 
+    await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
 
@@ -236,6 +238,7 @@ describe("Testing ETFVault, unit test, mock providers", async () => {
           yearnVault.setDeltaAllocation(vault, game, 20),
         ]);
         await vault.connect(game).depositETF(amountUSDC);
+        await vault.setVaultState(3);
         await rebalanceETF(vault);
 
         let compoundHistoricalPrice = await vault.historicalPrices(1, compoundVault.number);
