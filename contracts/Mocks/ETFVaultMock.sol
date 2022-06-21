@@ -137,6 +137,13 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     }
   }
 
+  function setVaultState(uint256 _state) external {
+    if (_state == 0) state = State.WaitingForController;
+    if (_state == 1) state = State.SendingFundsXChain;
+    if (_state == 2) state = State.WaitingForFunds;
+    if (_state == 3) state = State.RebalanceVault;
+  }
+
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {
   //   int128 g_casted = ABDKMath64x64.fromUInt(_g);
   //   int128 n_casted = ABDKMath64x64.fromUInt(_n);

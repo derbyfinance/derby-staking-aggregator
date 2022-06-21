@@ -25,6 +25,10 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   IERC20 public vaultCurrency;
   IController public controller;
 
+  // state 0 Rebalance done and ready for xChainController to rebalance again
+  // state 1 Allocation amount received and ready to send funds over to xChainController
+  // state 2 Allocation amount 0 received => will receive funds from xChainController
+  // state 3 Allocation amount sent or received and ready to rebalance the vault itself
   enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
   State public state;
 
@@ -174,11 +178,6 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     state = State.RebalanceVault;
   }
 
-  /// @notice Temporary helper to set state
-  function setVaultStateTEMP() public {
-    state = State.RebalanceVault;
-  }
-
   /// @notice Temporary helper to get total underlying plus vault balance
   function getTotalUnderlyingTEMP() public view returns(uint256) {
     return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
@@ -218,8 +217,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external returnGasFee nonReentrant onlyDao {
-    if (!rebalanceNeeded()) return;
+  function rebalanceETF() external nonReentrant onlyDao {
+    require(rebalanceNeeded(), "No rebalance needed");
+    require(state == State.RebalanceVault, "Wrong state");
     
     rebalancingPeriod++;
     

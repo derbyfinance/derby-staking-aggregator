@@ -87,7 +87,7 @@ contract XChainController {
       IERC20(getUnderlyingAddress(_ETFNumber, i)).safeTransfer(getVaultAddress(_ETFNumber, i), amount);
 
       // TEMP
-      IETFVault(getVaultAddress(_ETFNumber, i)).setVaultStateTEMP();
+      IETFVault(getVaultAddress(_ETFNumber, i)).setVaultState(3);
     }
   }
 
