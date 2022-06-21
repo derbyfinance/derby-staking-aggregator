@@ -15,8 +15,6 @@ import "./libraries/swap.sol";
 
 import "hardhat/console.sol";
 
-// ToDo: figure out when to transact from vault to protocols --> on rebalancing OR on vault funds treshhold?
-// ToDo: how to do automatic yield farming? --> Swap in uniswap.
 
 contract ETFVault is VaultToken, ReentrancyGuard {
   using SafeERC20 for IERC20;
@@ -31,7 +29,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   State public state;
 
   address public vaultCurrencyAddr; 
-  address public ETFgame;
+  address public game;
   address public governed;
   address public xChainController;
 
@@ -70,8 +68,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
-  modifier onlyETFgame {
-    require(msg.sender == ETFgame, "ETFvault: only ETFgame");
+  modifier onlyGame {
+    require(msg.sender == game, "ETFvault: only Game");
     _;
   }
 
@@ -84,6 +82,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 gasStart = gasleft();
     _;
     uint256 gasUsed = gasStart - gasleft();
+    console.log("gasUsed %s", gasUsed);
     swapAndPayGasFee(gasUsed);
   }
 
@@ -94,7 +93,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     string memory _ETFname,
     uint256 _ETFnumber,
     address _governed,
-    address _ETFGame, 
+    address _game, 
     address _controller, 
     address _vaultCurrency,
     uint256 _uScale,
@@ -108,7 +107,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     ETFnumber = _ETFnumber;
 
     governed = _governed;
-    ETFgame = _ETFGame;
+    game = _game;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
@@ -127,7 +126,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 totalSupply = totalSupply();
 
     if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / (savedTotalUnderlying + balanceBefore); 
+      shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore ); 
     } else {
       shares = amount; 
     }
@@ -169,8 +168,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   function rebalanceXChain() external onlyDao {
     if (state != State.SendingFundsXChain) return;
 
-    amountToSendXChain = 0;
     vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
+    amountToSendXChain = 0;
 
     state = State.RebalanceVault;
   }
@@ -219,22 +218,21 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external nonReentrant onlyDao returnGasFee {
+  function rebalanceETF() external returnGasFee nonReentrant onlyDao {
     if (!rebalanceNeeded()) return;
-    // if (state != State.RebalanceVault) return; // commented out for now so the tests wont fail
+    
     rebalancingPeriod++;
     
     claimTokens();
+    settleDeltaAllocation();
+
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
-
-    totalAllocatedTokens += deltaAllocatedTokens;
-    deltaAllocatedTokens = 0;
-    
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
-    executeDeposits(protocolToDeposit);
-    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
+    executeDeposits(protocolToDeposit);
     setTotalUnderlying();
+    
+    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
     state = State.WaitingForController;
   }
@@ -245,6 +243,12 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
     uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
+  }
+
+  /// @notice Adds deltaAllocatedTokens to totalAllocatedTokens
+  function settleDeltaAllocation() internal {
+    totalAllocatedTokens += deltaAllocatedTokens;
+    deltaAllocatedTokens = 0;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -263,11 +267,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
       if (deltaAllocations[i] == 0 || isBlacklisted) continue;
   
       setAllocation(i);
-      
-      int256 amountToProtocol;
-      if (totalAllocatedTokens == 0) amountToProtocol = 0;
-      else amountToProtocol = int(_newTotalUnderlying) * currentAllocations[i] / totalAllocatedTokens; 
 
+      int256 amountToProtocol = calcAmountToProtocol(_newTotalUnderlying, i);
       uint256 currentBalance = balanceUnderlying(i);
 
       int256 amountToDeposit = amountToProtocol - int(currentBalance);
@@ -275,10 +276,18 @@ contract ETFVault is VaultToken, ReentrancyGuard {
       
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit); 
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) withdrawFromProtocol(i, amountToWithdraw);
-      // console.log("protocol: %s, withdraw: %s", i, amountToWithdraw);
     }
     
     return protocolToDeposit;
+  }
+
+  /// @notice Calculates the amount to deposit or withdraw to protocol during a vault rebalance
+  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _protocol Protocol id number
+  /// @return amountToProtocol amount to deposit or withdraw to protocol
+  function calcAmountToProtocol(uint256 _totalUnderlying, uint256 _protocol) internal view returns(int256 amountToProtocol) {
+    if (totalAllocatedTokens == 0) amountToProtocol = 0;
+    else amountToProtocol = int(_totalUnderlying) * currentAllocations[_protocol] / totalAllocatedTokens; 
   }
 
   /// @notice Stores the historical price and the reward per locked token.
@@ -453,7 +462,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev Allocation can be negative
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
-  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external onlyETFgame {
+  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external onlyGame {
     require(!controller.getProtocolBlacklist(ETFnumber, _protocolNum), "Protocol on blacklist");
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
@@ -539,7 +548,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev function is implemented here because the vault holds the funds and can transfer them
   /// @param _user user (msg.sender) that triggered the redeemRewards function on the game contract.
   /// @param _amount the reward amount to be transferred to the user.
-  function redeemRewards(address _user, uint256 _amount) external onlyETFgame {
+  function redeemRewards(address _user, uint256 _amount) external onlyGame {
       if (_amount > vaultCurrency.balanceOf(address(this))) pullFunds(_amount);
       vaultCurrency.safeTransfer(_user, _amount);
   }
