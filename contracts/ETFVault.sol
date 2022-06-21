@@ -80,6 +80,13 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     _;
   }
 
+  modifier returnGasFee {
+    uint256 gasStart = gasleft();
+    _;
+    uint256 gasUsed = gasStart - gasleft();
+    swapAndPayGasFee(gasUsed);
+  }
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -162,8 +169,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   function rebalanceXChain() external onlyDao {
     if (state != State.SendingFundsXChain) return;
 
-    vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
     amountToSendXChain = 0;
+    vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
+
     state = State.RebalanceVault;
   }
 
@@ -211,34 +219,32 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external nonReentrant onlyDao {
+  function rebalanceETF() external nonReentrant onlyDao returnGasFee {
     if (!rebalanceNeeded()) return;
     // if (state != State.RebalanceVault) return; // commented out for now so the tests wont fail
-    uint256 gasStart = gasleft();
-
     rebalancingPeriod++;
     
     claimTokens();
-    
-    uint256 totalUnderlying = savedTotalUnderlying;
-    uint256 totalUnderlyingInclVaultBalance = totalUnderlying + vaultCurrency.balanceOf(address(this));
-    uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
+    uint256 underlyingIncBalance = calcUnderlyingIncBalance();
 
     totalAllocatedTokens += deltaAllocatedTokens;
     deltaAllocatedTokens = 0;
     
-    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(totalUnderlyingInclVaultBalance - liquidityVault);
+    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
     executeDeposits(protocolToDeposit);
-
-    lastTimeStamp = block.timestamp;
-    
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
-    uint256 gasUsed = gasStart - gasleft();
-    swapAndPayGasFee(gasUsed);
     setTotalUnderlying();
-
+    lastTimeStamp = block.timestamp;
     state = State.WaitingForController;
+  }
+
+  /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
+  /// @return underlying totalUnderlying - liquidityVault
+  function calcUnderlyingIncBalance() internal view returns(uint256) {
+    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
+    uint256 liquidityVault = totalUnderlyingInclVaultBalance * liquidityPerc / 100;
+    return totalUnderlyingInclVaultBalance - liquidityVault;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols

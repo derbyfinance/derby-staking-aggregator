@@ -76,6 +76,7 @@ describe("Testing ETFVaultWithdraw, unit test", async () => {
       aaveProvider.mock.balanceUnderlying.returns(mockedBalance),
     ]);
 
+    await vault.setTotalUnderlying();
     await vault.connect(user).withdrawETF(amountUSDC); // withdraw 9k == everything
 
     expect(await vault.totalSupply()).to.be.equal(0);
@@ -101,7 +102,8 @@ describe("Testing ETFVaultWithdraw, unit test", async () => {
       compoundProvider.mock.balanceUnderlying.returns(mockedBalanceComp.add(profitComp)),
       aaveProvider.mock.balanceUnderlying.returns(mocked2Balance.add(profit)),
     ]);
- 
+    
+    await vault.setTotalUnderlying();
     await vault.connect(user).withdrawETF(parseUSDC('2000')); 
 
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k

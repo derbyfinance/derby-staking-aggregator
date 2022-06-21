@@ -228,6 +228,7 @@ describe("Testing ETFVault, unit test, mock providers", async () => {
           aaveProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
           yearnProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
         ]);
+        await vault.setTotalUnderlying();
     
         // await setDeltaAllocations(user, vaultMock, allProtocols); 
         await Promise.all([

@@ -17,7 +17,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing ETFVaultWithdrawOrder, integration test", async () => {
+describe.skip("Testing ETFVaultWithdrawOrder, integration test", async () => {
   let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
@@ -67,7 +67,7 @@ describe("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance User == 100k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(100_000 , 2);
     // TotalUnderlying == 100k
-    let totalUnderlying = (await vault.getTotalUnderlying()).add(await IUSDc.balanceOf(vault.address));
+    let totalUnderlying = (await vault.savedTotalUnderlying()).add(await IUSDc.balanceOf(vault.address));
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(100_000 - gasUsed, 2);
     // Total liquid funds in vault == 10k
     let totalLiquidFunds = await IUSDc.balanceOf(vault.address);
@@ -93,7 +93,7 @@ describe("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance user == 100k - 20k = 80k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(80_000, 2);
     // TotalUnderlying == 100k -20k = 80k
-    totalUnderlying = await vault.getTotalUnderlying();
+    totalUnderlying = await vault.savedTotalUnderlying();
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(expectedTotalUnderlying - gasUsed, 2);
     // Total liquid funds in vault == 0k
     totalLiquidFunds = await IUSDc.balanceOf(vault.address);
@@ -122,7 +122,7 @@ describe("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance user == 100k - 20k - 60k = 20k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(20_000, 2);
     // TotalUnderlying == 100k -20k -60k = 20k
-    totalUnderlying = await vault.getTotalUnderlying();
+    totalUnderlying = await vault.savedTotalUnderlying();
     amountWithdrawed = formatUSDC(tokensWithdrawed)
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(
       100_000 - amountWithdrawed - gasUsed, 2
