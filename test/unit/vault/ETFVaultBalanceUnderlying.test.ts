@@ -85,7 +85,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 500);
     };
 
-    const totalUnderlying = await vault.getTotalUnderlying();
+    const totalUnderlying = await vault.savedTotalUnderlying();
     const balanceVault = await IUSDc.balanceOf(vault.address);
     const expectedBalanceVault = (amount * liquidityPerc / 100) - gasUsedUSDC;
 

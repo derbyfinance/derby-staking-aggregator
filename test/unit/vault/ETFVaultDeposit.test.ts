@@ -76,8 +76,8 @@ describe("Testing ETFVaultDeposit, unit test", async () => {
       yearnProvider.mock.balanceUnderlying.returns(mockedBalance),
     ]);
 
+    await vault.setTotalUnderlying();
     await vault.connect(user).depositETF(parseUSDC('1000'));
-    const exchange = await vault.exchangeRate();
     
     // expect LP Token balance User == 9k + 1k because Expect price == 1 i.e 1:1
     expect(await vault.exchangeRate()).to.be.equal(parseUSDC('1'));
@@ -93,6 +93,7 @@ describe("Testing ETFVaultDeposit, unit test", async () => {
       yearnProvider.mock.balanceUnderlying.returns(mockedBalance.add(profit)),
     ]);
 
+    await vault.setTotalUnderlying();
     // 300 profit on 9k + 1k = 3% => Exchange route should be 1.03
     expect(await vault.exchangeRate()).to.be.equal(parseUSDC('1.03'));
 

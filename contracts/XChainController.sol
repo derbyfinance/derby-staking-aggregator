@@ -50,7 +50,6 @@ contract XChainController {
   function rebalanceXChainAllocations(uint256 _ETFNumber) external onlyDao {
     // Correct state for Controller needed
     uint256 totalChainUnderlying = getTotalChainUnderlying(_ETFNumber);
-
     int256 totalAllocation = setInternalAllocation(_ETFNumber);
 
     for (uint i = 1; i <= latestChainId; i++) {

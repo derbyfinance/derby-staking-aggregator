@@ -80,7 +80,7 @@ describe.skip("Testing ETFVault, integration test", async () => {
       expect(balanceUnderlying).to.be.closeTo(expectedBalance, 5);
     };
 
-    let totalUnderlying = await vault.getTotalUnderlying();
+    let totalUnderlying = await vault.savedTotalUnderlying();
     let LPBalanceUser = await vault.balanceOf(userAddr);
     let balanceVault = await IUSDc.balanceOf(vault.address);
     let expectedBalanceVault = (amount * liquidityPerc / 100) - gasUsedUSDC;

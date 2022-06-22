@@ -67,7 +67,7 @@ describe.skip("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance User == 100k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(100_000 , 2);
     // TotalUnderlying == 100k
-    let totalUnderlying = (await vault.getTotalUnderlying()).add(await IUSDc.balanceOf(vault.address));
+    let totalUnderlying = (await vault.savedTotalUnderlying()).add(await IUSDc.balanceOf(vault.address));
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(100_000 - gasUsed, 2);
     // Total liquid funds in vault == 10k
     let totalLiquidFunds = await IUSDc.balanceOf(vault.address);
@@ -93,7 +93,7 @@ describe.skip("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance user == 100k - 20k = 80k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(80_000, 2);
     // TotalUnderlying == 100k -20k = 80k
-    totalUnderlying = await vault.getTotalUnderlying();
+    totalUnderlying = await vault.savedTotalUnderlying();
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(expectedTotalUnderlying - gasUsed, 2);
     // Total liquid funds in vault == 0k
     totalLiquidFunds = await IUSDc.balanceOf(vault.address);
@@ -122,7 +122,7 @@ describe.skip("Testing ETFVaultWithdrawOrder, integration test", async () => {
     // LP Balance user == 100k - 20k - 60k = 20k
     expect(formatUSDC(await vault.balanceOf(userAddr))).to.be.closeTo(20_000, 2);
     // TotalUnderlying == 100k -20k -60k = 20k
-    totalUnderlying = await vault.getTotalUnderlying();
+    totalUnderlying = await vault.savedTotalUnderlying();
     amountWithdrawed = formatUSDC(tokensWithdrawed)
     expect(formatUSDC(totalUnderlying)).to.be.closeTo(
       100_000 - amountWithdrawed - gasUsed, 2

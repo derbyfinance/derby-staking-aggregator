@@ -57,7 +57,6 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setETFVaultChainAddress(ETFnumber, 2, vault2.address, usdc),
       xChainController.setETFVaultChainAddress(ETFnumber, 3, vault3.address, usdc),
     ]);
-
   });
 
   it("Should 'cross chain' rebalance vaults and update vault state", async function() {

@@ -59,7 +59,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
   }
 
   function getETFGame() external view returns(address) {
-    return ETFgame;
+    return game;
   }
 
   function getETFnumber() external view returns(uint256) {
