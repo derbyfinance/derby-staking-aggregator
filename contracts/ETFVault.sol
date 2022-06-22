@@ -49,6 +49,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   uint256 public gasFeeLiquidity;
   uint256 public amountToSendXChain;
 
+  // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
 
   // total number of allocated xaver tokens currently
