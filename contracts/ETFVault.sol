@@ -86,7 +86,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 gasStart = gasleft();
     _;
     uint256 gasUsed = gasStart - gasleft();
-    console.log("gasUsed %s", gasUsed);
+    // console.log("gasUsed %s", gasUsed);
     swapAndPayGasFee(gasUsed);
   }
 
@@ -217,7 +217,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external nonReentrant onlyDao {
+  function rebalanceETF() external returnGasFee nonReentrant onlyDao {
     require(rebalanceNeeded(), "No rebalance needed");
     require(state == State.RebalanceVault, "Wrong state");
     
