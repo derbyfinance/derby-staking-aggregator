@@ -189,6 +189,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
   /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
+    console.log("pulling %s", _value);
+    console.log("vault balance %s", vaultCurrency.balanceOf(address(this)));
+    console.log("exchangeRate %s", exchangeRate());
     for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
       if (currentAllocations[i] == 0) continue;
       

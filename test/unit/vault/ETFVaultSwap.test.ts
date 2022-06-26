@@ -250,7 +250,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
     expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
-  it("Should always have some liquidity to pay for Rebalance fee", async function() {
+  it.only("Should always have some liquidity to pay for Rebalance fee", async function() {
     const gasFeeLiquidity = 10_000;
     const amountToDeposit = parseUSDC('100000');
     let amountToWithdraw = parseUSDC('50000');
@@ -304,4 +304,5 @@ describe("Testing ETFVaultSwap, unit test", async () => {
 
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
   });
+
 });
