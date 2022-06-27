@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
 
@@ -14,6 +15,8 @@ contract XChainController {
   uint256 public latestChainId = 3; // will adjust at xchain implementation
   address public game;
   address public dao;
+  address public xProviderAddr;
+  IXProvider public xProvider;
 
   struct ETFinfo {
     int256 totalDeltaAllocation;
@@ -37,11 +40,13 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao) {
+  constructor(address _game, address _dao, address _xProvider) {
     // feedback vault state back to controller
     // transfers via provider
     game = _game;
     dao = _dao;
+    xProvider = IXProvider(_xProvider);
+    xProviderAddr = _xProvider;
   }
 
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given ETFNumber
@@ -49,7 +54,7 @@ contract XChainController {
   /// @param _ETFNumber number of ETFVault
   function rebalanceXChainAllocations(uint256 _ETFNumber) external onlyDao {
     // Correct state for Controller needed
-    uint256 totalChainUnderlying = getTotalChainUnderlying(_ETFNumber);
+    uint256 totalChainUnderlying = setTotalChainUnderlying(_ETFNumber);
     int256 totalAllocation = setInternalAllocation(_ETFNumber);
 
     for (uint i = 1; i <= latestChainId; i++) {
@@ -94,9 +99,18 @@ contract XChainController {
   /// @notice Get total balance in vaultCurrency for an ETFNumber in all chains
   /// @param _ETFNumber number of ETFVault
   /// @return balance Total balance in VaultCurrency e.g USDC
-  function getTotalChainUnderlying(uint256 _ETFNumber) public view returns(uint256 balance) {
+  function setTotalChainUnderlying(uint256 _ETFNumber) public returns(uint256 balance) {
     for (uint i = 1; i <= latestChainId; i++) {
-      balance += IETFVault(getVaultAddress(_ETFNumber, i)).getTotalUnderlyingTEMP();
+      bytes4 selector = bytes4(keccak256("getTotalUnderlying(address)"));
+      bytes memory callData = abi.encodeWithSelector(selector, getVaultAddress(_ETFNumber, i));
+
+      IXProvider.callParams memory callParams = IXProvider.callParams({
+        to: xProviderAddr,
+        chainId: i,
+        callData: callData
+      });
+      
+      xProvider.xCall(callParams);
     }
   }
 
