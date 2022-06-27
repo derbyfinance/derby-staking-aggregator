@@ -232,9 +232,9 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
+    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     setTotalUnderlying();
     
-    if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
     state = State.WaitingForController;
   }
@@ -500,6 +500,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
     controller.setProtocolBlacklist(ETFnumber, _protocolNum);
+    savedTotalUnderlying -= balanceProtocol;
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 
