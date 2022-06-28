@@ -31,8 +31,8 @@ describe("Testing XChainController, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    xProvider = await deployXProvider(dao);
-    xChainController = await deployXChainController(dao, daoAddr, daoAddr, xProvider.address);
+    xChainController = await deployXChainController(dao, daoAddr, daoAddr);
+    xProvider = await deployXProvider(dao, xChainController.address);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
@@ -57,6 +57,7 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setETFVaultChainAddress(ETFnumber, 1, vault1.address, usdc),
       xChainController.setETFVaultChainAddress(ETFnumber, 2, vault2.address, usdc),
       xChainController.setETFVaultChainAddress(ETFnumber, 3, vault3.address, usdc),
+      xChainController.setProviderAddress(xProvider.address)
     ]);
   });
 

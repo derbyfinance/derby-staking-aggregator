@@ -3,13 +3,15 @@ pragma solidity ^0.8.11;
 
 import "./Interfaces/IETFVault.sol";
 import "./Interfaces/IXProvider.sol";
+import "./Interfaces/IXChainController.sol";
 
 import "hardhat/console.sol";
 
 contract XProvider {
+  address xController;
   
-  constructor() {
-
+  constructor(address _xController) {
+    xController = _xController;
   }
 
   function xTransfer() external {
@@ -17,23 +19,15 @@ contract XProvider {
   }
 
   function xCall(IXProvider.callParams memory params) public {
-    // crossChain implementation
-
-    // mock call to own Receive
-    xReceive(params);
-  }
-
-  function xReceive(IXProvider.callParams memory params) public {
-    // crossChain Receive implementation
     (bool success,) = params.to.call(params.callData);
     require(success, "No success");
   }
 
-  function getTotalUnderlying(address _ETFVault) public {
+  function getTotalUnderlying(uint256 _ETFNumber, address _ETFVault) public {
     uint256 underlying = IETFVault(_ETFVault).getTotalUnderlyingIncBalance();
 
-    bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256)"));
-    bytes memory callData = abi.encodeWithSelector(selector, underlying);
+    bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, underlying);
     address xProviderAddr = address(this);
 
     IXProvider.callParams memory callParams = IXProvider.callParams({
@@ -45,8 +39,8 @@ contract XProvider {
     xCall(callParams);
   }
   
-  function setTotalUnderlying(uint256 _underlying) public {
-    console.log("from setUnderlying %s", _underlying);
+  function setTotalUnderlying(uint256 _ETFNumber, uint256 _underlying) public {
+    IXChainController(xController).addTotalChainUnderlying(_ETFNumber, _underlying);
   }
 
 }

@@ -21,6 +21,8 @@ contract XChainController {
   struct ETFinfo {
     int256 totalDeltaAllocation;
     int256 totalCurrentAllocation;
+    uint256 totalChainUnderlying;
+    uint256 underlyingReceived;
     mapping(uint256 => int256) deltaAllocationPerChain; // chainId => allocation
     mapping(uint256 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint256 => address) vaultChainAddress; // different for actual xChain
@@ -40,19 +42,18 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao, address _xProvider) {
+  constructor(address _game, address _dao) {
     // feedback vault state back to controller
     // transfers via provider
     game = _game;
     dao = _dao;
-    xProvider = IXProvider(_xProvider);
-    xProviderAddr = _xProvider;
   }
 
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given ETFNumber
   /// @dev 
   /// @param _ETFNumber number of ETFVault
   function rebalanceXChainAllocations(uint256 _ETFNumber) external onlyDao {
+    require(ETFs[_ETFNumber].underlyingReceived == latestChainId, "Total underlying not set");
     // Correct state for Controller needed
     uint256 totalChainUnderlying = setTotalChainUnderlying(_ETFNumber);
     int256 totalAllocation = setInternalAllocation(_ETFNumber);
@@ -63,10 +64,7 @@ contract XChainController {
 
       int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_ETFNumber, i) / totalAllocation;
 
-      uint256 currentUnderlying = IETFVault(vaultAddress).getTotalUnderlyingTEMP();
-
-      int256 amountToDeposit = amountToChainVault - int256(currentUnderlying);
-      uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(amountToChainVault) : 0;
+      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(vaultAddress, amountToChainVault);
 
       if (amountToDeposit > 0) {
         ETFs[_ETFNumber].amountToDepositPerChain[i] = uint256(amountToDeposit);
@@ -100,9 +98,11 @@ contract XChainController {
   /// @param _ETFNumber number of ETFVault
   /// @return balance Total balance in VaultCurrency e.g USDC
   function setTotalChainUnderlying(uint256 _ETFNumber) public returns(uint256 balance) {
+    ETFs[_ETFNumber].totalChainUnderlying = 0;
+
     for (uint i = 1; i <= latestChainId; i++) {
-      bytes4 selector = bytes4(keccak256("getTotalUnderlying(address)"));
-      bytes memory callData = abi.encodeWithSelector(selector, getVaultAddress(_ETFNumber, i));
+      bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,address)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, getVaultAddress(_ETFNumber, i));
 
       IXProvider.callParams memory callParams = IXProvider.callParams({
         to: xProviderAddr,
@@ -112,6 +112,21 @@ contract XChainController {
       
       xProvider.xCall(callParams);
     }
+  }
+
+  function addTotalChainUnderlying(uint256 _ETFNumber, uint256 _amount) external {
+    ETFs[_ETFNumber].totalChainUnderlying += _amount;
+    ETFs[_ETFNumber].underlyingReceived ++;
+    console.log("total controller %s", ETFs[_ETFNumber].totalChainUnderlying);
+  }
+
+  function calcDepositWithdraw(address _vault, int256 _amountToChain) internal view returns(int256, uint256) {
+    uint256 currentUnderlying = IETFVault(_vault).getTotalUnderlyingIncBalance();
+
+    int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
+    uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
+
+    return (amountToDeposit, amountToWithdraw);
   }
 
   /// @notice Helper to get vault address of ETFNumber with given chainID
@@ -175,5 +190,11 @@ contract XChainController {
   ) external onlyDao{
     ETFs[_ETFNumber].vaultChainAddress[_chainId] = _address; 
     ETFs[_ETFNumber].vaultUnderlyingAddress[_chainId] = _underlying;
+  }
+
+  // OnlyDao
+  function setProviderAddress(address _xProvider) external {
+    xProvider = IXProvider(_xProvider);
+    xProviderAddr = _xProvider;
   }
 }
