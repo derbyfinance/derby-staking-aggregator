@@ -196,6 +196,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
       uint256 balanceProtocol = balanceUnderlying(i);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
+      savedTotalUnderlying -= amountToWithdraw;
 
       withdrawFromProtocol(i, amountToWithdraw);
       
@@ -499,6 +500,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
     controller.setProtocolBlacklist(ETFnumber, _protocolNum);
+    savedTotalUnderlying -= balanceProtocol;
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 

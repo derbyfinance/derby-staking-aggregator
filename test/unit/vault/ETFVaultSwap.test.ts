@@ -304,4 +304,5 @@ describe("Testing ETFVaultSwap, unit test", async () => {
 
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed))
   });
+
 });
