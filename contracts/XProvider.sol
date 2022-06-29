@@ -18,29 +18,45 @@ contract XProvider {
 
   }
 
-  function xCall(IXProvider.callParams memory params) public {
+  function xCall(
+    address _xProvider, 
+    uint256 _chainId, 
+    bytes memory _callData
+  ) public {
+    IXProvider.callParams memory params = IXProvider.callParams({
+      to: _xProvider,
+      chainId: _chainId,
+      callData: _callData
+    });
+
     (bool success,) = params.to.call(params.callData);
     require(success, "No success");
   }
 
-  function getTotalUnderlying(uint256 _ETFNumber, address _ETFVault) public {
-    uint256 underlying = IETFVault(_ETFVault).getTotalUnderlyingIncBalance();
+  function getTotalUnderlying(uint256 _ETFNumber, address _vault) public {
+    uint256 underlying = IETFVault(_vault).getTotalUnderlyingIncBalance();
 
     bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, underlying);
-    address xProviderAddr = address(this);
 
-    IXProvider.callParams memory callParams = IXProvider.callParams({
-      to: xProviderAddr,
-      chainId: 0,
-      callData: callData
-    });
-
-    xCall(callParams);
+    // callback
+    xCall(address(this), 0, callData);
   }
   
   function setTotalUnderlying(uint256 _ETFNumber, uint256 _underlying) public {
     IXChainController(xController).addTotalChainUnderlying(_ETFNumber, _underlying);
   }
+
+  // function createCallParams(
+  //   address _xProvider, 
+  //   uint256 _chainId, 
+  //   bytes memory _callData
+  // ) internal returns (IXProvider.callParams memory params) {
+  //   params = IXProvider.callParams({
+  //     to: _xProvider,
+  //     chainId: _chainId,
+  //     callData: _callData
+  //   });
+  // }
 
 }

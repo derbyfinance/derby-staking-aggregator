@@ -61,7 +61,16 @@ describe("Testing XChainController, unit test", async () => {
     ]);
   });
 
-  it.only("Should 'cross chain' rebalance vaults and update vault state", async function() {
+  it.only("(1) Should setTotalChainUnderlying from xController", async function() {
+    await xChainController.setTotalChainUnderlying(ETFnumber);
+
+    const underlying = await xChainController.getTotalUnderlyingETF(ETFnumber);
+
+    expect(underlying).to.be.equal(amountUSDC);
+  });
+
+  // Not using for now
+  it.skip("Should 'cross chain' rebalance vaults and update vault state", async function() {
     const allocationArray = [ // For reference only at the moment
       [1, 10],
       [1, 20],
@@ -78,17 +87,16 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setTotalDeltaAllocations(ETFnumber, 210),
     ]);
 
-    await xChainController.setTotalChainUnderlying(ETFnumber);
     // Set allocation amount and state in ETFVaults with ETFnumber 0
-    // await xChainController.rebalanceXChainAllocations(ETFnumber);
+    await xChainController.rebalanceXChainAllocations(ETFnumber);
 
     // Checking if vault states upped by atleast 1 after rebalanceXChainAllocations
-    // expect(await vault1.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault2.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault3.state()).to.be.greaterThanOrEqual(1);
+    expect(await vault1.state()).to.be.greaterThanOrEqual(1);
+    expect(await vault2.state()).to.be.greaterThanOrEqual(1);
+    expect(await vault3.state()).to.be.greaterThanOrEqual(1);
   });
 
-  it("Should 'cross chain' rebalance vaults and deposit/withdraw through xChainController", async function() {
+  it.skip("Should 'cross chain' rebalance vaults and deposit/withdraw through xChainController", async function() {
     await Promise.all([
       vault1.rebalanceXChain(),
       vault2.rebalanceXChain(),

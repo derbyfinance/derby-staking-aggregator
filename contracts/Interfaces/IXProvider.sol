@@ -9,6 +9,11 @@ interface IXProvider {
   }
 
   function xTransfer() external;
-  function xCall(callParams memory callParams) external;
-  function xReceive(uint256) external;
+
+  function xCall(    
+    address _xProvider, 
+    uint256 _chainId, 
+    bytes memory _callData
+  ) external;
+
 }

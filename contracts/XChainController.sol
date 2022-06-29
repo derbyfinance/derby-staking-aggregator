@@ -55,7 +55,7 @@ contract XChainController {
   function rebalanceXChainAllocations(uint256 _ETFNumber) external onlyDao {
     require(ETFs[_ETFNumber].underlyingReceived == latestChainId, "Total underlying not set");
     // Correct state for Controller needed
-    uint256 totalChainUnderlying = setTotalChainUnderlying(_ETFNumber);
+    uint256 totalChainUnderlying = getTotalUnderlyingETF(_ETFNumber);
     int256 totalAllocation = setInternalAllocation(_ETFNumber);
 
     for (uint i = 1; i <= latestChainId; i++) {
@@ -96,28 +96,20 @@ contract XChainController {
 
   /// @notice Get total balance in vaultCurrency for an ETFNumber in all chains
   /// @param _ETFNumber number of ETFVault
-  /// @return balance Total balance in VaultCurrency e.g USDC
-  function setTotalChainUnderlying(uint256 _ETFNumber) public returns(uint256 balance) {
+  function setTotalChainUnderlying(uint256 _ETFNumber) public {
     ETFs[_ETFNumber].totalChainUnderlying = 0;
 
     for (uint i = 1; i <= latestChainId; i++) {
       bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,address)"));
       bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, getVaultAddress(_ETFNumber, i));
 
-      IXProvider.callParams memory callParams = IXProvider.callParams({
-        to: xProviderAddr,
-        chainId: i,
-        callData: callData
-      });
-      
-      xProvider.xCall(callParams);
+      xProvider.xCall(xProviderAddr, i, callData);
     }
   }
-
+  
   function addTotalChainUnderlying(uint256 _ETFNumber, uint256 _amount) external {
     ETFs[_ETFNumber].totalChainUnderlying += _amount;
     ETFs[_ETFNumber].underlyingReceived ++;
-    console.log("total controller %s", ETFs[_ETFNumber].totalChainUnderlying);
   }
 
   function calcDepositWithdraw(address _vault, int256 _amountToChain) internal view returns(int256, uint256) {
@@ -127,6 +119,12 @@ contract XChainController {
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
 
     return (amountToDeposit, amountToWithdraw);
+  }
+
+  /// @notice Gets saved totalUnderlying for ETFNumber
+  function getTotalUnderlyingETF(uint256 _ETFNumber) public view returns(uint256) {
+    require(ETFs[_ETFNumber].underlyingReceived == latestChainId, "Not all vaults set");
+    return ETFs[_ETFNumber].totalChainUnderlying;
   }
 
   /// @notice Helper to get vault address of ETFNumber with given chainID
