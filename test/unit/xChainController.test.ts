@@ -17,7 +17,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing XChainController, unit test", async () => {
+describe.only("Testing XChainController, unit test", async () => {
   let vault1: ETFVaultMock, vault2: ETFVaultMock, vault3: ETFVaultMock, controller: Controller, xChainController: XChainController, xProvider: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   before(async function() {
@@ -61,7 +61,7 @@ describe("Testing XChainController, unit test", async () => {
     ]);
   });
 
-  it.only("(1) Should setTotalChainUnderlying from xController", async function() {
+  it("(1) Should setTotalChainUnderlying from xController", async function() {
     await xChainController.setTotalChainUnderlying(ETFnumber);
 
     const underlying = await xChainController.getTotalUnderlyingETF(ETFnumber);
@@ -130,9 +130,4 @@ describe("Testing XChainController, unit test", async () => {
     expect(await vault2.state()).to.be.equal(3);
     expect(await vault3.state()).to.be.equal(3);
   });
-
-  it("Should", async function() {
-    console.log(xChainController.address);
-  });
-
 });
