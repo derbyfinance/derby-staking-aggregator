@@ -11,7 +11,7 @@ interface IETFVault {
   function redeemRewards(address _user, uint256 _amount) external;
   function performanceFee() external view returns(uint256);
   function getTotalUnderlying() external view returns(uint256);
-  function getTotalUnderlyingTEMP() external view returns(uint256);
+  function getTotalUnderlyingIncBalance() external view returns(uint256);
   function vaultCurrencyAddress() external view returns(address);
   function setAllocationXChain(uint256 _amountToSend) external;
   function setVaultState(uint256 _state) external;

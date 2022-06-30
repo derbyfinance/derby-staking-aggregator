@@ -18,7 +18,8 @@ import type {
   CompoundProviderMock,
   ETFGameMock,
   TokenTimelock,
-  XChainController
+  XChainController,
+  XProvider,
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -38,6 +39,7 @@ import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json'
 import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol/ETFGameMock.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
+import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
 export const deployTokenTimeLock = (
@@ -132,6 +134,9 @@ export const deployXChainController = (deployerSign: Signer, game: string, dao: 
   return (deployContract(deployerSign, XChainControllerArtifact, [game, dao])) as Promise<XChainController>;
 };
 
+export const deployXProvider = (deployerSign: Signer, xController: string): Promise<XProvider> => {
+  return (deployContract(deployerSign, XProviderArtifact, [xController])) as Promise<XProvider>;
+};
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {
     return (deployContract(deployerSign, IGovernedArtifact, [daoAddress, guardianAddress])) as Promise<IGoverned>;

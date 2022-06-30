@@ -180,7 +180,7 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   }
 
   /// @notice Temporary helper to get total underlying plus vault balance
-  function getTotalUnderlyingTEMP() public view returns(uint256) {
+  function getTotalUnderlyingIncBalance() public view returns(uint256) {
     return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
   }
 

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
 
@@ -14,10 +15,14 @@ contract XChainController {
   uint256 public latestChainId = 3; // will adjust at xchain implementation
   address public game;
   address public dao;
+  address public xProviderAddr;
+  IXProvider public xProvider;
 
   struct ETFinfo {
     int256 totalDeltaAllocation;
     int256 totalCurrentAllocation;
+    uint256 totalChainUnderlying;
+    uint256 underlyingReceived;
     mapping(uint256 => int256) deltaAllocationPerChain; // chainId => allocation
     mapping(uint256 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint256 => address) vaultChainAddress; // different for actual xChain
@@ -48,8 +53,9 @@ contract XChainController {
   /// @dev 
   /// @param _ETFNumber number of ETFVault
   function rebalanceXChainAllocations(uint256 _ETFNumber) external onlyDao {
+    require(ETFs[_ETFNumber].underlyingReceived == latestChainId, "Total underlying not set");
     // Correct state for Controller needed
-    uint256 totalChainUnderlying = getTotalChainUnderlying(_ETFNumber);
+    uint256 totalChainUnderlying = getTotalUnderlyingETF(_ETFNumber);
     int256 totalAllocation = setInternalAllocation(_ETFNumber);
 
     for (uint i = 1; i <= latestChainId; i++) {
@@ -58,10 +64,7 @@ contract XChainController {
 
       int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_ETFNumber, i) / totalAllocation;
 
-      uint256 currentUnderlying = IETFVault(vaultAddress).getTotalUnderlyingTEMP();
-
-      int256 amountToDeposit = amountToChainVault - int256(currentUnderlying);
-      uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(amountToChainVault) : 0;
+      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(vaultAddress, amountToChainVault);
 
       if (amountToDeposit > 0) {
         ETFs[_ETFNumber].amountToDepositPerChain[i] = uint256(amountToDeposit);
@@ -93,11 +96,35 @@ contract XChainController {
 
   /// @notice Get total balance in vaultCurrency for an ETFNumber in all chains
   /// @param _ETFNumber number of ETFVault
-  /// @return balance Total balance in VaultCurrency e.g USDC
-  function getTotalChainUnderlying(uint256 _ETFNumber) public view returns(uint256 balance) {
+  function setTotalChainUnderlying(uint256 _ETFNumber) public {
+    ETFs[_ETFNumber].totalChainUnderlying = 0;
+
     for (uint i = 1; i <= latestChainId; i++) {
-      balance += IETFVault(getVaultAddress(_ETFNumber, i)).getTotalUnderlyingTEMP();
+      bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,address)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, getVaultAddress(_ETFNumber, i));
+
+      xProvider.xCall(xProviderAddr, i, callData);
     }
+  }
+  
+  function addTotalChainUnderlying(uint256 _ETFNumber, uint256 _amount) external {
+    ETFs[_ETFNumber].totalChainUnderlying += _amount;
+    ETFs[_ETFNumber].underlyingReceived ++;
+  }
+
+  function calcDepositWithdraw(address _vault, int256 _amountToChain) internal view returns(int256, uint256) {
+    uint256 currentUnderlying = IETFVault(_vault).getTotalUnderlyingIncBalance();
+
+    int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
+    uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
+
+    return (amountToDeposit, amountToWithdraw);
+  }
+
+  /// @notice Gets saved totalUnderlying for ETFNumber
+  function getTotalUnderlyingETF(uint256 _ETFNumber) public view returns(uint256) {
+    require(ETFs[_ETFNumber].underlyingReceived == latestChainId, "Not all vaults set");
+    return ETFs[_ETFNumber].totalChainUnderlying;
   }
 
   /// @notice Helper to get vault address of ETFNumber with given chainID
@@ -161,5 +188,11 @@ contract XChainController {
   ) external onlyDao{
     ETFs[_ETFNumber].vaultChainAddress[_chainId] = _address; 
     ETFs[_ETFNumber].vaultUnderlyingAddress[_chainId] = _underlying;
+  }
+
+  // OnlyDao
+  function setProviderAddress(address _xProvider) external {
+    xProvider = IXProvider(_xProvider);
+    xProviderAddr = _xProvider;
   }
 }
