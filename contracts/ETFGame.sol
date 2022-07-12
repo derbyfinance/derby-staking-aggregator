@@ -13,12 +13,30 @@ import "./Interfaces/IController.sol";
 import "./Interfaces/IETFGame.sol";
 import "./Interfaces/IGoverned.sol";
 
-// import "./libraries/ABDKMath64x64.sol";
-
 import "hardhat/console.sol";
 
 contract ETFGame is ERC721, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    struct Basket {
+        // the ETF number for which this Basket was created
+        uint256 ETFnumber;
+
+        // last period when this Basket got rebalanced
+        uint256 lastRebalancingPeriod;
+
+        // nr of total allocated tokens 
+        uint256 nrOfAllocatedTokens;
+
+        // total build up rewards
+        int256 totalUnRedeemedRewards;
+
+        // total redeemed rewards
+        int256 totalRedeemedRewards;
+
+        // allocations per period
+        mapping(uint256 => mapping(uint256 => int256)) allocations;
+    }
 
     // xaver token address
     address public xaverTokenAddress;
@@ -34,6 +52,34 @@ contract ETFGame is ERC721, ReentrancyGuard {
 
     // vault addresses
     mapping(address => bool) vaultAddresses;
+
+    // latest basket id
+    uint256 private latestBasketId;
+
+    // latest ETFnumber
+    uint256 public latestETFNumber = 0;
+
+    // maps the ETF number to the vault address of the ETF
+    mapping(uint256 => address) public ETFVaults;
+
+    // stores the total value locked per active locked derby token in the game. Stored per ETFvault per period.
+    // first index is ETFvault, second is rebalancing period.
+    mapping(uint256 => mapping(uint256 => uint256)) public cumTVLperToken;
+
+    // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
+    mapping(uint256 => Basket) private baskets;
+    
+    uint256[] public chainIds = [10, 100, 1000];
+    uint256[] public lastProtocolId = [5, 5, 5];
+
+    struct ETFinfo {
+        // chainId => deltaAllocation
+        mapping(uint256 => int256) deltaAllocationChain; 
+        // chainId => protocolNumber => deltaAllocation
+        mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol; 
+    }
+
+    mapping(uint256 => ETFinfo) internal ETFs;
 
     modifier onlyDao {
         require(msg.sender == governed, "ETFGame: only DAO");
@@ -60,40 +106,47 @@ contract ETFGame is ERC721, ReentrancyGuard {
         controller = IController(_controller);
     }
 
-    // latest basket id
-    uint256 private latestBasketId;
+    // internal will be used by rebalanceBasket
+    /// @notice Setter to set delta allocation for a particulair chainId
+    /// @param _ETFNumber number of ETFVault
+    /// @param _chainId number of chainId
+    /// @param _allocation delta allocation
+    function setDeltaAllocationChain(
+        uint256 _ETFNumber, 
+        uint256 _chainId, 
+        int256 _allocation
+    ) internal {
+        ETFs[_ETFNumber].deltaAllocationChain[_chainId] += _allocation;
+    }
 
-    // latest ETFnumber
-    uint256 public latestETFNumber = 0;
+    function getDeltaAllocationChain(
+        uint256 _ETFNumber, 
+        uint256 _chainId 
+    ) public view returns(int256) {
+        return ETFs[_ETFNumber].deltaAllocationChain[_chainId];
+    }
 
-    // maps the ETF number to the vault address of the ETF
-    mapping(uint256 => address) public ETFVaults;
+    /// @notice Set the delta allocated tokens by game contract
+    /// @dev Allocation can be negative
+    /// @param _ETFNumber number of ETFVault
+    /// @param _chainId number of chainId
+    /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
+    /// @param _allocation Delta allocation in tokens
+    function setDeltaAllocationProtocol(
+        uint256 _ETFNumber,
+        uint256 _chainId, 
+        uint256 _protocolNum, 
+        int256 _allocation
+    ) internal {
+        ETFs[_ETFNumber].deltaAllocationProtocol[_chainId][_protocolNum] += _allocation;
+    }
 
-    // stores the total value locked per active locked derby token in the game. Stored per ETFvault per period.
-    // first index is ETFvault, second is rebalancing period.
-    mapping(uint256 => mapping(uint256 => uint256)) public cumTVLperToken;
-
-    // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
-    mapping(uint256 => Basket) private baskets;
-
-    struct Basket {
-        // the ETF number for which this Basket was created
-        uint256 ETFnumber;
-
-        // last period when this Basket got rebalanced
-        uint256 lastRebalancingPeriod;
-
-        // nr of total allocated tokens 
-        uint256 nrOfAllocatedTokens;
-
-        // total build up rewards
-        int256 totalUnRedeemedRewards;
-
-        // total redeemed rewards
-        int256 totalRedeemedRewards;
-
-        // allocations per period
-        mapping(uint256 => uint256) allocations;
+    function getDeltaAllocationProtocol(
+        uint256 _ETFNumber, 
+        uint256 _chainId,
+        uint256 _protocolNum
+    ) public view returns(int256) {
+        return ETFs[_ETFNumber].deltaAllocationProtocol[_chainId][_protocolNum];
     }
 
     /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this. 
@@ -105,10 +158,24 @@ contract ETFGame is ERC721, ReentrancyGuard {
 
     /// @notice function to see the allocation of a specific protocol by a basketId. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    /// @param _chainId number of chainId.
     /// @param _protocolId Id of the protocol of which the allocation is queried.
     /// @return uint256 Number of xaver tokens that are allocated towards this specific protocol. 
-    function basketAllocationInProtocol(uint256 _basketId, uint256 _protocolId) external onlyBasketOwner(_basketId) view returns(uint256){
-        return baskets[_basketId].allocations[_protocolId];
+    function basketAllocationInProtocol(
+        uint256 _basketId, 
+        uint256 _chainId, 
+        uint256 _protocolId
+    ) external onlyBasketOwner(_basketId) view returns(int256) {
+        return baskets[_basketId].allocations[_chainId][_protocolId];
+    }
+
+    function setBasketAllocationInProtocol(
+        uint256 _basketId, 
+        uint256 _chainId, 
+        uint256 _protocolId, 
+        int256 _allocation
+    ) internal onlyBasketOwner(_basketId) {
+        baskets[_basketId].allocations[_chainId][_protocolId] += _allocation;
     }
 
     /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
@@ -179,47 +246,57 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @dev Finally it locks or unlocks tokens
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _allocations allocations set by the user of the basket. Allocations are real (not deltas) and scaled (so * 1E18).
-    function rebalanceBasket(uint256 _basketId, uint256[] memory _allocations) external onlyBasketOwner(_basketId) nonReentrant {
-        require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
+    function rebalanceBasket(
+      uint256 _basketId, 
+      int256[][] memory _allocations
+    ) external onlyBasketOwner(_basketId) nonReentrant {
+      // require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
 
-        addToTotalRewards(_basketId);
+      uint256 ETFNumber = baskets[_basketId].ETFnumber;
+      int256 totalNewAllocatedTokens;
 
-        uint256 totalNewAllocatedTokens = 0;
-        int256 deltaAllocation;
-        for (uint256 i = 0; i < _allocations.length; i++) {
-            totalNewAllocatedTokens += _allocations[i];
-            if (baskets[_basketId].allocations[i] == _allocations[i]) continue;
-            deltaAllocation = int256(_allocations[i] - baskets[_basketId].allocations[i]);
-            IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).setDeltaAllocations(i, deltaAllocation);
-            baskets[_basketId].allocations[i] = _allocations[i];
+      for (uint256 i = 0; i < _allocations.length; i++) {
+        int256 chainTotal;
+        uint256 chain = chainIds[i];
+
+        for (uint256 j = 0; j < 5; j++) {
+          chainTotal += _allocations[i][j];
+          setDeltaAllocationProtocol(ETFNumber, chain, j, _allocations[i][j]);
+          setBasketAllocationInProtocol(_basketId, chain, j, _allocations[i][j]);
+          // console.log("allocation %s i: %s, j: %s", _allocations[i][j], i, j);
         }
 
-        if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) {
-            unlockTokensFromBasket(_basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
-        }
-        else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) {
-            lockTokensToBasket(_basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
-        }
+        // console.log("chain total %s", chainTotal);
+        totalNewAllocatedTokens += chainTotal;
+        setDeltaAllocationChain(ETFNumber, chain, chainTotal);
+      }
 
-        baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).rebalancingPeriod() + 1;
+      // if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) {
+      //     unlockTokensFromBasket(_basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
+      // }
+      // else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) {
+      //     lockTokensToBasket(_basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
+      // }
+
+      // baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber])rebalancingPeriod() + 1;
     }
 
     /// @notice rewards are calculated here.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
-        if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
-        address ETFaddress = ETFVaults[baskets[_basketId].ETFnumber];
-        uint256 currentRebalancingPeriod = IETFVault(ETFaddress).rebalancingPeriod();
-        uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
+        // if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
+        // address ETFaddress = ETFVaults[baskets[_basketId].ETFnumber];
+        // uint256 currentRebalancingPeriod = IETFVault(ETFaddress).rebalancingPeriod();
+        // uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
-        if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
+        // if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
 
-        for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
-            for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].ETFnumber); i++) {
-                if (baskets[_basketId].allocations[i] == 0) continue;
-                baskets[_basketId].totalUnRedeemedRewards += IETFVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
-            }
-        }
+        // for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
+        //     for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].ETFnumber); i++) {
+        //         if (baskets[_basketId].allocations[i] == 0) continue;
+        //         baskets[_basketId].totalUnRedeemedRewards += IETFVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
+        //     }
+        // }
     }
 
     /// @notice redeem funds from basket in the game.
