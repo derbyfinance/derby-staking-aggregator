@@ -40,7 +40,7 @@ describe("Testing ETFgameMock", async () => {
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
-  beforeEach(async function() {
+  before(async function() {
     [dao, user] = await ethers.getSigners();
 
     [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
@@ -69,32 +69,6 @@ describe("Testing ETFgameMock", async () => {
     }
   });
 
-  it.only("Should rebalance basket and set deltaAllocationChain and deltaAllocationProtocol", async function() {
-    await gameMock.connect(dao).addETF(vault.address);
-    await gameMock.mintNewBasket(ETFNumber);    
-
-    const allocationArray = [ 
-      [100, 0, 0, 200, 0], // 300
-      [100, 0, 200, 100, 200], // 600
-      [0, 100, 200, 300, 400], // 1000 
-    ];
-    const totalAllocations = 1900;
-    await xaverToken.increaseAllowance(gameMock.address, totalAllocations);
-    await gameMock.rebalanceBasket(0, allocationArray);
-
-    expect(await gameMock.getDeltaAllocationChain(ETFNumber, chainIds[0])).to.be.equal(300);
-    expect(await gameMock.getDeltaAllocationChain(ETFNumber, chainIds[1])).to.be.equal(600);
-    expect(await gameMock.getDeltaAllocationChain(ETFNumber, chainIds[2])).to.be.equal(1000);
-
-    // looping through all of allocationArray
-    allocationArray.forEach(async (chainIdArray, i) => {
-      for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await gameMock.basketAllocationInProtocol(ETFNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
-      }
-    })
-
-  });
-
   it("XaverToken should have name, symbol and totalSupply set", async function() {
     expect(await xaverToken.name()).to.be.equal(name);
     expect(await xaverToken.symbol()).to.be.equal(symbol);
@@ -115,7 +89,52 @@ describe("Testing ETFgameMock", async () => {
     expect(await gameMock.ETFVaults(0)).to.be.equal(vault.address);
   });
 
-  it("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+  it("Should Lock tokens, mint basket and set correct deltas", async function() {
+    await gameMock.mintNewBasket(ETFNumber); 
+
+    const allocationArray = [ 
+      [100, 0, 0, 200, 0], // 300
+      [100, 0, 200, 100, 200], // 600
+      [0, 100, 200, 300, 400], // 1000 
+    ];
+    const totalAllocations = 1900;
+    await xaverToken.increaseAllowance(gameMock.address, totalAllocations);
+    await gameMock.rebalanceBasket(0, allocationArray);
+
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[0])).to.be.equal(300);
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[1])).to.be.equal(600);
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[2])).to.be.equal(1000);
+
+    // looping through all of allocationArray
+    allocationArray.forEach(async (chainIdArray, i) => {
+      for (let j = 0; j < chainIdArray.length; j++) {
+        expect(await gameMock.basketAllocationInProtocol(ETFNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+      }
+    });
+
+    // total allocated tokens == 1900;
+    expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(totalAllocations);
+  });
+
+  it("Should Unlock lokens", async function() {
+    const allocationArray = [ 
+      [-100, 0, 0, 0, 0], // 300
+      [0, 0, -200, -100, -200], // 600
+      [0, 0, -200, -200, 0], // 1000 
+    ];
+    const totalAllocations = -1000;
+
+    await gameMock.rebalanceBasket(0, allocationArray);
+
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[0])).to.be.equal(200);
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[1])).to.be.equal(100);
+    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[2])).to.be.equal(600);
+
+    expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(1900 - 1000);
+
+  });
+
+  it.skip("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
     // minting
     await gameMock.connect(dao).addETF(vault.address);
     await gameMock.mintNewBasket(0);

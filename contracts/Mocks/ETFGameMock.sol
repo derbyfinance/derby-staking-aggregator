@@ -39,4 +39,19 @@ contract ETFGameMock is ETFGame {
     function triggerRedeemedRewardsVault(address ETFVault, address user, uint256 amount) external {
         IETFVault(ETFVault).redeemRewards(user, amount);
     }
+
+    function getDeltaAllocationChainTEST(
+        uint256 _ETFNumber, 
+        uint256 _chainId 
+    ) external view returns(int256) {
+        return getDeltaAllocationChain(_ETFNumber, _chainId);
+    }
+
+    function getDeltaAllocationProtocolTEST(
+        uint256 _ETFNumber, 
+        uint256 _chainId,
+        uint256 _protocolNum
+    ) external view returns(int256) {
+        return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
+    }
 }

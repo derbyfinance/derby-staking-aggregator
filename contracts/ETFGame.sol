@@ -26,7 +26,7 @@ contract ETFGame is ERC721, ReentrancyGuard {
         uint256 lastRebalancingPeriod;
 
         // nr of total allocated tokens 
-        uint256 nrOfAllocatedTokens;
+        int256 nrOfAllocatedTokens;
 
         // total build up rewards
         int256 totalUnRedeemedRewards;
@@ -74,9 +74,9 @@ contract ETFGame is ERC721, ReentrancyGuard {
 
     struct ETFinfo {
         // chainId => deltaAllocation
-        mapping(uint256 => int256) deltaAllocationChain; 
+        mapping(uint256 => int256) deltaAllocationChain;
         // chainId => protocolNumber => deltaAllocation
-        mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol; 
+        mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     }
 
     mapping(uint256 => ETFinfo) internal ETFs;
@@ -122,7 +122,7 @@ contract ETFGame is ERC721, ReentrancyGuard {
     function getDeltaAllocationChain(
         uint256 _ETFNumber, 
         uint256 _chainId 
-    ) public view returns(int256) {
+    ) internal view returns(int256) {
         return ETFs[_ETFNumber].deltaAllocationChain[_chainId];
     }
 
@@ -145,27 +145,37 @@ contract ETFGame is ERC721, ReentrancyGuard {
         uint256 _ETFNumber, 
         uint256 _chainId,
         uint256 _protocolNum
-    ) public view returns(int256) {
+    ) internal view returns(int256) {
         return ETFs[_ETFNumber].deltaAllocationProtocol[_chainId][_protocolNum];
     }
 
     /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @return uint256 Number of xaver tokens that are allocated towards protocols. 
-    function basketTotalAllocatedTokens(uint256 _basketId) external onlyBasketOwner(_basketId) view returns(uint256){
+    /// @return int256 Number of xaver tokens that are allocated towards protocols. 
+    function basketTotalAllocatedTokens(
+        uint256 _basketId
+    ) public onlyBasketOwner(_basketId) view returns(int256) {
         return baskets[_basketId].nrOfAllocatedTokens;
+    }
+
+    function setBasketTotalAllocatedTokens(
+        uint256 _basketId, 
+        int256 _allocation
+    ) internal onlyBasketOwner(_basketId) {
+        baskets[_basketId].nrOfAllocatedTokens += _allocation;
+        require(basketTotalAllocatedTokens(_basketId) >= 0, "Basket: underflow");
     }
 
     /// @notice function to see the allocation of a specific protocol by a basketId. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _chainId number of chainId.
     /// @param _protocolId Id of the protocol of which the allocation is queried.
-    /// @return uint256 Number of xaver tokens that are allocated towards this specific protocol. 
+    /// @return int256 Number of xaver tokens that are allocated towards this specific protocol. 
     function basketAllocationInProtocol(
         uint256 _basketId, 
         uint256 _chainId, 
         uint256 _protocolId
-    ) external onlyBasketOwner(_basketId) view returns(int256) {
+    ) public onlyBasketOwner(_basketId) view returns(int256) {
         return baskets[_basketId].allocations[_chainId][_protocolId];
     }
 
@@ -176,7 +186,11 @@ contract ETFGame is ERC721, ReentrancyGuard {
         int256 _allocation
     ) internal onlyBasketOwner(_basketId) {
         baskets[_basketId].allocations[_chainId][_protocolId] += _allocation;
+        console.log("setting basket %s", uint(basketAllocationInProtocol(_basketId, _chainId, _protocolId)));
+        require(basketAllocationInProtocol(_basketId, _chainId, _protocolId) >= 0, "Basket: underflow");
     }
+
+    //gasUsed 561291
 
     /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
@@ -217,28 +231,26 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract. 
     function lockTokensToBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
+        console.log("amount to lock %s", _lockedTokenAmount);
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
-        require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
 
-        baskets[_basketId].nrOfAllocatedTokens += _lockedTokenAmount;
+        require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
     }
     
 
     /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.  
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
-    function unlockTokensFromBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
-        require(baskets[_basketId].nrOfAllocatedTokens >= _lockedTokenAmount, "Not enough unallocated tokens in basket");
-
-        baskets[_basketId].nrOfAllocatedTokens -= _lockedTokenAmount;
+    /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
+    function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal onlyBasketOwner(_basketId) {
+        console.log("amount to unlock %s", _unlockedTokenAmount);
 
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
-        IERC20(xaverTokenAddress).safeTransfer(msg.sender, _lockedTokenAmount);
+        IERC20(xaverTokenAddress).safeTransfer(msg.sender, _unlockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
 
-        require((balanceBefore - balanceAfter - _lockedTokenAmount) == 0, "Error unlock: under/overflow");
+        require((balanceBefore - balanceAfter - _unlockedTokenAmount) == 0, "Error unlock: under/overflow");
     }
 
     /// @notice rebalances an existing Basket
@@ -251,34 +263,42 @@ contract ETFGame is ERC721, ReentrancyGuard {
       int256[][] memory _allocations
     ) external onlyBasketOwner(_basketId) nonReentrant {
       // require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
-
+      uint256 gasStart = gasleft();
+    
+      int256 totalDelta;
       uint256 ETFNumber = baskets[_basketId].ETFnumber;
-      int256 totalNewAllocatedTokens;
+      int256 oldTotal = basketTotalAllocatedTokens(_basketId);
 
       for (uint256 i = 0; i < _allocations.length; i++) {
         int256 chainTotal;
         uint256 chain = chainIds[i];
 
         for (uint256 j = 0; j < 5; j++) {
-          chainTotal += _allocations[i][j];
-          setDeltaAllocationProtocol(ETFNumber, chain, j, _allocations[i][j]);
-          setBasketAllocationInProtocol(_basketId, chain, j, _allocations[i][j]);
-          // console.log("allocation %s i: %s, j: %s", _allocations[i][j], i, j);
+          int256 allocation = _allocations[i][j];
+          if (allocation == 0) continue;
+
+          chainTotal += allocation;
+          setDeltaAllocationProtocol(ETFNumber, chain, j, allocation);
+          setBasketAllocationInProtocol(_basketId, chain, j, allocation);
         }
 
-        // console.log("chain total %s", chainTotal);
-        totalNewAllocatedTokens += chainTotal;
+        totalDelta += chainTotal;
         setDeltaAllocationChain(ETFNumber, chain, chainTotal);
       }
 
-      // if (baskets[_basketId].nrOfAllocatedTokens > totalNewAllocatedTokens) {
-      //     unlockTokensFromBasket(_basketId, baskets[_basketId].nrOfAllocatedTokens - totalNewAllocatedTokens);
-      // }
-      // else if (baskets[_basketId].nrOfAllocatedTokens < totalNewAllocatedTokens) {
-      //     lockTokensToBasket(_basketId, totalNewAllocatedTokens - baskets[_basketId].nrOfAllocatedTokens);
-      // }
+      setBasketTotalAllocatedTokens(_basketId, totalDelta);
+
+      if (totalDelta < 0) {
+        unlockTokensFromBasket(_basketId, uint256(oldTotal - basketTotalAllocatedTokens(_basketId)));
+      }
+      else if (totalDelta > 0) {
+        lockTokensToBasket(_basketId, uint256(totalDelta));
+      }
 
       // baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber])rebalancingPeriod() + 1;
+
+      uint256 gasUsed = gasStart - gasleft();
+      console.log("gasUsed %s", gasUsed);
     }
 
     /// @notice rewards are calculated here.
