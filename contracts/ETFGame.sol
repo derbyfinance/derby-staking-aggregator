@@ -154,8 +154,8 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @return int256 Number of xaver tokens that are allocated towards protocols. 
     function basketTotalAllocatedTokens(
         uint256 _basketId
-    ) public onlyBasketOwner(_basketId) view returns(int256) {
-        return baskets[_basketId].nrOfAllocatedTokens;
+    ) public onlyBasketOwner(_basketId) view returns(uint256) {
+        return uint256(baskets[_basketId].nrOfAllocatedTokens);
     }
 
     function setBasketTotalAllocatedTokens(
@@ -263,11 +263,10 @@ contract ETFGame is ERC721, ReentrancyGuard {
       int256[][] memory _allocations
     ) external onlyBasketOwner(_basketId) nonReentrant {
       // require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
-      uint256 gasStart = gasleft();
-    
+
       int256 totalDelta;
       uint256 ETFNumber = baskets[_basketId].ETFnumber;
-      int256 oldTotal = basketTotalAllocatedTokens(_basketId);
+      uint256 oldTotal = basketTotalAllocatedTokens(_basketId);
 
       for (uint256 i = 0; i < _allocations.length; i++) {
         int256 chainTotal;
@@ -289,16 +288,15 @@ contract ETFGame is ERC721, ReentrancyGuard {
       setBasketTotalAllocatedTokens(_basketId, totalDelta);
 
       if (totalDelta < 0) {
-        unlockTokensFromBasket(_basketId, uint256(oldTotal - basketTotalAllocatedTokens(_basketId)));
+        uint256 tokensToUnlock = oldTotal - basketTotalAllocatedTokens(_basketId);
+        require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
+        unlockTokensFromBasket(_basketId, tokensToUnlock);
       }
       else if (totalDelta > 0) {
         lockTokensToBasket(_basketId, uint256(totalDelta));
       }
 
       // baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber])rebalancingPeriod() + 1;
-
-      uint256 gasUsed = gasStart - gasleft();
-      console.log("gasUsed %s", gasUsed);
     }
 
     /// @notice rewards are calculated here.
