@@ -64,6 +64,12 @@ describe("Testing ETFgameMock", async () => {
       IUSDc.connect(user).approve(vault.address, amountUSDC),
     ]);
 
+    await Promise.all([
+      gameMock.connect(dao).setLatestProtocolId(10, 5),
+      gameMock.connect(dao).setLatestProtocolId(100, 5),
+      gameMock.connect(dao).setLatestProtocolId(1000, 5),
+    ])
+
     for (const protocol of protocols.values()) {
       await protocol.addProtocolToController(controller, ETFnumber, AllMockProviders);
     }

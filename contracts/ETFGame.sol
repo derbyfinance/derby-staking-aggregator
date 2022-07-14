@@ -70,9 +70,12 @@ contract ETFGame is ERC721, ReentrancyGuard {
     mapping(uint256 => Basket) private baskets;
     
     uint256[] public chainIds = [10, 100, 1000];
-    uint256[] public lastProtocolId = [5, 5, 5];
+
+    mapping(uint256 => uint256) public latestProtocolId;
 
     struct ETFinfo {
+        // rebalance period of ETF, upped at vault rebalance
+        uint256 rebalancingPeriod;
         // chainId => deltaAllocation
         mapping(uint256 => int256) deltaAllocationChain;
         // chainId => protocolNumber => deltaAllocation
@@ -104,6 +107,13 @@ contract ETFGame is ERC721, ReentrancyGuard {
         routerAddress = _routerAddress;
         governed = _governed;
         controller = IController(_controller);
+
+        // comments 
+        // setters chainId array
+        // story
+        // rebalance period vault
+        // requires
+        // modifiers
     }
 
     // internal will be used by rebalanceBasket
@@ -154,8 +164,8 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @return int256 Number of xaver tokens that are allocated towards protocols. 
     function basketTotalAllocatedTokens(
         uint256 _basketId
-    ) public onlyBasketOwner(_basketId) view returns(uint256) {
-        return uint256(baskets[_basketId].nrOfAllocatedTokens);
+    ) public onlyBasketOwner(_basketId) view returns(int256) {
+        return baskets[_basketId].nrOfAllocatedTokens;
     }
 
     function setBasketTotalAllocatedTokens(
@@ -222,7 +232,7 @@ contract ETFGame is ERC721, ReentrancyGuard {
         require(_ETFnumber < latestETFNumber, "ETFGame: invalid ETF number");
         // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
         baskets[latestBasketId].ETFnumber = _ETFnumber;
-        baskets[latestBasketId].lastRebalancingPeriod = IETFVault(ETFVaults[_ETFnumber]).rebalancingPeriod() + 1;
+        baskets[latestBasketId].lastRebalancingPeriod = ETFs[_ETFnumber].rebalancingPeriod + 1;
         _safeMint(msg.sender, latestBasketId);
         latestBasketId++;
     }
@@ -262,17 +272,17 @@ contract ETFGame is ERC721, ReentrancyGuard {
       uint256 _basketId, 
       int256[][] memory _allocations
     ) external onlyBasketOwner(_basketId) nonReentrant {
-      // require(_allocations.length == IController(routerAddress).latestProtocolId(baskets[_basketId].ETFnumber), "Allocations array does not have the correct length");
-
       int256 totalDelta;
       uint256 ETFNumber = baskets[_basketId].ETFnumber;
-      uint256 oldTotal = basketTotalAllocatedTokens(_basketId);
 
       for (uint256 i = 0; i < _allocations.length; i++) {
         int256 chainTotal;
         uint256 chain = chainIds[i];
+        uint256 latestProtocol = latestProtocolId[chain];
 
-        for (uint256 j = 0; j < 5; j++) {
+        require(_allocations[i].length == latestProtocol, "Invalid allocation length");
+
+        for (uint256 j = 0; j < latestProtocol; j++) {
           int256 allocation = _allocations[i][j];
           if (allocation == 0) continue;
 
@@ -285,18 +295,21 @@ contract ETFGame is ERC721, ReentrancyGuard {
         setDeltaAllocationChain(ETFNumber, chain, chainTotal);
       }
 
-      setBasketTotalAllocatedTokens(_basketId, totalDelta);
-
-      if (totalDelta < 0) {
-        uint256 tokensToUnlock = oldTotal - basketTotalAllocatedTokens(_basketId);
-        require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
-        unlockTokensFromBasket(_basketId, tokensToUnlock);
-      }
-      else if (totalDelta > 0) {
+      if (totalDelta > 0) {
         lockTokensToBasket(_basketId, uint256(totalDelta));
       }
+      if (totalDelta < 0) {
+        int256 oldTotal = basketTotalAllocatedTokens(_basketId);
+        int256 newTotal = oldTotal + totalDelta;
+        int256 tokensToUnlock = oldTotal - newTotal;
+        require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
 
-      // baskets[_basketId].lastRebalancingPeriod = IETFVault(ETFVaults[baskets[_basketId].ETFnumber])rebalancingPeriod() + 1;
+        unlockTokensFromBasket(_basketId, uint(tokensToUnlock));
+      }
+
+      // addToTotalRewards(_basketId);
+      setBasketTotalAllocatedTokens(_basketId, totalDelta);
+      baskets[_basketId].lastRebalancingPeriod = ETFs[ETFNumber].rebalancingPeriod + 1;
     }
 
     /// @notice rewards are calculated here.
@@ -326,5 +339,12 @@ contract ETFGame is ERC721, ReentrancyGuard {
         baskets[_basketId].totalUnRedeemedRewards = 0;
 
         IETFVault(ETFVaults[baskets[_basketId].ETFnumber]).redeemRewards(msg.sender, uint256(amount));
+    }
+
+    /// @notice Setter for latest protocol Id for given chainId.
+    /// @param _chainId number of chain id set in chainIds array
+    /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
+    function setLatestProtocolId(uint256 _chainId, uint256 _latestProtocolId) external onlyDao {
+        latestProtocolId[_chainId] = _latestProtocolId;
     }
 }
