@@ -109,11 +109,9 @@ contract ETFGame is ERC721, ReentrancyGuard {
         controller = IController(_controller);
 
         // comments 
-        // setters chainId array
         // story
-        // rebalance period vault
         // requires
-        // modifiers
+        // test !basket owner
     }
 
     // internal will be used by rebalanceBasket
@@ -182,25 +180,31 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @param _protocolId Id of the protocol of which the allocation is queried.
     /// @return int256 Number of xaver tokens that are allocated towards this specific protocol. 
     function basketAllocationInProtocol(
-        uint256 _basketId, 
-        uint256 _chainId, 
+        uint256 _basketId,
+        uint256 _chainId,
         uint256 _protocolId
     ) public onlyBasketOwner(_basketId) view returns(int256) {
         return baskets[_basketId].allocations[_chainId][_protocolId];
     }
 
     function setBasketAllocationInProtocol(
-        uint256 _basketId, 
-        uint256 _chainId, 
-        uint256 _protocolId, 
+        uint256 _basketId,
+        uint256 _chainId,
+        uint256 _protocolId,
         int256 _allocation
     ) internal onlyBasketOwner(_basketId) {
         baskets[_basketId].allocations[_chainId][_protocolId] += _allocation;
-        console.log("setting basket %s", uint(basketAllocationInProtocol(_basketId, _chainId, _protocolId)));
         require(basketAllocationInProtocol(_basketId, _chainId, _protocolId) >= 0, "Basket: underflow");
     }
 
-    //gasUsed 561291
+    function setBasketRebalancingPeriod(
+        uint256 _basketId,
+        uint256 _ETFNumber
+    ) internal onlyBasketOwner(_basketId) {
+        baskets[_basketId].lastRebalancingPeriod = ETFs[_ETFNumber].rebalancingPeriod + 1;
+    }
+
+
 
     /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this. 
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
@@ -238,9 +242,8 @@ contract ETFGame is ERC721, ReentrancyGuard {
     }
 
     /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated. 
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract. 
-    function lockTokensToBasket(uint256 _basketId, uint256 _lockedTokenAmount) internal onlyBasketOwner(_basketId) {
+    function lockTokensToBasket(uint256 _lockedTokenAmount) internal {
         console.log("amount to lock %s", _lockedTokenAmount);
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
@@ -251,11 +254,9 @@ contract ETFGame is ERC721, ReentrancyGuard {
     
 
     /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.  
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
-    function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal onlyBasketOwner(_basketId) {
+    function unlockTokensFromBasket(uint256 _unlockedTokenAmount) internal {
         console.log("amount to unlock %s", _unlockedTokenAmount);
-
         uint256 balanceBefore = IERC20(xaverTokenAddress).balanceOf(address(this));
         IERC20(xaverTokenAddress).safeTransfer(msg.sender, _unlockedTokenAmount);
         uint256 balanceAfter = IERC20(xaverTokenAddress).balanceOf(address(this));
@@ -267,14 +268,25 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @dev First calculates the rewards the basket has built up, then sets the new allocations and communicates the deltas to the vault
     /// @dev Finally it locks or unlocks tokens
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _allocations allocations set by the user of the basket. Allocations are real (not deltas) and scaled (so * 1E18).
+    /// @param _allocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18).
     function rebalanceBasket(
       uint256 _basketId, 
       int256[][] memory _allocations
     ) external onlyBasketOwner(_basketId) nonReentrant {
-      int256 totalDelta;
       uint256 ETFNumber = baskets[_basketId].ETFnumber;
 
+      int256 totalDelta = settleDeltaAllocations(_basketId, ETFNumber, _allocations);
+      lockOrUnlockTokens(_basketId, totalDelta);
+      setBasketTotalAllocatedTokens(_basketId, totalDelta);
+      setBasketRebalancingPeriod(_basketId, ETFNumber);
+      // addToTotalRewards(_basketId);
+    }
+
+    function settleDeltaAllocations(
+      uint256 _basketId, 
+      uint256 _ETFNumber,
+      int256[][] memory _allocations
+    ) internal returns(int256 totalDelta) {
       for (uint256 i = 0; i < _allocations.length; i++) {
         int256 chainTotal;
         uint256 chain = chainIds[i];
@@ -287,29 +299,30 @@ contract ETFGame is ERC721, ReentrancyGuard {
           if (allocation == 0) continue;
 
           chainTotal += allocation;
-          setDeltaAllocationProtocol(ETFNumber, chain, j, allocation);
+          setDeltaAllocationProtocol(_ETFNumber, chain, j, allocation);
           setBasketAllocationInProtocol(_basketId, chain, j, allocation);
         }
 
         totalDelta += chainTotal;
-        setDeltaAllocationChain(ETFNumber, chain, chainTotal);
+        setDeltaAllocationChain(_ETFNumber, chain, chainTotal);
       }
+    }
 
-      if (totalDelta > 0) {
-        lockTokensToBasket(_basketId, uint256(totalDelta));
+    function lockOrUnlockTokens(
+      uint256 _basketId,
+      int256 _totalDelta
+    ) internal {
+      if (_totalDelta > 0) {
+        lockTokensToBasket(uint256(_totalDelta));
       }
-      if (totalDelta < 0) {
+      if (_totalDelta < 0) {
         int256 oldTotal = basketTotalAllocatedTokens(_basketId);
-        int256 newTotal = oldTotal + totalDelta;
+        int256 newTotal = oldTotal + _totalDelta;
         int256 tokensToUnlock = oldTotal - newTotal;
         require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
 
-        unlockTokensFromBasket(_basketId, uint(tokensToUnlock));
+        unlockTokensFromBasket(uint(tokensToUnlock));
       }
-
-      // addToTotalRewards(_basketId);
-      setBasketTotalAllocatedTokens(_basketId, totalDelta);
-      baskets[_basketId].lastRebalancingPeriod = ETFs[ETFNumber].rebalancingPeriod + 1;
     }
 
     /// @notice rewards are calculated here.
@@ -346,5 +359,9 @@ contract ETFGame is ERC721, ReentrancyGuard {
     /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
     function setLatestProtocolId(uint256 _chainId, uint256 _latestProtocolId) external onlyDao {
         latestProtocolId[_chainId] = _latestProtocolId;
+    }
+
+    function setChainIdArray(uint256[] memory _chainIds) external onlyDao {
+        chainIds = _chainIds;
     }
 }
