@@ -34,7 +34,7 @@ contract Game is ERC721, ReentrancyGuard {
       // total redeemed rewards
       int256 totalRedeemedRewards;
 
-      // allocations per period
+      // basket => vaultNumber => chainId => allocation
       mapping(uint256 => mapping(uint256 => int256)) allocations;
     }
 
@@ -79,8 +79,10 @@ contract Game is ERC721, ReentrancyGuard {
     
     uint256[] public chainIds;
 
+    // chainId => latestProtocolId set by dao
     mapping(uint256 => uint256) public latestProtocolId;
 
+    // vaultNumber => vaultInfo struct
     mapping(uint256 => vaultInfo) internal vaults;
 
     modifier onlyDao {
@@ -111,13 +113,13 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Setter for delta allocation in a particulair chainId
     /// @param _vaultNumber number of vault
     /// @param _chainId number of chainId
-    /// @param _allocation delta allocation
+    /// @param _deltaAllocation delta allocation
     function setDeltaAllocationChain(
       uint256 _vaultNumber, 
       uint256 _chainId, 
-      int256 _allocation
+      int256 _deltaAllocation
     ) internal {
-      vaults[_vaultNumber].deltaAllocationChain[_chainId] += _allocation;
+      vaults[_vaultNumber].deltaAllocationChain[_chainId] += _deltaAllocation;
     }
 
     /// @notice Getter for delta allocation in a particulair chainId
@@ -136,14 +138,14 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _vaultNumber number of vault
     /// @param _chainId number of chainId
     /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
-    /// @param _allocation Delta allocation in tokens
+    /// @param _deltaAllocation Delta allocation in tokens
     function setDeltaAllocationProtocol(
       uint256 _vaultNumber,
       uint256 _chainId, 
       uint256 _protocolNum, 
-      int256 _allocation
+      int256 _deltaAllocation
     ) internal {
-      vaults[_vaultNumber].deltaAllocationProtocol[_chainId][_protocolNum] += _allocation;
+      vaults[_vaultNumber].deltaAllocationProtocol[_chainId][_protocolNum] += _deltaAllocation;
     }
 
     /// @notice Getter for the delta allocation in Protocol vault e.g compound_usdc_01
@@ -277,14 +279,14 @@ contract Game is ERC721, ReentrancyGuard {
     /// @dev First calculates the rewards the basket has built up, then sets the new allocations and communicates the deltas to the vault
     /// @dev Finally it locks or unlocks tokens
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    /// @param _allocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18).
+    /// @param _deltaAllocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18).
     function rebalanceBasket(
       uint256 _basketId, 
-      int256[][] memory _allocations
+      int256[][] memory _deltaAllocations
     ) external onlyBasketOwner(_basketId) nonReentrant {    
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
 
-      int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _allocations);
+      int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
       lockOrUnlockTokens(_basketId, totalDelta);
       setBasketTotalAllocatedTokens(_basketId, totalDelta);
       setBasketRebalancingPeriod(_basketId, vaultNumber);
@@ -292,26 +294,26 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     /// @notice Internal helper to calculate and settle the delta allocations from baskets
-    /// @dev Sets the total allocations per ChainId used in XChainController
-    /// @dev Sets the total allocations per protocol number used in Vaults
+    /// @dev Sets the total allocations per ChainId, used in XChainController
+    /// @dev Sets the total allocations per protocol number, used in Vaults
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
     /// @param _vaultNumber number of vault
-    /// @param _allocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18)
+    /// @param _deltaAllocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18)
     /// @return totalDelta total delta allocated tokens of the basket, used in lockOrUnlockTokens
     function settleDeltaAllocations(
       uint256 _basketId, 
       uint256 _vaultNumber,
-      int256[][] memory _allocations
+      int256[][] memory _deltaAllocations
     ) internal returns(int256 totalDelta) {
-      for (uint256 i = 0; i < _allocations.length; i++) {
+      for (uint256 i = 0; i < _deltaAllocations.length; i++) {
         int256 chainTotal;
         uint256 chain = chainIds[i];
         uint256 latestProtocol = latestProtocolId[chain];
 
-        require(_allocations[i].length == latestProtocol, "Invalid allocation length");
+        require(_deltaAllocations[i].length == latestProtocol, "Invalid allocation length");
 
         for (uint256 j = 0; j < latestProtocol; j++) {
-          int256 allocation = _allocations[i][j];
+          int256 allocation = _deltaAllocations[i][j];
           if (allocation == 0) continue;
 
           chainTotal += allocation;
