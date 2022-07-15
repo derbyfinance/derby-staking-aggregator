@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../../typechain-types';
-import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import type { Controller, VaultMock } from '../../../typechain-types';
+import { deployController, deployVaultMock } from '../../helpers/deploy';
 import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
 import { initController } from "../../helpers/vaultHelpers";
 import AllMockProviders from "../../helpers/allMockProvidersClass";
@@ -17,8 +17,8 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing ETFVaultWithdraw, unit test", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+describe("Testing VaultWithdraw, unit test", async () => {
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -35,7 +35,7 @@ describe("Testing ETFVaultWithdraw, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
@@ -50,7 +50,7 @@ describe("Testing ETFVaultWithdraw, unit test", async () => {
     }
   });
 
-  it("Deposit, withdraw and burn Xaver LP Tokens", async function() {
+  it("Deposit, withdraw and burn Derby LP Tokens", async function() {
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
 
     console.log(`-------------Depositing 9k-------------`)

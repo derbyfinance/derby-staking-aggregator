@@ -4,14 +4,14 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import type { FeeTestContract} from '../../typechain-types';
 import { controllerAddProtocol, erc20, getUSDCSigner } from "../helpers/helpers";
-import { deployController, deployETFVaultMock } from "../helpers/deploy";
+import { deployController, deployVaultMock } from "../helpers/deploy";
 import { usdc, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "../helpers/addresses";
 import { setDeltaAllocations, getAllocations, getAndLogBalances } from "../helpers/vaultHelpers";
 import FeeTestContractArtifact from '../../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from '../helpers/helpers';
-import type { ETFVaultMock, Controller } from '../../typechain-types';
+import type { VaultMock, Controller } from '../../typechain-types';
 import allProviders  from "../helpers/allProvidersClass";
 
 interface Protocol {
@@ -28,7 +28,7 @@ const deployFeeTestContract = (
   ETFname: string,
   ETFnumber: number,
   daoAddress: string,
-  ETFGame: string, 
+  Game: string, 
   controller: string, 
   vaultCurrency: string, 
   uScale: number,
@@ -36,7 +36,7 @@ const deployFeeTestContract = (
   ) => deployContract(
     deployerSign, 
     FeeTestContractArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<FeeTestContract>;
 
 const protocols = [
@@ -52,7 +52,7 @@ const protocols = [
   [20, 60],
 ]
 
-const name = 'XaverUSDC';
+const name = 'DerbyUSDC';
 const symbol = 'dUSDC';
 const ETFname = 'USDC_med_risk';
 const ETFnumber = 0;
@@ -108,7 +108,7 @@ describe.skip("Testing feeTest, gas", async () => {
 });
 
 describe.skip("Testing feeTest. Simulate looping through game players and calculating weighted average price", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -121,7 +121,7 @@ describe.skip("Testing feeTest. Simulate looping through game players and calcul
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       allProviders.deployAllProviders(dao, controller),

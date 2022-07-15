@@ -29,8 +29,8 @@ contract CompoundProvider is IProvider {
   }
 
   /// @notice Deposit the underlying asset in Compound
-  /// @dev Pulls underlying asset from ETFVault, deposit them in Compound, send cTokens back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls underlying asset from Vault, deposit them in Compound, send cTokens back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -60,8 +60,8 @@ contract CompoundProvider is IProvider {
   }
 
   /// @notice Withdraw the underlying asset from Compound
-  /// @dev Pulls cTokens from ETFVault, redeem them from Compound, send underlying back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls cTokens from Vault, redeem them from Compound, send underlying back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -92,7 +92,7 @@ contract CompoundProvider is IProvider {
   }
 
   /// @notice Get balance from address in underlying token
-  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @param _address Address to request balance from, most likely an Vault
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _cToken) public view override returns(uint256) {

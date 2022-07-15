@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../ETFVault.sol";
+import "../Vault.sol";
 import "hardhat/console.sol";
 
 // import "../libraries/ABDKMath64x64.sol";
 
-contract ETFVaultMock is ETFVault { // is VaultToken
+contract VaultMock is Vault { // is VaultToken
 
   mapping(uint256 => uint256) private players;
 
@@ -19,19 +19,19 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     string memory _ETFname,
     uint256 _ETFnumber,
     address _governed,
-    address _ETFGame, 
+    address _Game, 
     address _controller, 
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) ETFVault(
+  ) Vault(
     _name,
     _symbol,
     _decimals,
     _ETFname,
     _ETFnumber,
     _governed,
-    _ETFGame,
+    _Game,
     _controller,
     _vaultCurrency,
     _uScale,
@@ -58,7 +58,7 @@ contract ETFVaultMock is ETFVault { // is VaultToken
     return performanceFee;
   }
 
-  function getETFGame() external view returns(address) {
+  function getGame() external view returns(address) {
     return game;
   }
 

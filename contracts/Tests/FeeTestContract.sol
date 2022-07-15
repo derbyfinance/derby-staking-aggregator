@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../ETFVault.sol";
+import "../Vault.sol";
 import "hardhat/console.sol";
 
-contract FeeTestContract is ETFVault {
+contract FeeTestContract is Vault {
     constructor(
     string memory _name,
     string memory _symbol,
@@ -12,19 +12,19 @@ contract FeeTestContract is ETFVault {
     string memory _ETFname,
     uint256 _ETFnumber,
     address _governed,
-    address _ETFGame, 
+    address _Game, 
     address _router, 
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) ETFVault(
+  ) Vault(
     _name,
     _symbol,
     _decimals,
     _ETFname,
     _ETFnumber,
     _governed,
-    _ETFGame,
+    _Game,
     _router,
     _vaultCurrency,
     _uScale,
