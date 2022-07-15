@@ -7,7 +7,7 @@ import "./Interfaces/IXChainController.sol";
 
 import "hardhat/console.sol";
 
-contract connextXProvider {
+contract ConnextXProvider {
   address xController;
   
   constructor(address _xController) {

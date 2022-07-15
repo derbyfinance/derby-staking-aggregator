@@ -39,7 +39,7 @@ import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
 import GameMockArtifact from '../../artifacts/contracts/Mocks/GameMock.sol/GameMock.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
-import connextXProviderArtifact from '../../artifacts/contracts/connextXProvider.sol/connextXProvider.json';
+import ConnextXProviderArtifact from '../../artifacts/contracts/ConnextXProvider.sol/ConnextXProvider.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
 export const deployTokenTimeLock = (
@@ -135,7 +135,7 @@ export const deployXChainController = (deployerSign: Signer, game: string, dao: 
 };
 
 export const deployConnextXProvider = (deployerSign: Signer, xController: string): Promise<ConnextXProvider> => {
-  return (deployContract(deployerSign, connextXProviderArtifact, [xController])) as Promise<ConnextXProvider>;
+  return (deployContract(deployerSign, ConnextXProviderArtifact, [xController])) as Promise<ConnextXProvider>;
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {
