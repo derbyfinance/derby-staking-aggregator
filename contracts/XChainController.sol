@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
@@ -68,11 +68,11 @@ contract XChainController {
 
       if (amountToDeposit > 0) {
         ETFs[_ETFNumber].amountToDepositPerChain[i] = uint256(amountToDeposit);
-        IETFVault(vaultAddress).setAllocationXChain(0);
+        IVault(vaultAddress).setAllocationXChain(0);
         // up state for vault
       }
       if (amountToWithdraw > 0) {
-        IETFVault(vaultAddress).setAllocationXChain(amountToWithdraw);
+        IVault(vaultAddress).setAllocationXChain(amountToWithdraw);
       }
     }
   }
@@ -90,7 +90,7 @@ contract XChainController {
       IERC20(getUnderlyingAddress(_ETFNumber, i)).safeTransfer(getVaultAddress(_ETFNumber, i), amount);
 
       // TEMP
-      IETFVault(getVaultAddress(_ETFNumber, i)).setVaultState(3);
+      IVault(getVaultAddress(_ETFNumber, i)).setVaultState(3);
     }
   }
 
@@ -113,7 +113,7 @@ contract XChainController {
   }
 
   function calcDepositWithdraw(address _vault, int256 _amountToChain) internal view returns(int256, uint256) {
-    uint256 currentUnderlying = IETFVault(_vault).getTotalUnderlyingIncBalance();
+    uint256 currentUnderlying = IVault(_vault).getTotalUnderlyingIncBalance();
 
     int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;

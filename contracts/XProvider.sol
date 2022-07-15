@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./Interfaces/IETFVault.sol";
+import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 
@@ -34,7 +34,7 @@ contract XProvider {
   }
 
   function getTotalUnderlying(uint256 _ETFNumber, address _vault) public {
-    uint256 underlying = IETFVault(_vault).getTotalUnderlyingIncBalance();
+    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
 
     bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _ETFNumber, underlying);

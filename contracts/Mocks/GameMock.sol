@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../ETFGame.sol";
+import "../Game.sol";
 import "hardhat/console.sol";
 
-contract ETFGameMock is ETFGame {
+contract GameMock is Game {
     constructor(string memory name_, 
         string memory symbol_, 
         address _xaverTokenAddress, 
         address _routerAddress,
         address _governed,
         address _controller
-    ) ETFGame (
+    ) Game (
         name_, 
         symbol_,
         _xaverTokenAddress,
@@ -33,11 +33,11 @@ contract ETFGameMock is ETFGame {
     } 
 
     function setDeltaAllocations(address ETFVault, uint256 _protocolNum, int256 _allocation) external {
-        IETFVault(ETFVault).setDeltaAllocations(_protocolNum, _allocation);
+        IVault(ETFVault).setDeltaAllocations(_protocolNum, _allocation);
     }
 
     function triggerRedeemedRewardsVault(address ETFVault, address user, uint256 amount) external {
-        IETFVault(ETFVault).redeemRewards(user, amount);
+        IVault(ETFVault).redeemRewards(user, amount);
     }
 
     function getDeltaAllocationChainTEST(

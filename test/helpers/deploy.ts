@@ -10,11 +10,11 @@ import type {
   AaveProvider,
   TruefiProvider,
   Controller,
-  ETFVault,
-  ETFGame, 
+  Vault,
+  Game, 
   XaverToken, 
   IGoverned,
-  ETFVaultMock,
+  VaultMock,
   CompoundProviderMock,
   ETFGameMock,
   TokenTimelock,
@@ -30,13 +30,13 @@ import TruefiProviderArtifact from '../../artifacts/contracts/Providers/TruefiPr
 import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
 import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
-import ETFVaultArtifact from '../../artifacts/contracts/ETFVault.sol/ETFVault.json';
+import VaultArtifact from '../../artifacts/contracts/Vault.sol/Vault.json';
 import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
-import ETFVaultArtifactMock from '../../artifacts/contracts/Mocks/ETFVaultMock.sol/ETFVaultMock.json';
+import VaultArtifactMock from '../../artifacts/contracts/Mocks/VaultMock.sol/VaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
-import ETFGameArtifact from '../../artifacts/contracts/ETFGame.sol/ETFGame.json';
-import ETFGameMockArtifact from '../../artifacts/contracts/Mocks/ETFGameMock.sol/ETFGameMock.json';
+import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
+import GameMockArtifact from '../../artifacts/contracts/Mocks/GameMock.sol/GameMock.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
 import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
@@ -81,7 +81,7 @@ export const deployAaveProvider = (deployerSign: Signer, controller: string): Pr
   return (deployContract(deployerSign, AaveProviderArtifact, [controller])) as Promise<AaveProvider>;
 };
 
-export const deployETFVault = (
+export const deployVault = (
   deployerSign: Signer, 
   name: string, 
   symbol: string, 
@@ -96,11 +96,11 @@ export const deployETFVault = (
   gasFeeLiq: number
   ) => deployContract(
     deployerSign, 
-    ETFVaultArtifact, 
+    VaultArtifact, 
     [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<ETFVault>;
 
-export const deployETFVaultMock = (
+export const deployVaultMock = (
   deployerSign: Signer, 
   name: string, 
   symbol: string, 
@@ -115,9 +115,9 @@ export const deployETFVaultMock = (
   gasFeeLiq: number
   ) => deployContract(
     deployerSign, 
-    ETFVaultArtifactMock, 
+    VaultArtifactMock, 
     [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
-  ) as Promise<ETFVaultMock>;
+  ) as Promise<VaultMock>;
 
 export const deployController = (
   deployerSign: Signer, 
@@ -146,10 +146,10 @@ export const deployXaverToken = (deployerSign: Signer, name: string, symbol: str
     return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol, totalXaverSupply])) as Promise<XaverToken>;
 };
 
-export const deployETFGame = (deployerSign: Signer, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGame> => {
-    return (deployContract(deployerSign, ETFGameArtifact, [XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<ETFGame>;
+export const deployGame = (deployerSign: Signer, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<Game> => {
+    return (deployContract(deployerSign, GameArtifact, [XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<Game>;
 };
 
-export const deployETFGameMock = (deployerSign: Signer, name: string, symbol: string, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGameMock> => {
-  return (deployContract(deployerSign, ETFGameMockArtifact, [name, symbol, XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<ETFGameMock>;
+export const deployGameMock = (deployerSign: Signer, name: string, symbol: string, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGameMock> => {
+  return (deployContract(deployerSign, GameMockArtifact, [name, symbol, XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<GameMock>;
 };
