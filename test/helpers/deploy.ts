@@ -12,11 +12,11 @@ import type {
   Controller,
   Vault,
   Game, 
-  XaverToken, 
+  DerbyToken, 
   IGoverned,
   VaultMock,
   CompoundProviderMock,
-  ETFGameMock,
+  GameMock,
   TokenTimelock,
   XChainController,
   XProvider,
@@ -34,7 +34,7 @@ import VaultArtifact from '../../artifacts/contracts/Vault.sol/Vault.json';
 import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
 import VaultArtifactMock from '../../artifacts/contracts/Mocks/VaultMock.sol/VaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
-import XaverTokenArtifact from '../../artifacts/contracts/XaverToken.sol/XaverToken.json';
+import DerbyTokenArtifact from '../../artifacts/contracts/DerbyToken.sol/DerbyToken.json';
 import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
 import GameMockArtifact from '../../artifacts/contracts/Mocks/GameMock.sol/GameMock.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
@@ -89,7 +89,7 @@ export const deployVault = (
   ETFname: string,
   ETFnumber: number,
   daoAddress: string,
-  ETFGame: string, 
+  Game: string, 
   controller: string, 
   vaultCurrency: string, 
   uScale: number,
@@ -97,8 +97,8 @@ export const deployVault = (
   ) => deployContract(
     deployerSign, 
     VaultArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
-  ) as Promise<ETFVault>;
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
+  ) as Promise<Vault>;
 
 export const deployVaultMock = (
   deployerSign: Signer, 
@@ -108,7 +108,7 @@ export const deployVaultMock = (
   ETFname: string,
   ETFnumber: number,
   daoAddress: string, 
-  ETFGame: string,
+  Game: string,
   controller: string, 
   vaultCurrency: string,
   uScale: number, 
@@ -116,7 +116,7 @@ export const deployVaultMock = (
   ) => deployContract(
     deployerSign, 
     VaultArtifactMock, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, ETFGame, controller, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<VaultMock>;
 
 export const deployController = (
@@ -142,14 +142,14 @@ export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardi
     return (deployContract(deployerSign, IGovernedArtifact, [daoAddress, guardianAddress])) as Promise<IGoverned>;
 };
 
-export const deployXaverToken = (deployerSign: Signer, name: string, symbol: string, totalXaverSupply: BigNumber): Promise<XaverToken> => {
-    return (deployContract(deployerSign, XaverTokenArtifact, [name, symbol, totalXaverSupply])) as Promise<XaverToken>;
+export const deployDerbyToken = (deployerSign: Signer, name: string, symbol: string, totalDerbySupply: BigNumber): Promise<DerbyToken> => {
+    return (deployContract(deployerSign, DerbyTokenArtifact, [name, symbol, totalDerbySupply])) as Promise<DerbyToken>;
 };
 
-export const deployGame = (deployerSign: Signer, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<Game> => {
-    return (deployContract(deployerSign, GameArtifact, [XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<Game>;
+export const deployGame = (deployerSign: Signer, DerbyTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<Game> => {
+    return (deployContract(deployerSign, GameArtifact, [DerbyTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<Game>;
 };
 
-export const deployGameMock = (deployerSign: Signer, name: string, symbol: string, XaverTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<ETFGameMock> => {
-  return (deployContract(deployerSign, GameMockArtifact, [name, symbol, XaverTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<GameMock>;
+export const deployGameMock = (deployerSign: Signer, name: string, symbol: string, DerbyTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<GameMock> => {
+  return (deployContract(deployerSign, GameMockArtifact, [name, symbol, DerbyTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<GameMock>;
 };

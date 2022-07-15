@@ -4,21 +4,21 @@ import { parseEther } from "../helpers/helpers";
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { ethers, network } from "hardhat";
-import { TokenTimelock, XaverToken } from "typechain-types";
-import { deployTokenTimeLock, deployXaverToken } from '../helpers/deploy';
+import { TokenTimelock, DerbyToken } from "typechain-types";
+import { deployTokenTimeLock, deployDerbyToken } from '../helpers/deploy';
 
 const name = 'Derby Finance';
 const symbol = 'DRB';
 const totalSupply = 1_000_000;
 
 describe("Testing TokenTimeLock", async () => {
-  let admin: Signer, vc: Signer, vcAddr: string, tokenTimelock: TokenTimelock, xaverToken: XaverToken;
+  let admin: Signer, vc: Signer, vcAddr: string, tokenTimelock: TokenTimelock, DerbyToken: DerbyToken;
  
   beforeEach(async function() {
     [admin, vc] = await ethers.getSigners();
     vcAddr = await vc.getAddress();
 
-    xaverToken = await deployXaverToken(
+    DerbyToken = await deployDerbyToken(
       admin, 
       name, 
       symbol, 
@@ -27,7 +27,7 @@ describe("Testing TokenTimeLock", async () => {
 
     tokenTimelock = await deployTokenTimeLock(
       admin, 
-      xaverToken.address,
+      DerbyToken.address,
     );
   }); 
 
@@ -37,7 +37,7 @@ describe("Testing TokenTimeLock", async () => {
     const monthDurationUnix = 10;
     const { timestamp } = await ethers.provider.getBlock("latest");
 
-    await xaverToken.increaseAllowance(tokenTimelock.address, amount)
+    await DerbyToken.increaseAllowance(tokenTimelock.address, amount)
     await tokenTimelock.init(
       vcAddr, 
       amount, 
@@ -67,7 +67,7 @@ describe("Testing TokenTimeLock", async () => {
     const { timestamp } = await ethers.provider.getBlock("latest");
 
     // setting timestamp + 50 = in the future
-    await xaverToken.increaseAllowance(tokenTimelock.address, amount)
+    await DerbyToken.increaseAllowance(tokenTimelock.address, amount)
     await tokenTimelock.init(
       vcAddr, 
       amount, 
@@ -94,7 +94,7 @@ describe("Testing TokenTimeLock", async () => {
     const monthDurationUnix = 10;
     const { timestamp } = await ethers.provider.getBlock("latest");
 
-    await xaverToken.increaseAllowance(tokenTimelock.address, amount)
+    await DerbyToken.increaseAllowance(tokenTimelock.address, amount)
     await tokenTimelock.init(
       vcAddr, 
       amount, 
@@ -103,7 +103,7 @@ describe("Testing TokenTimeLock", async () => {
       monthDurationUnix,
     );
 
-    const balance = await xaverToken.balanceOf(tokenTimelock.address);
+    const balance = await DerbyToken.balanceOf(tokenTimelock.address);
     const tokensPerMonthContract = await tokenTimelock.tokensPerMonth();
     let claimableTokens = await tokenTimelock.claimableTokens();
 
@@ -118,9 +118,9 @@ describe("Testing TokenTimeLock", async () => {
       expect(claimableTokens).to.be.equal(tokensPerMonth.mul(j));
     }
 
-    let balanceBefore = await xaverToken.balanceOf(vcAddr);
+    let balanceBefore = await DerbyToken.balanceOf(vcAddr);
     await tokenTimelock.connect(vc).release();
-    let balanceAfter = await xaverToken.balanceOf(vcAddr);
+    let balanceAfter = await DerbyToken.balanceOf(vcAddr);
 
     expect(balanceBefore).to.be.equal(0);
     expect(balanceAfter).to.be.equal(tokensPerMonth.mul(5));
@@ -133,7 +133,7 @@ describe("Testing TokenTimeLock", async () => {
     }
 
     await tokenTimelock.connect(vc).release();
-    balanceAfter = await xaverToken.balanceOf(vcAddr);
+    balanceAfter = await DerbyToken.balanceOf(vcAddr);
 
     expect(balanceAfter).to.be.equal(tokensPerMonth.mul(12));
 
@@ -145,7 +145,7 @@ describe("Testing TokenTimeLock", async () => {
     }
 
     await tokenTimelock.connect(vc).release();
-    balanceAfter = await xaverToken.balanceOf(vcAddr);
+    balanceAfter = await DerbyToken.balanceOf(vcAddr);
 
     expect(balanceAfter).to.be.equal(tokensPerMonth.mul(17));
 
@@ -157,11 +157,11 @@ describe("Testing TokenTimeLock", async () => {
     }
 
     await tokenTimelock.connect(vc).release();
-    balanceAfter = await xaverToken.balanceOf(vcAddr);
+    balanceAfter = await DerbyToken.balanceOf(vcAddr);
 
     expect(balanceAfter).to.be.equal(tokensPerMonth.mul(18)); // 18 is max
 
-    const balanceContract = await xaverToken.balanceOf(tokenTimelock.address);
+    const balanceContract = await DerbyToken.balanceOf(tokenTimelock.address);
     expect(balanceContract).to.be.equal(0);
   });
 });

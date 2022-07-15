@@ -72,7 +72,7 @@ contract Controller is IController {
   /// @notice Deposit the underlying asset in given protocol number
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNumber Protocol number linked to protocol vault (number)
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @return Deposit function for requested protocol
   function deposit(
@@ -93,7 +93,7 @@ contract Controller is IController {
   /// @notice Withdraw the underlying asset in given protocol number
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @return Withdraw function for requested protocol
   function withdraw(
@@ -232,7 +232,7 @@ contract Controller is IController {
   }
 
   /// @notice Add protocol and vault to Controller
-  /// @param _vault ETFVault address to whitelist
+  /// @param _vault Vault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;
   }

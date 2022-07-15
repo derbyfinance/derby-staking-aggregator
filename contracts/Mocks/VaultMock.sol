@@ -19,7 +19,7 @@ contract VaultMock is Vault { // is VaultToken
     string memory _ETFname,
     uint256 _ETFnumber,
     address _governed,
-    address _ETFGame, 
+    address _Game, 
     address _controller, 
     address _vaultCurrency,
     uint256 _uScale,
@@ -31,7 +31,7 @@ contract VaultMock is Vault { // is VaultToken
     _ETFname,
     _ETFnumber,
     _governed,
-    _ETFGame,
+    _Game,
     _controller,
     _vaultCurrency,
     _uScale,
@@ -58,7 +58,7 @@ contract VaultMock is Vault { // is VaultToken
     return performanceFee;
   }
 
-  function getETFGame() external view returns(address) {
+  function getGame() external view returns(address) {
     return game;
   }
 

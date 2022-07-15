@@ -7,14 +7,14 @@ import "hardhat/console.sol";
 contract GameMock is Game {
     constructor(string memory name_, 
         string memory symbol_, 
-        address _xaverTokenAddress, 
+        address _derbyTokenAddress, 
         address _routerAddress,
         address _governed,
         address _controller
     ) Game (
         name_, 
         symbol_,
-        _xaverTokenAddress,
+        _derbyTokenAddress,
         _routerAddress,
         _governed,
         _controller
@@ -32,12 +32,12 @@ contract GameMock is Game {
         addToTotalRewards(_basketId);
     } 
 
-    function setDeltaAllocations(address ETFVault, uint256 _protocolNum, int256 _allocation) external {
-        IVault(ETFVault).setDeltaAllocations(_protocolNum, _allocation);
+    function setDeltaAllocations(address _vault, uint256 _protocolNum, int256 _allocation) external {
+        IVault(_vault).setDeltaAllocations(_protocolNum, _allocation);
     }
 
-    function triggerRedeemedRewardsVault(address ETFVault, address user, uint256 amount) external {
-        IVault(ETFVault).redeemRewards(user, amount);
+    function triggerRedeemedRewardsVault(address _vault, address user, uint256 amount) external {
+        IVault(_vault).redeemRewards(user, amount);
     }
 
     function getDeltaAllocationChainTEST(

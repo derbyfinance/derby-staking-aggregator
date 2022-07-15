@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFVaultMock, XChainController, XProvider } from '../../typechain-types';
-import { deployController, deployETFVaultMock, deployXChainController, deployXProvider } from '../helpers/deploy';
+import type { Controller, VaultMock, XChainController, XProvider } from '../../typechain-types';
+import { deployController, deployVaultMock, deployXChainController, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
@@ -17,8 +17,8 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe.skip("Testing XChainController, unit test", async () => {
-  let vault1: ETFVaultMock, vault2: ETFVaultMock, vault3: ETFVaultMock, controller: Controller, xChainController: XChainController, xProvider: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+describe("Testing XChainController, unit test", async () => {
+  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainController, xProvider: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -35,9 +35,9 @@ describe.skip("Testing XChainController, unit test", async () => {
     xProvider = await deployXProvider(dao, xChainController.address);
 
     [vault1, vault2, vault3] = await Promise.all([
-      await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
     ]);
 
     await Promise.all([
@@ -54,9 +54,9 @@ describe.skip("Testing XChainController, unit test", async () => {
     ]);
 
     await Promise.all([
-      xChainController.setETFVaultChainAddress(ETFnumber, 1, vault1.address, usdc),
-      xChainController.setETFVaultChainAddress(ETFnumber, 2, vault2.address, usdc),
-      xChainController.setETFVaultChainAddress(ETFnumber, 3, vault3.address, usdc),
+      xChainController.setVaultChainAddress(ETFnumber, 1, vault1.address, usdc),
+      xChainController.setVaultChainAddress(ETFnumber, 2, vault2.address, usdc),
+      xChainController.setVaultChainAddress(ETFnumber, 3, vault3.address, usdc),
       xChainController.setProviderAddress(xProvider.address)
     ]);
   });
@@ -87,7 +87,7 @@ describe.skip("Testing XChainController, unit test", async () => {
       xChainController.setTotalDeltaAllocations(ETFnumber, 210),
     ]);
 
-    // Set allocation amount and state in ETFVaults with ETFnumber 0
+    // Set allocation amount and state in Vaults with ETFnumber 0
     await xChainController.rebalanceXChainAllocations(ETFnumber);
 
     // Checking if vault states upped by atleast 1 after rebalanceXChainAllocations

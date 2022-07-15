@@ -33,8 +33,8 @@ contract AaveProvider is IProvider{
   }
 
   /// @notice Deposit the underlying asset in Aave
-  /// @dev Pulls underlying asset from ETFVault, deposit them in Aave, send aTokens back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls underlying asset from Vault, deposit them in Aave, send aTokens back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _uToken Address of underlying Token eg USDC
   /// @param _aToken Address of protocol LP Token eg aUSDC
@@ -60,8 +60,8 @@ contract AaveProvider is IProvider{
   }
 
   /// @notice Withdraw the underlying asset from Aave
-  /// @dev Pulls cTokens from ETFVault, redeem them from Aave, send underlying back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls cTokens from Vault, redeem them from Aave, send underlying back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _uToken Address of underlying Token eg USDC
   /// @param _aToken Address of protocol LP Token eg aUSDC
@@ -86,7 +86,7 @@ contract AaveProvider is IProvider{
   }
 
   /// @notice Get balance from address in shares i.e LP tokens
-  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @param _address Address to request balance from, most likely an Vault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
   function balanceUnderlying(address _address, address _aToken) public view override returns (uint256) {
