@@ -58,6 +58,7 @@ describe.only("Testing Game", async () => {
     // With MOCK Providers
     await Promise.all([
       initController(controller, [gameMock.address, vault.address]),
+      gameMock.connect(dao).setChainIdArray([10, 100, 1000]),
       controller.connect(dao).addGame(gameMock.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),

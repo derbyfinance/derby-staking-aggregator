@@ -77,7 +77,7 @@ contract Game is ERC721, ReentrancyGuard {
     // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
     mapping(uint256 => Basket) private baskets;
     
-    uint256[] public chainIds = [10, 100, 1000];
+    uint256[] public chainIds;
 
     mapping(uint256 => uint256) public latestProtocolId;
 
