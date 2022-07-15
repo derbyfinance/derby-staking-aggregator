@@ -284,13 +284,13 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
     ) external onlyBasketOwner(_basketId) nonReentrant {    
+      // addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
 
       int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
       lockOrUnlockTokens(_basketId, totalDelta);
       setBasketTotalAllocatedTokens(_basketId, totalDelta);
       setBasketRebalancingPeriod(_basketId, vaultNumber);
-      // addToTotalRewards(_basketId);
     }
 
     /// @notice Internal helper to calculate and settle the delta allocations from baskets
