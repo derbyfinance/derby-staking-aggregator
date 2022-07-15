@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "./Interfaces/IETFVault.sol";
-import "./Interfaces/IETFGame.sol";
+import "./Interfaces/IVault.sol";
+import "./Interfaces/IGame.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
 
@@ -16,7 +16,7 @@ import "./libraries/swap.sol";
 import "hardhat/console.sol";
 
 
-contract ETFVault is VaultToken, ReentrancyGuard {
+contract Vault is VaultToken, ReentrancyGuard {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   string public ETFname;
@@ -52,13 +52,13 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
 
-  // total number of allocated xaver tokens currently
+  // total number of allocated Derby tokens currently
   int256 public totalAllocatedTokens;
 
   // current allocations over the protocols 
   mapping(uint256 => int256) internal currentAllocations;
 
-  // delta of the total number of xaver tokens allocated on next rebalancing
+  // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
   // delta of the portfolio on next rebalancing
@@ -74,12 +74,12 @@ contract ETFVault is VaultToken, ReentrancyGuard {
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
   modifier onlyGame {
-    require(msg.sender == game, "ETFvault: only Game");
+    require(msg.sender == game, "Vault: only Game");
     _;
   }
 
   modifier onlyDao {
-    require(msg.sender == governed, "ETFvault: only DAO");
+    require(msg.sender == governed, "Vault: only DAO");
     _;
   }
 
@@ -118,8 +118,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     lastTimeStamp = block.timestamp;
   }
 
-  /// @notice Deposit in ETFVault
-  /// @dev Deposit VaultCurrency to ETFVault and mint LP tokens
+  /// @notice Deposit in Vault
+  /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
   function depositETF(uint256 _amount) external nonReentrant returns(uint256 shares) {
@@ -139,8 +139,8 @@ contract ETFVault is VaultToken, ReentrancyGuard {
     _mint(msg.sender, shares); 
   }
 
-  /// @notice Withdraw from ETFVault
-  /// @dev Withdraw VaultCurrency from ETFVault and burn LP tokens
+  /// @notice Withdraw from Vault
+  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
   /// @return value Amount received by seller in vaultCurrency
   function withdrawETF(uint256 _amount) external nonReentrant returns(uint256 value) {

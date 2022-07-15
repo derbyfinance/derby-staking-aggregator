@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '../../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../../typechain-types';
-import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import type { Controller, VaultMock } from '../../../typechain-types';
+import { deployController, deployVaultMock } from '../../helpers/deploy';
 import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
 import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
 import allProviders  from "../../helpers/allProvidersClass";
@@ -18,8 +18,8 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing ETFVault, unit test", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
+describe("Testing Vault, unit test", async () => {
+  let vault: VaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -36,7 +36,7 @@ describe("Testing ETFVault, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [gameAddr, vault.address]),
@@ -178,8 +178,8 @@ describe("Testing ETFVault, unit test", async () => {
   });
 });
 
-describe("Testing ETFVault, unit test, mock providers", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
+describe("Testing Vault, unit test, mock providers", async () => {
+  let vault: VaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -196,7 +196,7 @@ describe("Testing ETFVault, unit test, mock providers", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     // With MOCK Providers
     await Promise.all([

@@ -3,7 +3,7 @@ pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract XaverToken  is ERC20 {
+contract DerbyToken  is ERC20 {
     constructor(
       string memory _name,
       string memory _symbol,

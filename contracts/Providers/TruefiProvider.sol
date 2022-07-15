@@ -25,8 +25,8 @@ contract TruefiProvider is IProvider {
   }
 
   /// @notice Deposit the underlying asset in TrueFi
-  /// @dev Pulls underlying asset from ETFVault, deposit them in TrueFi, send tTokens back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls underlying asset from Vault, deposit them in TrueFi, send tTokens back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -57,8 +57,8 @@ contract TruefiProvider is IProvider {
   }
 
   /// @notice Withdraw the underlying asset from TrueFi
-  /// @dev Pulls tTokens from ETFVault, redeem them from TrueFi, send underlying back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls tTokens from Vault, redeem them from TrueFi, send underlying back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -89,7 +89,7 @@ contract TruefiProvider is IProvider {
 
   /// @notice Get balance from address in underlying token
   /// @dev balance = poolvalue * shares / totalsupply
-  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @param _address Address to request balance from, most likely an Vault
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _tToken) public view override returns(uint256) {

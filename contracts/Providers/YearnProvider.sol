@@ -24,8 +24,8 @@ contract YearnProvider is IProvider{
   }
 
   /// @notice Deposit the underlying asset in Yearn
-  /// @dev Pulls underlying asset from ETFVault, deposit them in Yearn, send yTokens back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls underlying asset from Vault, deposit them in Yearn, send yTokens back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -51,8 +51,8 @@ contract YearnProvider is IProvider{
   }
 
   /// @notice Withdraw the underlying asset from Yearn
-  /// @dev Pulls cTokens from ETFVault, redeem them from Yearn, send underlying back.
-  /// @param _vault Address from ETFVault contract i.e buyer
+  /// @dev Pulls cTokens from Vault, redeem them from Yearn, send underlying back.
+  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @param _uToken Address of underlying Token eg USDC
@@ -77,7 +77,7 @@ contract YearnProvider is IProvider{
   }
 
   /// @notice Get balance from address in shares i.e LP tokens
-  /// @param _address Address to request balance from, most likely an ETFVault
+  /// @param _address Address to request balance from, most likely an Vault
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(address _address, address _yToken) public view override returns (uint256) {

@@ -4,8 +4,8 @@
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, ETFVaultMock } from '../../../typechain-types';
-import { deployController, deployETFVaultMock } from '../../helpers/deploy';
+import type { Controller, VaultMock } from '../../../typechain-types';
+import { deployController, deployVaultMock } from '../../helpers/deploy';
 import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
 import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
 import allProviders  from "../../helpers/allProvidersClass";
@@ -19,8 +19,8 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing ETFVaultSwap, unit test", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
+describe("Testing VaultSwap, unit test", async () => {
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
 
   const protocols = new Map<string, ProtocolVault>()
   .set('compound_usdc_01', compound_usdc_01)
@@ -49,7 +49,7 @@ describe("Testing ETFVaultSwap, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),

@@ -4,14 +4,14 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, ETFGameMock, ETFVaultMock, XaverToken } from '../../typechain-types';
-import { deployController, deployETFVaultMock } from '../helpers/deploy';
+import type { Controller, GameMock, VaultMock, DerbyToken } from '../../typechain-types';
+import { deployController, deployVaultMock } from '../helpers/deploy';
 import { usdc, compound_usdc_01, aave_usdc_01, yearn_usdc_01, compound_dai_01, aave_usdt_01 } from "../helpers/addresses";
 import { initController, rebalanceETF } from "../helpers/vaultHelpers";
 import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
-import { deployETFGameMock, deployXaverToken } from "../helpers/deploy";
+import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 
@@ -19,11 +19,11 @@ const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
-const totalXaverSupply = parseEther(1E8.toString()); 
+const totalDerbySupply = parseEther(1E8.toString()); 
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing ETFgameMock", async () => {
-  let vault: ETFVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, xaverToken: XaverToken,  gameMock: ETFGameMock;
+describe("Testing GameMock", async () => {
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  gameMock: GameMock;
 
   const protocols = new Map<string, ProtocolVault>()
   .set('compound_usdc_01', compound_usdc_01)
@@ -72,7 +72,7 @@ describe("Testing ETFgameMock", async () => {
 
     // set some initial allocations in the basket
     let allocations = [10, 0, 10, 0, 10];
-    await xaverToken.increaseAllowance(gameMock.address, 30);
+    await DerbyToken.increaseAllowance(gameMock.address, 30);
     await gameMock.rebalanceBasket(0, allocations);
 
     // do 3 loops to simulate time passing (and bump up rebalancingperiod).
@@ -101,7 +101,7 @@ describe("Testing ETFgameMock", async () => {
     
     // set new allocations in basket
     let newAllocations = [20, 0, 20, 0, 20]; // not actually stored in vault because we didn't rebalance the vault here
-    await xaverToken.increaseAllowance(gameMock.address, 50);
+    await DerbyToken.increaseAllowance(gameMock.address, 50);
     await gameMock.rebalanceBasket(0, newAllocations);
 
     // yield per time step: 0.1
@@ -127,9 +127,9 @@ describe("Testing ETFgameMock", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    xaverToken = await deployXaverToken(user, name, symbol, totalXaverSupply);
-    gameMock = await deployETFGameMock(user, nftName, nftSymbol, xaverToken.address, controller.address, daoAddr, controller.address);
-    vault = await deployETFVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
+    gameMock = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
 
     // With MOCK Providers
     await Promise.all([
@@ -145,27 +145,27 @@ describe("Testing ETFgameMock", async () => {
     }
   });
 
-  it("XaverToken should have name, symbol and totalSupply set", async function() {
-    expect(await xaverToken.name()).to.be.equal(name);
-    expect(await xaverToken.symbol()).to.be.equal(symbol);
-    expect(await xaverToken.totalSupply()).to.be.equal(totalXaverSupply); 
+  it("DerbyToken should have name, symbol and totalSupply set", async function() {
+    expect(await DerbyToken.name()).to.be.equal(name);
+    expect(await DerbyToken.symbol()).to.be.equal(symbol);
+    expect(await DerbyToken.totalSupply()).to.be.equal(totalDerbySupply); 
   });
 
-  it("ETFgameMock should have xaverToken contract addresses set", async function() {
-    expect(await gameMock.xaverTokenAddress()).to.be.equal(xaverToken.address);
+  it("GameMock should have DerbyToken contract addresses set", async function() {
+    expect(await gameMock.DerbyTokenAddress()).to.be.equal(DerbyToken.address);
   });
   
   it("Can add a vault", async function() {
-    await expect(gameMock.connect(user).addETF(vault.address)).to.be.revertedWith("ETFGame: only DAO");
+    await expect(gameMock.connect(user).addETF(vault.address)).to.be.revertedWith("Game: only DAO");
     let latestETFNumber = await gameMock.latestETFNumber();
     expect(latestETFNumber).to.be.equal(0);
     await gameMock.connect(dao).addETF(vault.address);
     latestETFNumber = await gameMock.latestETFNumber();
     expect(latestETFNumber).to.be.equal(1);
-    expect(await gameMock.ETFVaults(0)).to.be.equal(vault.address);
+    expect(await gameMock.Vaults(0)).to.be.equal(vault.address);
   });
 
-  it("Can mint a basket NFT and lock xaver tokens in it, can also unlock the xaver tokens", async function() {
+  it("Can mint a basket NFT and lock Derby tokens in it, can also unlock the Derby tokens", async function() {
     // minting
     await gameMock.connect(dao).addETF(vault.address);
     await gameMock.mintNewBasket(0);
@@ -175,24 +175,24 @@ describe("Testing ETFgameMock", async () => {
 
     // locking
     const amountToLock = 1000;
-    const balanceBefore = await xaverToken.balanceOf(userAddr);
-    await xaverToken.approve(gameMock.address, amountToLock);
-    await expect(gameMock.connect(dao).lockTokensToBasketTEST(0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    const balanceBefore = await DerbyToken.balanceOf(userAddr);
+    await DerbyToken.approve(gameMock.address, amountToLock);
+    await expect(gameMock.connect(dao).lockTokensToBasketTEST(0, amountToLock)).to.be.revertedWith("Game Not the owner of the basket");
     await gameMock.lockTokensToBasketTEST(0, amountToLock);
-    const balanceDiff = balanceBefore.sub(await xaverToken.balanceOf(userAddr));
-    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    const balanceDiff = balanceBefore.sub(await DerbyToken.balanceOf(userAddr));
+    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Game Not the owner of the basket");
     let unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(amountToLock);
     expect(balanceDiff).to.be.equal(amountToLock.toString());
 
     // unlocking
-    await expect(gameMock.connect(dao).unlockTokensFromBasketTEST(0, amountToLock)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    await expect(gameMock.connect(dao).unlockTokensFromBasketTEST(0, amountToLock)).to.be.revertedWith("Game Not the owner of the basket");
     await expect(gameMock.unlockTokensFromBasketTEST(0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
     await gameMock.unlockTokensFromBasketTEST(0, amountToLock);
-    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("ETFGame Not the owner of the basket");
+    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Game Not the owner of the basket");
     unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
     expect(unAllocatedTokens).to.be.equal(0);
-    expect(await xaverToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
+    expect(await DerbyToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
   });
 
   it("Owner of basket NFT can read out allocations", async function() {
@@ -202,7 +202,7 @@ describe("Testing ETFgameMock", async () => {
 
     let allocations = [20, 30, 40, 50, 60];
     let totalAllocations = 200;
-    await xaverToken.increaseAllowance(gameMock.address, totalAllocations);
+    await DerbyToken.increaseAllowance(gameMock.address, totalAllocations);
     await gameMock.rebalanceBasket(0, allocations);
 
     expect(totalAllocations).to.be.equal(await gameMock.basketTotalAllocatedTokens(0));

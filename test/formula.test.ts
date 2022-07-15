@@ -4,16 +4,16 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { ETFVaultMock } from '../typechain-types';
+import type { VaultMock } from '../typechain-types';
 import { vaultInfo } from "./helpers/vaultHelpers";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-// skipping ETFVault test for now
+// skipping Vault test for now
 describe.skip("Deploy Contracts and interact with Vault", async () => {
-  let vaultMock: ETFVaultMock,
+  let vaultMock: VaultMock,
   user: Signer,
   dao: Signer,
   userAddr: string,
@@ -30,7 +30,7 @@ describe.skip("Deploy Contracts and interact with Vault", async () => {
   //     IUSDc,,,,,
   //     router,,,,,,,
   //     dao
-  //   ] = await beforeEachETFVault(amountUSDC)
+  //   ] = await beforeEachVault(amountUSDC)
   // });
 
   // it("Calulates the n root correctly", async function() {
