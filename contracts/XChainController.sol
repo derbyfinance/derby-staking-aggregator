@@ -33,16 +33,15 @@ contract XChainController {
   struct vaultStages {
     uint256 activeVaults;
 
-    uint256 ready;
-    uint256 allocationsReceived;
+    bool ready;
+    bool allocationsReceived;
     uint256 underlyingReceived;
     uint256 fundsReceived;
-
   }
 
   mapping(uint256 => vaultInfo) internal vaults;
+  mapping(uint256 => vaultStages) internal vaultStage;
 
-  
 
   modifier onlyGame {
     require(msg.sender == game, "XChainController: only Game");
@@ -54,11 +53,59 @@ contract XChainController {
     _;
   }
 
+  modifier onlyWhenReady(uint256 _vaultNumber) {
+    require(
+      vaultStage[_vaultNumber].ready, 
+      "Not all vaults are ready"
+    );
+    _;
+  }
+
+  modifier onlyWhenAllocationsReceived(uint256 _vaultNumber) {
+    require(
+      vaultStage[_vaultNumber].allocationsReceived, 
+      "Allocations not received from game"
+    );
+    _;
+  }
+
+  modifier onlyWhenUnderlyingsReceived(uint256 _vaultNumber) {
+    require(
+      vaultStage[_vaultNumber].underlyingReceived == vaultStage[_vaultNumber].activeVaults, 
+      "Not all underlyings received"
+    );
+    _;
+  }
+
+  modifier onlyWhenFundsReceived(uint256 _vaultNumber) {
+    require(
+      vaultStage[_vaultNumber].fundsReceived == vaultStage[_vaultNumber].activeVaults, 
+      "Not all funds received"
+    );
+    _;
+  }
+
   constructor(address _game, address _dao) {
     // feedback vault state back to controller
     // transfers via provider
     game = _game;
     dao = _dao;
+  }
+
+  function setReady(uint256 _vaultNumber, bool _state) internal {
+    vaultStage[_vaultNumber].ready = _state;
+  }
+
+  function setAllocationsReceived(uint256 _vaultNumber, bool _state) internal {
+    vaultStage[_vaultNumber].allocationsReceived = _state;
+  }
+
+  function upUnderlyingReceived(uint256 _vaultNumber) internal {
+    vaultStage[_vaultNumber].underlyingReceived++;
+  }
+
+  function upFundsReceived(uint256 _vaultNumber) internal {
+    vaultStage[_vaultNumber].fundsReceived++;
   }
 
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given vaultNumber

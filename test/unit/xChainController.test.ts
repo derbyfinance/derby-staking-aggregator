@@ -61,7 +61,7 @@ describe("Testing XChainController, unit test", async () => {
     ]);
   });
 
-  it("(1) Should setTotalChainUnderlying from xController", async function() {
+  it("(1.5) Should setTotalChainUnderlying from xController", async function() {
     await xChainController.setTotalChainUnderlying(ETFnumber);
 
     const underlying = await xChainController.getTotalUnderlyingETF(ETFnumber);
