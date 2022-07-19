@@ -20,6 +20,7 @@ import type {
   TokenTimelock,
   XChainController,
   XProvider,
+  XChainControllerMock,
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -39,6 +40,7 @@ import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
 import GameMockArtifact from '../../artifacts/contracts/Mocks/GameMock.sol/GameMock.json';
 import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
+import XChainControllerMockArtifact from '../../artifacts/contracts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
@@ -132,6 +134,10 @@ export const deployController = (
 
 export const deployXChainController = (deployerSign: Signer, game: string, dao: string): Promise<XChainController> => {
   return (deployContract(deployerSign, XChainControllerArtifact, [game, dao])) as Promise<XChainController>;
+};
+
+export const deployXChainControllerMock = (deployerSign: Signer, game: string, dao: string): Promise<XChainControllerMock> => {
+  return (deployContract(deployerSign, XChainControllerMockArtifact, [game, dao])) as Promise<XChainControllerMock>;
 };
 
 export const deployXProvider = (deployerSign: Signer, xController: string): Promise<XProvider> => {

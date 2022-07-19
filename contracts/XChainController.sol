@@ -92,6 +92,10 @@ contract XChainController {
     dao = _dao;
   }
 
+  function setActiveVaults(uint256 _vaultNumber, uint256 _activeVaults) internal {
+    vaultStage[_vaultNumber].activeVaults = _activeVaults;
+  }
+
   function setReady(uint256 _vaultNumber, bool _state) internal {
     vaultStage[_vaultNumber].ready = _state;
   }
@@ -106,6 +110,13 @@ contract XChainController {
 
   function upFundsReceived(uint256 _vaultNumber) internal {
     vaultStage[_vaultNumber].fundsReceived++;
+  }
+
+  function resetVaultStages(uint256 _vaultNumber) internal {
+    vaultStage[_vaultNumber].ready = true;
+    vaultStage[_vaultNumber].allocationsReceived = false;
+    vaultStage[_vaultNumber].underlyingReceived = 0;
+    vaultStage[_vaultNumber].fundsReceived = 0;
   }
 
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given vaultNumber
