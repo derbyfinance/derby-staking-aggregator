@@ -30,6 +30,10 @@ contract XChainController {
     mapping(uint256 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
   }
 
+  // state 0 Ready; waiting for game to send allocations
+  // state 1 allocationsReceived; allocations received from game, ready to rebalance XChain
+  // state 2 
+  // state 3 
   struct vaultStages {
     uint256 activeVaults;
 
@@ -100,15 +104,15 @@ contract XChainController {
     vaultStage[_vaultNumber].ready = _state;
   }
 
-  function setAllocationsReceived(uint256 _vaultNumber, bool _state) internal {
+  function setAllocationsReceived(uint256 _vaultNumber, bool _state) internal onlyWhenReady(_vaultNumber) {
     vaultStage[_vaultNumber].allocationsReceived = _state;
   }
 
-  function upUnderlyingReceived(uint256 _vaultNumber) internal {
+  function upUnderlyingReceived(uint256 _vaultNumber) internal onlyWhenAllocationsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  function upFundsReceived(uint256 _vaultNumber) internal {
+  function upFundsReceived(uint256 _vaultNumber) internal onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 

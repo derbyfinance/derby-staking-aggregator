@@ -61,11 +61,29 @@ describe("Testing XChainController, unit test", async () => {
     ]);
   });
 
-  it("(1.5) ", async function() {
-    await xChainController.resetVaultStagesTEST(vaultNumber);
+  it("(1.5 Store vault stages) ", async function() {
+    await xChainController.setActiveVaultsTEST(vaultNumber, 1);
 
-    const test = await xChainController.getVaultState(vaultNumber);
-    console.log({  test })
+    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(false);
+
+    await xChainController.setReadyTEST(vaultNumber, true);
+    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(true);
+
+    await xChainController.setAllocationsReceivedTEST(vaultNumber, true);
+    expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
+
+    await xChainController.upUnderlyingReceivedTEST(vaultNumber);
+    expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(1);
+
+    await xChainController.upFundsReceivedTEST(vaultNumber);
+    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(1);
+
+    await xChainController.resetVaultStagesTEST(vaultNumber);
+    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(true);
+    expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(false);
+    expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(0);
+    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
+
   });
 
   // 

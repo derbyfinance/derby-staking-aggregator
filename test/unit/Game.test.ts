@@ -15,14 +15,13 @@ import { vaultInfo } from "../helpers/vaultHelpers";
 import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
-const ETFNumber = 0;
 const chainIds = [10, 100, 1000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString()); 
-const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing Game", async () => {
   let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  gameMock: GameMock;
@@ -53,7 +52,7 @@ describe.only("Testing Game", async () => {
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     gameMock = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
 
     // With MOCK Providers
     await Promise.all([
@@ -72,7 +71,7 @@ describe.only("Testing Game", async () => {
     ])
 
     for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, ETFnumber, AllMockProviders);
+      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
     }
   });
 
@@ -96,7 +95,7 @@ describe.only("Testing Game", async () => {
   });
 
   it("Should Lock tokens, mint basket and set correct deltas", async function() {
-    await gameMock.mintNewBasket(ETFNumber); 
+    await gameMock.mintNewBasket(vaultNumber); 
 
     const allocationArray = [ 
       [100, 0, 0, 200, 0], // 300
@@ -113,15 +112,15 @@ describe.only("Testing Game", async () => {
 
     expect(tokenBalanceBefore.sub(tokenBalanceAfter)).to.be.equal(1900);
 
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[0])).to.be.equal(300);
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[1])).to.be.equal(600);
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[2])).to.be.equal(1000);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(300);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(600);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(1000);
     expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(totalAllocations);
 
     // looping through all of allocationArray
     allocationArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await gameMock.basketAllocationInProtocol(ETFNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+        expect(await gameMock.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
       }
     });
   });
@@ -146,15 +145,15 @@ describe.only("Testing Game", async () => {
     // received 1000 tokens
     expect(tokenBalanceAfter.sub(tokenBalanceBefore)).to.be.equal(1000);
 
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[0])).to.be.equal(200);
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[1])).to.be.equal(200);
-    expect(await gameMock.getDeltaAllocationChainTEST(ETFNumber, chainIds[2])).to.be.equal(500);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(200);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(200);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(500);
     expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(1900 - 1000);
 
     // looping through all of allocationArray
     allocationTestArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await gameMock.basketAllocationInProtocol(ETFNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+        expect(await gameMock.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
       }
     });
   });
