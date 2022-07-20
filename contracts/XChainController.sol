@@ -30,17 +30,17 @@ contract XChainController {
     mapping(uint256 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
   }
 
-  // state 0 Ready; waiting for game to send allocations
-  // state 1 allocationsReceived; allocations received from game, ready to rebalance XChain
-  // state 2 
-  // state 3 
+  // activeVaults; number of active vaults for vaultNumber, set in XChainRebalance
+  // stage 0 Ready; waiting for game to send allocations
+  // stage 1 AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
+  // stage 2 UnderlyingReceived; underlyings received from all active vault contracts
+  // stage 3 FundsReceived; funds received from all active vault contracts
   struct vaultStages {
     uint256 activeVaults;
-
-    bool ready;
-    bool allocationsReceived;
-    uint256 underlyingReceived;
-    uint256 fundsReceived;
+    bool ready; // stage 0
+    bool allocationsReceived; // stage 1
+    uint256 underlyingReceived; // stage 2
+    uint256 fundsReceived; // stage 3
   }
 
   mapping(uint256 => vaultInfo) internal vaults;
@@ -57,6 +57,7 @@ contract XChainController {
     _;
   }
 
+  // vaultStage 0
   modifier onlyWhenReady(uint256 _vaultNumber) {
     require(
       vaultStage[_vaultNumber].ready, 
@@ -65,6 +66,7 @@ contract XChainController {
     _;
   }
 
+  // vaultStage 1
   modifier onlyWhenAllocationsReceived(uint256 _vaultNumber) {
     require(
       vaultStage[_vaultNumber].allocationsReceived, 
@@ -73,6 +75,7 @@ contract XChainController {
     _;
   }
 
+  // vaultStage 2
   modifier onlyWhenUnderlyingsReceived(uint256 _vaultNumber) {
     require(
       vaultStage[_vaultNumber].underlyingReceived == vaultStage[_vaultNumber].activeVaults, 
@@ -81,6 +84,7 @@ contract XChainController {
     _;
   }
 
+  // vaultStage 3
   modifier onlyWhenFundsReceived(uint256 _vaultNumber) {
     require(
       vaultStage[_vaultNumber].fundsReceived == vaultStage[_vaultNumber].activeVaults, 
@@ -96,27 +100,40 @@ contract XChainController {
     dao = _dao;
   }
 
+  /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
+  /// @param _vaultNumber Number of the vault
+  /// @param _activeVaults Number active vaults, calculated in xChainRebalance
   function setActiveVaults(uint256 _vaultNumber, uint256 _activeVaults) internal {
     vaultStage[_vaultNumber].activeVaults = _activeVaults;
   }
 
+  /// @notice Setter for stage 0: 
+  /// @notice Ready; waiting for game to send allocations
   function setReady(uint256 _vaultNumber, bool _state) internal {
     vaultStage[_vaultNumber].ready = _state;
   }
 
+  /// @notice Setter for stage 1: 
+  /// @notice AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
   function setAllocationsReceived(uint256 _vaultNumber, bool _state) internal onlyWhenReady(_vaultNumber) {
     vaultStage[_vaultNumber].allocationsReceived = _state;
   }
 
+  /// @notice Setter to tick up stage 2: 
+  /// @notice UnderlyingReceived; underlyings received from all active vault contracts
   function upUnderlyingReceived(uint256 _vaultNumber) internal onlyWhenAllocationsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
+  /// @notice Setter to tick up stage 3: 
+  /// @notice FundsReceived; funds received from all active vault contracts
   function upFundsReceived(uint256 _vaultNumber) internal onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 
-  function resetVaultStages(uint256 _vaultNumber) internal {
+  /// @notice Resets all stages in vaultStage struct for a vaultNumber
+  /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
+  function resetVaultStages(uint256 _vaultNumber) public onlyDao {
     vaultStage[_vaultNumber].ready = true;
     vaultStage[_vaultNumber].allocationsReceived = false;
     vaultStage[_vaultNumber].underlyingReceived = 0;
