@@ -164,6 +164,13 @@ describe.only("Testing Game", async () => {
   it("Should push delta allocations from game to xChainController", async function() {
     // chainIds = [10, 100, 1000];
     await game.connect(dao).pushAllocationsToGame(vaultNumber);
+
+    // checking of allocations are correctly set in xChainController
+    expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(200);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(200);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(500);
+
   });
 
   // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
