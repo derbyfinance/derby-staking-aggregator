@@ -46,7 +46,6 @@ contract XChainController {
   mapping(uint256 => vaultInfo) internal vaults;
   mapping(uint256 => vaultStages) internal vaultStage;
 
-
   modifier onlyGame {
     require(msg.sender == game, "XChainController: only Game");
     _;
