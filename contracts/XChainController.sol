@@ -141,19 +141,22 @@ contract XChainController {
     vaultStage[_vaultNumber].fundsReceived = 0;
   }
 
+  /// @notice Used by game to send allocations to xChainController
+  /// @param _vaultNumber number of Vault
+  /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGame(uint256 _vaultNumber, int256[] memory _deltas) external {
     for (uint256 i = 0; i < chainIds.length; i++) {
       settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
     }
   }
 
-  /// @notice Helper to settle the total current allocation with the total delta allocation
+  /// @notice Helper to settle the total current allocation with the delta allocations received from Game
   /// @param _vaultNumber number of Vault
-  /// @param _chainId hi
-  /// @param _deltaAllocation ji
-  function settleCurrentAllocation(uint256 _vaultNumber, uint256 _chainId, int256 _deltaAllocation) internal {
-    vaults[_vaultNumber].totalCurrentAllocation += _deltaAllocation;
-    vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltaAllocation;
+  /// @param _chainId number of chainId
+  /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
+  function settleCurrentAllocation(uint256 _vaultNumber, uint256 _chainId, int256 _deltas) internal {
+    vaults[_vaultNumber].totalCurrentAllocation += _deltas;
+    vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
   }
 
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given vaultNumber

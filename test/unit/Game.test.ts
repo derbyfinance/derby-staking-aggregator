@@ -107,7 +107,7 @@ describe.only("Testing Game", async () => {
     ];
     const totalAllocations = 1900;
     await DerbyToken.increaseAllowance(game.address, totalAllocations);
-    await expect(game.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith('ETFGame Not the owner of the basket');
+    await expect(game.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith('Game: Not the owner of the basket');
 
     const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
     await game.rebalanceBasket(0, allocationArray);
@@ -161,6 +161,7 @@ describe.only("Testing Game", async () => {
     });
   });
 
+  // Allocations in protocols are not resetted at this point
   it("Should push delta allocations from game to xChainController", async function() {
     // chainIds = [10, 100, 1000];
     await game.connect(dao).pushAllocationsToGame(vaultNumber);
@@ -171,6 +172,13 @@ describe.only("Testing Game", async () => {
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(200);
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(500);
 
+    // delta allocations for chain in game should be resetted
+    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(0);
+    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(0);
+    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(0);
+
+    // should not be able to rebalance when game is xChainRebalancing
+    await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game is xChainRebalancing');
   });
 
   // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {

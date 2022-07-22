@@ -45,6 +45,8 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     }
 
+    bool public isXChainRebalancing;
+
     address public derbyTokenAddress;
     address public routerAddress;
     address public governed;
@@ -78,12 +80,17 @@ contract Game is ERC721, ReentrancyGuard {
     mapping(uint256 => vaultInfo) internal vaults;
 
     modifier onlyDao {
-      require(msg.sender == governed, "ETFGame: only DAO");
+      require(msg.sender == governed, "Game: only DAO");
       _;
     }
 
     modifier onlyBasketOwner(uint256 _basketId) {
-      require(msg.sender == ownerOf(_basketId), "ETFGame Not the owner of the basket");
+      require(msg.sender == ownerOf(_basketId), "Game: Not the owner of the basket");
+      _;
+    }
+
+    modifier onlyWhenNotRebalancing() {
+      require(!isXChainRebalancing, "Game is xChainRebalancing");
       _;
     }
 
@@ -275,7 +282,7 @@ contract Game is ERC721, ReentrancyGuard {
     function rebalanceBasket(
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
-    ) external onlyBasketOwner(_basketId) nonReentrant {    
+    ) external onlyBasketOwner(_basketId) nonReentrant onlyWhenNotRebalancing {    
       // addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
 
@@ -339,6 +346,8 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     function pushAllocationsToGame(uint256 _vaultNumber) external onlyDao {
+      isXChainRebalancing = true;
+
       int256[] memory deltas = allocationsToArray(_vaultNumber);
       IXProvider(xProvider).pushAllocationsToController(_vaultNumber, deltas);
     }
@@ -350,8 +359,6 @@ contract Game is ERC721, ReentrancyGuard {
         uint256 chain = chainIds[i];
         deltas[i] = getDeltaAllocationChain(_vaultNumber, chain);
         vaults[_vaultNumber].deltaAllocationChain[chain] = 0;
-
-        console.log("chain ID: %s delta: %s", chain, uint(deltas[i]));
       }
     }
 

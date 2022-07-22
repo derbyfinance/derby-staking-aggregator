@@ -34,10 +34,14 @@ contract XProvider {
   }
 
   function pushAllocationsToController(uint256 _vaultNumber, int256[] memory _deltas) public {
-    bytes4 selector = bytes4(keccak256("receiveAllocationsFromGame(uint256,int256[])"));
+    bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
-    xCall(xController, 0, callData);
+    xCall(address(this), 0, callData);
+  }
+
+  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external {
+    return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
   function getTotalUnderlying(uint256 _vaultNumber, address _vault) public {
