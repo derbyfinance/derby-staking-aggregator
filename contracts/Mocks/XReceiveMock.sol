@@ -19,4 +19,8 @@ contract XReceiveMock {
     function xReceiveAndSetSomeValue(uint256 _value)  external onlyXProvider {
         value = _value;
     }
+
+    function getValue() public view returns(uint256) {
+        return value;
+    }
 }

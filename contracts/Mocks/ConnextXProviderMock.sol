@@ -33,20 +33,10 @@ contract ConnextXProviderMock is IXProviderMock {
   }
   
   constructor(
-    address _xSendMock, // for example, game
-    uint32 _xSendMockChainID, 
-    address _xReceiveMock, // for example xChainController
-    uint32 _xReceiveMockChainID, 
-    address _receiveProvider,
     address _executor,
     address _dao,
     address _connextHandler
   ){
-    xSendMock = _xSendMock;
-    xSendMockChainID = _xSendMockChainID;
-    xReceiveMock = _xReceiveMock;
-    xReceiveMockChainID = _xReceiveMockChainID;
-    receiveProvider = _receiveProvider;
     executor = _executor;
     dao = _dao;
     connext = IConnextHandler(_connextHandler);
@@ -60,6 +50,10 @@ contract ConnextXProviderMock is IXProviderMock {
   function setxReceiveMock(address _xReceiveMock, uint32 _xReceiveMockChainID) external onlyDao {
     xReceiveMock = _xReceiveMock;
     xReceiveMockChainID = _xReceiveMockChainID;
+  }
+
+  function setReceiveProvider(address _receiveProviderAddress) external onlyDao {
+    receiveProvider = _receiveProviderAddress;
   }
 
   function setDao(address _dao) external onlyDao {
@@ -96,7 +90,8 @@ contract ConnextXProviderMock is IXProviderMock {
     connext.xcall(xcallArgs);
   }
 
-  function xReceive(uint256 _value) external onlyExecutor {
+  // onlyExecutor
+  function xReceive(uint256 _value) external  {
     IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
   }
 }
