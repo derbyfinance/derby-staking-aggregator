@@ -2,7 +2,7 @@
 pragma solidity ^0.8.11;
 
 import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
-import "../Interfaces/ExternalInterfaces/IExecutor.sol";
+import "./interfaces/IExecutorMock.sol";
 import "../Interfaces/ExternalInterfaces/IConnextHandler.sol";
 
 contract ConnextHandlerMock is IConnextHandler {
@@ -23,9 +23,9 @@ contract ConnextHandlerMock is IConnextHandler {
     }
 
     function xcall(XCallArgs calldata _args) external payable returns (bytes32) {
-        IExecutor.ExecutorArgs memory exArgs;
+        IExecutorMock.ExecutorArgs memory exArgs;
         exArgs.to = _args.params.to;
         exArgs.callData = _args.params.callData;
-        IExecutor(executor).execute(exArgs);
+        IExecutorMock(executor).execute(exArgs);
     }
 }

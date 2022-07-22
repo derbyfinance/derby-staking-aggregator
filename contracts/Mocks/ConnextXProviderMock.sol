@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./IXProviderMock.sol";
-import "./IXReceiveMock.sol";
+import "./interfaces/IXProviderMock.sol";
+import "./interfaces/IXReceiveMock.sol";
 import "../Interfaces/ExternalInterfaces/IConnextHandler.sol";
-import "../Interfaces/ExternalInterfaces/IExecutor.sol";
+import "./interfaces/IExecutorMock.sol";
 import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
 
 import "hardhat/console.sol";
@@ -25,8 +25,8 @@ contract ConnextXProviderMock is IXProviderMock {
   }
 
   modifier onlyExecutor() { 
-    require(IExecutor(msg.sender).originSender() == xSendMock && 
-    IExecutor(msg.sender).origin() == xSendMockChainID && 
+    require(IExecutorMock(msg.sender).originSender() == xSendMock && 
+    IExecutorMock(msg.sender).origin() == xSendMockChainID && 
     msg.sender == executor, 
     "Expected origin contract on origin domain called by Executor"); 
     _;  

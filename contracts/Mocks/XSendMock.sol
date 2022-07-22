@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "./IXProviderMock.sol";
+import "./interfaces/IXProviderMock.sol";
 
 contract XSendMock {
     address public xprovider; // ConnextXProviderMock

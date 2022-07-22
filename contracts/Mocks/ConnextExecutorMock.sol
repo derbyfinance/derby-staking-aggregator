@@ -2,9 +2,9 @@
 pragma solidity ^0.8.11;
 
 import {LibCrossDomainProperty, TypedMemView} from "../libraries/LibCrossDomainProperty.sol";
-import "../Interfaces/ExternalInterfaces/IExecutor.sol";
+import "./interfaces/IExecutorMock.sol";
 
-contract ConnextExecutorMock is IExecutor {
+contract ConnextExecutorMock is IExecutorMock {
     address private immutable connext;
     bytes private properties = LibCrossDomainProperty.EMPTY_BYTES;
 
