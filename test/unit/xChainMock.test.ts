@@ -40,7 +40,7 @@ describe.only("Testing XChainController, unit test", async () => {
   it("Should send integer from XSendMock to XReceiveMock", async function() {
     let sendValue = '12345';
     await xSend.xSendSomeValue(sendValue);
-    let receivedValue = await XReceive.getValue();
+    let receivedValue = await XReceive.value();
     expect(sendValue).to.be.equal(receivedValue);
   });
 });
