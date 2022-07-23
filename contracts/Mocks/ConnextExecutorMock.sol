@@ -6,6 +6,8 @@ import "./interfaces/IExecutorMock.sol";
 
 contract ConnextExecutorMock is IExecutorMock {
     address private immutable connext;
+    address private originSender_;
+    uint32 private origin_;
     bytes private properties = LibCrossDomainProperty.EMPTY_BYTES;
 
     constructor(address _connext) {
@@ -18,23 +20,16 @@ contract ConnextExecutorMock is IExecutorMock {
     }
 
     function originSender() external view override returns (address) {
-        // The following will revert if it is empty
-        bytes29 _parsed = LibCrossDomainProperty.parseDomainAndSenderBytes(properties);
-        return LibCrossDomainProperty.sender(_parsed);
+        return originSender_;
     }
 
-    /**
-    * @notice Allows a `_to` contract to access origin domain (i.e. domain of `xcall`)
-    * @dev These properties are set via reentrancy a la L2CrossDomainMessenger from
-    * optimism
-    */
     function origin() external view override returns (uint32) {
-        // The following will revert if it is empty
-        bytes29 _parsed = LibCrossDomainProperty.parseDomainAndSenderBytes(properties);
-        return LibCrossDomainProperty.domain(_parsed);
+        return origin_;
     }
 
     function execute(ExecutorArgs memory _args) external payable  onlyConnext returns (bool success, bytes memory returnData) {
+        originSender_ = _args.originSender;
+        origin_ = _args.origin;
         (bool success,) = _args.to.call(_args.callData);
         require(success, "ConnextExecutorMock: No success");       
     }

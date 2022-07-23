@@ -26,6 +26,8 @@ contract ConnextHandlerMock is IConnextHandler {
         IExecutorMock.ExecutorArgs memory exArgs;
         exArgs.to = _args.params.to;
         exArgs.callData = _args.params.callData;
+        exArgs.originSender = _args.params.recovery;
+        exArgs.origin = _args.params.originDomain;
         IExecutorMock(executor).execute(exArgs);
     }
 }

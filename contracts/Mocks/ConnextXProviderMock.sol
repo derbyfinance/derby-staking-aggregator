@@ -73,7 +73,7 @@ contract ConnextXProviderMock is IXProviderMock {
       originDomain: xSendMockChainID,      
       destinationDomain: xReceiveMockChainID,      
       agent: receiveProvider,      
-      recovery: receiveProvider,      
+      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier      
       forceSlow: true,      
       receiveLocal: false,      
       callback: address(0),      
@@ -90,8 +90,7 @@ contract ConnextXProviderMock is IXProviderMock {
     connext.xcall(xcallArgs);
   }
 
-  // onlyExecutor
-  function xReceive(uint256 _value) external  {
+  function xReceive(uint256 _value) external  onlyExecutor {
     IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
   }
 }
