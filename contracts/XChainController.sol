@@ -58,6 +58,11 @@ contract XChainController {
     _;
   }
 
+  modifier onlyXProvider {
+    require(msg.sender == xProviderAddr, "XChainController: only xProviderAddr");
+    _;
+  }
+
   // vaultStage 0
   modifier onlyWhenReady(uint256 _vaultNumber) {
     require(
@@ -144,7 +149,7 @@ contract XChainController {
   /// @notice Used by game to send allocations to xChainController
   /// @param _vaultNumber number of Vault
   /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
-  function receiveAllocationsFromGame(uint256 _vaultNumber, int256[] memory _deltas) external {
+  function receiveAllocationsFromGame(uint256 _vaultNumber, int256[] memory _deltas) external onlyXProvider {
     for (uint256 i = 0; i < chainIds.length; i++) {
       settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
     }
@@ -271,9 +276,16 @@ contract XChainController {
     vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
   }
 
-  // OnlyDao
-  function setProviderAddress(address _xProvider) external {
+  /// @notice Setter for xProvider address
+  /// @param _xProvider new address of xProvider on this chain
+  function setProviderAddress(address _xProvider) external onlyDao {
     xProvider = IXProvider(_xProvider);
     xProviderAddr = _xProvider;
+  }
+
+  /// @notice Setter for chainId array
+  /// @param _chainIds array of all the used chainIds
+  function setChainIdArray(uint256[] memory _chainIds) external onlyDao {
+    chainIds = _chainIds;
   }
 }

@@ -345,6 +345,8 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice Trigger for Dao to push delta allocations to the xChainController
+    /// @dev Sends over an array that should match the IDs in chainIds array
     function pushAllocationsToGame(uint256 _vaultNumber) external onlyDao {
       isXChainRebalancing = true;
 
@@ -352,6 +354,8 @@ contract Game is ERC721, ReentrancyGuard {
       IXProvider(xProvider).pushAllocationsToController(_vaultNumber, deltas);
     }
 
+    /// @notice Creates delta allocation array for chains matching IDs in chainIds array
+    /// @notice Resets deltaAllocation for chainIds
     function allocationsToArray(uint256 _vaultNumber) internal returns(int256[] memory deltas) {
       deltas = new int[](chainIds.length);
 
@@ -404,6 +408,8 @@ contract Game is ERC721, ReentrancyGuard {
       chainIds = _chainIds;
     }
 
+    /// @notice Setter for xProvider address
+    /// @param _xProvider new address of xProvider on this chain
     function setXProvider(address _xProvider) external onlyDao {
       xProvider = _xProvider;
     }
