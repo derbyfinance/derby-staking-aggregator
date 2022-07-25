@@ -164,8 +164,10 @@ describe.only("Testing Game", async () => {
 
   // Allocations in protocols are not resetted at this point
   it("Should push delta allocations from game to xChainController", async function() {
+    await xChainController.connect(dao).resetVaultStages(vaultNumber);
+    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
-    await game.connect(dao).pushAllocationsToGame(vaultNumber);
+    await game.connect(dao).pushAllocationsToController(vaultNumber);
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
@@ -177,6 +179,10 @@ describe.only("Testing Game", async () => {
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(0);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(0);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(0);
+
+    // checking vaultStages
+    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(false);
+    expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
     await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game is xChainRebalancing');

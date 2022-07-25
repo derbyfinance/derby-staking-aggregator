@@ -31,7 +31,7 @@ contract XChainControllerMock is XChainController {
     return upFundsReceived(_vaultNumber);
   }
 
-  function getVaultState(uint256 _vaultNumber) external view returns(bool) {
+  function getVaultReadyState(uint256 _vaultNumber) external view returns(bool) {
     return vaultStage[_vaultNumber].ready;
   }
 

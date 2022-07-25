@@ -347,7 +347,7 @@ contract Game is ERC721, ReentrancyGuard {
 
     /// @notice Trigger for Dao to push delta allocations to the xChainController
     /// @dev Sends over an array that should match the IDs in chainIds array
-    function pushAllocationsToGame(uint256 _vaultNumber) external onlyDao {
+    function pushAllocationsToController(uint256 _vaultNumber) external onlyDao {
       isXChainRebalancing = true;
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);

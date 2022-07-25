@@ -149,10 +149,16 @@ contract XChainController {
   /// @notice Used by game to send allocations to xChainController
   /// @param _vaultNumber number of Vault
   /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
-  function receiveAllocationsFromGame(uint256 _vaultNumber, int256[] memory _deltas) external onlyXProvider {
+  function receiveAllocationsFromGame(
+    uint256 _vaultNumber, 
+    int256[] memory _deltas
+  ) external onlyXProvider onlyWhenReady(_vaultNumber) {
     for (uint256 i = 0; i < chainIds.length; i++) {
       settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
     }
+
+    setAllocationsReceived(_vaultNumber, true);
+    setReady(_vaultNumber, false);
   }
 
   /// @notice Helper to settle the total current allocation with the delta allocations received from Game
