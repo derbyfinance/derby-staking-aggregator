@@ -185,7 +185,7 @@ describe.only("Testing Game", async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game is xChainRebalancing');
+    await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
   });
 
   // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
