@@ -1,78 +1,50 @@
 const { ethers } = require("hardhat");
-var { exec } = require('child_process');
-const { setTimeout } = require("timers/promises");
+// var { exec } = require('child_process');
+// const { setTimeout } = require("timers/promises");
 
-const abi = require('../artifacts/contracts/MultiChainToken.sol/MultiChainToken.json').abi;
-const bytecode = require('../artifacts/contracts/MultiChainToken.sol/MultiChainToken.json').bytecode;
-const abi_dummy = require('../artifacts/contracts/DummyContract.sol/DummyContract.json').abi;
-const bytecode_dummy = require('../artifacts/contracts/DummyContract.sol/DummyContract.json').bytecode;
+const abi_xprovider = require('../artifacts/contracts/Mocks/ConnextXProviderMock.sol/ConnextXProviderMock.json').abi;
+const abi_receive = require('../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json').abi;
+const abi_send = require('../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json').abi;
+const bytecode_xprovider = require('../artifacts/contracts/Mocks/ConnextXProviderMock.sol/ConnextXProviderMock.json').bytecode;
+const bytecode_receive = require('../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json').bytecode;
+const bytecode_send = require('../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json').bytecode;
 
 const privateKey = process.env.PRIVATE_KEY !== undefined ? process.env.PRIVATE_KEY : [];
-const networks = ["rinkeby", "goerli"];
-const endpoints = {
-    "rinkeby": "0x08a65B184A784aC2E53D57af7d89d614C50fbaB0",
-    "bscTestnet": "0x3d04203B09298A701a1250Ac7b5F94c72371E5bA",
-    "polygonMumbai": "0xFA98f9DE4444b010AFc0da926b484548b52039Ce"
+const handlers = {
+    "rinkeby": "0x4cAA6358a3d9d1906B5DABDE60A626AAfD80186F",
+    "goerli": "0x6c9a905Ab3f4495E2b47f5cA131ab71281E0546e"
 };
-const name = "TestDRB";
-const symbol = "DRB";
-const deploymentList = [];
-const setAddressesList = [];
 
 const main = async () => {
-    let deploy = async (wallet, name, symbol, endpoint, testnet) => {
-        const factory = new ethers.ContractFactory(abi, bytecode, wallet);
-        const contract = await factory.deploy(name, symbol, endpoint);
-    
-        console.log("Contract deployed to:", testnet, " with address: ",contract.address);
-    
-        await contract.deployed();
+    // deploy on rinkeby
+    let testnet = "rinkeby";
+    let url = config.networks[testnet].url;
+    let provider = ethers.getDefaultProvider(url);
+    let wallet = new ethers.Wallet(privateKey, provider);
+    let wallet_address = await wallet.getAddress();
 
-        //verify source code Multichain contracts
-        await setTimeout(60000); //timeout to make sure that Etherescan has processed the
-        exec(`npx hardhat verify --network ${testnet} ${contract.address} ${name} ${symbol} ${endpoint}`, (err, stdout, stderr) => {
-            if (err) {
-              console.error(err);
-              return;
-            }
-            console.log(stdout);
-        });
+    console.log("deploying xprovider on rinkeby");
+    let factory = new ethers.ContractFactory(abi_xprovider, bytecode_xprovider, wallet);
+    let xProvider_rinkeby = await factory.deploy(wallet_address, handlers[testnet]);
 
-        return contract.address;
-    };
-    
-    const deployments = async () => {
-        for (let testnet of networks){
-            const url = config.networks[testnet].url;
-            // Connect to the network
-            const provider = ethers.getDefaultProvider(url);
-            const wallet = new ethers.Wallet(privateKey, provider);
-            
-            const deployment = deploy(wallet, name, symbol, endpoints[testnet], testnet);
-            deploymentList.push(deployment);
-        }
-        return Promise.all(deploymentList);
-    };
+    console.log("deploying xsend on rinkeby");
+    factory = new ethers.ContractFactory(abi_send, bytecode_send, wallet);
+    let xSend_rinkeby = await factory.deploy(xProvider_rinkeby.address);
 
-    const addresses = await deployments();
-    // [0] rinkeby, [1] bsc_testnet, [2] mumbai
-    console.log("addresses: ", addresses);
+    // deploy on goerli
+    testnet = "goerli";
+    url = config.networks[testnet].url;
+    provider = ethers.getDefaultProvider(url);
+    wallet = new ethers.Wallet(privateKey, provider);
+    wallet_address = await wallet.getAddress();
 
-    const setAddresses = async () => {
-        for (let i=0; i<networks.length; i++){
-            const url = config.networks[networks[i]].url;
-            // Connect to the network
-            const provider = ethers.getDefaultProvider(url);
-            const wallet = new ethers.Wallet(privateKey, provider);
+    console.log("deploying xprovider on goerli");
+    factory = new ethers.ContractFactory(abi_xprovider, bytecode_xprovider, wallet);
+    let xProvider_goerli = await factory.deploy(wallet_address, handlers[testnet]);
 
-            const contract = new ethers.Contract(addresses[i], abi, wallet);
-            const setAddress = contract.setExternalMultiChainAddresses(addresses[0], addresses[1], addresses[2]);
-            setAddressesList.push(setAddress);
-        }
-        return Promise.all(setAddressesList);
-    };
-
-    await setAddresses();
+    console.log("deploying xsend on rinkeby");
+    factory = new ethers.ContractFactory(abi_receive, bytecode_receive, wallet);
+    let xReceive_rinkeby = await factory.deploy(xProvider_goerli.address);
 }
 
 main();

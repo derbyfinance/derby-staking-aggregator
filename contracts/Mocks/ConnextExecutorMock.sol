@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import {LibCrossDomainProperty, TypedMemView} from "../libraries/LibCrossDomainProperty.sol";
 import "./interfaces/IExecutorMock.sol";
 
 contract ConnextExecutorMock is IExecutorMock {
     address private immutable connext;
     address private originSender_;
     uint32 private origin_;
-    bytes private properties = LibCrossDomainProperty.EMPTY_BYTES;
 
     constructor(address _connext) {
         connext = _connext;
