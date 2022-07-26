@@ -20,6 +20,11 @@ import type {
   TokenTimelock,
   XChainController,
   XProvider,
+  ConnextXProviderMock,
+  ConnextExecutorMock,
+  ConnextHandlerMock,
+  XReceiveMock,
+  XSendMock,
   XChainControllerMock,
  } from '../../typechain-types';
 
@@ -42,7 +47,13 @@ import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Control
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
 import XChainControllerMockArtifact from '../../artifacts/contracts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
+import ConnextXProviderMockArtifact from '../../artifacts/contracts/Mocks/ConnextXProviderMock.sol/ConnextXProviderMock.json';
+import ConnextExecutorMockArtifact from '../../artifacts/contracts/Mocks/ConnextExecutorMock.sol/ConnextExecutorMock.json';
+import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/ConnextHandlerMock.sol/ConnextHandlerMock.json';
+import XReceiveMockArtifact from '../../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json';
+import XSendMockArtifact from '../../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
+import { Address } from "cluster";
 
 export const deployTokenTimeLock = (
   deployerSign: Signer, 
@@ -159,3 +170,25 @@ export const deployGame = (deployerSign: Signer, DerbyTokenAddress: string, rout
 export const deployGameMock = (deployerSign: Signer, name: string, symbol: string, DerbyTokenAddress: string, routerAddress: string, governedAddress: string, controllerAddress: string): Promise<GameMock> => {
   return (deployContract(deployerSign, GameMockArtifact, [name, symbol, DerbyTokenAddress, routerAddress, governedAddress, controllerAddress])) as Promise<GameMock>;
 };
+
+export const deployConnextXProviderMock = (deployerSign: Signer, executorAddress: string, daoAddress: string, connextAddress: string): Promise<ConnextXProviderMock> => {
+  return (deployContract(deployerSign, ConnextXProviderMockArtifact, [executorAddress, daoAddress, connextAddress])) as Promise<ConnextXProviderMock>;
+};
+
+export const deployConnextExecutorMock = (deployerSign: Signer, handlerAddress: string): Promise<ConnextExecutorMock> => {
+  return (deployContract(deployerSign, ConnextExecutorMockArtifact, [handlerAddress])) as Promise<ConnextExecutorMock>;
+}
+
+export const deployConnextHandlerMock = (deployerSign: Signer, daoAddress: string): Promise<ConnextHandlerMock> => {
+  return (deployContract(deployerSign, ConnextHandlerMockArtifact, [daoAddress])) as Promise<ConnextHandlerMock>;
+}
+
+export const deployXReceiveMock = (deployerSign: Signer, ConnextXProviderAddress: string): Promise<XReceiveMock> => {
+  return (deployContract(deployerSign, XReceiveMockArtifact, [ConnextXProviderAddress])) as Promise<XReceiveMock>;
+}
+
+export const deployXSendMock = (deployerSign: Signer, ConnextXProviderAddress: string): Promise<XSendMock> => {
+  return (deployContract(deployerSign, XSendMockArtifact, [ConnextXProviderAddress])) as Promise<XSendMock>;
+}
+
+

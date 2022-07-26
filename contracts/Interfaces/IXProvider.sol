@@ -8,8 +8,6 @@ interface IXProvider {
     bytes callData;
   }
 
-  function xTransfer() external;
-
   function xCall(    
     address _xProvider, 
     uint256 _chainId, 
