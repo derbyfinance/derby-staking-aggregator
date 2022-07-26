@@ -45,8 +45,6 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     }
 
-    bool public isXChainRebalancing;
-
     address public derbyTokenAddress;
     address public routerAddress;
     address public governed;
@@ -79,6 +77,9 @@ contract Game is ERC721, ReentrancyGuard {
     // vaultNumber => vaultInfo struct
     mapping(uint256 => vaultInfo) internal vaults;
 
+    mapping(uint256 => bool) public isXChainRebalancing;
+
+
     modifier onlyDao {
       require(msg.sender == governed, "Game: only DAO");
       _;
@@ -89,10 +90,6 @@ contract Game is ERC721, ReentrancyGuard {
       _;
     }
 
-    modifier onlyWhenNotRebalancing() {
-      require(!isXChainRebalancing, "Game is xChainRebalancing");
-      _;
-    }
 
     constructor(
       string memory name_, 
@@ -282,9 +279,11 @@ contract Game is ERC721, ReentrancyGuard {
     function rebalanceBasket(
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
-    ) external onlyBasketOwner(_basketId) nonReentrant onlyWhenNotRebalancing {    
+    ) external onlyBasketOwner(_basketId) nonReentrant  {    
       // addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
+
+      require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
       int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
       lockOrUnlockTokens(_basketId, totalDelta);
@@ -348,7 +347,7 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Trigger for Dao to push delta allocations to the xChainController
     /// @dev Sends over an array that should match the IDs in chainIds array
     function pushAllocationsToController(uint256 _vaultNumber) external onlyDao {
-      isXChainRebalancing = true;
+      isXChainRebalancing[_vaultNumber] = true;
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);
       IXProvider(xProvider).pushAllocationsToController(_vaultNumber, deltas);
