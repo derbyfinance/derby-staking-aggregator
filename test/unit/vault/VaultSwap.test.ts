@@ -17,7 +17,7 @@ import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing VaultSwap, unit test", async () => {
   let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
@@ -49,7 +49,7 @@ describe("Testing VaultSwap, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
@@ -61,7 +61,7 @@ describe("Testing VaultSwap, unit test", async () => {
     await controller.setClaimable(allProviders.compoundProvider.address, true);
 
     for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, ETFnumber, allProviders);
+      await protocol.addProtocolToController(controller, vaultNumber, allProviders);
       await protocol.resetAllocation(vault);
     }
   });

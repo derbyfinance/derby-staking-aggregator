@@ -1,3 +1,4 @@
+/* eslint-disable node/no-unsupported-features/es-syntax */
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
@@ -14,15 +15,15 @@ import { vaultInfo } from "../helpers/vaultHelpers";
 import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
-
+const chainIds = [10, 100, 1000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString()); 
-const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing GameMock", async () => {
+describe.only("Testing Game", async () => {
   let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  gameMock: GameMock;
 
   const protocols = new Map<string, ProtocolVault>()
@@ -38,85 +39,7 @@ describe("Testing GameMock", async () => {
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
-  async function generateUnredeemedRewards() {
-    const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
-
-    // minting
-    await gameMock.connect(dao).addETF(vault.address);
-    await gameMock.mintNewBasket(0);
-
-    // set liquidity vault to 0 for easy calculation 
-    await vault.setLiquidityPerc(0);
-
-    const amount = 10_000;
-    const amountUSDC = parseUSDC(amount.toString());
-
-    // set balance before
-    let balance = 1000*1E6;
-    let balanceComp = 1000*1E8;
-    let price = 1000;
-    await Promise.all([
-      yearnProvider.mock.balanceUnderlying.returns(balance),
-      compoundProvider.mock.balanceUnderlying.returns(balanceComp),
-      aaveProvider.mock.balanceUnderlying.returns(balance),
-      yearnProvider.mock.deposit.returns(0),
-      compoundProvider.mock.deposit.returns(0),
-      aaveProvider.mock.deposit.returns(0),
-      yearnProvider.mock.withdraw.returns(0),
-      compoundProvider.mock.withdraw.returns(0),
-      aaveProvider.mock.withdraw.returns(0),
-      yearnProvider.mock.exchangeRate.returns(price),
-      compoundProvider.mock.exchangeRate.returns(price),
-      aaveProvider.mock.exchangeRate.returns(price),
-    ]);
-
-    // set some initial allocations in the basket
-    let allocations = [10, 0, 10, 0, 10];
-    await DerbyToken.increaseAllowance(gameMock.address, 30);
-    await gameMock.rebalanceBasket(0, allocations);
-
-    // do 3 loops to simulate time passing (and bump up rebalancingperiod).
-    for (let i = 0; i < 3; i++){
-      await Promise.all([
-        compoundVault.setDeltaAllocationsWithGame(gameMock, vault.address, 40),
-        aaveVault.setDeltaAllocationsWithGame(gameMock, vault.address, 60),
-        yearnVault.setDeltaAllocationsWithGame(gameMock, vault.address, 20),
-        compoundDAIVault.setDeltaAllocationsWithGame(gameMock, vault.address, 0),
-        aaveUSDTVault.setDeltaAllocationsWithGame(gameMock, vault.address, 0),
-      ]);
-
-      // await setDeltaAllocationsWithGame(vault, gameMock, allProtocols);
-      await vault.connect(user).depositETF(amountUSDC);
-
-      // set balance after
-      price = Math.round(price * 1.1);
-      await Promise.all([
-        yearnProvider.mock.exchangeRate.returns(price),
-        compoundProvider.mock.exchangeRate.returns(price),
-        aaveProvider.mock.exchangeRate.returns(price),
-      ]);
-      await vault.setVaultState(3);
-      await rebalanceETF(vault);
-    }
-    
-    // set new allocations in basket
-    let newAllocations = [20, 0, 20, 0, 20]; // not actually stored in vault because we didn't rebalance the vault here
-    await DerbyToken.increaseAllowance(gameMock.address, 50);
-    await gameMock.rebalanceBasket(0, newAllocations);
-
-    // yield per time step: 0.1
-    // started counting basket rewards at rebalancingPeriod 1
-    // end counting basket rewards at rebalancingPeriod 3
-    // 1: rewards: 0
-    // 2: TVL: 10k + 10k +3k = 23k, y: 0.1, perfFee: 0.1, totalTokens: 30 + 120 + 120 = 270, allocations user per protocol: 10
-    // 2: rewards = 23000 * 1E6 * 0.1 * 0.1 / 270 * 10 = 8518518 per game player, 3 players total --> 25555554
-    // 3: rewards = 25555554
-    // total expected rewards = 2 * 25555554 = 51111108
-    let rewards = await gameMock.basketUnredeemedRewards(0);
-    return rewards;
-  }
-
-  beforeEach(async function() {
+  before(async function() {
     [dao, user] = await ethers.getSigners();
 
     [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
@@ -129,19 +52,26 @@ describe("Testing GameMock", async () => {
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     gameMock = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameMock.address, controller.address, usdc, uScale, gasFeeLiquidity);
 
     // With MOCK Providers
     await Promise.all([
       initController(controller, [gameMock.address, vault.address]),
+      gameMock.connect(dao).setChainIdArray([10, 100, 1000]),
       controller.connect(dao).addGame(gameMock.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
       IUSDc.connect(user).approve(vault.address, amountUSDC),
     ]);
 
+    await Promise.all([
+      gameMock.connect(dao).setLatestProtocolId(10, 5),
+      gameMock.connect(dao).setLatestProtocolId(100, 5),
+      gameMock.connect(dao).setLatestProtocolId(1000, 5),
+    ])
+
     for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, ETFnumber, AllMockProviders);
+      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
     }
   });
 
@@ -152,101 +82,117 @@ describe("Testing GameMock", async () => {
   });
 
   it("GameMock should have DerbyToken contract addresses set", async function() {
-    expect(await gameMock.DerbyTokenAddress()).to.be.equal(DerbyToken.address);
+    expect(await gameMock.derbyTokenAddress()).to.be.equal(DerbyToken.address);
   });
   
   it("Can add a vault", async function() {
     await expect(gameMock.connect(user).addETF(vault.address)).to.be.revertedWith("Game: only DAO");
-    let latestETFNumber = await gameMock.latestETFNumber();
-    expect(latestETFNumber).to.be.equal(0);
+    let latestNumber = await gameMock.latestvaultNumber();
+    expect(latestNumber).to.be.equal(0);
     await gameMock.connect(dao).addETF(vault.address);
-    latestETFNumber = await gameMock.latestETFNumber();
-    expect(latestETFNumber).to.be.equal(1);
-    expect(await gameMock.Vaults(0)).to.be.equal(vault.address);
+    latestNumber = await gameMock.latestvaultNumber();
+    expect(latestNumber).to.be.equal(1);
   });
 
-  it("Can mint a basket NFT and lock Derby tokens in it, can also unlock the Derby tokens", async function() {
-    // minting
-    await gameMock.connect(dao).addETF(vault.address);
-    await gameMock.mintNewBasket(0);
-    const ownerOfNFT = await gameMock.ownerOf(0);
-    const userAddr = await user.getAddress();
-    expect(ownerOfNFT).to.be.equal(userAddr);
+  it("Should Lock tokens, mint basket and set correct deltas", async function() {
+    await gameMock.mintNewBasket(vaultNumber); 
 
-    // locking
-    const amountToLock = 1000;
-    const balanceBefore = await DerbyToken.balanceOf(userAddr);
-    await DerbyToken.approve(gameMock.address, amountToLock);
-    await expect(gameMock.connect(dao).lockTokensToBasketTEST(0, amountToLock)).to.be.revertedWith("Game Not the owner of the basket");
-    await gameMock.lockTokensToBasketTEST(0, amountToLock);
-    const balanceDiff = balanceBefore.sub(await DerbyToken.balanceOf(userAddr));
-    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Game Not the owner of the basket");
-    let unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
-    expect(unAllocatedTokens).to.be.equal(amountToLock);
-    expect(balanceDiff).to.be.equal(amountToLock.toString());
-
-    // unlocking
-    await expect(gameMock.connect(dao).unlockTokensFromBasketTEST(0, amountToLock)).to.be.revertedWith("Game Not the owner of the basket");
-    await expect(gameMock.unlockTokensFromBasketTEST(0, amountToLock+1)).to.be.revertedWith("Not enough unallocated tokens in basket");
-    await gameMock.unlockTokensFromBasketTEST(0, amountToLock);
-    await expect(gameMock.connect(dao).basketTotalAllocatedTokens(0)).to.be.revertedWith("Game Not the owner of the basket");
-    unAllocatedTokens = await gameMock.basketTotalAllocatedTokens(0);
-    expect(unAllocatedTokens).to.be.equal(0);
-    expect(await DerbyToken.balanceOf(userAddr)).to.be.equal(balanceBefore);
-  });
-
-  it("Owner of basket NFT can read out allocations", async function() {
-    // minting
-    await gameMock.connect(dao).addETF(vault.address);
-    await gameMock.mintNewBasket(0);    
-
-    let allocations = [20, 30, 40, 50, 60];
-    let totalAllocations = 200;
+    const allocationArray = [ 
+      [100, 0, 0, 200, 0], // 300
+      [100, 0, 200, 100, 200], // 600
+      [0, 100, 200, 300, 400], // 1000 
+    ];
+    const totalAllocations = 1900;
     await DerbyToken.increaseAllowance(gameMock.address, totalAllocations);
-    await gameMock.rebalanceBasket(0, allocations);
+    await expect(gameMock.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith('ETFGame Not the owner of the basket');
 
-    expect(totalAllocations).to.be.equal(await gameMock.basketTotalAllocatedTokens(0));
+    const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
+    await gameMock.rebalanceBasket(0, allocationArray);
+    const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
 
-    allocations.map(async (alloc, i) => {
-      expect(alloc).to.be.equal(await gameMock.basketAllocationInProtocol(0, i));
+    expect(tokenBalanceBefore.sub(tokenBalanceAfter)).to.be.equal(1900);
+
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(300);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(600);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(1000);
+    expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(totalAllocations);
+
+    // looping through all of allocationArray
+    allocationArray.forEach(async (chainIdArray, i) => {
+      for (let j = 0; j < chainIdArray.length; j++) {
+        expect(await gameMock.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+      }
     });
   });
 
-  it("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
-    let rewards = await generateUnredeemedRewards();
-    expect(rewards).to.be.closeTo('51111108', 500000);
+  it("Should Unlock lokens and read allocations in basket", async function() {
+    const allocationDeltaArray = [ 
+      [-100, 0, 0, 0, 0],
+      [0, 0, -100, -100, -200],
+      [0, 0, -200, -200, -100],
+    ];
+
+    const allocationTestArray = [ 
+      [0, 0, 0, 200, 0], // 200
+      [100, 0, 100, 0, 0], // 200
+      [0, 100, 0, 100, 300], // 500
+    ];
+
+    const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);    
+    await gameMock.rebalanceBasket(0, allocationDeltaArray);
+    const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
+
+    // received 1000 tokens
+    expect(tokenBalanceAfter.sub(tokenBalanceBefore)).to.be.equal(1000);
+
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(200);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(200);
+    expect(await gameMock.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(500);
+    expect(await gameMock.basketTotalAllocatedTokens(0)).to.be.equal(1900 - 1000);
+
+    // looping through all of allocationArray
+    allocationTestArray.forEach(async (chainIdArray, i) => {
+      for (let j = 0; j < chainIdArray.length; j++) {
+        expect(await gameMock.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+      }
+    });
   });
 
-  it("Should be able to redeem funds via vault function", async function() {
-    let rewards = await generateUnredeemedRewards();
-    let userBalanceBefore = await IUSDc.balanceOf(userAddr);
-    let vaultBalanceBefore = await IUSDc.balanceOf(vault.address);
+  // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
+  //   let rewards = await generateUnredeemedRewards();
+  //   expect(rewards).to.be.closeTo('51111108', 500000);
+  // });
 
-    await gameMock.triggerRedeemedRewardsVault(vault.address, userAddr, rewards);
+  // it.skip("Should be able to redeem funds via vault function", async function() {
+  //   let rewards = await generateUnredeemedRewards();
+  //   let userBalanceBefore = await IUSDc.balanceOf(userAddr);
+  //   let vaultBalanceBefore = await IUSDc.balanceOf(vault.address);
 
-    let userBalanceAfter = await IUSDc.balanceOf(userAddr);
-    let vaultBalanceAfter = await IUSDc.balanceOf(vault.address);
+  //   await gameMock.triggerRedeemedRewardsVault(vault.address, userAddr, rewards);
 
-    expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
-    expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
-  });
+  //   let userBalanceAfter = await IUSDc.balanceOf(userAddr);
+  //   let vaultBalanceAfter = await IUSDc.balanceOf(vault.address);
 
-  it("Should be able to redeem funds via game", async function() {
-    let rewards = await generateUnredeemedRewards();
-    let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
-    let userBalanceBefore = await IUSDc.balanceOf(userAddr);
+  //   expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
+  //   expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
+  // });
+
+  // it.skip("Should be able to redeem funds via game", async function() {
+  //   let rewards = await generateUnredeemedRewards();
+  //   let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
+  //   let userBalanceBefore = await IUSDc.balanceOf(userAddr);
     
-    await gameMock.redeemRewards(0);
+  //   await gameMock.redeemRewards(0);
 
-    let userBalanceAfter = await IUSDc.balanceOf(userAddr);
+  //   let userBalanceAfter = await IUSDc.balanceOf(userAddr);
 
-    expect(unredeemedRewards).to.be.equal(rewards);
-    expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
+  //   expect(unredeemedRewards).to.be.equal(rewards);
+  //   expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
 
-    let redeemedRewards = await gameMock.basketRedeemedRewards(0);
-    unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
+  //   let redeemedRewards = await gameMock.basketRedeemedRewards(0);
+  //   unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
 
-    expect(unredeemedRewards).to.be.equal(0);
-    expect(redeemedRewards).to.be.equal(rewards);
-  });   
+  //   expect(unredeemedRewards).to.be.equal(0);
+  //   expect(redeemedRewards).to.be.equal(rewards);
+  // });   
 });

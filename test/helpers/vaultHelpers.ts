@@ -16,7 +16,7 @@ export const vaultInfo = {
   name: 'DerbyUSDC',
   symbol: 'cUSDC',
   ETFname: 'USDC_med_risk',
-  ETFnumber: 0,
+  vaultNumber: 0,
   decimals: 6,
   uScale: 1E6,
   liquidityPerc: 10,
@@ -77,13 +77,13 @@ export function initController(controller: Controller, addVaultAddresses: string
 export async function addAllProtocolsToController(
   protocolMap: Map<string, ProtocolVault>, 
   controller: Controller, 
-  ETFnumber: number, 
+  vaultNumber: number, 
   allProviders: any
   ) {
   for (const protocol of protocolMap.values()) {
     await protocol.addProtocolToController(
       controller,
-      ETFnumber,
+      vaultNumber,
       allProviders
     );  
   };

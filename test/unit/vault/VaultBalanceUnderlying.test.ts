@@ -14,7 +14,7 @@ import allProviders  from "../../helpers/allProvidersClass";
 // const amount = 5_000_000;0
 const amount = Math.floor(Math.random() * 1_000_000) + 1_000_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, ETFname, ETFnumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
+const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
@@ -32,7 +32,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       deployController(dao, daoAddr),
     ]);
 
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       allProviders.deployAllProviders(dao, controller),
@@ -49,7 +49,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
     for (const protocol of allProtocols.values()) {
       await protocol.addProtocolToController(
         controller,
-        ETFnumber,
+        vaultNumber,
         allProviders
       );  
       await protocol.resetAllocation(vault);
