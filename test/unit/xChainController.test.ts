@@ -32,7 +32,7 @@ describe.only("Testing XChainController, unit test", async () => {
 
     controller = await deployController(dao, daoAddr);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
-    xProvider = await deployXProvider(dao, xChainController.address);
+    xProvider = await deployXProvider(dao, daoAddr, daoAddr, daoAddr, xChainController.address, 10);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
