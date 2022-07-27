@@ -16,28 +16,30 @@ contract XProvider {
   address public xControllerProvider;
   address public receiveProvider;
   address public dao;
+  address public game;
   address public executor;
 
   uint32 public homeChainId;
   uint32 public xControllerChain;
+  uint32 public gameChain;
+
+  mapping(address => bool) internal senderWhitelist;
 
   modifier onlyDao {
     require(msg.sender == dao, "ConnextProvider: only DAO");
     _;
   }
 
-  // modifier onlyExecutor() { 
-  //   require(IExecutorMock(msg.sender).originSender() == xSendMock && 
-  //   IExecutorMock(msg.sender).origin() == xSendMockChainID && 
-  //   msg.sender == executor, 
-  //   "Expected origin contract on origin domain called by Executor"); 
-  //   _;  
-  // }
+  modifier onlyExecutor(uint32 _chain) { 
+    require(
+      senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
+      IExecutorMock(msg.sender).origin() == _chain &&
+      msg.sender == executor,
+      "Expected origin contract on origin domain called by Executor"
+    ); 
+    _;  
+  }
   
-  // constructor(address _xController) {
-  //   xController = _xController;
-  // }
-
   constructor(
     address _executor,
     address _connextHandler,
@@ -52,23 +54,11 @@ contract XProvider {
     homeChainId = _homeChainId;
   }
 
-  function xCall(
-    address _xProvider, 
-    uint256 _chainId, 
-    bytes memory _callData
-  ) public {
-    IXProvider.callParams memory params = IXProvider.callParams({
-      to: _xProvider,
-      chainId: _chainId,
-      callData: _callData
-    });
-
-    (bool success,) = params.to.call(params.callData);
-    require(success, "No success");
-  }
-
   /// @notice Function to send an integer value crosschain
-  // / @param _callData Value to send crosschain.
+  /// @param _to address of the contract on receiving chain
+  /// @param _originDomain Chain Id of sender chain
+  /// @param _destinationDomain chain Id of destination chain
+  /// @param _callData Function selector to call on receiving chain with params
   function xSend(
     address _to,
     uint32 _originDomain,
@@ -99,6 +89,9 @@ contract XProvider {
     connext.xcall(xcallArgs);
   }
 
+  /// @notice Pushes the delta allocations from the game to the xChainController
+  /// @param _vaultNumber number of the vault
+  /// @param _deltas Array with delta Allocations for all chainIds
   function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) public {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
@@ -106,12 +99,11 @@ contract XProvider {
     xSend(xControllerProvider, homeChainId, xControllerChain, callData);
   }
 
-  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external {
+  /// @notice Receives the delta allocations from the game and routes to xChainController
+  /// @param _vaultNumber number of the vault
+  /// @param _deltas Array with delta Allocations for all chainIds
+  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyExecutor(gameChain) {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
-  }
-
-  function setDao(address _dao) external onlyDao {
-    dao = _dao;
   }
 
   /// @notice Setter for xControllerProvider address
@@ -124,6 +116,22 @@ contract XProvider {
   /// @param _xControllerChain new address of xProvider for xController chain
   function setXControllerChainId(uint32 _xControllerChain) external onlyDao {
     xControllerChain = _xControllerChain;
+  }
+
+  /// @notice Setter for gameChain Id address
+  /// @param _gameChain new address of xProvider for xController chain
+  function setGameChainId(uint32 _gameChain) external onlyDao {
+    gameChain = _gameChain;
+  }
+
+  /// @notice Whitelists the contract for the onlyExecutor modifier
+  /// @param _contract address to whitelist
+  function whitelistSender(address _contract) external onlyDao {
+    senderWhitelist[_contract] = true;
+  }
+
+  function setDao(address _dao) external onlyDao {
+    dao = _dao;
   }
 
   // function getTotalUnderlying(uint256 _vaultNumber, address _vault) public {

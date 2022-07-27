@@ -54,15 +54,19 @@ describe.only("Testing Game", async () => {
       xProvider10.setXControllerChainId(100),
       xProvider100.setXControllerProvider(xProvider100.address),
       xProvider100.setXControllerChainId(100),
+      xProvider10.setXControllerProvider(xProvider100.address),
+      xProvider100.setXControllerProvider(xProvider100.address),
+      xProvider10.setGameChainId(10),
+      xProvider100.setGameChainId(10),
+      game.connect(dao).setXProvider(xProvider10.address),
+      xProvider10.whitelistSender(xChainController.address),
+      xProvider100.whitelistSender(game.address),
     ]);
 
     // With MOCK Providers
     await Promise.all([
       initController(controller, [game.address, vault.address]),
       game.connect(dao).setChainIdArray([10, 100, 1000]),
-      game.connect(dao).setXProvider(xProvider10.address),
-      xProvider10.setXControllerProvider(xProvider100.address),
-      xProvider100.setXControllerProvider(xProvider100.address),
       ConnextHandler.setExecutor(ConnextExecutor.address),
       xChainController.connect(dao).setProviderAddress(xProvider100.address),
       controller.connect(dao).addGame(game.address),
