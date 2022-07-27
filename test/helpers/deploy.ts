@@ -53,7 +53,7 @@ import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/ConnextH
 import XReceiveMockArtifact from '../../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json';
 import XSendMockArtifact from '../../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
-import { Address } from "cluster";
+
 
 export const deployTokenTimeLock = (
   deployerSign: Signer, 
@@ -151,8 +151,15 @@ export const deployXChainControllerMock = (deployerSign: Signer, game: string, d
   return (deployContract(deployerSign, XChainControllerMockArtifact, [game, dao])) as Promise<XChainControllerMock>;
 };
 
-export const deployXProvider = (deployerSign: Signer, xController: string): Promise<XProvider> => {
-  return (deployContract(deployerSign, XProviderArtifact, [xController])) as Promise<XProvider>;
+export const deployXProvider = (
+  deployerSign: Signer, 
+  executor: string, 
+  handler: string, 
+  dao: string, 
+  xController: string,
+  homeChain: number,
+): Promise<XProvider> => {
+  return (deployContract(deployerSign, XProviderArtifact, [executor, handler, dao, xController, homeChain])) as Promise<XProvider>;
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {

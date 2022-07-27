@@ -104,7 +104,7 @@ contract ConnextXProviderMock is IXProviderMock {
 
   /// @notice Function to receive value crosschain, onlyExecutor modifier makes sure only xSend can actually send the value
   /// @param _value Value to send crosschain.
-  function xReceive(uint256 _value) external  onlyExecutor {
+  function xReceive(uint256 _value) external onlyExecutor {
     IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
   }
 }
