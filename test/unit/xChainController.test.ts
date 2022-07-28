@@ -115,9 +115,6 @@ describe("Testing XChainController, unit test", async () => {
 
     await xChainController.setTotalUnderlying(vaultNumber);
 
-    const totalUnderlying = await xChainController.setTotalUnderlying(vaultNumber);
-    console.log({ totalUnderlying })
-
     // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 10)).to.be.equal(amountUSDC);
     // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 100)).to.be.equal(amountUSDC);
     // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 1000)).to.be.equal(0);

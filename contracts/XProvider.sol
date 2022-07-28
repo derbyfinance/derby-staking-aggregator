@@ -110,16 +110,16 @@ contract XProvider {
   /// @param _vaultNumber number of the vault
   /// @param _vault Array 
   /// @param _chainId Array 
-  function getTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId) public {
-    bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,uint256,address)"));
-    bytes memory callData = abi.encodeWithSelector(
-      selector, 
-      _vaultNumber, 
-      _chainId, 
-      _vault
-    );
+  function pushGetTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId, address _provider) public {
+    bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
+    console.log("Provider %s", _provider);
+    xSend(_provider, homeChainId, _chainId, callData);
+  }
 
-    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+  function receiveGetTotalUnderlying(uint256 _vaultNumber, address _vault) public {
+    console.log("get totalunderlying provider");
+    // uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
   }
 
   /// @notice Setter for xControllerProvider address
@@ -149,16 +149,6 @@ contract XProvider {
   function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
-
-  // function getTotalUnderlying(uint256 _vaultNumber, address _vault) public {
-  //   uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
-
-  //   bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256,uint256)"));
-  //   bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, underlying);
-
-  //   // callback
-  //   xCall(address(this), 0, callData);
-  // }
   
   // function setTotalUnderlying(uint256 _vaultNumber, uint256 _underlying) public {
   //   IXChainController(xController).addTotalChainUnderlying(_vaultNumber, _underlying);

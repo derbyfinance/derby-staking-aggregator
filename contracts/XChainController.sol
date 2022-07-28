@@ -26,11 +26,11 @@ contract XChainController {
     uint256 totalUnderlying;
     uint256 underlyingReceived;
     uint256 allocationsReceived;
-    mapping(uint256 => int256) currentAllocationPerChain; // chainId => allocation
-    mapping(uint256 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
-    mapping(uint256 => address) vaultChainAddress; // chainId => vault address
-    mapping(uint256 => address) vaultUnderlyingAddress; // chainId => underlying address e.g USDC
-    mapping(uint256 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
+    mapping(uint32 => int256) currentAllocationPerChain; // chainId => allocation
+    mapping(uint32 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
+    mapping(uint32 => address) vaultChainAddress; // chainId => vault address
+    mapping(uint32 => address) vaultUnderlyingAddress; // chainId => underlying address e.g USDC
+    mapping(uint32 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
   }
 
   // activeVaults; number of active vaults for vaultNumber, set in XChainRebalance
@@ -48,7 +48,7 @@ contract XChainController {
 
   mapping(uint256 => vaultInfo) internal vaults;
   mapping(uint256 => vaultStages) internal vaultStage;
-  mapping(uint256 => address) internal xProviders; // chainId => xProvider
+  mapping(uint32 => address) internal xProviders; // chainId => xProvider
 
   modifier onlyGame {
     require(msg.sender == game, "XChainController: only Game");
@@ -168,7 +168,7 @@ contract XChainController {
   /// @param _vaultNumber number of Vault
   /// @param _chainId number of chainId
   /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
-  function settleCurrentAllocation(uint256 _vaultNumber, uint256 _chainId, int256 _deltas) internal {
+  function settleCurrentAllocation(uint256 _vaultNumber, uint32 _chainId, int256 _deltas) internal {
     vaults[_vaultNumber].totalCurrentAllocation += _deltas;
     vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
   }
@@ -180,10 +180,11 @@ contract XChainController {
     vaults[_vaultNumber].underlyingReceived = 0;
 
     for (uint i = 0; i < chainIds.length; i++) {
+      uint32 chain = chainIds[i];
       address vault = getVaultAddress(_vaultNumber, homeChainId);
 
-      if (chainIds[i] == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
-      else xProvider.getTotalUnderlying(_vaultNumber, vault, chainIds[i]);
+      if (chain == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
+      else xProvider.pushGetTotalUnderlying(_vaultNumber, vault, chain, xProviders[chain]);
     }
   }
 
@@ -197,7 +198,7 @@ contract XChainController {
   /// @notice Step 2 callback
   /// @notice Callback to set totalUnderlying in XController
   /// @param _amount total underlying in vault currency
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint256 _chainId, uint256 _amount) public {
+  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint32 _chainId, uint256 _amount) public {
     console.log("underlying callback %s", _amount);
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _amount;
     vaults[_vaultNumber].totalUnderlying += _amount;
@@ -283,17 +284,17 @@ contract XChainController {
   }
 
   /// @notice Helper to get vault address of vaultNumber with given chainID
-  function getVaultAddress(uint256 _vaultNumber, uint256 _chainId) internal view returns(address) {
+  function getVaultAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
     return vaults[_vaultNumber].vaultChainAddress[_chainId];
   }
 
   /// @notice Helper to get underyling address of vaultNumber with given chainID eg USDC
-  function getUnderlyingAddress(uint256 _vaultNumber, uint256 _chainId) internal view returns(address) {
+  function getUnderlyingAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
     return vaults[_vaultNumber].vaultUnderlyingAddress[_chainId];
   }
 
   /// @notice Helper to get current allocation per chain of vaultNumber with given chainID
-  function getCurrentAllocation(uint256 _vaultNumber, uint256 _chainId) internal view returns(int256) {
+  function getCurrentAllocation(uint256 _vaultNumber, uint32 _chainId) internal view returns(int256) {
     return vaults[_vaultNumber].currentAllocationPerChain[_chainId];
   }
 
@@ -308,7 +309,7 @@ contract XChainController {
   /// @param _underlying underlying of the Vault eg USDC
   function setVaultChainAddress(
     uint256 _vaultNumber, 
-    uint256 _chainId, 
+    uint32 _chainId, 
     address _address, 
     address _underlying
   ) external onlyDao{
@@ -323,7 +324,7 @@ contract XChainController {
     xProviderAddr = _xProvider;
   }
 
-  function setXProviderAddress(address _xProvider, uint256 _chainId) external {
+  function setXProviderAddress(address _xProvider, uint32 _chainId) external {
     xProviders[_chainId] = _xProvider;
   }
 
