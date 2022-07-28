@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
-import { deployController, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import type { ConnextExecutorMock, ConnextHandlerMock, Controller, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
+import { deployConnextExecutorMock, deployConnextHandlerMock, deployController, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
@@ -18,7 +18,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing XChainController, unit test", async () => {
-  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -30,9 +30,16 @@ describe("Testing XChainController, unit test", async () => {
       user.getAddress()
     ]);
 
+    ConnextHandler = await deployConnextHandlerMock(dao, daoAddr);
+    ConnextExecutor = await deployConnextExecutorMock(dao, ConnextHandler.address);
+
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
-    xProvider = await deployXProvider(dao, daoAddr, daoAddr, daoAddr, xChainController.address, 10);
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
+
+    [xProvider10, xProvider100] = await Promise.all([
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 10),
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 100)
+    ]);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
@@ -41,7 +48,20 @@ describe("Testing XChainController, unit test", async () => {
     ]);
 
     await Promise.all([
+      xProvider10.setXControllerProvider(xProvider100.address),
+      xProvider10.setXControllerChainId(100),
+      xProvider100.setXControllerProvider(xProvider100.address),
+      xProvider100.setXControllerChainId(100),
+      xProvider10.setXControllerProvider(xProvider100.address),
+      xProvider100.setXControllerProvider(xProvider100.address),
+      xProvider10.setGameChainId(10),
+      xProvider100.setGameChainId(10),
+      xProvider10.whitelistSender(xChainController.address),
+    ]);
+
+    await Promise.all([
       initController(controller, [userAddr, vault1.address, vault2.address, vault3.address]),
+      ConnextHandler.setExecutor(ConnextExecutor.address),
       allProviders.deployAllProviders(dao, controller),
       IUSDc.connect(USDCSigner).transfer(vault1.address, amountUSDC),
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
@@ -57,11 +77,13 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setVaultChainAddress(vaultNumber, 1, vault1.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 2, vault2.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 3, vault3.address, usdc),
-      xChainController.setProviderAddress(xProvider.address)
+      xChainController.setXProviderAddress(xProvider10.address, 10),
+      xChainController.setXProviderAddress(xProvider100.address, 100), 
+      xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
     ]);
   });
 
-  it("(1.5 Store vault stages) ", async function() {
+  it("1.5) Store vault stages", async function() {
     await xChainController.setActiveVaultsTEST(vaultNumber, 1);
 
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(false);
@@ -83,6 +105,10 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(false);
     expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(0);
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
+
+  });
+
+  it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
 
   });
 
