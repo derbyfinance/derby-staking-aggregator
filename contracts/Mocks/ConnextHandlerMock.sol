@@ -23,6 +23,10 @@ contract ConnextHandlerMock is IConnextHandler {
         executor = _executor;
     }
 
+    function getExecutor() external view returns(address) {
+        return executor;
+    }
+
     function xcall(XCallArgs calldata _args) external payable returns (bytes32) {
         IExecutorMock.ExecutorArgs memory exArgs;
         exArgs.to = _args.params.to;

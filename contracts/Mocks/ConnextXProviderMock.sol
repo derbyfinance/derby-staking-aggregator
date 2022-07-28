@@ -3,7 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./interfaces/IXProviderMock.sol";
 import "./interfaces/IXReceiveMock.sol";
-import "../Interfaces/ExternalInterfaces/IConnextHandler.sol";
+import "../Interfaces/ExternalInterfaces/IConnextHandler.sol"; // https://github.com/connext/nxtp/blob/main/packages/deployments/contracts/contracts/core/connext/interfaces/IConnextHandler.sol
 import "./interfaces/IExecutorMock.sol";
 import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
 
@@ -37,13 +37,14 @@ contract ConnextXProviderMock is IXProviderMock {
   }
   
   constructor(
-    address _executor,
+    address _executor, // disabled on testnet
     address _dao,
     address _connextHandler
   ){
-    executor = _executor;
+    executor = _executor; // disabled on testnet
     dao = _dao;
     connext = IConnextHandler(_connextHandler);
+    // executor = connext.executor(); // on testnet
   }
 
   /// @notice setter for the sender contract parameters, always needs to be set, could be a list when multiple contracts on the sending chain have to send values.
@@ -85,7 +86,8 @@ contract ConnextXProviderMock is IXProviderMock {
       originDomain: xSendMockChainID,      
       destinationDomain: xReceiveMockChainID,      
       agent: receiveProvider,      
-      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier      
+      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier 
+      // recovery: receiveProvider, // on testnet         
       forceSlow: true,      
       receiveLocal: false,      
       callback: address(0),      
