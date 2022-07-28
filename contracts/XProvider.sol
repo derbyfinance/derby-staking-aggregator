@@ -106,6 +106,22 @@ contract XProvider {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
+  /// @notice Pushes the delta allocations from the game to the xChainController
+  /// @param _vaultNumber number of the vault
+  /// @param _vault Array 
+  /// @param _chainId Array 
+  function getTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId) public {
+    bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,uint256,address)"));
+    bytes memory callData = abi.encodeWithSelector(
+      selector, 
+      _vaultNumber, 
+      _chainId, 
+      _vault
+    );
+
+    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+  }
+
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider new address of xProvider for xController chain
   function setXControllerProvider(address _xControllerProvider) external onlyDao {

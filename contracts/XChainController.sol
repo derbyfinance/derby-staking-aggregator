@@ -19,7 +19,7 @@ contract XChainController {
   IXProvider public xProvider;
 
   uint32 public homeChainId;
-  uint32[] public chainIds = [10, 100, 1000];
+  uint32[] public chainIds = [10, 100];
 
   struct vaultInfo {
     int256 totalCurrentAllocation;
@@ -180,29 +180,18 @@ contract XChainController {
     vaults[_vaultNumber].underlyingReceived = 0;
 
     for (uint i = 0; i < chainIds.length; i++) {
-      if (chainIds[i] == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber);
-      else setTotalUnderlyingsXChain(_vaultNumber, chainIds[i]);
+      address vault = getVaultAddress(_vaultNumber, homeChainId);
+
+      if (chainIds[i] == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
+      else xProvider.getTotalUnderlying(_vaultNumber, vault, chainIds[i]);
     }
   }
 
   /// @notice Helper to get and set total underlying in XController from home chain
-  function setTotalUnderlyingHomeChain(uint256 _vaultNumber) internal {
-    address vault = getVaultAddress(_vaultNumber, homeChainId);
-    uint256 underlying = IVault(vault).getTotalUnderlyingIncBalance();
+  function setTotalUnderlyingHomeChain(uint256 _vaultNumber, address _vault) internal {
+    console.log("home chain");
+    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
     setTotalUnderlyingCallback(_vaultNumber, homeChainId, underlying);
-  }
-
-  /// @notice Helper to get and set total underlying in XController from X chain
-  function setTotalUnderlyingsXChain(uint256 _vaultNumber, uint256 _chainId) internal {
-    bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,uint256,address)"));
-    bytes memory callData = abi.encodeWithSelector(
-      selector, 
-      _vaultNumber, 
-      _chainId, 
-      getVaultAddress(_vaultNumber, _chainId)
-    );
-
-    xProvider.xCall(xProviders[_chainId], _chainId, callData);
   }
 
   /// @notice Step 2 callback

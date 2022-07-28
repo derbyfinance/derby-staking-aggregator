@@ -63,8 +63,9 @@ describe("Testing XChainController, unit test", async () => {
       initController(controller, [userAddr, vault1.address, vault2.address, vault3.address]),
       ConnextHandler.setExecutor(ConnextExecutor.address),
       allProviders.deployAllProviders(dao, controller),
-      IUSDc.connect(USDCSigner).transfer(vault1.address, amountUSDC),
+      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(5)),
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
+      IUSDc.connect(user).approve(vault2.address, amountUSDC),
     ]);
 
     await Promise.all([
@@ -108,8 +109,19 @@ describe("Testing XChainController, unit test", async () => {
 
   });
 
-  it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
+  it.only("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
+    await vault1.connect(user).depositETF(amountUSDC); // 100k
+    await vault2.connect(user).depositETF(amountUSDC); // 100k
 
+    await xChainController.setTotalUnderlying(vaultNumber);
+
+    const totalUnderlying = await xChainController.setTotalUnderlying(vaultNumber);
+    console.log({ totalUnderlying })
+
+    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 10)).to.be.equal(amountUSDC);
+    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 100)).to.be.equal(amountUSDC);
+    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 1000)).to.be.equal(0);
+    // expect(totalUnderlying).to.be.equal(amountUSDC.mul(2)); // 200k
   });
 
   // 
