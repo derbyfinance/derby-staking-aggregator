@@ -44,7 +44,7 @@ contract ConnextXProviderMock is IXProviderMock {
     // executor = _executor; // disabled on testnet
     dao = _dao;
     connext = IConnextHandler(_connextHandler);
-    executor = connext.getExecutor(); // on testnet
+    executor = connext.executor(); // on testnet
   }
 
   /// @notice setter for the sender contract parameters, always needs to be set, could be a list when multiple contracts on the sending chain have to send values.

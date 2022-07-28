@@ -5,6 +5,6 @@ import {XCallArgs} from "../../libraries/LibConnextStorage.sol";
 
 interface IConnextHandler {
   function xcall(XCallArgs calldata _args) external payable returns (bytes32);
-  function getExecutor() external view returns(address);
+  function executor() external view returns(address);
 }
   
