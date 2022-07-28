@@ -32,7 +32,7 @@ describe.only("Testing XChainController, unit test", async () => {
 
     controller = await deployController(dao, daoAddr);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
-    xProvider = await deployXProvider(dao, xChainController.address);
+    xProvider = await deployXProvider(dao, daoAddr, daoAddr, daoAddr, xChainController.address, 10);
 
     [vault1, vault2, vault3] = await Promise.all([
       await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
@@ -64,10 +64,10 @@ describe.only("Testing XChainController, unit test", async () => {
   it("(1.5 Store vault stages) ", async function() {
     await xChainController.setActiveVaultsTEST(vaultNumber, 1);
 
-    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(false);
+    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(false);
 
     await xChainController.setReadyTEST(vaultNumber, true);
-    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(true);
+    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
 
     await xChainController.setAllocationsReceivedTEST(vaultNumber, true);
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
@@ -79,7 +79,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(1);
 
     await xChainController.resetVaultStagesTEST(vaultNumber);
-    expect(await xChainController.getVaultState(vaultNumber)).to.be.equal(true);
+    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(false);
     expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(0);
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);

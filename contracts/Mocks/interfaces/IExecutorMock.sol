@@ -12,5 +12,5 @@ interface IExecutorMock {
 
   function originSender() external returns (address);
   function origin() external returns (uint32);
-  function execute(ExecutorArgs calldata _args) external payable returns (bool success, bytes memory returnData);
+  function execute(ExecutorArgs calldata _args) external payable;
 }

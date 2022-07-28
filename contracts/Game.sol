@@ -12,6 +12,7 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGame.sol";
 import "./Interfaces/IGoverned.sol";
+import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
 
@@ -21,19 +22,14 @@ contract Game is ERC721, ReentrancyGuard {
     struct Basket {
       // the ETF number for which this Basket was created
       uint256 vaultNumber;
-
       // last period when this Basket got rebalanced
       uint256 lastRebalancingPeriod;
-
       // nr of total allocated tokens 
       int256 nrOfAllocatedTokens;
-
       // total build up rewards
       int256 totalUnRedeemedRewards;
-
       // total redeemed rewards
       int256 totalRedeemedRewards;
-
       // basket => vaultNumber => chainId => allocation
       mapping(uint256 => mapping(uint256 => int256)) allocations;
     }
@@ -49,26 +45,24 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     }
 
-    // derby token address
     address public derbyTokenAddress;
-
-    // router address
     address public routerAddress;
-
-    // address of DAO governance contract
     address public governed;
+    address public xProvider;
 
-    // controller
     IController public controller;
-
-    // vault addresses
-    mapping(address => bool) vaultAddresses;
 
     // latest basket id
     uint256 private latestBasketId;
 
     // latest vaultNumber
     uint256 public latestvaultNumber = 0;
+
+    // array of chainIds e.g [10, 100, 1000];
+    uint256[] public chainIds;
+
+    // vault addresses
+    mapping(address => bool) vaultAddresses;
 
     // stores the total value locked per active locked derby token in the game. Stored per vault per period.
     // first index is vault, second is rebalancing period.
@@ -77,23 +71,25 @@ contract Game is ERC721, ReentrancyGuard {
     // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
     mapping(uint256 => Basket) private baskets;
     
-    uint256[] public chainIds;
-
     // chainId => latestProtocolId set by dao
     mapping(uint256 => uint256) public latestProtocolId;
 
     // vaultNumber => vaultInfo struct
     mapping(uint256 => vaultInfo) internal vaults;
 
+    mapping(uint256 => bool) public isXChainRebalancing;
+
+
     modifier onlyDao {
-      require(msg.sender == governed, "ETFGame: only DAO");
+      require(msg.sender == governed, "Game: only DAO");
       _;
     }
 
     modifier onlyBasketOwner(uint256 _basketId) {
-      require(msg.sender == ownerOf(_basketId), "ETFGame Not the owner of the basket");
+      require(msg.sender == ownerOf(_basketId), "Game: Not the owner of the basket");
       _;
     }
+
 
     constructor(
       string memory name_, 
@@ -283,9 +279,11 @@ contract Game is ERC721, ReentrancyGuard {
     function rebalanceBasket(
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
-    ) external onlyBasketOwner(_basketId) nonReentrant {    
+    ) external onlyBasketOwner(_basketId) nonReentrant  {    
       // addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
+
+      require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
       int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
       lockOrUnlockTokens(_basketId, totalDelta);
@@ -346,6 +344,28 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice Trigger for Dao to push delta allocations to the xChainController
+    /// @dev Sends over an array that should match the IDs in chainIds array
+    function pushAllocationsToController(uint256 _vaultNumber) external {
+      isXChainRebalancing[_vaultNumber] = true;
+
+      int256[] memory deltas = allocationsToArray(_vaultNumber);
+      IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+    }
+
+    /// @notice Creates delta allocation array for chains matching IDs in chainIds array
+    /// @notice Resets deltaAllocation for chainIds
+    /// @return deltas Array with delta Allocations for all chainIds
+    function allocationsToArray(uint256 _vaultNumber) internal returns(int256[] memory deltas) {
+      deltas = new int[](chainIds.length);
+
+      for (uint256 i = 0; i < chainIds.length; i++) {
+        uint256 chain = chainIds[i];
+        deltas[i] = getDeltaAllocationChain(_vaultNumber, chain);
+        vaults[_vaultNumber].deltaAllocationChain[chain] = 0;
+      }
+    }
+
     /// @notice rewards are calculated here.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
@@ -386,5 +406,11 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _chainIds array of all the used chainIds
     function setChainIdArray(uint256[] memory _chainIds) external onlyDao {
       chainIds = _chainIds;
+    }
+
+    /// @notice Setter for xProvider address
+    /// @param _xProvider new address of xProvider on this chain
+    function setXProvider(address _xProvider) external onlyDao {
+      xProvider = _xProvider;
     }
 }

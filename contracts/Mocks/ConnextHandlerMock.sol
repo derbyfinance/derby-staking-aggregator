@@ -4,6 +4,7 @@ pragma solidity ^0.8.11;
 import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
 import "./interfaces/IExecutorMock.sol";
 import "../Interfaces/ExternalInterfaces/IConnextHandler.sol";
+import "hardhat/console.sol";
 
 contract ConnextHandlerMock is IConnextHandler {
     address public executor;
@@ -32,6 +33,7 @@ contract ConnextHandlerMock is IConnextHandler {
         exArgs.callData = _args.params.callData;
         exArgs.originSender = _args.params.recovery;
         exArgs.origin = _args.params.originDomain;
+
         IExecutorMock(executor).execute(exArgs);
     }
 }

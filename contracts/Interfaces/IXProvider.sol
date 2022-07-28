@@ -14,4 +14,6 @@ interface IXProvider {
     bytes memory _callData
   ) external;
 
+  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external;
+
 }
