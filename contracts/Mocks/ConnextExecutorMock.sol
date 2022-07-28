@@ -2,6 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "./interfaces/IExecutorMock.sol";
+import "hardhat/console.sol";
 
 contract ConnextExecutorMock is IExecutorMock {
     address private immutable connext;
@@ -25,7 +26,7 @@ contract ConnextExecutorMock is IExecutorMock {
         return origin_;
     }
 
-    function execute(ExecutorArgs memory _args) external payable  onlyConnext returns (bool success, bytes memory returnData) {
+    function execute(ExecutorArgs memory _args) external override payable onlyConnext {
         originSender_ = _args.originSender;
         origin_ = _args.origin;
         (bool success,) = _args.to.call(_args.callData);

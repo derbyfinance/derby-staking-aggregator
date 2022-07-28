@@ -5,15 +5,14 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, GameMock, VaultMock, DerbyToken, XProvider, XChainControllerMock } from '../../typechain-types';
-import { deployController, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
-import { usdc, compound_usdc_01, aave_usdc_01, yearn_usdc_01, compound_dai_01, aave_usdt_01 } from "../helpers/addresses";
-import { initController, rebalanceETF } from "../helpers/vaultHelpers";
+import type { Controller, GameMock, VaultMock, DerbyToken, XProvider, XChainControllerMock, ConnextExecutorMock, ConnextHandlerMock } from '../../typechain-types';
+import { deployConnextExecutorMock, deployConnextHandlerMock, deployController, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import { usdc } from "../helpers/addresses";
+import { initController } from "../helpers/vaultHelpers";
 import AllMockProviders from "../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
 import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
-import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 const chainIds = [10, 100, 1000];
 const nftName = 'DerbyNFT';
@@ -24,20 +23,7 @@ const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing Game", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider: XProvider;
-
-  const protocols = new Map<string, ProtocolVault>()
-  .set('compound_usdc_01', compound_usdc_01)
-  .set('compound_dai_01', compound_dai_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('aave_usdt_01', aave_usdt_01)
-  .set('yearn_usdc_01', yearn_usdc_01);
-
-  const compoundVault = protocols.get('compound_usdc_01')!;
-  const compoundDAIVault = protocols.get('compound_dai_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
-  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
-  const yearnVault = protocols.get('yearn_usdc_01')!;
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -49,19 +35,40 @@ describe.only("Testing Game", async () => {
       user.getAddress()
     ]);
 
+    ConnextHandler = await deployConnextHandlerMock(dao, daoAddr);
+    ConnextExecutor = await deployConnextExecutorMock(dao, ConnextHandler.address);
+
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
     vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
-    xProvider = await deployXProvider(dao, xChainController.address);
+
+    [xProvider10, xProvider100] = await Promise.all([
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 10),
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 100)
+    ])
+
+    await Promise.all([
+      xProvider10.setXControllerProvider(xProvider100.address),
+      xProvider10.setXControllerChainId(100),
+      xProvider100.setXControllerProvider(xProvider100.address),
+      xProvider100.setXControllerChainId(100),
+      xProvider10.setXControllerProvider(xProvider100.address),
+      xProvider100.setXControllerProvider(xProvider100.address),
+      xProvider10.setGameChainId(10),
+      xProvider100.setGameChainId(10),
+      game.connect(dao).setXProvider(xProvider10.address),
+      xProvider10.whitelistSender(xChainController.address),
+      xProvider100.whitelistSender(game.address),
+    ]);
 
     // With MOCK Providers
     await Promise.all([
       initController(controller, [game.address, vault.address]),
       game.connect(dao).setChainIdArray([10, 100, 1000]),
-      game.connect(dao).setXProvider(xProvider.address),
-      xChainController.connect(dao).setProviderAddress(xProvider.address),
+      ConnextHandler.setExecutor(ConnextExecutor.address),
+      xChainController.connect(dao).setProviderAddress(xProvider100.address),
       controller.connect(dao).addGame(game.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
@@ -74,9 +81,9 @@ describe.only("Testing Game", async () => {
       game.connect(dao).setLatestProtocolId(1000, 5),
     ])
 
-    for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
-    }
+    // for (const protocol of protocols.values()) {
+    //   await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
+    // }
   });
 
   it("DerbyToken should have name, symbol and totalSupply set", async function() {
@@ -167,7 +174,7 @@ describe.only("Testing Game", async () => {
     await xChainController.connect(dao).resetVaultStages(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
-    await game.connect(dao).pushAllocationsToController(vaultNumber);
+    await game.pushAllocationsToController(vaultNumber);
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
