@@ -108,16 +108,21 @@ describe("Testing XChainController, unit test", async () => {
 
   });
 
-  it.only("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
+  it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
     await vault2.connect(user).depositETF(amountUSDC); // 100k
 
+    await xChainController.setAllocationsReceivedTEST(vaultNumber, true);
+
     await xChainController.setTotalUnderlying(vaultNumber);
 
-    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 10)).to.be.equal(amountUSDC);
-    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 100)).to.be.equal(amountUSDC);
-    // expect(await xChainController.getTotalUnderlyingOnChain(vaultNumber, 1000)).to.be.equal(0);
-    // expect(totalUnderlying).to.be.equal(amountUSDC.mul(2)); // 200k
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC); // 100k
+
+    const totalUnderlying = await xChainController.getTotalUnderlyingVaultTEST(vaultNumber);
+    console.log({ totalUnderlying })
+
+    expect(totalUnderlying).to.be.equal(amountUSDC.mul(2)); // 200k
   });
 
   // 

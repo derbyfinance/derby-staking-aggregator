@@ -12,7 +12,6 @@ import "hardhat/console.sol";
 contract XChainController {
   using SafeERC20 for IERC20;
 
-  uint256 public latestChainId = 3; // will adjust at xchain implementation
   address public game;
   address public dao;
   address public xProviderAddr;
@@ -175,7 +174,7 @@ contract XChainController {
 
   /// @notice Step 2 trigger 
   /// @notice Set total balance in vaultCurrency for an vaultNumber on all chains
-  function setTotalUnderlying(uint256 _vaultNumber) external {
+  function setTotalUnderlying(uint256 _vaultNumber) external onlyWhenAllocationsReceived(_vaultNumber) {
     vaults[_vaultNumber].totalUnderlying = 0;
     vaults[_vaultNumber].underlyingReceived = 0;
 
@@ -191,36 +190,102 @@ contract XChainController {
 
   /// @notice Helper to get and set total underlying in XController from home chain
   function setTotalUnderlyingHomeChain(uint256 _vaultNumber, address _vault) internal {
-    console.log("home chain");
     uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
     setTotalUnderlyingCallback(_vaultNumber, underlying);
   }
 
+  /// @notice Helper so only this contract can call setTotalUnderlyingCallbackInt
   function setTotalUnderlyingCallback(uint256 _vaultNumber, uint256 _underlying) internal {
     setTotalUnderlyingCallbackInt(_vaultNumber, homeChainId, _underlying);
   }
 
+  /// @notice Helper so only Provider can call setTotalUnderlyingCallbackInt
   function setTotalUnderlyingCallback(uint256 _vaultNumber, uint32 _chainId, uint256 _underlying) external onlyXProvider {
     setTotalUnderlyingCallbackInt(_vaultNumber, _chainId, _underlying);
   }
 
   /// @notice Step 2 callback
   /// @notice Callback to set totalUnderlying in XController
-  /// @param _underlying total underlying in vault currency
+  /// @param _vaultNumber Number of Vault
+  /// @param _chainId Chain number the vault called from
+  /// @param _underlying Total underlying in vault currency
   function setTotalUnderlyingCallbackInt(
     uint256 _vaultNumber, 
     uint32 _chainId, 
     uint256 _underlying
   ) internal {
-    console.log("underlying callback %s", _underlying);
+    console.log("underlying callback %s chain %s", _underlying, _chainId);
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
     vaults[_vaultNumber].totalUnderlying += _underlying;
     vaults[_vaultNumber].underlyingReceived ++;
   }
 
+  /// @notice Helper to get total current allocation of vaultNumber
+  function getTotalUnderlyingOnChain(uint256 _vaultNumber, uint32 _chainId) internal view returns(uint256) {
+    return vaults[_vaultNumber].totalUnderlyingPerChain[_chainId];
+  }
+
+  /// @notice Gets saved totalUnderlying for vaultNumber
+  function getTotalUnderlyingVault(uint256 _vaultNumber) internal view returns(uint256) {
+    require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Not all vaults set");
+    return vaults[_vaultNumber].totalUnderlying;
+  }
+
+  /// @notice Helper to get vault address of vaultNumber with given chainID
+  function getVaultAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
+    return vaults[_vaultNumber].vaultChainAddress[_chainId];
+  }
+
+  /// @notice Helper to get underyling address of vaultNumber with given chainID eg USDC
+  function getUnderlyingAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
+    return vaults[_vaultNumber].vaultUnderlyingAddress[_chainId];
+  }
+
+  /// @notice Helper to get current allocation per chain of vaultNumber with given chainID
+  function getCurrentAllocation(uint256 _vaultNumber, uint32 _chainId) internal view returns(int256) {
+    return vaults[_vaultNumber].currentAllocationPerChain[_chainId];
+  }
+
+  /// @notice Helper to get total current allocation of vaultNumber
+  function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
+    return vaults[_vaultNumber].totalCurrentAllocation;
+  }
+
+  /// @notice Set Vault address and underlying for a particulair chainId
+  /// @param _vaultNumber number of Vault
+  /// @param _chainId number of chainId 
+  /// @param _address address of the Vault
+  /// @param _underlying underlying of the Vault eg USDC
+  function setVaultChainAddress(
+    uint256 _vaultNumber, 
+    uint32 _chainId, 
+    address _address, 
+    address _underlying
+  ) external onlyDao{
+    vaults[_vaultNumber].vaultChainAddress[_chainId] = _address; 
+    vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
+  }
+
+  /// @notice Setter for xProvider address
+  /// @param _xProvider new address of xProvider on this chain
+  function setHomeXProviderAddress(address _xProvider) external onlyDao {
+    xProvider = IXProvider(_xProvider);
+    xProviderAddr = _xProvider;
+  }
+
+  function setXProviderAddress(address _xProvider, uint32 _chainId) external onlyDao {
+    xProviders[_chainId] = _xProvider;
+  }
+
+  /// @notice Setter for chainId array
+  /// @param _chainIds array of all the used chainIds
+  function setChainIdArray(uint32[] memory _chainIds) external onlyDao {
+    chainIds = _chainIds;
+  }
+
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given vaultNumber
   /// @dev 
-  /// @param _vaultNumber number of Vault
+  /// @param _vaultNumber Number of Vault
   function rebalanceXChainAllocations(uint256 _vaultNumber) external onlyDao {
     // require(vaults[_vaultNumber].underlyingReceived == latestChainId, "Total underlying not set");
     // // Correct state for Controller needed
@@ -288,62 +353,5 @@ contract XChainController {
     // uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
 
     // return (amountToDeposit, amountToWithdraw);
-  }
-
-  /// @notice Gets saved totalUnderlying for vaultNumber
-  function getTotalUnderlyingETF(uint256 _vaultNumber) public view returns(uint256) {
-    // require(vaults[_vaultNumber].underlyingReceived == latestChainId, "Not all vaults set");
-    // return vaults[_vaultNumber].totalChainUnderlying;
-  }
-
-  /// @notice Helper to get vault address of vaultNumber with given chainID
-  function getVaultAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
-    return vaults[_vaultNumber].vaultChainAddress[_chainId];
-  }
-
-  /// @notice Helper to get underyling address of vaultNumber with given chainID eg USDC
-  function getUnderlyingAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns(address) {
-    return vaults[_vaultNumber].vaultUnderlyingAddress[_chainId];
-  }
-
-  /// @notice Helper to get current allocation per chain of vaultNumber with given chainID
-  function getCurrentAllocation(uint256 _vaultNumber, uint32 _chainId) internal view returns(int256) {
-    return vaults[_vaultNumber].currentAllocationPerChain[_chainId];
-  }
-
-  function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
-    return vaults[_vaultNumber].totalCurrentAllocation;
-  }
-
-  /// @notice Set Vault address and underlying for a particulair chainId
-  /// @param _vaultNumber number of Vault
-  /// @param _chainId number of chainId
-  /// @param _address address of the Vault
-  /// @param _underlying underlying of the Vault eg USDC
-  function setVaultChainAddress(
-    uint256 _vaultNumber, 
-    uint32 _chainId, 
-    address _address, 
-    address _underlying
-  ) external onlyDao{
-    vaults[_vaultNumber].vaultChainAddress[_chainId] = _address; 
-    vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
-  }
-
-  /// @notice Setter for xProvider address
-  /// @param _xProvider new address of xProvider on this chain
-  function setHomeXProviderAddress(address _xProvider) external onlyDao {
-    xProvider = IXProvider(_xProvider);
-    xProviderAddr = _xProvider;
-  }
-
-  function setXProviderAddress(address _xProvider, uint32 _chainId) external onlyDao {
-    xProviders[_chainId] = _xProvider;
-  }
-
-  /// @notice Setter for chainId array
-  /// @param _chainIds array of all the used chainIds
-  function setChainIdArray(uint32[] memory _chainIds) external onlyDao {
-    chainIds = _chainIds;
   }
 }

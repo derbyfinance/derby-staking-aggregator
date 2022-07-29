@@ -30,6 +30,17 @@ contract XProvider {
     _;
   }
 
+  modifier onlyController {
+    require(msg.sender == xController, "ConnextProvider: only DAO");
+    _;
+  }
+
+  modifier onlyGame {
+    require(msg.sender == game, "ConnextProvider: only DAO");
+    _;
+  }
+
+
   modifier onlyExecutor(uint32 _chain) { 
     require(
       senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
@@ -92,7 +103,7 @@ contract XProvider {
   /// @notice Pushes the delta allocations from the game to the xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
-  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) public {
+  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyGame {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
@@ -110,24 +121,36 @@ contract XProvider {
   /// @param _vaultNumber number of the vault
   /// @param _vault Array 
   /// @param _chainId Array 
-  function pushGetTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId, address _provider) public {
+  function pushGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    address _vault, 
+    uint32 _chainId, 
+    address _provider
+  ) external onlyController {
     bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
 
     xSend(_provider, homeChainId, _chainId, callData);
   }
 
-  function receiveGetTotalUnderlying(uint256 _vaultNumber, address _vault) public {
+  function receiveGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    address _vault
+  ) external onlyExecutor(xControllerChain) {
     uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
 
-    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint256)"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, underlying);
-
+    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint32,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
+    console.log("chainnn %s", homeChainId);
     xSend(xControllerProvider, homeChainId, xControllerChain, callData);
   }
 
-  function callbackGetTotalUnderlying(uint256 _vaultNumber, uint256 _underlying) public {
-    return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, homeChainId, _underlying);
+  function callbackGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    uint32 _chainId, 
+    uint256 _underlying
+  ) external {
+    return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
   }
 
   /// @notice Setter for xControllerProvider address
