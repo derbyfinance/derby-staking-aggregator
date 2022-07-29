@@ -182,6 +182,7 @@ contract XChainController {
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
       address vault = getVaultAddress(_vaultNumber, homeChainId);
+      require(vault != address(0), "No vault on this chainId");
 
       if (chain == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
       else xProvider.pushGetTotalUnderlying(_vaultNumber, vault, chain, xProviders[chain]);
@@ -192,16 +193,28 @@ contract XChainController {
   function setTotalUnderlyingHomeChain(uint256 _vaultNumber, address _vault) internal {
     console.log("home chain");
     uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
-    setTotalUnderlyingCallback(_vaultNumber, homeChainId, underlying);
+    setTotalUnderlyingCallback(_vaultNumber, underlying);
+  }
+
+  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint256 _underlying) internal {
+    setTotalUnderlyingCallbackInt(_vaultNumber, homeChainId, _underlying);
+  }
+
+  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint32 _chainId, uint256 _underlying) external onlyXProvider {
+    setTotalUnderlyingCallbackInt(_vaultNumber, _chainId, _underlying);
   }
 
   /// @notice Step 2 callback
   /// @notice Callback to set totalUnderlying in XController
-  /// @param _amount total underlying in vault currency
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint32 _chainId, uint256 _amount) public {
-    console.log("underlying callback %s", _amount);
-    vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _amount;
-    vaults[_vaultNumber].totalUnderlying += _amount;
+  /// @param _underlying total underlying in vault currency
+  function setTotalUnderlyingCallbackInt(
+    uint256 _vaultNumber, 
+    uint32 _chainId, 
+    uint256 _underlying
+  ) internal {
+    console.log("underlying callback %s", _underlying);
+    vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
+    vaults[_vaultNumber].totalUnderlying += _underlying;
     vaults[_vaultNumber].underlyingReceived ++;
   }
 
@@ -324,7 +337,7 @@ contract XChainController {
     xProviderAddr = _xProvider;
   }
 
-  function setXProviderAddress(address _xProvider, uint32 _chainId) external {
+  function setXProviderAddress(address _xProvider, uint32 _chainId) external onlyDao {
     xProviders[_chainId] = _xProvider;
   }
 

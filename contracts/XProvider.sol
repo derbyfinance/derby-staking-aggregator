@@ -35,7 +35,7 @@ contract XProvider {
       senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
       IExecutorMock(msg.sender).origin() == _chain &&
       msg.sender == executor,
-      "Expected origin contract on origin domain called by Executor"
+      "!Executor"
     ); 
     _;  
   }
@@ -113,13 +113,21 @@ contract XProvider {
   function pushGetTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId, address _provider) public {
     bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
-    console.log("Provider %s", _provider);
+
     xSend(_provider, homeChainId, _chainId, callData);
   }
 
   function receiveGetTotalUnderlying(uint256 _vaultNumber, address _vault) public {
-    console.log("get totalunderlying provider");
-    // uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
+    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
+
+    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, underlying);
+
+    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+  }
+
+  function callbackGetTotalUnderlying(uint256 _vaultNumber, uint256 _underlying) public {
+    return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, homeChainId, _underlying);
   }
 
   /// @notice Setter for xControllerProvider address
