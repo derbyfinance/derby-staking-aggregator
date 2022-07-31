@@ -156,10 +156,11 @@ export const deployXProvider = (
   executor: string, 
   handler: string, 
   dao: string, 
+  game: string,
   xController: string,
   homeChain: number,
 ): Promise<XProvider> => {
-  return (deployContract(deployerSign, XProviderArtifact, [executor, handler, dao, xController, homeChain])) as Promise<XProvider>;
+  return (deployContract(deployerSign, XProviderArtifact, [executor, handler, dao, game, xController, homeChain])) as Promise<XProvider>;
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {

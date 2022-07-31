@@ -36,7 +36,7 @@ contract XProvider {
   }
 
   modifier onlyGame {
-    require(msg.sender == game, "ConnextProvider: only DAO");
+    require(msg.sender == game, "ConnextProvider: only Game");
     _;
   }
 
@@ -55,12 +55,14 @@ contract XProvider {
     address _executor,
     address _connextHandler,
     address _dao,
+    address _game,
     address _xController,
     uint32 _homeChainId
   ){
     executor = _executor;
-    xController = _xController;
     dao = _dao;
+    game = _game;
+    xController = _xController;
     connext = IConnextHandler(_connextHandler);
     homeChainId = _homeChainId;
   }
@@ -117,10 +119,11 @@ contract XProvider {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
-  /// @notice Pushes the delta allocations from the game to the xChainController
+  /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
   /// @param _vaultNumber number of the vault
-  /// @param _vault Array 
-  /// @param _chainId Array 
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _provider Address of the provider on given chainId 
   function pushGetTotalUnderlying(
     uint256 _vaultNumber, 
     address _vault, 
@@ -133,6 +136,10 @@ contract XProvider {
     xSend(_provider, homeChainId, _chainId, callData);
   }
 
+  /// @notice Receiver for the pushGetTotalUnderlying on each chainId
+  /// @dev Gets the totalUnderling plus vault balance and sends back a callback to callbackGetTotalUnderlying on mainchain
+  /// @param _vaultNumber number of the vault
+  /// @param _vault Address of the Derby Vault on given chainId 
   function receiveGetTotalUnderlying(
     uint256 _vaultNumber, 
     address _vault
@@ -145,6 +152,10 @@ contract XProvider {
     xSend(xControllerProvider, homeChainId, xControllerChain, callData);
   }
 
+  /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
+  /// @param _vaultNumber number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
   function callbackGetTotalUnderlying(
     uint256 _vaultNumber, 
     uint32 _chainId, 

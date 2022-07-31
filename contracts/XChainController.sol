@@ -149,8 +149,8 @@ contract XChainController {
   }
 
   /// @notice Step 1; Used by game to send allocations to xChainController
-  /// @param _vaultNumber number of Vault
-  /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
+  /// @param _vaultNumber Number of Vault
+  /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGame(
     uint256 _vaultNumber, 
     int256[] memory _deltas
@@ -164,9 +164,9 @@ contract XChainController {
   }
 
   /// @notice Helper to settle the total current allocation with the delta allocations received from Game
-  /// @param _vaultNumber number of Vault
-  /// @param _chainId number of chainId
-  /// @param _deltas delta allocations array received from game, indexes match chainIds[] set in this contract
+  /// @param _vaultNumber Number of Vault
+  /// @param _chainId Number of chain used
+  /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function settleCurrentAllocation(uint256 _vaultNumber, uint32 _chainId, int256 _deltas) internal {
     vaults[_vaultNumber].totalCurrentAllocation += _deltas;
     vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
@@ -205,10 +205,10 @@ contract XChainController {
   }
 
   /// @notice Step 2 callback
-  /// @notice Callback to set totalUnderlying in XController
-  /// @param _vaultNumber Number of Vault
-  /// @param _chainId Chain number the vault called from
-  /// @param _underlying Total underlying in vault currency
+  /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
+  /// @param _vaultNumber number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
   function setTotalUnderlyingCallbackInt(
     uint256 _vaultNumber, 
     uint32 _chainId, 
@@ -253,7 +253,7 @@ contract XChainController {
 
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
-  /// @param _chainId number of chainId 
+  /// @param _chainId Number of chain used
   /// @param _address address of the Vault
   /// @param _underlying underlying of the Vault eg USDC
   function setVaultChainAddress(
@@ -273,6 +273,9 @@ contract XChainController {
     xProviderAddr = _xProvider;
   }
 
+  /// @notice Setter for xProvider address
+  /// @param _xProvider new address of xProvider on this chain
+  /// @param _chainId Number of the chain to set the provider for
   function setXProviderAddress(address _xProvider, uint32 _chainId) external onlyDao {
     xProviders[_chainId] = _xProvider;
   }

@@ -17,7 +17,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing XChainController, unit test", async () => {
+describe.only("Testing XChainController, unit test", async () => {
   let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
 
   before(async function() {
@@ -37,8 +37,8 @@ describe("Testing XChainController, unit test", async () => {
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
 
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 10),
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 100)
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 10),
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 100)
     ]);
 
     [vault1, vault2, vault3] = await Promise.all([

@@ -45,8 +45,8 @@ describe.only("Testing Game", async () => {
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
 
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 10),
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, xChainController.address, 100)
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, game.address, xChainController.address, 10),
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, game.address, xChainController.address, 100)
     ])
 
     await Promise.all([
@@ -68,7 +68,8 @@ describe.only("Testing Game", async () => {
       initController(controller, [game.address, vault.address]),
       game.connect(dao).setChainIdArray([10, 100, 1000]),
       ConnextHandler.setExecutor(ConnextExecutor.address),
-      xChainController.connect(dao).setProviderAddress(xProvider100.address),
+      xChainController.connect(dao).setHomeXProviderAddress(xProvider100.address),
+      xChainController.connect(dao).setChainIdArray(chainIds),
       controller.connect(dao).addGame(game.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
