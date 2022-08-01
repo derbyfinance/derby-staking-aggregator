@@ -148,7 +148,7 @@ contract XProvider {
 
     bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint32,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
-    console.log("chainnn %s", homeChainId);
+
     xSend(xControllerProvider, homeChainId, xControllerChain, callData);
   }
 
@@ -163,6 +163,8 @@ contract XProvider {
   ) external {
     return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
   }
+
+
 
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider new address of xProvider for xController chain

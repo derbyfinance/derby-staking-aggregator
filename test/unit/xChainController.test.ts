@@ -14,11 +14,12 @@ import { vaultInfo } from "../helpers/vaultHelpers";
 
 
 const amount = 100_000;
+const chainIds = [10, 100, 1000];
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing XChainController, unit test", async () => {
-  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
+  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -36,27 +37,31 @@ describe.only("Testing XChainController, unit test", async () => {
     controller = await deployController(dao, daoAddr);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
 
-    [xProvider10, xProvider100] = await Promise.all([
+    [xProvider10, xProvider100, xProvider1000] = await Promise.all([
       deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 10),
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 100)
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 100),
+      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, userAddr, xChainController.address, 1000)
     ]);
 
     [vault1, vault2, vault3] = await Promise.all([
-      await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
     ]);
 
     await Promise.all([
       xProvider10.setXControllerProvider(xProvider100.address),
       xProvider10.setXControllerChainId(100),
+      xProvider10.setGameChainId(10),
+      xProvider10.whitelistSender(xChainController.address),
       xProvider100.setXControllerProvider(xProvider100.address),
       xProvider100.setXControllerChainId(100),
-      xProvider10.setXControllerProvider(xProvider100.address),
-      xProvider100.setXControllerProvider(xProvider100.address),
-      xProvider10.setGameChainId(10),
       xProvider100.setGameChainId(10),
-      xProvider10.whitelistSender(xChainController.address),
+      xProvider100.whitelistSender(xChainController.address),
+      xProvider1000.setXControllerProvider(xProvider100.address),
+      xProvider1000.setXControllerChainId(100),
+      xProvider1000.setGameChainId(10),
+      xProvider1000.whitelistSender(xChainController.address),
     ]);
 
     await Promise.all([
@@ -65,7 +70,7 @@ describe.only("Testing XChainController, unit test", async () => {
       allProviders.deployAllProviders(dao, controller),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(5)),
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
-      IUSDc.connect(user).approve(vault2.address, amountUSDC),
+      IUSDc.connect(user).approve(vault2.address, amountUSDC.mul(2)),
     ]);
 
     await Promise.all([
@@ -77,8 +82,10 @@ describe.only("Testing XChainController, unit test", async () => {
     await Promise.all([
       xChainController.setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
+      xChainController.setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
       xChainController.setXProviderAddress(xProvider10.address, 10),
       xChainController.setXProviderAddress(xProvider100.address, 100), 
+      xChainController.setXProviderAddress(xProvider1000.address, 1000), 
       xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
     ]);
   });
@@ -110,80 +117,22 @@ describe.only("Testing XChainController, unit test", async () => {
 
   it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
-    await vault2.connect(user).depositETF(amountUSDC); // 100k
+    await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
 
     await xChainController.setAllocationsReceivedTEST(vaultNumber, true);
 
     await xChainController.setTotalUnderlying(vaultNumber);
 
+    console.log("hii")
+
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC); // 100k
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 1000)).to.be.equal(0); // 0
 
     const totalUnderlying = await xChainController.getTotalUnderlyingVaultTEST(vaultNumber);
     console.log({ totalUnderlying })
 
-    expect(totalUnderlying).to.be.equal(amountUSDC.mul(2)); // 200k
+    expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
   });
 
-  // 
-  it.skip("Should 'cross chain' rebalance vaults and update vault state", async function() {
-    // const allocationArray = [ // For reference only at the moment
-    //   [1, 10],
-    //   [1, 20],
-    //   [2, 30],
-    //   [2, 40],
-    //   [3, 50],
-    //   [3, 60],
-    // ];
-
-    // await Promise.all([
-    //   xChainController.setDeltaAllocationPerChain(vaultNumber, 1, 10 + 20),
-    //   xChainController.setDeltaAllocationPerChain(vaultNumber, 2, 30 + 40),
-    //   xChainController.setDeltaAllocationPerChain(vaultNumber, 3, 50 + 60),
-    //   xChainController.setTotalDeltaAllocations(vaultNumber, 210),
-    // ]);
-
-    // // Set allocation amount and state in Vaults with vaultNumber 0
-    // await xChainController.rebalanceXChainAllocations(vaultNumber);
-
-    // // Checking if vault states upped by atleast 1 after rebalanceXChainAllocations
-    // expect(await vault1.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault2.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault3.state()).to.be.greaterThanOrEqual(1);
-  });
-
-  it.skip("Should 'cross chain' rebalance vaults and deposit/withdraw through xChainController", async function() {
-    // await Promise.all([
-    //   vault1.rebalanceXChain(),
-    //   vault2.rebalanceXChain(),
-    //   vault3.rebalanceXChain(),
-    // ]);
-
-    // await xChainController.executeDeposits(vaultNumber);
-
-    // const [balance1, balance2, balance3] = await Promise.all([
-    //   await IUSDc.balanceOf(vault1.address), 
-    //   await IUSDc.balanceOf(vault2.address), 
-    //   await IUSDc.balanceOf(vault3.address), 
-    // ]);
-
-    // const expectedBalances = [
-    //   30 / 210 * amount,
-    //   70 / 210 * amount,
-    //   110 / 210 * amount,
-    // ];
-
-    // console.log({balance1})
-    // console.log({balance2})
-    // console.log({balance3})
-
-    // expect(formatUSDC(balance1)).to.be.closeTo(expectedBalances[0], 1);
-    // expect(formatUSDC(balance2)).to.be.closeTo(expectedBalances[1], 1);
-    // expect(formatUSDC(balance3)).to.be.closeTo(expectedBalances[2], 1);
-
-    // // Checking if vault states upped to 3 => ready to rebalance vault itself
-    // expect(await vault1.state()).to.be.equal(3);
-    // expect(await vault2.state()).to.be.equal(3);
-    // expect(await vault3.state()).to.be.equal(3);
-  });
 });

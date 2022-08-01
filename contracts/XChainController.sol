@@ -18,7 +18,7 @@ contract XChainController {
   IXProvider public xProvider;
 
   uint32 public homeChainId;
-  uint32[] public chainIds = [10, 100];
+  uint32[] public chainIds = [10, 100, 1000];
 
   struct vaultInfo {
     int256 totalCurrentAllocation;
@@ -180,7 +180,8 @@ contract XChainController {
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
-      address vault = getVaultAddress(_vaultNumber, homeChainId);
+      console.log("chain id %s", chain);
+      address vault = getVaultAddress(_vaultNumber, chain);
       require(vault != address(0), "No vault on this chainId");
 
       if (chain == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
@@ -284,77 +285,5 @@ contract XChainController {
   /// @param _chainIds array of all the used chainIds
   function setChainIdArray(uint32[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
-  }
-
-  /// @notice Rebalances i.e deposit or withdraw all cross chains for a given vaultNumber
-  /// @dev 
-  /// @param _vaultNumber Number of Vault
-  function rebalanceXChainAllocations(uint256 _vaultNumber) external onlyDao {
-    // require(vaults[_vaultNumber].underlyingReceived == latestChainId, "Total underlying not set");
-    // // Correct state for Controller needed
-    // uint256 totalChainUnderlying = getTotalUnderlyingETF(_vaultNumber);
-    // int256 totalAllocation = setInternalAllocation(_vaultNumber);
-
-    // for (uint i = 1; i <= latestChainId; i++) {
-    //   setXChainAllocation(_vaultNumber, i);
-    //   address vaultAddress = getVaultAddress(_vaultNumber, i);
-
-    //   int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_vaultNumber, i) / totalAllocation;
-
-    //   (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(vaultAddress, amountToChainVault);
-
-    //   if (amountToDeposit > 0) {
-    //     vaults[_vaultNumber].amountToDepositPerChain[i] = uint256(amountToDeposit);
-    //     IVault(vaultAddress).setAllocationXChain(0);
-    //     // up state for vault
-    //   }
-    //   if (amountToWithdraw > 0) {
-    //     IVault(vaultAddress).setAllocationXChain(amountToWithdraw);
-    //   }
-    // }
-  }
-
-  /// @notice Helper function so the rebalance will execute all withdrawals first and can wait for vaults to deposit
-  /// @dev Executes and resets all deposits set in mapping(amountToDepositPerChain) by rebalanceXChainAllocations
-  /// @param _vaultNumber number of Vault
-  function executeDeposits(uint256 _vaultNumber) external onlyDao {
-    // Correct state for Controller needed
-    // for (uint i = 0; i <= latestChainId; i++) {
-    //   uint256 amount = vaults[_vaultNumber].amountToDepositPerChain[i];
-    //   if (amount == 0) continue;
-
-    //   vaults[_vaultNumber].amountToDepositPerChain[i] = 0;
-    //   IERC20(getUnderlyingAddress(_vaultNumber, i)).safeTransfer(getVaultAddress(_vaultNumber, i), amount);
-
-    //   // TEMP
-    //   IVault(getVaultAddress(_vaultNumber, i)).setVaultState(3);
-    // }
-  }
-
-  /// @notice Get total balance in vaultCurrency for an vaultNumber in all chains
-  /// @param _vaultNumber number of Vault
-  function setTotalChainUnderlying(uint256 _vaultNumber) public {
-    // vaults[_vaultNumber].totalChainUnderlying = 0;
-
-    // for (uint i = 1; i <= latestChainId; i++) {
-    //   bytes4 selector = bytes4(keccak256("getTotalUnderlying(uint256,address)"));
-    //   bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, getVaultAddress(_vaultNumber, i));
-
-    //   xProvider.xCall(xProviderAddr, i, callData);
-    // }
-  }
-  
-  function addTotalChainUnderlying(uint256 _vaultNumber, uint256 _amount) external {
-    // vaults[_vaultNumber].totalChainUnderlying += _amount;
-    // vaults[_vaultNumber].underlyingReceived ++;
-  }
-
-  function calcDepositWithdraw(address _vault, int256 _amountToChain) internal view returns(int256, uint256) {
-    // uint256 currentUnderlying = IVault(_vault).getTotalUnderlyingIncBalance();
-
-    // int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
-    // uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
-
-    // return (amountToDeposit, amountToWithdraw);
   }
 }
