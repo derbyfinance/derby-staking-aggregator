@@ -40,7 +40,6 @@ contract XProvider {
     _;
   }
 
-
   modifier onlyExecutor(uint32 _chain) { 
     require(
       senderWhitelist[IExecutorMock(msg.sender).originSender()] &&

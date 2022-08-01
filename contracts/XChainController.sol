@@ -180,7 +180,6 @@ contract XChainController {
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
-      console.log("chain id %s", chain);
       address vault = getVaultAddress(_vaultNumber, chain);
       require(vault != address(0), "No vault on this chainId");
 
@@ -228,14 +227,18 @@ contract XChainController {
   function pushVaultAmounts(uint256 _vaultNumber) external {
     require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Total underlying not set");
 
-    uint256 totalChainUnderlying = getTotalUnderlyingVault(_vaultNumber);
+    uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
+    
+    console.log("totalUnderlying %s", totalUnderlying);
+    console.log("totalAllocation %s", uint(totalAllocation));
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
       address vault = getVaultAddress(_vaultNumber, chain);
+      console.log("chain push vault amounts %s", chain);
 
-      int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
+      int256 amountToChainVault = int(totalUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
 
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
 
