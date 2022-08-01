@@ -47,9 +47,9 @@ import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Control
 import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
 import XChainControllerMockArtifact from '../../artifacts/contracts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
-import ConnextXProviderMockArtifact from '../../artifacts/contracts/Mocks/ConnextXProviderMock.sol/ConnextXProviderMock.json';
-import ConnextExecutorMockArtifact from '../../artifacts/contracts/Mocks/ConnextExecutorMock.sol/ConnextExecutorMock.json';
-import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/ConnextHandlerMock.sol/ConnextHandlerMock.json';
+import ConnextXProviderMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextXProviderMock.sol/ConnextXProviderMock.json';
+import ConnextExecutorMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextExecutorMock.sol/ConnextExecutorMock.json';
+import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextHandlerMock.sol/ConnextHandlerMock.json';
 import XReceiveMockArtifact from '../../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json';
 import XSendMockArtifact from '../../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";

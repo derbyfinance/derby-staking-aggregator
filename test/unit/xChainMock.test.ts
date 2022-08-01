@@ -9,7 +9,7 @@ import { deployXSendMock, deployXReceiveMock, deployConnextXProviderMock, deploy
 import { usdc } from "../helpers/addresses";
 import { ethers } from "hardhat";
 
-describe.skip("Testing ConnextXProviderMock, unit test", async () => {
+describe.only("Testing ConnextXProviderMock, unit test", async () => {
   let dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, xSend: XSendMock, XReceive: XReceiveMock, ConnextXProviderSend: ConnextXProviderMock, ConnextXProviderReceive: ConnextXProviderMock, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
 
   before(async function() {

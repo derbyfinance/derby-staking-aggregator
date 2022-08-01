@@ -3,9 +3,9 @@ pragma solidity ^0.8.11;
 
 import "./interfaces/IXProviderMock.sol";
 import "./interfaces/IXReceiveMock.sol";
-import "../Interfaces/ExternalInterfaces/IConnextHandler.sol"; // https://github.com/connext/nxtp/blob/main/packages/deployments/contracts/contracts/core/connext/interfaces/IConnextHandler.sol
+import "../../Interfaces/ExternalInterfaces/IConnextHandler.sol"; // https://github.com/connext/nxtp/blob/main/packages/deployments/contracts/contracts/core/connext/interfaces/IConnextHandler.sol
 import "./interfaces/IExecutorMock.sol";
-import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
+import {XCallArgs, CallParams} from "../../libraries/LibConnextStorage.sol";
 
 import "hardhat/console.sol";
 
