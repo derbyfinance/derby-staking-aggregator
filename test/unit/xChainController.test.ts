@@ -135,4 +135,23 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
   });
 
+  it("(4) Calc and set amount to deposit or withdraw in vault", async function() {
+    await xChainController.connect(dao).setChainIdArray(chainIds);
+    await xChainController.pushVaultAmounts(vaultNumber);
+
+    const expectedAmounts = [
+      100_000 - (30 / 210 * 200_000),
+      100_000 - (70 / 210 * 200_000),
+      0,
+    ];
+
+    // expect(formatUSDC(await vault1.amountToSendXChain())).to.be.closeTo(expectedAmounts[0], 1);
+    // expect(formatUSDC(await vault2.amountToSendXChain())).to.be.closeTo(expectedAmounts[1], 1);
+    // expect(formatUSDC(await vault3.amountToSendXChain())).to.be.closeTo(expectedAmounts[2], 1);
+
+    // Checking if vault states upped by atleast 1 after setVaultAmounts
+    // expect(await vault1.state()).to.be.greaterThanOrEqual(1);
+    // expect(await vault2.state()).to.be.greaterThanOrEqual(1);
+    // expect(await vault3.state()).to.be.greaterThanOrEqual(1);
+  });
 });

@@ -221,6 +221,54 @@ contract XChainController {
     vaults[_vaultNumber].underlyingReceived ++;
   }
 
+  /// @notice Step 3 trigger
+  /// @notice Rebalances i.e deposit or withdraw all cross chains for a given ETFNumber
+  /// @dev 
+  /// @param _vaultNumber Number of vault
+  function pushVaultAmounts(uint256 _vaultNumber) external {
+    require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Total underlying not set");
+
+    uint256 totalChainUnderlying = getTotalUnderlyingVault(_vaultNumber);
+    int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
+
+    for (uint i = 0; i < chainIds.length; i++) {
+      uint32 chain = chainIds[i];
+      address vault = getVaultAddress(_vaultNumber, chain);
+
+      int256 amountToChainVault = int(totalChainUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
+
+      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
+
+      if (amountToDeposit > 0) {
+        console.log("deposit");
+        // vaults[_vaultNumber].amountToDepositPerChain[chain] = uint256(amountToDeposit);
+        // if (chain == homeChainId) IETFVault(vault).setXChainAllocation(0);
+        // else setVaultAllocationXChain(chain, vault, 0);
+        // up state for vault
+      }
+
+      if (amountToWithdraw > 0) {
+        console.log("withdraw");
+        // if (chain == homeChainId) IETFVault(vault).setXChainAllocation(amountToWithdraw);
+        // else setVaultAllocationXChain(chain, vault, amountToWithdraw);
+        // 
+      }
+    }
+  }
+
+  function calcDepositWithdraw(
+    uint256 _vaultNumber, 
+    uint32 _chainId, 
+    int256 _amountToChain
+  ) internal view returns(int256, uint256) {
+    uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
+    
+    int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
+    uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
+
+    return (amountToDeposit, amountToWithdraw);
+  }
+
   /// @notice Helper to get total current allocation of vaultNumber
   function getTotalUnderlyingOnChain(uint256 _vaultNumber, uint32 _chainId) internal view returns(uint256) {
     return vaults[_vaultNumber].totalUnderlyingPerChain[_chainId];
@@ -286,4 +334,5 @@ contract XChainController {
   function setChainIdArray(uint32[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
   }
+
 }
