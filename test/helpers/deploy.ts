@@ -147,8 +147,8 @@ export const deployXChainController = (deployerSign: Signer, game: string, dao: 
   return (deployContract(deployerSign, XChainControllerArtifact, [game, dao])) as Promise<XChainController>;
 };
 
-export const deployXChainControllerMock = (deployerSign: Signer, game: string, dao: string): Promise<XChainControllerMock> => {
-  return (deployContract(deployerSign, XChainControllerMockArtifact, [game, dao])) as Promise<XChainControllerMock>;
+export const deployXChainControllerMock = (deployerSign: Signer, game: string, dao: string, homeChain: number): Promise<XChainControllerMock> => {
+  return (deployContract(deployerSign, XChainControllerMockArtifact, [game, dao, homeChain])) as Promise<XChainControllerMock>;
 };
 
 export const deployXProvider = (
@@ -156,10 +156,11 @@ export const deployXProvider = (
   executor: string, 
   handler: string, 
   dao: string, 
+  game: string,
   xController: string,
   homeChain: number,
 ): Promise<XProvider> => {
-  return (deployContract(deployerSign, XProviderArtifact, [executor, handler, dao, xController, homeChain])) as Promise<XProvider>;
+  return (deployContract(deployerSign, XProviderArtifact, [executor, handler, dao, game, xController, homeChain])) as Promise<XProvider>;
 };
 
 export const deployIGoverned = (deployerSign: Signer, daoAddress: string, guardianAddress: string): Promise<IGoverned> => {

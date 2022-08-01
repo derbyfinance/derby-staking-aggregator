@@ -30,12 +30,23 @@ contract XProvider {
     _;
   }
 
+  modifier onlyController {
+    require(msg.sender == xController, "ConnextProvider: only DAO");
+    _;
+  }
+
+  modifier onlyGame {
+    require(msg.sender == game, "ConnextProvider: only Game");
+    _;
+  }
+
+
   modifier onlyExecutor(uint32 _chain) { 
     require(
       senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
       IExecutorMock(msg.sender).origin() == _chain &&
       msg.sender == executor,
-      "Expected origin contract on origin domain called by Executor"
+      "!Executor"
     ); 
     _;  
   }
@@ -44,12 +55,14 @@ contract XProvider {
     address _executor,
     address _connextHandler,
     address _dao,
+    address _game,
     address _xController,
     uint32 _homeChainId
   ){
     executor = _executor;
-    xController = _xController;
     dao = _dao;
+    game = _game;
+    xController = _xController;
     connext = IConnextHandler(_connextHandler);
     homeChainId = _homeChainId;
   }
@@ -92,7 +105,7 @@ contract XProvider {
   /// @notice Pushes the delta allocations from the game to the xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
-  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) public {
+  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyGame {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
@@ -105,6 +118,53 @@ contract XProvider {
   function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyExecutor(gameChain) {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
+
+  /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
+  /// @param _vaultNumber number of the vault
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _provider Address of the provider on given chainId 
+  function pushGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    address _vault, 
+    uint32 _chainId, 
+    address _provider
+  ) external onlyController {
+    bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
+
+    xSend(_provider, homeChainId, _chainId, callData);
+  }
+
+  /// @notice Receiver for the pushGetTotalUnderlying on each chainId
+  /// @dev Gets the totalUnderling plus vault balance and sends back a callback to callbackGetTotalUnderlying on mainchain
+  /// @param _vaultNumber number of the vault
+  /// @param _vault Address of the Derby Vault on given chainId 
+  function receiveGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    address _vault
+  ) external onlyExecutor(xControllerChain) {
+    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
+
+    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint32,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
+
+    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+  }
+
+  /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
+  /// @param _vaultNumber number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
+  function callbackGetTotalUnderlying(
+    uint256 _vaultNumber, 
+    uint32 _chainId, 
+    uint256 _underlying
+  ) external {
+    return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
+  }
+
+
 
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider new address of xProvider for xController chain
@@ -133,16 +193,6 @@ contract XProvider {
   function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
-
-  // function getTotalUnderlying(uint256 _vaultNumber, address _vault) public {
-  //   uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
-
-  //   bytes4 selector = bytes4(keccak256("setTotalUnderlying(uint256,uint256)"));
-  //   bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, underlying);
-
-  //   // callback
-  //   xCall(address(this), 0, callData);
-  // }
   
   // function setTotalUnderlying(uint256 _vaultNumber, uint256 _underlying) public {
   //   IXChainController(xController).addTotalChainUnderlying(_vaultNumber, _underlying);

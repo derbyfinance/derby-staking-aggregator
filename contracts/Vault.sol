@@ -179,8 +179,9 @@ contract Vault is VaultToken, ReentrancyGuard {
     state = State.RebalanceVault;
   }
 
-  /// @notice Temporary helper to get total underlying plus vault balance
+  /// @notice Returns totalUnderlying plus balance from the vault in vaultCurrency e.g USDC
   function getTotalUnderlyingIncBalance() public view returns(uint256) {
+    console.log("get underlying in vault");
     return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
   }
 
