@@ -163,6 +163,32 @@ contract XProvider {
     return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
   }
 
+  /// @notice Pushes 
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _amountToWithdraw Add 
+  /// @param _provider Address of the provider on given chainId 
+  function pushSetXChainAllocation(
+    address _vault, 
+    uint32 _chainId, 
+    uint256 _amountToWithdraw,
+    address _provider
+  ) external onlyController {
+    bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToWithdraw);
+
+    xSend(_provider, homeChainId, _chainId, callData);
+  }
+
+  /// @notice Receiver 
+  /// @param _vault Address of the Derby Vault on given chainId 
+  /// @param _amountToWithdraw Address of the Derby Vault on given chainId 
+  function receiveSetXChainAllocation(
+    address _vault,
+    uint256 _amountToWithdraw
+  ) external onlyExecutor(xControllerChain) {
+    IVault(_vault).setXChainAllocation(_amountToWithdraw);
+  }
 
 
   /// @notice Setter for xControllerProvider address

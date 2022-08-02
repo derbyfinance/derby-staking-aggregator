@@ -230,32 +230,20 @@ contract XChainController {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     
-    console.log("totalUnderlying %s", totalUnderlying);
-    console.log("totalAllocation %s", uint(totalAllocation));
-
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
       address vault = getVaultAddress(_vaultNumber, chain);
-      console.log("chain push vault amounts %s", chain);
 
       int256 amountToChainVault = int(totalUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
 
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
 
       if (amountToDeposit > 0) {
-        console.log("deposit");
-        // vaults[_vaultNumber].amountToDepositPerChain[chain] = uint256(amountToDeposit);
-        // if (chain == homeChainId) IETFVault(vault).setXChainAllocation(0);
-        // else setVaultAllocationXChain(chain, vault, 0);
-        // up state for vault
+        setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
+        depositOrWithdraw(vault, chain, 0);
       }
 
-      if (amountToWithdraw > 0) {
-        console.log("withdraw");
-        // if (chain == homeChainId) IETFVault(vault).setXChainAllocation(amountToWithdraw);
-        // else setVaultAllocationXChain(chain, vault, amountToWithdraw);
-        // 
-      }
+      if (amountToWithdraw > 0) depositOrWithdraw(vault, chain, amountToWithdraw);
     }
   }
 
@@ -270,6 +258,12 @@ contract XChainController {
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
 
     return (amountToDeposit, amountToWithdraw);
+  }
+
+  function depositOrWithdraw(address _vault, uint32 _chainId, uint256 _amount) internal {
+    if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
+    else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount, xProviders[_chainId]);
+    // up state for vault?
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
@@ -301,6 +295,10 @@ contract XChainController {
   /// @notice Helper to get total current allocation of vaultNumber
   function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
     return vaults[_vaultNumber].totalCurrentAllocation;
+  }
+
+  function setAmountToDeposit(uint256 _vaultNumber, uint32 _chainId, int256 _amountToDeposit) internal {
+    vaults[_vaultNumber].amountToDepositPerChain[_chainId] = uint256(_amountToDeposit);
   }
 
   /// @notice Set Vault address and underlying for a particulair chainId

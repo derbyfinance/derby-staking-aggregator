@@ -169,8 +169,6 @@ describe.only("Testing XChainController, unit test", async () => {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
     await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
 
-    await xChainController.setAllocationsReceivedTEST(vaultNumber, true);
-
     await xChainController.setTotalUnderlying(vaultNumber);
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
@@ -183,8 +181,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
   });
 
-  it.skip("(4) Calc and set amount to deposit or withdraw in vault", async function() {
-    await xChainController.connect(dao).setChainIdArray(chainIds);
+  it("(4) Calc and set amount to deposit or withdraw in vault", async function() {
     await xChainController.pushVaultAmounts(vaultNumber);
 
     const expectedAmounts = [
