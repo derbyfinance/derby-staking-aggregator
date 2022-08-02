@@ -26,6 +26,8 @@ import type {
   XReceiveMock,
   XSendMock,
   XChainControllerMock,
+  LZEndpointMock,
+  LZXProviderMock
  } from '../../typechain-types';
 
 import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -50,6 +52,8 @@ import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider
 import ConnextXProviderMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextXProviderMock.sol/ConnextXProviderMock.json';
 import ConnextExecutorMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextExecutorMock.sol/ConnextExecutorMock.json';
 import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextHandlerMock.sol/ConnextHandlerMock.json';
+import LZEndpointMockArtifact  from "../../artifacts/contracts/Mocks/LayerZero/LZEndpointMock.sol/LZEndpointMock.json";
+import LZXProviderMockArtifact  from "../../artifacts/contracts/Mocks/LayerZero/LZXProviderMock.sol/LZXProviderMock.json";
 import XReceiveMockArtifact from '../../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json';
 import XSendMockArtifact from '../../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
@@ -189,6 +193,14 @@ export const deployConnextExecutorMock = (deployerSign: Signer, handlerAddress: 
 
 export const deployConnextHandlerMock = (deployerSign: Signer, daoAddress: string): Promise<ConnextHandlerMock> => {
   return (deployContract(deployerSign, ConnextHandlerMockArtifact, [daoAddress])) as Promise<ConnextHandlerMock>;
+}
+
+export const deployLZEndpointMock = (deployerSign: Signer, chainID: number): Promise<LZEndpointMock> => {
+  return (deployContract(deployerSign, LZEndpointMockArtifact, [chainID])) as Promise<LZEndpointMock>
+}
+
+export const deployLZXProviderMock = (deployerSign: Signer, endpointAddress: string, daoAddress: string): Promise<LZXProviderMock> => {
+  return (deployContract(deployerSign, LZXProviderMockArtifact, [endpointAddress, daoAddress])) as Promise<LZXProviderMock>
 }
 
 export const deployXReceiveMock = (deployerSign: Signer, ConnextXProviderAddress: string): Promise<XReceiveMock> => {
