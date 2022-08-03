@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
-import "./Mocks/interfaces/IExecutorMock.sol";
+import "./Mocks/Connext/interfaces/IExecutorMock.sol";
 import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
 import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
 
