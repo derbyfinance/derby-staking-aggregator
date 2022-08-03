@@ -5,9 +5,16 @@ import "../Connext/interfaces/IXProviderMock.sol";
 import "../Connext/interfaces/IXReceiveMock.sol";
 import "./interfaces/ILayerZeroEndpoint.sol";
 import "./interfaces/ILayerZeroReceiver.sol";
+import "../../Interfaces/ExternalInterfaces/IConnextHandler.sol"; // https://github.com/connext/nxtp/blob/main/packages/deployments/contracts/contracts/core/connext/interfaces/IConnextHandler.sol
+import {XCallArgs, CallParams} from "../../libraries/LibConnextStorage.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract LZXProviderMock is IXProviderMock, ILayerZeroReceiver {
+    using SafeERC20 for IERC20;
+
     ILayerZeroEndpoint public endpoint;
+    IConnextHandler public immutable connext;
     address public dao;
     address xReceiveMock;
     uint16 xReceiveMockChainID;
@@ -20,9 +27,10 @@ contract LZXProviderMock is IXProviderMock, ILayerZeroReceiver {
       _;
     }
 
-    constructor(address _endpoint, address _dao){
+    constructor(address _endpoint, address _dao, address _connextHandler){
         endpoint = ILayerZeroEndpoint(_endpoint);
         dao = _dao;
+        connext = IConnextHandler(_connextHandler);
     }
 
     /// @notice setter for the receiver contract parameters, always needs to be set, could be a list when multiple contracts on the sending chain have to send values.
@@ -66,5 +74,34 @@ contract LZXProviderMock is IXProviderMock, ILayerZeroReceiver {
     /// @param _value Value to send crosschain.
     function xReceive(uint256 _value) external {
         IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
+    }
+
+    function xTransfer(address to, address asset, uint32 originDomain, uint32 destinationDomain, uint256 amount) external {
+        IERC20 token = IERC20(asset);    
+        require(token.allowance(msg.sender, address(this)) >= amount, "LZXProvider: User must approve amount");
+        token.transferFrom(msg.sender, address(this), amount);    
+        token.approve(address(connext), amount);
+
+        CallParams memory callParams = CallParams({
+            to: to,      
+            callData: "",      
+            originDomain: originDomain,      
+            destinationDomain: destinationDomain,      
+            agent: to,      
+            recovery: to,      
+            forceSlow: false,      
+            receiveLocal: false,      
+            callback: address(0),      
+            callbackFee: 0,      
+            relayerFee: 0,      
+            slippageTol: 9995    
+        });
+
+        XCallArgs memory xcallArgs = XCallArgs({
+            params: callParams,      
+            transactingAssetId: asset, 
+            amount: amount  
+        });    
+        connext.xcall(xcallArgs);
     }
 }
