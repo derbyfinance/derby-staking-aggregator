@@ -219,8 +219,7 @@ contract XChainController {
   }
 
   /// @notice Step 3 trigger
-  /// @notice Rebalances i.e deposit or withdraw all cross chains for a given ETFNumber
-  /// @dev 
+  /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
@@ -236,14 +235,18 @@ contract XChainController {
 
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
-        depositOrWithdraw(vault, chain, 0);
+        setXChainAllocationVault(vault, chain, 0);
         upFundsReceived(_vaultNumber);
       }
 
-      if (amountToWithdraw > 0) depositOrWithdraw(vault, chain, amountToWithdraw);
+      if (amountToWithdraw > 0) setXChainAllocationVault(vault, chain, amountToWithdraw);
     }
   }
 
+  /// @notice Calculates the amounts the vaults on each chainId have to send or receive 
+  /// @param _vaultNumber number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _amountToChain Amount in vaultcurrency that should be on given chainId
   function calcDepositWithdraw(
     uint256 _vaultNumber, 
     uint32 _chainId, 
@@ -257,7 +260,11 @@ contract XChainController {
     return (amountToDeposit, amountToWithdraw);
   }
 
-  function depositOrWithdraw(address _vault, uint32 _chainId, uint256 _amount) internal {
+  /// @notice Sets the amounts to deposit or withdraw in vaultcurrency in the vaults
+  /// @param _vault Address of the vault
+  /// @param _chainId Number of chain used
+  /// @param _amount Amount in vaultcurrency that should be on given chainId
+  function setXChainAllocationVault(address _vault, uint32 _chainId, uint256 _amount) internal {
     if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount, xProviders[_chainId]);
   }
@@ -292,6 +299,7 @@ contract XChainController {
     return vaults[_vaultNumber].totalCurrentAllocation;
   }
 
+  /// @notice Helper to set the amount to deposit in a chain vault
   function setAmountToDeposit(uint256 _vaultNumber, uint32 _chainId, int256 _amountToDeposit) internal {
     vaults[_vaultNumber].amountToDepositPerChain[_chainId] = uint256(_amountToDeposit);
   }
