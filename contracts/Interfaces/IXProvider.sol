@@ -17,6 +17,5 @@ interface IXProvider {
   function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external;
 
   function pushGetTotalUnderlying(uint256 _vaultNumber, address _vault, uint32 _chainId, address _provider) external;
-  function pushSetXChainAllocation(address _vault, uint32 _chainId, uint256 _amountToWithdraw, address _provider) external;
 
 }
