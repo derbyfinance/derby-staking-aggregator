@@ -199,16 +199,16 @@ export const deployLZEndpointMock = (deployerSign: Signer, chainID: number): Pro
   return (deployContract(deployerSign, LZEndpointMockArtifact, [chainID])) as Promise<LZEndpointMock>
 }
 
-export const deployLZXProviderMock = (deployerSign: Signer, endpointAddress: string, daoAddress: string): Promise<LZXProviderMock> => {
-  return (deployContract(deployerSign, LZXProviderMockArtifact, [endpointAddress, daoAddress])) as Promise<LZXProviderMock>
+export const deployLZXProviderMock = (deployerSign: Signer, endpointAddress: string, daoAddress: string, connextAddress: string): Promise<LZXProviderMock> => {
+  return (deployContract(deployerSign, LZXProviderMockArtifact, [endpointAddress, daoAddress, connextAddress])) as Promise<LZXProviderMock>
 }
 
-export const deployXReceiveMock = (deployerSign: Signer, ConnextXProviderAddress: string): Promise<XReceiveMock> => {
-  return (deployContract(deployerSign, XReceiveMockArtifact, [ConnextXProviderAddress])) as Promise<XReceiveMock>;
+export const deployXReceiveMock = (deployerSign: Signer, daoAddress: string): Promise<XReceiveMock> => {
+  return (deployContract(deployerSign, XReceiveMockArtifact, [daoAddress])) as Promise<XReceiveMock>;
 }
 
-export const deployXSendMock = (deployerSign: Signer, ConnextXProviderAddress: string): Promise<XSendMock> => {
-  return (deployContract(deployerSign, XSendMockArtifact, [ConnextXProviderAddress])) as Promise<XSendMock>;
+export const deployXSendMock = (deployerSign: Signer, daoAddress: string): Promise<XSendMock> => {
+  return (deployContract(deployerSign, XSendMockArtifact, [daoAddress])) as Promise<XSendMock>;
 }
 
 
