@@ -100,7 +100,7 @@ contract ConnextXProviderMock is IXProviderMock {
       params: callParams,      
       transactingAssetId: address(0), // The asset the caller sent with the transfer.
       amount: 0    
-    });
+    });    
     connext.xcall(xcallArgs);
   }
 

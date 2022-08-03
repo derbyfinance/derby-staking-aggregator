@@ -23,6 +23,8 @@ contract XChainController {
   struct vaultInfo {
     int256 totalCurrentAllocation;
     uint256 totalUnderlying;
+    uint256 underlyingReceived;
+    uint256 allocationsReceived;
     mapping(uint32 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint32 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint32 => address) vaultChainAddress; // chainId => vault address
@@ -174,10 +176,11 @@ contract XChainController {
   /// @notice Set total balance in vaultCurrency for an vaultNumber on all chains
   function setTotalUnderlying(uint256 _vaultNumber) external onlyWhenAllocationsReceived(_vaultNumber) {
     vaults[_vaultNumber].totalUnderlying = 0;
-    vaultStage[_vaultNumber].underlyingReceived = 0;
+    vaults[_vaultNumber].underlyingReceived = 0;
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
+      console.log("chain id %s", chain);
       address vault = getVaultAddress(_vaultNumber, chain);
       require(vault != address(0), "No vault on this chainId");
 
@@ -215,58 +218,7 @@ contract XChainController {
     console.log("underlying callback %s chain %s", _underlying, _chainId);
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
     vaults[_vaultNumber].totalUnderlying += _underlying;
-    vaultStage[_vaultNumber].underlyingReceived ++;
-  }
-
-  /// @notice Step 3 trigger
-  /// @notice Calculates the amounts the vaults on each chainId have to send or receive
-  /// @param _vaultNumber Number of vault
-  function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
-    uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
-    int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
-    
-    for (uint i = 0; i < chainIds.length; i++) {
-      uint32 chain = chainIds[i];
-      address vault = getVaultAddress(_vaultNumber, chain);
-
-      int256 amountToChainVault = int(totalUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
-
-      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
-
-      if (amountToDeposit > 0) {
-        setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
-        setXChainAllocationVault(vault, chain, 0);
-        upFundsReceived(_vaultNumber);
-      }
-
-      if (amountToWithdraw > 0) setXChainAllocationVault(vault, chain, amountToWithdraw);
-    }
-  }
-
-  /// @notice Calculates the amounts the vaults on each chainId have to send or receive 
-  /// @param _vaultNumber number of the vault
-  /// @param _chainId Number of chain used
-  /// @param _amountToChain Amount in vaultcurrency that should be on given chainId
-  function calcDepositWithdraw(
-    uint256 _vaultNumber, 
-    uint32 _chainId, 
-    int256 _amountToChain
-  ) internal view returns(int256, uint256) {
-    uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
-    
-    int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
-    uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
-
-    return (amountToDeposit, amountToWithdraw);
-  }
-
-  /// @notice Sets the amounts to deposit or withdraw in vaultcurrency in the vaults
-  /// @param _vault Address of the vault
-  /// @param _chainId Number of chain used
-  /// @param _amount Amount in vaultcurrency that should be on given chainId
-  function setXChainAllocationVault(address _vault, uint32 _chainId, uint256 _amount) internal {
-    if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
-    else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount, xProviders[_chainId]);
+    vaults[_vaultNumber].underlyingReceived ++;
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
@@ -275,7 +227,8 @@ contract XChainController {
   }
 
   /// @notice Gets saved totalUnderlying for vaultNumber
-  function getTotalUnderlyingVault(uint256 _vaultNumber) internal view onlyWhenUnderlyingsReceived(_vaultNumber) returns(uint256) {
+  function getTotalUnderlyingVault(uint256 _vaultNumber) internal view returns(uint256) {
+    require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Not all vaults set");
     return vaults[_vaultNumber].totalUnderlying;
   }
 
@@ -297,11 +250,6 @@ contract XChainController {
   /// @notice Helper to get total current allocation of vaultNumber
   function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
     return vaults[_vaultNumber].totalCurrentAllocation;
-  }
-
-  /// @notice Helper to set the amount to deposit in a chain vault
-  function setAmountToDeposit(uint256 _vaultNumber, uint32 _chainId, int256 _amountToDeposit) internal {
-    vaults[_vaultNumber].amountToDepositPerChain[_chainId] = uint256(_amountToDeposit);
   }
 
   /// @notice Set Vault address and underlying for a particulair chainId
@@ -338,5 +286,4 @@ contract XChainController {
   function setChainIdArray(uint32[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
   }
-
 }
