@@ -153,12 +153,12 @@ contract Vault is VaultToken, ReentrancyGuard {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
-  // xchainprovider modifier?
   /// @notice Will set the amount to send back to the xChainController by the xChainController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xChainController
   /// @param _amountToSend amount to send in vaultCurrency
-  function setAllocationXChain(uint256 _amountToSend) external {
+  function setXChainAllocation(uint256 _amountToSend) external {
+    console.log("Vault _amountToSend %s", _amountToSend);
     amountToSendXChain = _amountToSend;
 
     if (_amountToSend == 0) {
@@ -181,7 +181,6 @@ contract Vault is VaultToken, ReentrancyGuard {
 
   /// @notice Returns totalUnderlying plus balance from the vault in vaultCurrency e.g USDC
   function getTotalUnderlyingIncBalance() public view returns(uint256) {
-    console.log("get underlying in vault");
     return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
   }
 

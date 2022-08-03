@@ -40,7 +40,6 @@ contract XProvider {
     _;
   }
 
-
   modifier onlyExecutor(uint32 _chain) { 
     require(
       senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
@@ -164,7 +163,32 @@ contract XProvider {
     return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
   }
 
+  /// @notice Pushes the amount the vault has to send back to the xChainController
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _amountToSendBack Amount the vault has to send back
+  /// @param _provider Address of the xProvider on given chainId 
+  function pushSetXChainAllocation(
+    address _vault, 
+    uint32 _chainId, 
+    uint256 _amountToSendBack,
+    address _provider
+  ) external onlyController {
+    bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack);
 
+    xSend(_provider, homeChainId, _chainId, callData);
+  }
+
+  /// @notice Receiver for the amount the vault has to send back to the xChainController
+  /// @param _vault Address of the Derby Vault on given chainId 
+  /// @param _amountToSendBack Amount the vault has to send back
+  function receiveSetXChainAllocation(
+    address _vault,
+    uint256 _amountToSendBack
+  ) external onlyExecutor(xControllerChain) {
+    IVault(_vault).setXChainAllocation(_amountToSendBack);
+  }
 
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider new address of xProvider for xController chain

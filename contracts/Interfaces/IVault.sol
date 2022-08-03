@@ -13,6 +13,6 @@ interface IVault {
   function getTotalUnderlying() external view returns(uint256);
   function getTotalUnderlyingIncBalance() external view returns(uint256);
   function vaultCurrencyAddress() external view returns(address);
-  function setAllocationXChain(uint256 _amountToSend) external;
+  function setXChainAllocation(uint256 _amountToSend) external;
   function setVaultState(uint256 _state) external;
 }
