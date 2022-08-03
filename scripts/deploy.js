@@ -14,6 +14,10 @@ const handlers = {
     "rinkeby": "0x4cAA6358a3d9d1906B5DABDE60A626AAfD80186F",
     "goerli": "0x6c9a905Ab3f4495E2b47f5cA131ab71281E0546e"
 };
+const lz_endpoints = {
+  "rinkeby": "0x79a63d6d8BBD5c6dfc774dA79bCcD948EAcb53FA",
+  "bsc": "0x6Fcb97553D41516Cb228ac03FdC8B9a0a9df04A1"
+};
 
 const main = async () => {
     // deploy on rinkeby
