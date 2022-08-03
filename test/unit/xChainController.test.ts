@@ -169,6 +169,8 @@ describe.only("Testing XChainController, unit test", async () => {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
     await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
 
+    await xChainController.setActiveVaultsTEST(vaultNumber, 3); // mocking 3 active vaults for now
+
     await xChainController.setTotalUnderlying(vaultNumber);
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
@@ -185,18 +187,18 @@ describe.only("Testing XChainController, unit test", async () => {
     await xChainController.pushVaultAmounts(vaultNumber);
 
     const expectedAmounts = [
-      100_000 - (30 / 210 * 200_000),
-      100_000 - (70 / 210 * 200_000),
-      0,
+      100_000 - (400 / 2000 * 300_000), // vault 1
+      200_000 - (600 / 2000 * 300_000), // vault 2
+      0, // vault 3
     ];
 
-    // expect(formatUSDC(await vault1.amountToSendXChain())).to.be.closeTo(expectedAmounts[0], 1);
-    // expect(formatUSDC(await vault2.amountToSendXChain())).to.be.closeTo(expectedAmounts[1], 1);
-    // expect(formatUSDC(await vault3.amountToSendXChain())).to.be.closeTo(expectedAmounts[2], 1);
+    expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
+    expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
+    expect(formatUSDC(await vault3.amountToSendXChain())).to.be.equal(expectedAmounts[2]);
 
-    // Checking if vault states upped by atleast 1 after setVaultAmounts
-    // expect(await vault1.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault2.state()).to.be.greaterThanOrEqual(1);
-    // expect(await vault3.state()).to.be.greaterThanOrEqual(1);
+    // Checking if vault states upped correctly
+    expect(await vault1.state()).to.be.equal(1);
+    expect(await vault2.state()).to.be.equal(1);
+    expect(await vault3.state()).to.be.equal(2); // dont have to send any funds
   });
 });

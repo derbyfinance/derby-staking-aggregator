@@ -23,8 +23,6 @@ contract XChainController {
   struct vaultInfo {
     int256 totalCurrentAllocation;
     uint256 totalUnderlying;
-    uint256 underlyingReceived;
-    uint256 allocationsReceived;
     mapping(uint32 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint32 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint32 => address) vaultChainAddress; // chainId => vault address
@@ -176,7 +174,7 @@ contract XChainController {
   /// @notice Set total balance in vaultCurrency for an vaultNumber on all chains
   function setTotalUnderlying(uint256 _vaultNumber) external onlyWhenAllocationsReceived(_vaultNumber) {
     vaults[_vaultNumber].totalUnderlying = 0;
-    vaults[_vaultNumber].underlyingReceived = 0;
+    vaultStage[_vaultNumber].underlyingReceived = 0;
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
@@ -217,16 +215,14 @@ contract XChainController {
     console.log("underlying callback %s chain %s", _underlying, _chainId);
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
     vaults[_vaultNumber].totalUnderlying += _underlying;
-    vaults[_vaultNumber].underlyingReceived ++;
+    vaultStage[_vaultNumber].underlyingReceived ++;
   }
 
   /// @notice Step 3 trigger
   /// @notice Rebalances i.e deposit or withdraw all cross chains for a given ETFNumber
   /// @dev 
   /// @param _vaultNumber Number of vault
-  function pushVaultAmounts(uint256 _vaultNumber) external {
-    require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Total underlying not set");
-
+  function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     
@@ -241,6 +237,7 @@ contract XChainController {
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
         depositOrWithdraw(vault, chain, 0);
+        upFundsReceived(_vaultNumber);
       }
 
       if (amountToWithdraw > 0) depositOrWithdraw(vault, chain, amountToWithdraw);
@@ -263,7 +260,6 @@ contract XChainController {
   function depositOrWithdraw(address _vault, uint32 _chainId, uint256 _amount) internal {
     if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount, xProviders[_chainId]);
-    // up state for vault?
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
@@ -272,8 +268,7 @@ contract XChainController {
   }
 
   /// @notice Gets saved totalUnderlying for vaultNumber
-  function getTotalUnderlyingVault(uint256 _vaultNumber) internal view returns(uint256) {
-    require(vaults[_vaultNumber].underlyingReceived == chainIds.length, "Not all vaults set");
+  function getTotalUnderlyingVault(uint256 _vaultNumber) internal view onlyWhenUnderlyingsReceived(_vaultNumber) returns(uint256) {
     return vaults[_vaultNumber].totalUnderlying;
   }
 
