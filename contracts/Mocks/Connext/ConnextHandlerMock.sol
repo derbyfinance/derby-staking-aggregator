@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import {XCallArgs, CallParams} from "../libraries/LibConnextStorage.sol";
+import {XCallArgs, CallParams} from "../../libraries/LibConnextStorage.sol";
 import "./interfaces/IExecutorMock.sol";
-import "../Interfaces/ExternalInterfaces/IConnextHandler.sol";
+import "../../Interfaces/ExternalInterfaces/IConnextHandler.sol";
 import "hardhat/console.sol";
 
 contract ConnextHandlerMock is IConnextHandler {
