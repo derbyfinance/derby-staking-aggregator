@@ -6,6 +6,8 @@ pragma abicoder v2;
 import "./interfaces/ILayerZeroReceiver.sol";
 import "./interfaces/ILayerZeroEndpoint.sol";
 
+import "hardhat/console.sol";
+
 /*
 mocking multi endpoint connection.
 - send() will short circuit to lzReceive() directly
@@ -82,6 +84,10 @@ contract LZEndpointMock is ILayerZeroEndpoint {
     ) external payable override {
         address destAddr = packedBytesToAddr(_destination);
         address lzEndpoint = lzEndpointLookup[destAddr];
+
+        console.log("_chainId %s", _chainId);
+        console.log("destAddr %s", destAddr);
+        console.log("lzEndPoint %s", lzEndpoint);
 
         require(lzEndpoint != address(0), "LayerZeroMock: destination LayerZero Endpoint not found");
 

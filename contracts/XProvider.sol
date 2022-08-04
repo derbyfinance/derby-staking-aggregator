@@ -4,26 +4,28 @@ pragma solidity ^0.8.11;
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
-import "./Mocks/Connext/interfaces/IExecutorMock.sol";
-import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
-import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
+import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
+import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
 
 import "hardhat/console.sol";
 
-contract XProvider {
-  IConnextHandler public immutable connext;
+contract XProvider is ILayerZeroReceiver {
+  ILayerZeroEndpoint public endpoint;
+
   address public xController;
   address public xControllerProvider;
   address public receiveProvider;
   address public dao;
   address public game;
-  address public executor;
 
-  uint32 public homeChainId;
-  uint32 public xControllerChain;
-  uint32 public gameChain;
+  uint16 public homeChainId;
+  uint16 public xControllerChain;
+  uint16 public gameChain;
 
   mapping(address => bool) internal senderWhitelist;
+  mapping(uint16 => bytes) public trustedRemoteLookup;
+
+  event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
   modifier onlyDao {
     require(msg.sender == dao, "ConnextProvider: only DAO");
@@ -40,29 +42,27 @@ contract XProvider {
     _;
   }
 
-  modifier onlyExecutor(uint32 _chain) { 
-    require(
-      senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
-      IExecutorMock(msg.sender).origin() == _chain &&
-      msg.sender == executor,
-      "!Executor"
-    ); 
+  modifier onlyExecutor(uint16 _chain) { 
+    // require(
+    //   senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
+    //   IExecutorMock(msg.sender).origin() == _chain &&
+    //   msg.sender == executor,
+    //   "!Executor"
+    // ); 
     _;  
   }
   
   constructor(
-    address _executor,
-    address _connextHandler,
+    address _endpoint,
     address _dao,
     address _game,
     address _xController,
-    uint32 _homeChainId
-  ){
-    executor = _executor;
+    uint16 _homeChainId
+  ) {
+    endpoint = ILayerZeroEndpoint(_endpoint);
     dao = _dao;
     game = _game;
     xController = _xController;
-    connext = IConnextHandler(_connextHandler);
     homeChainId = _homeChainId;
   }
 
@@ -73,32 +73,23 @@ contract XProvider {
   /// @param _callData Function selector to call on receiving chain with params
   function xSend(
     address _to,
-    uint32 _originDomain,
-    uint32 _destinationDomain,
+    uint16 _originDomain,
+    uint16 _destinationDomain,
     bytes memory _callData
   ) internal {
-    CallParams memory callParams = CallParams({
-      to: _to,
-      callData: _callData,
-      originDomain: _originDomain,
-      destinationDomain: _destinationDomain,
-      agent: receiveProvider,
-      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier
-      forceSlow: true,
-      receiveLocal: false,
-      callback: address(0),
-      callbackFee: 0,
-      relayerFee: 0,
-      slippageTol: 9995
-    });
+    bytes memory trustedRemote = trustedRemoteLookup[_destinationDomain]; // same chainID as the provider on the receiverChain 
+    require(trustedRemote.length != 0, "LzApp: destination chain is not a trusted source");
 
-    XCallArgs memory xcallArgs = XCallArgs({
-      params: callParams,  
-      transactingAssetId: address(0), // The asset the caller sent with the transfer.
-      amount: 0
-    });
+    endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
+  }
 
-    connext.xcall(xcallArgs);
+  function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
+    console.log("lz receive");
+    require(msg.sender == address(endpoint));
+    require(_srcAddress.length == trustedRemoteLookup[_srcChainId].length && keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]));
+
+    (bool success,) = address(this).call(_payload);
+    require(success, "LZXProviderMock: lzReceive: No success");
   }
 
   /// @notice Pushes the delta allocations from the game to the xChainController
@@ -126,7 +117,7 @@ contract XProvider {
   function pushGetTotalUnderlying(
     uint256 _vaultNumber, 
     address _vault, 
-    uint32 _chainId, 
+    uint16 _chainId, 
     address _provider
   ) external onlyController {
     bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
@@ -145,7 +136,7 @@ contract XProvider {
   ) external onlyExecutor(xControllerChain) {
     uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
 
-    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint32,uint256)"));
+    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint16,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
 
     xSend(xControllerProvider, homeChainId, xControllerChain, callData);
@@ -157,7 +148,7 @@ contract XProvider {
   /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
   function callbackGetTotalUnderlying(
     uint256 _vaultNumber, 
-    uint32 _chainId, 
+    uint16 _chainId, 
     uint256 _underlying
   ) external {
     return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
@@ -170,7 +161,7 @@ contract XProvider {
   /// @param _provider Address of the xProvider on given chainId 
   function pushSetXChainAllocation(
     address _vault, 
-    uint32 _chainId, 
+    uint16 _chainId, 
     uint256 _amountToSendBack,
     address _provider
   ) external onlyController {
@@ -190,6 +181,14 @@ contract XProvider {
     IVault(_vault).setXChainAllocation(_amountToSendBack);
   }
 
+  /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
+  /// @param _srcChainId chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
+  /// @param _srcAddress address of remote xprovider
+  function setTrustedRemote(uint16 _srcChainId, bytes calldata _srcAddress) external onlyDao {
+    trustedRemoteLookup[_srcChainId] = _srcAddress;
+    emit SetTrustedRemote(_srcChainId, _srcAddress);
+  }
+
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider new address of xProvider for xController chain
   function setXControllerProvider(address _xControllerProvider) external onlyDao {
@@ -198,13 +197,13 @@ contract XProvider {
 
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerChain new address of xProvider for xController chain
-  function setXControllerChainId(uint32 _xControllerChain) external onlyDao {
+  function setXControllerChainId(uint16 _xControllerChain) external onlyDao {
     xControllerChain = _xControllerChain;
   }
 
   /// @notice Setter for gameChain Id address
   /// @param _gameChain new address of xProvider for xController chain
-  function setGameChainId(uint32 _gameChain) external onlyDao {
+  function setGameChainId(uint16 _gameChain) external onlyDao {
     gameChain = _gameChain;
   }
 
