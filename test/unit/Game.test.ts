@@ -5,8 +5,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, GameMock, VaultMock, DerbyToken, XProvider, XChainControllerMock, ConnextExecutorMock, ConnextHandlerMock } from '../../typechain-types';
-import { deployConnextExecutorMock, deployConnextHandlerMock, deployController, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import type { Controller, GameMock, VaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '../../typechain-types';
+import { deployController, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import AllMockProviders from "../helpers/allMockProvidersClass";
@@ -23,7 +23,7 @@ const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing Game", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, ConnextExecutor: ConnextExecutorMock, ConnextHandler: ConnextHandlerMock;
+  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock ;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -35,18 +35,20 @@ describe.only("Testing Game", async () => {
       user.getAddress()
     ]);
 
-    ConnextHandler = await deployConnextHandlerMock(dao, daoAddr);
-    ConnextExecutor = await deployConnextExecutorMock(dao, ConnextHandler.address);
-
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
     vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
 
+    [LZEndpoint10, LZEndpoint100] = await Promise.all([
+      deployLZEndpointMock(dao, 10),
+      deployLZEndpointMock(dao, 100),
+    ]);
+
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, ConnextExecutor.address, ConnextHandler.address, daoAddr, game.address, xChainController.address, 100)
+      deployXProvider(dao, LZEndpoint10.address, daoAddr, game.address, xChainController.address, 10),
+      deployXProvider(dao, LZEndpoint100.address, daoAddr, game.address, xChainController.address, 100)
     ])
 
     await Promise.all([
@@ -58,16 +60,15 @@ describe.only("Testing Game", async () => {
       xProvider100.setXControllerProvider(xProvider100.address),
       xProvider10.setGameChainId(10),
       xProvider100.setGameChainId(10),
+      xProvider10.setTrustedRemote(100, xProvider100.address),
+      xProvider100.setTrustedRemote(10, xProvider10.address),
       game.connect(dao).setXProvider(xProvider10.address),
-      xProvider10.whitelistSender(xChainController.address),
-      xProvider100.whitelistSender(game.address),
     ]);
 
     // With MOCK Providers
     await Promise.all([
       initController(controller, [game.address, vault.address]),
       game.connect(dao).setChainIdArray([10, 100, 1000]),
-      ConnextHandler.setExecutor(ConnextExecutor.address),
       xChainController.connect(dao).setHomeXProviderAddress(xProvider100.address),
       xChainController.connect(dao).setChainIdArray(chainIds),
       controller.connect(dao).addGame(game.address),
@@ -80,7 +81,12 @@ describe.only("Testing Game", async () => {
       game.connect(dao).setLatestProtocolId(10, 5),
       game.connect(dao).setLatestProtocolId(100, 5),
       game.connect(dao).setLatestProtocolId(1000, 5),
-    ])
+    ]);
+
+    await Promise.all([
+      LZEndpoint10.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
+      LZEndpoint100.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
+    ]);
 
     // for (const protocol of protocols.values()) {
     //   await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
