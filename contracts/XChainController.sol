@@ -45,7 +45,6 @@ contract XChainController {
 
   mapping(uint256 => vaultInfo) internal vaults;
   mapping(uint256 => vaultStages) internal vaultStage;
-  mapping(uint16 => address) internal xProviders; // chainId => xProvider
 
   modifier onlyGame {
     require(msg.sender == game, "XChainController: only Game");
@@ -182,7 +181,7 @@ contract XChainController {
       require(vault != address(0), "No vault on this chainId");
 
       if (chain == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
-      else xProvider.pushGetTotalUnderlying(_vaultNumber, vault, chain, xProviders[chain]);
+      else xProvider.pushGetTotalUnderlying(_vaultNumber, vault, chain);
     }
   }
 
@@ -198,7 +197,7 @@ contract XChainController {
   }
 
   /// @notice Helper so only Provider can call setTotalUnderlyingCallbackInt
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external onlyXProvider {
+  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external {
     setTotalUnderlyingCallbackInt(_vaultNumber, _chainId, _underlying);
   }
 
@@ -266,7 +265,7 @@ contract XChainController {
   /// @param _amount Amount in vaultcurrency that should be on given chainId
   function setXChainAllocationVault(address _vault, uint16 _chainId, uint256 _amount) internal {
     if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
-    else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount, xProviders[_chainId]);
+    else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
@@ -324,13 +323,6 @@ contract XChainController {
   function setHomeXProviderAddress(address _xProvider) external onlyDao {
     xProvider = IXProvider(_xProvider);
     xProviderAddr = _xProvider;
-  }
-
-  /// @notice Setter for xProvider address
-  /// @param _xProvider new address of xProvider on this chain
-  /// @param _chainId Number of the chain to set the provider for
-  function setXProviderAddress(address _xProvider, uint16 _chainId) external onlyDao {
-    xProviders[_chainId] = _xProvider;
   }
 
   /// @notice Setter for chainId array

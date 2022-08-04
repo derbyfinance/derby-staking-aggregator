@@ -85,10 +85,6 @@ contract LZEndpointMock is ILayerZeroEndpoint {
         address destAddr = packedBytesToAddr(_destination);
         address lzEndpoint = lzEndpointLookup[destAddr];
 
-        console.log("_chainId %s", _chainId);
-        console.log("destAddr %s", destAddr);
-        console.log("lzEndPoint %s", lzEndpoint);
-
         require(lzEndpoint != address(0), "LayerZeroMock: destination LayerZero Endpoint not found");
 
         require(msg.value >= nativeFee * _payload.length, "LayerZeroMock: not enough native for fees");

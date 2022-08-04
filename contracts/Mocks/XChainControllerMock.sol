@@ -2,7 +2,6 @@
 pragma solidity ^0.8.11;
 
 import "../XChainController.sol";
-import "hardhat/console.sol";
 
 contract XChainControllerMock is XChainController {
   constructor(address _game, address _dao, uint16 _homeChain) XChainController(_game, _dao, _homeChain) {} 

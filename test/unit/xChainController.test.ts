@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { ConnextExecutorMock, ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
-import { deployConnextExecutorMock, deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import type { Controller, DerbyToken, GameMock, LZEndpointMock, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
+import { deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
@@ -65,9 +65,6 @@ describe.only("Testing XChainController, unit test", async () => {
       xProvider10.setXControllerChainId(100),
       xProvider100.setXControllerChainId(100),
       xProvider1000.setXControllerChainId(100),
-      xProvider10.whitelistSender(xChainController.address),
-      xProvider100.whitelistSender(game.address),
-      xProvider1000.whitelistSender(xChainController.address),
       xProvider10.setGameChainId(10),
       xProvider100.setGameChainId(10),
       xProvider1000.setGameChainId(10),
@@ -76,7 +73,7 @@ describe.only("Testing XChainController, unit test", async () => {
       xProvider100.setTrustedRemote(10, xProvider10.address),
       xProvider100.setTrustedRemote(1000, xProvider1000.address),
       xProvider1000.setTrustedRemote(10, xProvider10.address),
-      xProvider1000.setTrustedRemote(100, xProvider1000.address),
+      xProvider1000.setTrustedRemote(100, xProvider100.address),
     ]);
 
     await Promise.all([
@@ -116,18 +113,8 @@ describe.only("Testing XChainController, unit test", async () => {
       xChainController.setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
-      xChainController.setXProviderAddress(xProvider10.address, 10),
-      xChainController.setXProviderAddress(xProvider100.address, 100), 
-      xChainController.setXProviderAddress(xProvider1000.address, 1000), 
       xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
     ]);
-
-    console.log(`Endpoint 10: ${LZEndpoint10.address}`)
-    console.log(`Endpoint 100: ${LZEndpoint100.address}`)
-    console.log(`Endpoint 1000: ${LZEndpoint1000.address}`)
-    console.log(`xProvider 10: ${xProvider10.address}`)
-    console.log(`xProvider 100: ${xProvider100.address}`)
-    console.log(`xProvider 1000: ${xProvider1000.address}`)
   });
 
   it("1) Store allocations in Game contract", async function() {
@@ -195,7 +182,7 @@ describe.only("Testing XChainController, unit test", async () => {
     await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
 
     await xChainController.setActiveVaultsTEST(vaultNumber, 3); // mocking 3 active vaults for now
-
+    
     await xChainController.setTotalUnderlying(vaultNumber);
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
@@ -208,7 +195,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
   });
 
-  it.skip("(4) Calc and set amount to deposit or withdraw in vault", async function() {
+  it("(4) Calc and set amount to deposit or withdraw in vault", async function() {
     await xChainController.pushVaultAmounts(vaultNumber);
 
     const expectedAmounts = [

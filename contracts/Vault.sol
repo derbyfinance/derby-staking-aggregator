@@ -158,7 +158,6 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xChainController
   /// @param _amountToSend amount to send in vaultCurrency
   function setXChainAllocation(uint256 _amountToSend) external {
-    console.log("Vault _amountToSend %s", _amountToSend);
     amountToSendXChain = _amountToSend;
 
     if (_amountToSend == 0) {

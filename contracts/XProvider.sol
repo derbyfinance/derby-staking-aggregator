@@ -14,7 +14,6 @@ contract XProvider is ILayerZeroReceiver {
 
   address public xController;
   address public xControllerProvider;
-  address public receiveProvider;
   address public dao;
   address public game;
 
@@ -22,33 +21,27 @@ contract XProvider is ILayerZeroReceiver {
   uint16 public xControllerChain;
   uint16 public gameChain;
 
-  mapping(address => bool) internal senderWhitelist;
   mapping(uint16 => bytes) public trustedRemoteLookup;
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
   modifier onlyDao {
-    require(msg.sender == dao, "ConnextProvider: only DAO");
+    require(msg.sender == dao, "LZProvider: only DAO");
     _;
   }
 
   modifier onlyController {
-    require(msg.sender == xController, "ConnextProvider: only DAO");
+    require(msg.sender == xController, "LZProvider: only Controller");
     _;
   }
 
   modifier onlyGame {
-    require(msg.sender == game, "ConnextProvider: only Game");
+    require(msg.sender == game, "LZProvider: only Game");
     _;
   }
 
-  modifier onlyExecutor(uint16 _chain) { 
-    // require(
-    //   senderWhitelist[IExecutorMock(msg.sender).originSender()] &&
-    //   IExecutorMock(msg.sender).origin() == _chain &&
-    //   msg.sender == executor,
-    //   "!Executor"
-    // ); 
+  modifier onlySelf() { 
+    require(msg.sender == address(this), "LZProvider: only Self");
     _;  
   }
   
@@ -66,30 +59,30 @@ contract XProvider is ILayerZeroReceiver {
     homeChainId = _homeChainId;
   }
 
-  /// @notice Function to send an integer value crosschain
-  /// @param _to address of the contract on receiving chain
-  /// @param _originDomain Chain Id of sender chain
+  /// @notice Function to send function selectors crossChain
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
   function xSend(
-    address _to,
-    uint16 _originDomain,
     uint16 _destinationDomain,
     bytes memory _callData
   ) internal {
     bytes memory trustedRemote = trustedRemoteLookup[_destinationDomain]; // same chainID as the provider on the receiverChain 
-    require(trustedRemote.length != 0, "LzApp: destination chain is not a trusted source");
+    require(trustedRemote.length != 0, "LZProvider: destination chain not trusted");
 
     endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
   }
 
-  function lzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) external {
-    console.log("lz receive");
-    require(msg.sender == address(endpoint));
-    require(_srcAddress.length == trustedRemoteLookup[_srcChainId].length && keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]));
+  function lzReceive(
+    uint16 _srcChainId, 
+    bytes calldata _srcAddress, 
+    uint64 _nonce, 
+    bytes calldata _payload
+  ) external {
+    require(msg.sender == address(endpoint), "Not an endpoint");
+    require(_srcAddress.length == trustedRemoteLookup[_srcChainId].length && keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]), "Not trusted");
 
     (bool success,) = address(this).call(_payload);
-    require(success, "LZXProviderMock: lzReceive: No success");
+    require(success, "LZProvider: lzReceive: No success");
   }
 
   /// @notice Pushes the delta allocations from the game to the xChainController
@@ -99,13 +92,13 @@ contract XProvider is ILayerZeroReceiver {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
-    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+    xSend(xControllerChain, callData);
   }
 
   /// @notice Receives the delta allocations from the game and routes to xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
-  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyExecutor(gameChain) {
+  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlySelf {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
@@ -113,17 +106,15 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber number of the vault
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
-  /// @param _provider Address of the provider on given chainId 
   function pushGetTotalUnderlying(
     uint256 _vaultNumber, 
     address _vault, 
-    uint16 _chainId, 
-    address _provider
+    uint16 _chainId
   ) external onlyController {
     bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
 
-    xSend(_provider, homeChainId, _chainId, callData);
+    xSend(_chainId, callData);
   }
 
   /// @notice Receiver for the pushGetTotalUnderlying on each chainId
@@ -133,13 +124,13 @@ contract XProvider is ILayerZeroReceiver {
   function receiveGetTotalUnderlying(
     uint256 _vaultNumber, 
     address _vault
-  ) external onlyExecutor(xControllerChain) {
+  ) external onlySelf {
     uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
 
     bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint16,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
 
-    xSend(xControllerProvider, homeChainId, xControllerChain, callData);
+    xSend(xControllerChain, callData);
   }
 
   /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
@@ -158,17 +149,15 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
   /// @param _amountToSendBack Amount the vault has to send back
-  /// @param _provider Address of the xProvider on given chainId 
   function pushSetXChainAllocation(
     address _vault, 
     uint16 _chainId, 
-    uint256 _amountToSendBack,
-    address _provider
+    uint256 _amountToSendBack
   ) external onlyController {
     bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack);
 
-    xSend(_provider, homeChainId, _chainId, callData);
+    xSend(_chainId, callData);
   }
 
   /// @notice Receiver for the amount the vault has to send back to the xChainController
@@ -177,7 +166,7 @@ contract XProvider is ILayerZeroReceiver {
   function receiveSetXChainAllocation(
     address _vault,
     uint256 _amountToSendBack
-  ) external onlyExecutor(xControllerChain) {
+  ) external onlySelf {
     IVault(_vault).setXChainAllocation(_amountToSendBack);
   }
 
@@ -207,18 +196,7 @@ contract XProvider is ILayerZeroReceiver {
     gameChain = _gameChain;
   }
 
-  /// @notice Whitelists the contract for the onlyExecutor modifier
-  /// @param _contract address to whitelist
-  function whitelistSender(address _contract) external onlyDao {
-    senderWhitelist[_contract] = true;
-  }
-
   function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
-  
-  // function setTotalUnderlying(uint256 _vaultNumber, uint256 _underlying) public {
-  //   IXChainController(xController).addTotalChainUnderlying(_vaultNumber, _underlying);
-  // }
-
 }
