@@ -2,10 +2,9 @@
 pragma solidity ^0.8.11;
 
 import "../XChainController.sol";
-import "hardhat/console.sol";
 
 contract XChainControllerMock is XChainController {
-  constructor(address _game, address _dao, uint32 _homeChain) XChainController(_game, _dao, _homeChain) {} 
+  constructor(address _game, address _dao, uint16 _homeChain) XChainController(_game, _dao, _homeChain) {} 
 
   function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
     return setActiveVaults(_vaultNumber, _activeVaults);
@@ -51,11 +50,11 @@ contract XChainControllerMock is XChainController {
     return getCurrentTotalAllocation(_vaultNumber);
   }
 
-  function getCurrentAllocationTEST(uint256 _vaultNumber, uint32 _chainId) external view returns(int256) {
+  function getCurrentAllocationTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(int256) {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
-  function getTotalUnderlyingOnChainTEST(uint256 _vaultNumber, uint32 _chainId) external view returns(uint256) {
+  function getTotalUnderlyingOnChainTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(uint256) {
     return getTotalUnderlyingOnChain(_vaultNumber, _chainId);
   }
 
