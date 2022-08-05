@@ -109,4 +109,6 @@ contract ConnextXProviderMock is IXProviderMock {
   function xReceive(uint256 _value) external onlyExecutor {
     IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
   }
+
+  function xTransfer(address to, address asset, uint32 originDomain, uint32 destinationDomain, uint256 amount) external {}
 }
