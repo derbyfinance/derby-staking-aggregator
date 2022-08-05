@@ -49,6 +49,11 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    bsc: {
+      url: process.env.BSC_TESTNET_URL || "",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     hardhat: {
       forking: {
         url: `${process.env.PROVIDER_FORKING}`,
@@ -62,7 +67,7 @@ const config: HardhatUserConfig = {
   //   coinmarketcap: process.env.CMC,
   // },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
+    apiKey: process.env.BINANCESCAN_API_KEY
   },
   mocha: {
     timeout: 3000000,
