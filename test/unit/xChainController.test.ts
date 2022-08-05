@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, DerbyToken, GameMock, LZEndpointMock, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
-import { deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import type { ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, VaultMock, XChainControllerMock, XProvider } from '../../typechain-types';
+import { deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import allProviders  from "../helpers/allProvidersClass";
@@ -22,7 +22,7 @@ const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing XChainController, unit test", async () => {
-  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, LZEndpoint1000: LZEndpointMock, DerbyToken: DerbyToken,  game: GameMock;
+  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, LZEndpoint1000: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -33,6 +33,8 @@ describe.only("Testing XChainController, unit test", async () => {
       dao.getAddress(),
       user.getAddress()
     ]);
+
+    connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
@@ -47,9 +49,9 @@ describe.only("Testing XChainController, unit test", async () => {
     ]);
 
     [xProvider10, xProvider100, xProvider1000] = await Promise.all([
-      deployXProvider(dao, LZEndpoint10.address, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, LZEndpoint100.address, daoAddr, game.address, xChainController.address, 100),
-      deployXProvider(dao, LZEndpoint1000.address, daoAddr, game.address, xChainController.address, 1000)
+      deployXProvider(dao, LZEndpoint10.address, connextHandler.address, daoAddr, game.address, xChainController.address, 10),
+      deployXProvider(dao, LZEndpoint100.address, connextHandler.address, daoAddr, game.address, xChainController.address, 100),
+      deployXProvider(dao, LZEndpoint1000.address, connextHandler.address, daoAddr, game.address, xChainController.address, 1000)
     ]);
 
     [vault1, vault2, vault3] = await Promise.all([
@@ -195,7 +197,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
   });
 
-  it("(4) Calc and set amount to deposit or withdraw in vault", async function() {
+  it("4.0) Calc and set amount to deposit or withdraw in vault", async function() {
     await xChainController.pushVaultAmounts(vaultNumber);
 
     const expectedAmounts = [
@@ -213,4 +215,20 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await vault2.state()).to.be.equal(1);
     expect(await vault3.state()).to.be.equal(2); // dont have to send any funds
   });
+
+  it("4.1) Temp test for transfers", async function() {
+    const amount = parseUSDC('1000');
+    await IUSDc.connect(user).approve(xProvider10.address, amount);
+
+    await xProvider10.connect(user).xTransfer(
+      daoAddr,
+      usdc,
+      10,
+      100,
+      amount
+    );
+
+    expect(await IUSDc.balanceOf(daoAddr)).to.be.equal(amount);
+  });
+
 });
