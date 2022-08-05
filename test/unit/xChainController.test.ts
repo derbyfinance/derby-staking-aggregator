@@ -217,7 +217,18 @@ describe.only("Testing XChainController, unit test", async () => {
   });
 
   it("4.1) Temp test for transfers", async function() {
-    await xChainController.pushVaultAmounts(vaultNumber);
+    const amount = parseUSDC('1000');
+    await IUSDc.connect(user).approve(xProvider10.address, amount);
 
+    await xProvider10.connect(user).xTransfer(
+      daoAddr,
+      usdc,
+      10,
+      100,
+      amount
+    );
+
+    expect(await IUSDc.balanceOf(daoAddr)).to.be.equal(amount);
   });
+
 });

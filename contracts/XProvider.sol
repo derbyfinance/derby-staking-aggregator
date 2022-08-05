@@ -84,36 +84,36 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   function xTransfer(
-    address _to, 
-    address _asset, 
-    uint32 _originDomain, 
-    uint32 _destinationDomain, 
+    address _to,
+    address _asset,
+    uint32 _originDomain,
+    uint32 _destinationDomain,
     uint256 _amount
-  ) external {
-    IERC20 token = IERC20(_asset);    
-    require(token.allowance(msg.sender, address(this)) >= _amount, "LZXProvider: User must approve amount");
-    token.transferFrom(msg.sender, address(this), _amount);    
-    token.approve(address(connext), _amount);
+  ) external {  
+    require(IERC20(_asset).allowance(msg.sender, address(this)) >= _amount, "LZXProvider: Not approved");
+
+    IERC20(_asset).transferFrom(msg.sender, address(this), _amount);    
+    IERC20(_asset).approve(address(connext), _amount);
 
     CallParams memory callParams = CallParams({
-      to: _to,      
-      callData: "",      
-      originDomain: _originDomain,      
-      destinationDomain: _destinationDomain,      
-      agent: _to,      
-      recovery: _too,      
-      forceSlow: false,      
-      receiveLocal: false,      
-      callback: address(0),      
-      callbackFee: 0,      
-      relayerFee: 0,      
-      slippageTol: 9995    
+      to: _to,
+      callData: "",
+      originDomain: _originDomain,
+      destinationDomain: _destinationDomain,
+      agent: _to,
+      recovery: _to,
+      forceSlow: false,
+      receiveLocal: false,
+      callback: address(0),
+      callbackFee: 0,
+      relayerFee: 0,
+      slippageTol: 9995
     });
 
     XCallArgs memory xcallArgs = XCallArgs({
-      params: callParams,      
-      transactingAssetId: _asset, 
-      amount: _amount  
+      params: callParams,
+      transactingAssetId: _asset,
+      amount: _amount
     });  
 
     connext.xcall(xcallArgs);
