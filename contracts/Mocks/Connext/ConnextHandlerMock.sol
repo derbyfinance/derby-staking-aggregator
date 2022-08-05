@@ -31,7 +31,7 @@ contract ConnextHandlerMock is IConnextHandler {
         return executor;
     }
 
-    function xcall(XCallArgs calldata _args) external payable returns(bytes32) {
+    function xcall(XCallArgs calldata _args) external payable returns (bytes32) {
         // split logic for messaging and transfer of value
         if (_args.transactingAssetId == address(0)) { // message
             IExecutorMock.ExecutorArgs memory exArgs;
