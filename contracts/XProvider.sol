@@ -141,7 +141,7 @@ contract XProvider is ILayerZeroReceiver {
     uint256 _vaultNumber, 
     uint16 _chainId, 
     uint256 _underlying
-  ) external {
+  ) external onlySelf {
     return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
   }
 

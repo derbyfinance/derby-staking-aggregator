@@ -197,7 +197,7 @@ contract XChainController {
   }
 
   /// @notice Helper so only Provider can call setTotalUnderlyingCallbackInt
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external {
+  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external onlyXProvider {
     setTotalUnderlyingCallbackInt(_vaultNumber, _chainId, _underlying);
   }
 
