@@ -101,7 +101,7 @@ contract XProvider is ILayerZeroReceiver {
       originDomain: _originDomain,      
       destinationDomain: _destinationDomain,      
       agent: _to,      
-      recovery: _to,      
+      recovery: _too,      
       forceSlow: false,      
       receiveLocal: false,      
       callback: address(0),      
