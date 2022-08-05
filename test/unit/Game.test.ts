@@ -47,8 +47,8 @@ describe.only("Testing Game", async () => {
     ]);
 
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, LZEndpoint10.address, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, LZEndpoint100.address, daoAddr, game.address, xChainController.address, 100)
+      deployXProvider(dao, LZEndpoint10.address, daoAddr, daoAddr, game.address, xChainController.address, 10),
+      deployXProvider(dao, LZEndpoint100.address, daoAddr, daoAddr, game.address, xChainController.address, 100)
     ])
 
     await Promise.all([

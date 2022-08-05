@@ -1,16 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
+
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
+import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
 
 import "hardhat/console.sol";
 
 contract XProvider is ILayerZeroReceiver {
-  ILayerZeroEndpoint public endpoint;
+  using SafeERC20 for IERC20;
+
+  ILayerZeroEndpoint public immutable endpoint;
+  IConnextHandler public immutable connext;
 
   address public xController;
   address public xControllerProvider;
@@ -47,12 +56,14 @@ contract XProvider is ILayerZeroReceiver {
   
   constructor(
     address _endpoint,
+    address _connextHandler,
     address _dao,
     address _game,
     address _xController,
     uint16 _homeChainId
   ) {
     endpoint = ILayerZeroEndpoint(_endpoint);
+    connext = IConnextHandler(_connextHandler);
     dao = _dao;
     game = _game;
     xController = _xController;
@@ -70,6 +81,42 @@ contract XProvider is ILayerZeroReceiver {
     require(trustedRemote.length != 0, "LZProvider: destination chain not trusted");
 
     endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
+  }
+
+  function xTransfer(
+    address _to, 
+    address _asset, 
+    uint32 _originDomain, 
+    uint32 _destinationDomain, 
+    uint256 _amount
+  ) external {
+    IERC20 token = IERC20(_asset);    
+    require(token.allowance(msg.sender, address(this)) >= _amount, "LZXProvider: User must approve amount");
+    token.transferFrom(msg.sender, address(this), _amount);    
+    token.approve(address(connext), _amount);
+
+    CallParams memory callParams = CallParams({
+      to: _to,      
+      callData: "",      
+      originDomain: _originDomain,      
+      destinationDomain: _destinationDomain,      
+      agent: _to,      
+      recovery: _to,      
+      forceSlow: false,      
+      receiveLocal: false,      
+      callback: address(0),      
+      callbackFee: 0,      
+      relayerFee: 0,      
+      slippageTol: 9995    
+    });
+
+    XCallArgs memory xcallArgs = XCallArgs({
+      params: callParams,      
+      transactingAssetId: _asset, 
+      amount: _amount  
+    });  
+
+    connext.xcall(xcallArgs);
   }
 
   function lzReceive(
