@@ -9,6 +9,7 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IGame.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
+import "./Interfaces/IXProvider.sol";
 
 import "./VaultToken.sol";
 import "./libraries/swap.sol";
@@ -36,6 +37,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   address public game;
   address public governed;
   address public xChainController;
+  address public xProvider;
 
   int256 public marginScale = 1E10; // 10000 USDC
   uint256 public uScale;
@@ -43,7 +45,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   uint256 public performanceFee = 10;
   uint256 public rebalancingPeriod = 0;
 
-  uint256 public blockRebalanceInterval = 1;
+  uint256 public blockRebalanceInterval = 1; // SHOULD BE REPLACED FOR REALISTIC NUMBER
   uint256 public lastTimeStamp;
 
   uint256 public gasFeeLiquidity;
@@ -160,19 +162,17 @@ contract Vault is VaultToken, ReentrancyGuard {
   function setXChainAllocation(uint256 _amountToSend) external {
     amountToSendXChain = _amountToSend;
 
-    if (_amountToSend == 0) {
-      state = State.WaitingForFunds;
-    } else {
-      state = State.SendingFundsXChain;
-    }
+    if (_amountToSend == 0) state = State.WaitingForFunds;
+    else state = State.SendingFundsXChain;
   }
 
-  // OnlyDao modifier
-  /// @notice Will be replaced with xChain logic
-  function rebalanceXChain() external onlyDao {
+  /// @notice Send vaultcurrency to the xChainController for xChain rebalance
+  function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
+    console.log("vault amount %s", amountToSendXChain);
+    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+    IXProvider(xProvider).xTransferToController(amountToSendXChain, vaultCurrencyAddr);
 
-    vaultCurrency.safeTransfer(xChainController, amountToSendXChain);
     amountToSendXChain = 0;
 
     state = State.RebalanceVault;
@@ -555,9 +555,10 @@ contract Vault is VaultToken, ReentrancyGuard {
       vaultCurrency.safeTransfer(_user, _amount);
   }
 
-  /// @notice callback to receive Ether from unwrapping WETH
-  receive() external payable {
-    require(msg.sender == Swap.WETH, "Not WETH");
+  /// @notice Setter for xProvider address
+  /// @param _xProvider new address of xProvider on this chain
+  function setHomeXProviderAddress(address _xProvider) external onlyDao {
+    xProvider = _xProvider;
   }
 
   /// @notice Temporary, will be replaced by xChain logic
@@ -565,4 +566,10 @@ contract Vault is VaultToken, ReentrancyGuard {
   function setxChainControllerAddress(address _xChainController) external {
     xChainController = _xChainController;
   }
+
+  /// @notice callback to receive Ether from unwrapping WETH
+  receive() external payable {
+    require(msg.sender == Swap.WETH, "Not WETH");
+  }
+
 }

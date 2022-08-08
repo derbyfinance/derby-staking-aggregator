@@ -109,6 +109,9 @@ describe.only("Testing XChainController, unit test", async () => {
       vault1.setxChainControllerAddress(xChainController.address),
       vault2.setxChainControllerAddress(xChainController.address),
       vault3.setxChainControllerAddress(xChainController.address),
+      vault1.setHomeXProviderAddress(xProvider10.address),
+      vault2.setHomeXProviderAddress(xProvider100.address),
+      vault3.setHomeXProviderAddress(xProvider1000.address),
     ]);
 
     await Promise.all([
@@ -216,19 +219,21 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await vault3.state()).to.be.equal(2); // dont have to send any funds
   });
 
-  it("4.1) Temp test for transfers", async function() {
-    const amount = parseUSDC('1000');
-    await IUSDc.connect(user).approve(xProvider10.address, amount);
+  it("4.1) Trigger vaults to transfer funds to xChainController", async function() {
+    await vault1.rebalanceXChain();
+    await vault2.rebalanceXChain();
+    await vault3.rebalanceXChain();
 
-    await xProvider10.connect(user).xTransfer(
-      daoAddr,
-      usdc,
-      10,
-      100,
-      amount
-    );
+    // 150k should be sent to xChainController
+    expect(formatUSDC(await IUSDc.balanceOf(xChainController.address))).to.be.equal(150_000);
 
-    expect(await IUSDc.balanceOf(daoAddr)).to.be.equal(amount);
+    expect(await vault1.state()).to.be.equal(3); // should have upped after sending funds
+    expect(await vault2.state()).to.be.equal(3); // should have upped after sending funds
+    expect(await vault3.state()).to.be.equal(2); // have to receive funds
+  });
+
+  it("4.1) Trigger xChainController to send funds to vaults", async function() {
+
   });
 
 });

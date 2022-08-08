@@ -84,13 +84,23 @@ contract XProvider is ILayerZeroReceiver {
     endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
   }
 
+  function xTransferToController(uint256 _amount, address _asset) external {
+    xTransfer(
+      xController,
+      _asset,
+      homeChainId,
+      xControllerChain,
+      _amount
+    );
+  }
+
   function xTransfer(
     address _to,
     address _asset,
     uint32 _originDomain,
     uint32 _destinationDomain,
     uint256 _amount
-  ) external {  
+  ) internal {
     require(IERC20(_asset).allowance(msg.sender, address(this)) >= _amount, "LZXProvider: Not approved");
 
     IERC20(_asset).transferFrom(msg.sender, address(this), _amount);    
