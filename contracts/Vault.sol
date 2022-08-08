@@ -10,6 +10,7 @@ import "./Interfaces/IGame.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IGoverned.sol";
 import "./Interfaces/IXProvider.sol";
+import "./Interfaces/IXChainController.sol";
 
 import "./VaultToken.sol";
 import "./libraries/swap.sol";
@@ -26,9 +27,9 @@ contract Vault is VaultToken, ReentrancyGuard {
   IERC20 public vaultCurrency;
   IController public controller;
 
-  // state 0 Rebalance done and ready for xChainController to rebalance again
-  // state 1 Allocation amount received and ready to send funds over to xChainController
-  // state 2 Allocation amount 0 received => will receive funds from xChainController
+  // state 0 Rebalance done and ready for xController to rebalance again
+  // state 1 Allocation amount received and ready to send funds over to xController
+  // state 2 Allocation amount 0 received => will receive funds from xController
   // state 3 Allocation amount sent or received and ready to rebalance the vault itself
   enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
   State public state;
@@ -36,20 +37,23 @@ contract Vault is VaultToken, ReentrancyGuard {
   address public vaultCurrencyAddr; 
   address public game;
   address public governed;
-  address public xChainController;
+  address public xController;
   address public xProvider;
 
-  int256 public marginScale = 1E10; // 10000 USDC
-  uint256 public uScale;
+  uint256 public vaultNumber = 0;
   uint256 public liquidityPerc = 10;
   uint256 public performanceFee = 10;
   uint256 public rebalancingPeriod = 0;
+  uint256 public uScale;
+  int256 public marginScale = 1E10; // 10000 USDC
 
   uint256 public blockRebalanceInterval = 1; // SHOULD BE REPLACED FOR REALISTIC NUMBER
   uint256 public lastTimeStamp;
-
   uint256 public gasFeeLiquidity;
+  
   uint256 public amountToSendXChain;
+  uint256 public homeChainId;
+  uint256 public xControllerChainId;
 
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
@@ -155,9 +159,9 @@ contract Vault is VaultToken, ReentrancyGuard {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
-  /// @notice Will set the amount to send back to the xChainController by the xChainController
+  /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
-  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xChainController
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
   /// @param _amountToSend amount to send in vaultCurrency
   function setXChainAllocation(uint256 _amountToSend) external {
     amountToSendXChain = _amountToSend;
@@ -166,15 +170,19 @@ contract Vault is VaultToken, ReentrancyGuard {
     else state = State.SendingFundsXChain;
   }
 
-  /// @notice Send vaultcurrency to the xChainController for xChain rebalance
+  /// @notice Send vaultcurrency to the xController for xChain rebalance
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
-    console.log("vault amount %s", amountToSendXChain);
-    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController(amountToSendXChain, vaultCurrencyAddr);
+
+    if (homeChainId == xControllerChainId) {
+      vaultCurrency.safeTransfer(xController, amountToSendXChain);
+      IXChainController(xController).upFundsReceived(vaultNumber);
+    } else {
+      vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+      IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    }
 
     amountToSendXChain = 0;
-
     state = State.RebalanceVault;
   }
 
@@ -561,10 +569,22 @@ contract Vault is VaultToken, ReentrancyGuard {
     xProvider = _xProvider;
   }
 
-  /// @notice Temporary, will be replaced by xChain logic
-  /// @param _xChainController set controller address
-  function setxChainControllerAddress(address _xChainController) external {
-    xChainController = _xChainController;
+  /// @notice T
+  /// @param _xController set controller address
+  function setXControllerAddress(address _xController) external onlyDao {
+    xController = _xController;
+  }
+
+  /// @notice T
+  /// @param _chainId set controller address
+  function setHomeChain(uint256 _chainId) external onlyDao {
+    homeChainId = _chainId;
+  }
+
+  /// @notice T
+  /// @param _chainId set controller address
+  function setXControllerChain(uint256 _chainId) external onlyDao {
+    xControllerChainId = _chainId;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH

@@ -84,16 +84,6 @@ contract XProvider is ILayerZeroReceiver {
     endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
   }
 
-  function xTransferToController(uint256 _amount, address _asset) external {
-    xTransfer(
-      xController,
-      _asset,
-      homeChainId,
-      xControllerChain,
-      _amount
-    );
-  }
-
   function xTransfer(
     address _to,
     address _asset,
@@ -226,6 +216,34 @@ contract XProvider is ILayerZeroReceiver {
     uint256 _amountToSendBack
   ) external onlySelf {
     IVault(_vault).setXChainAllocation(_amountToSendBack);
+  }
+
+  
+  /// @notice Only vault modifier
+  function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external {
+    xTransfer(
+      xController,
+      _asset,
+      homeChainId,
+      xControllerChain,
+      _amount
+    );
+    pushTransferToXController(_vaultNumber); // vault Number
+  }
+
+  /// @notice O
+  /// @param _vaultNumber number of the vault
+  function pushTransferToXController(uint256 _vaultNumber) internal {
+    bytes4 selector = bytes4(keccak256("receiveTransferToXController(uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber);
+
+    xSend(xControllerChain, callData);
+  }
+
+  /// @notice R
+  /// @param _vaultNumber number of the vault
+  function receiveTransferToXController(uint256 _vaultNumber) external onlySelf {
+    return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

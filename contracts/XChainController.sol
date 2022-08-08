@@ -130,9 +130,10 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
+  /// MODIFIER onlyProvider plus vault on same chain
   /// @notice Setter to tick up stage 3: 
   /// @notice FundsReceived; funds received from all active vault contracts
-  function upFundsReceived(uint256 _vaultNumber) internal onlyWhenUnderlyingsReceived(_vaultNumber) {
+  function upFundsReceived(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 
@@ -235,7 +236,7 @@ contract XChainController {
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
         setXChainAllocationVault(vault, chain, 0);
-        upFundsReceived(_vaultNumber);
+        vaultStage[_vaultNumber].fundsReceived++;
       }
 
       if (amountToWithdraw > 0) setXChainAllocationVault(vault, chain, amountToWithdraw);

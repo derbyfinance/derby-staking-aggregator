@@ -106,12 +106,18 @@ describe.only("Testing XChainController, unit test", async () => {
     ]);
 
     await Promise.all([
-      vault1.setxChainControllerAddress(xChainController.address),
-      vault2.setxChainControllerAddress(xChainController.address),
-      vault3.setxChainControllerAddress(xChainController.address),
+      vault1.setXControllerAddress(xChainController.address),
+      vault2.setXControllerAddress(xChainController.address),
+      vault3.setXControllerAddress(xChainController.address),
       vault1.setHomeXProviderAddress(xProvider10.address),
       vault2.setHomeXProviderAddress(xProvider100.address),
       vault3.setHomeXProviderAddress(xProvider1000.address),
+      vault1.setHomeChain(10),
+      vault2.setHomeChain(100),
+      vault3.setHomeChain(1000),
+      vault1.setXControllerChain(100),
+      vault2.setXControllerChain(100),
+      vault3.setXControllerChain(100),
     ]);
 
     await Promise.all([
@@ -158,9 +164,6 @@ describe.only("Testing XChainController, unit test", async () => {
 
     await xChainController.upUnderlyingReceivedTEST(vaultNumber);
     expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(1);
-
-    await xChainController.upFundsReceivedTEST(vaultNumber);
-    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(1);
 
     await xChainController.resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
@@ -230,9 +233,11 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await vault1.state()).to.be.equal(3); // should have upped after sending funds
     expect(await vault2.state()).to.be.equal(3); // should have upped after sending funds
     expect(await vault3.state()).to.be.equal(2); // have to receive funds
+
+    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);
   });
 
-  it("4.1) Trigger xChainController to send funds to vaults", async function() {
+  it("4.2) Trigger xChainController to send funds to vaults", async function() {
 
   });
 
