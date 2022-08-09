@@ -83,7 +83,7 @@ describe.only("Testing XChainController, unit test", async () => {
 
     await Promise.all([
       game.connect(dao).setXProvider(xProvider10.address),
-      game.connect(dao).setChainIdArray([10, 100, 1000]),
+      game.connect(dao).setChainIdArray(chainIds),
       game.connect(dao).addETF(vault1.address),
       game.connect(dao).setLatestProtocolId(10, 5),
       game.connect(dao).setLatestProtocolId(100, 5),
