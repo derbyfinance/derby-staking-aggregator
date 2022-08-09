@@ -23,6 +23,7 @@ contract XChainController {
   struct vaultInfo {
     int256 totalCurrentAllocation;
     uint256 totalUnderlying;
+    mapping(uint16 => bool) chainIdOff; // true == off // false == on
     mapping(uint16 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint16 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint16 => address) vaultChainAddress; // chainId => vault address
@@ -130,7 +131,6 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// MODIFIER onlyProvider plus vault on same chain
   /// @notice Setter to tick up stage 3: 
   /// @notice FundsReceived; funds received from all active vault contracts
   function upFundsReceived(uint256 _vaultNumber) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
@@ -153,10 +153,13 @@ contract XChainController {
     uint256 _vaultNumber, 
     int256[] memory _deltas
   ) external onlyXProvider onlyWhenReady(_vaultNumber) {
+    uint256 activeVaults;
+
     for (uint256 i = 0; i < chainIds.length; i++) {
-      settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
+      activeVaults += settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
     }
 
+    setActiveVaults(_vaultNumber, activeVaults);
     setAllocationsReceived(_vaultNumber, true);
     setReady(_vaultNumber, false);
   }
@@ -165,9 +168,23 @@ contract XChainController {
   /// @param _vaultNumber Number of Vault
   /// @param _chainId Number of chain used
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
-  function settleCurrentAllocation(uint256 _vaultNumber, uint16 _chainId, int256 _deltas) internal {
+  function settleCurrentAllocation(
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    int256 _deltas
+  ) internal returns(uint256 activeVault) {
+    if (vaults[_vaultNumber].totalCurrentAllocation == 0 && _deltas == 0) {
+      vaults[_vaultNumber].chainIdOff[_chainId] = true;
+      activeVault = 0;
+    } else {
+      vaults[_vaultNumber].chainIdOff[_chainId] = false;
+      activeVault = 1;
+    }
+
     vaults[_vaultNumber].totalCurrentAllocation += _deltas;
     vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
+
+    require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
   /// @notice Step 2 trigger 
