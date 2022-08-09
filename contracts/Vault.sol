@@ -176,7 +176,7 @@ contract Vault is VaultToken, ReentrancyGuard {
 
     if (homeChainId == xControllerChainId) {
       vaultCurrency.safeTransfer(xController, amountToSendXChain);
-      IXChainController(xController).upFundsReceived(vaultNumber);
+      IXProvider(xProvider).receiveFeedbackToXController(vaultNumber);
     } else {
       vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
       IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);

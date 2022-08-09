@@ -76,6 +76,9 @@ describe.only("Testing XChainController, unit test", async () => {
       xProvider100.setTrustedRemote(1000, xProvider1000.address),
       xProvider1000.setTrustedRemote(10, xProvider10.address),
       xProvider1000.setTrustedRemote(100, xProvider100.address),
+      xProvider10.toggleVaultWhitelist(vault1.address),
+      xProvider100.toggleVaultWhitelist(vault2.address),
+      xProvider1000.toggleVaultWhitelist(vault3.address),
     ]);
 
     await Promise.all([
@@ -234,10 +237,11 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await vault2.state()).to.be.equal(3); // should have upped after sending funds
     expect(await vault3.state()).to.be.equal(2); // have to receive funds
 
+    // all 3 vaults are ready
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);
   });
 
-  it("4.2) Trigger xChainController to send funds to vaults", async function() {
+  it("5) Trigger xChainController to send funds to vaults", async function() {
 
   });
 

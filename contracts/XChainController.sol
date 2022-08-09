@@ -133,7 +133,7 @@ contract XChainController {
   /// MODIFIER onlyProvider plus vault on same chain
   /// @notice Setter to tick up stage 3: 
   /// @notice FundsReceived; funds received from all active vault contracts
-  function upFundsReceived(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
+  function upFundsReceived(uint256 _vaultNumber) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 
