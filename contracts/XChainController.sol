@@ -47,17 +47,17 @@ contract XChainController {
   mapping(uint256 => vaultStages) internal vaultStage;
 
   modifier onlyGame {
-    require(msg.sender == game, "XChainController: only Game");
+    require(msg.sender == game, "xController: only Game");
     _;
   }
 
   modifier onlyDao {
-    require(msg.sender == dao, "XChainController: only DAO");
+    require(msg.sender == dao, "xController: only DAO");
     _;
   }
 
   modifier onlyXProvider {
-    require(msg.sender == xProviderAddr, "XChainController: only xProviderAddr");
+    require(msg.sender == xProviderAddr, "xController: only xProviderAddr");
     _;
   }
 

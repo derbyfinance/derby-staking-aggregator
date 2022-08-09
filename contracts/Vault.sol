@@ -21,8 +21,8 @@ import "hardhat/console.sol";
 contract Vault is VaultToken, ReentrancyGuard {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
-  string public ETFname;
-  uint256 public ETFnumber;
+  string public vaultName;
+  uint256 public vaultNumber;
 
   IERC20 public vaultCurrency;
   IController public controller;
@@ -40,7 +40,6 @@ contract Vault is VaultToken, ReentrancyGuard {
   address public xController;
   address public xProvider;
 
-  uint256 public vaultNumber = 0;
   uint256 public liquidityPerc = 10;
   uint256 public performanceFee = 10;
   uint256 public rebalancingPeriod = 0;
@@ -101,8 +100,8 @@ contract Vault is VaultToken, ReentrancyGuard {
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    string memory _ETFname,
-    uint256 _ETFnumber,
+    string memory _vaultName,
+    uint256 _vaultNumber,
     address _governed,
     address _game, 
     address _controller, 
@@ -114,8 +113,8 @@ contract Vault is VaultToken, ReentrancyGuard {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
 
-    ETFname = _ETFname;
-    ETFnumber = _ETFnumber;
+    vaultName = _vaultName;
+    vaultNumber = _vaultNumber;
 
     governed = _governed;
     game = _game;
@@ -196,7 +195,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
   /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
-    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       if (currentAllocations[i] == 0) continue;
       
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
@@ -267,9 +266,9 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault 
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _newTotalUnderlying) internal returns(uint256[] memory){
-    uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(ETFnumber));
-    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
-      bool isBlacklisted = controller.getProtocolBlacklist(ETFnumber, i);
+    uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
+    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       storePriceAndRewards(_newTotalUnderlying, i);
 
@@ -362,7 +361,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
       // console.log("protocol: %s, deposit: %s", i, amount);
@@ -375,7 +374,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(ETFnumber, _protocolNum);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(vaultNumber, _protocolNum);
 
     if (vaultCurrency.balanceOf(address(this)) < _amount) _amount = vaultCurrency.balanceOf(address(this));
   
@@ -394,7 +393,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     }
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    controller.deposit(ETFnumber, _protocolNum, address(this), _amount);
+    controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
 
     console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
@@ -405,14 +404,14 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount > 0) {
-      IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(ETFnumber, _protocolNum);
+      IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(vaultNumber, _protocolNum);
 
       _amount = _amount * protocol.uScale / uScale;
 
-      uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount);
+      uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
       IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
 
-      uint256 amountReceived = controller.withdraw(ETFnumber, _protocolNum, address(this), shares);
+      uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
 
       if (protocol.underlying != vaultCurrencyAddr) {
         _amount = Swap.swapStableCoins(
@@ -434,7 +433,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @notice Set total balance in VaultCurrency in all underlying protocols
   function setTotalUnderlying() public {
     uint totalUnderlying;
-    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       if (currentAllocations[i] == 0) continue;
       totalUnderlying += balanceUnderlying(i);
     }
@@ -445,8 +444,8 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns(uint256) {
-    uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
-    uint256 underlyingBalance = controller.balanceUnderlying(ETFnumber, _protocolNum, address(this)) * uScale / protocolUScale;
+    uint256 protocolUScale = controller.getProtocolInfo(vaultNumber, _protocolNum).uScale;
+    uint256 underlyingBalance = controller.balanceUnderlying(vaultNumber, _protocolNum, address(this)) * uScale / protocolUScale;
     return underlyingBalance;
   }
 
@@ -455,8 +454,8 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _amount Amount in underyling token e.g USDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns(uint256) {
-    uint256 protocolUScale = controller.getProtocolInfo(ETFnumber, _protocolNum).uScale;
-    uint256 shares = controller.calcShares(ETFnumber, _protocolNum, _amount * protocolUScale / uScale);
+    uint256 protocolUScale = controller.getProtocolInfo(vaultNumber, _protocolNum).uScale;
+    uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount * protocolUScale / uScale);
     return shares;
   }
 
@@ -464,7 +463,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns(uint256) {
-    return controller.exchangeRate(ETFnumber, _protocolNum);
+    return controller.exchangeRate(vaultNumber, _protocolNum);
   }
 
   /// @notice Set the delta allocated tokens by game contract
@@ -472,7 +471,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external onlyGame {
-    require(!controller.getProtocolBlacklist(ETFnumber, _protocolNum), "Protocol on blacklist");
+    require(!controller.getProtocolBlacklist(vaultNumber, _protocolNum), "Protocol on blacklist");
     int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
     deltaAllocations[_protocolNum] = deltaAllocation;
     deltaAllocatedTokens += _allocation; 
@@ -481,12 +480,12 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    for (uint i = 0; i < controller.latestProtocolId(ETFnumber); i++) {
+    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       if (currentAllocations[i] == 0) continue;
-      bool claim = controller.claim(ETFnumber, i);
+      bool claim = controller.claim(vaultNumber, i);
 
       if (claim) {
-        address govToken = controller.getProtocolInfo(ETFnumber, i).govToken;
+        address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         
         Swap.swapTokensMulti(
@@ -506,7 +505,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   function blacklistProtocol(uint256 _protocolNum) external onlyDao {
     uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
-    controller.setProtocolBlacklist(ETFnumber, _protocolNum);
+    controller.setProtocolBlacklist(vaultNumber, _protocolNum);
     savedTotalUnderlying -= balanceProtocol;
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
@@ -569,22 +568,16 @@ contract Vault is VaultToken, ReentrancyGuard {
     xProvider = _xProvider;
   }
 
-  /// @notice T
+  /// @notice Setter for xController address
   /// @param _xController set controller address
   function setXControllerAddress(address _xController) external onlyDao {
     xController = _xController;
   }
 
-  /// @notice T
-  /// @param _chainId set controller address
-  function setHomeChain(uint256 _chainId) external onlyDao {
-    homeChainId = _chainId;
-  }
-
-  /// @notice T
-  /// @param _chainId set controller address
-  function setXControllerChain(uint256 _chainId) external onlyDao {
-    xControllerChainId = _chainId;
+  /// @notice Setter for xController chainId and homeChain
+  function setChainIds(uint16 _homeChain, uint16 _xControllerChain) external onlyDao {
+    homeChainId = _homeChain;
+    xControllerChainId = _xControllerChain;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH

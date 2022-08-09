@@ -55,7 +55,7 @@ describe.only("Testing XChainController, unit test", async () => {
     ]);
 
     [vault1, vault2, vault3] = await Promise.all([
-      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
       deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
       deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
     ]);
@@ -115,12 +115,9 @@ describe.only("Testing XChainController, unit test", async () => {
       vault1.setHomeXProviderAddress(xProvider10.address),
       vault2.setHomeXProviderAddress(xProvider100.address),
       vault3.setHomeXProviderAddress(xProvider1000.address),
-      vault1.setHomeChain(10),
-      vault2.setHomeChain(100),
-      vault3.setHomeChain(1000),
-      vault1.setXControllerChain(100),
-      vault2.setXControllerChain(100),
-      vault3.setXControllerChain(100),
+      vault1.setChainIds(10, 100),
+      vault2.setChainIds(100, 100),
+      vault3.setChainIds(1000, 100),
     ]);
 
     await Promise.all([

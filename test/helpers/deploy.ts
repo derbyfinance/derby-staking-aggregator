@@ -103,18 +103,18 @@ export const deployVault = (
   name: string, 
   symbol: string, 
   decimals: number, 
-  ETFname: string,
-  ETFnumber: number,
+  vaultName: string,
+  vaultNumber: number,
   daoAddress: string,
   Game: string, 
   controller: string, 
   vaultCurrency: string, 
   uScale: number,
-  gasFeeLiq: number
+  gasFeeLiq: number,
   ) => deployContract(
     deployerSign, 
     VaultArtifact, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, vaultName, vaultNumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<Vault>;
 
 export const deployVaultMock = (
@@ -122,18 +122,18 @@ export const deployVaultMock = (
   name: string, 
   symbol: string, 
   decimals: number, 
-  ETFname: string,
-  ETFnumber: number,
+  vaultName: string,
+  vaultNumber: number,
   daoAddress: string, 
   Game: string,
   controller: string, 
   vaultCurrency: string,
   uScale: number, 
-  gasFeeLiq: number
+  gasFeeLiq: number,
   ) => deployContract(
     deployerSign, 
     VaultArtifactMock, 
-    [name, symbol, decimals, ETFname, ETFnumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
+    [name, symbol, decimals, vaultName, vaultNumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<VaultMock>;
 
 export const deployController = (
