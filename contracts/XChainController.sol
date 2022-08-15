@@ -233,13 +233,14 @@ contract XChainController {
 
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
 
+      // deposit from the perspective of the xController
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
-        setXChainAllocationVault(vault, chain, 0);
+        setXAmountToSend(vault, chain, 0);
         vaultStage[_vaultNumber].fundsReceived++;
       }
 
-      if (amountToWithdraw > 0) setXChainAllocationVault(vault, chain, amountToWithdraw);
+      if (amountToWithdraw > 0) setXAmountToSend(vault, chain, amountToWithdraw);
     }
   }
 
@@ -264,7 +265,7 @@ contract XChainController {
   /// @param _vault Address of the vault
   /// @param _chainId Number of chain used
   /// @param _amount Amount in vaultcurrency that should be on given chainId
-  function setXChainAllocationVault(address _vault, uint16 _chainId, uint256 _amount) internal {
+  function setXAmountToSend(address _vault, uint16 _chainId, uint256 _amount) internal {
     if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }
