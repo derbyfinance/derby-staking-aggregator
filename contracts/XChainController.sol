@@ -47,17 +47,17 @@ contract XChainController {
   mapping(uint256 => vaultStages) internal vaultStage;
 
   modifier onlyGame {
-    require(msg.sender == game, "XChainController: only Game");
+    require(msg.sender == game, "xController: only Game");
     _;
   }
 
   modifier onlyDao {
-    require(msg.sender == dao, "XChainController: only DAO");
+    require(msg.sender == dao, "xController: only DAO");
     _;
   }
 
   modifier onlyXProvider {
-    require(msg.sender == xProviderAddr, "XChainController: only xProviderAddr");
+    require(msg.sender == xProviderAddr, "xController: only xProviderAddr");
     _;
   }
 
@@ -130,9 +130,10 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
+  /// MODIFIER onlyProvider plus vault on same chain
   /// @notice Setter to tick up stage 3: 
   /// @notice FundsReceived; funds received from all active vault contracts
-  function upFundsReceived(uint256 _vaultNumber) internal onlyWhenUnderlyingsReceived(_vaultNumber) {
+  function upFundsReceived(uint256 _vaultNumber) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 
@@ -232,13 +233,14 @@ contract XChainController {
 
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
 
+      // deposit from the perspective of the xController
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
-        setXChainAllocationVault(vault, chain, 0);
-        upFundsReceived(_vaultNumber);
+        setXAmountToSend(vault, chain, 0);
+        vaultStage[_vaultNumber].fundsReceived++;
       }
 
-      if (amountToWithdraw > 0) setXChainAllocationVault(vault, chain, amountToWithdraw);
+      if (amountToWithdraw > 0) setXAmountToSend(vault, chain, amountToWithdraw);
     }
   }
 
@@ -263,7 +265,7 @@ contract XChainController {
   /// @param _vault Address of the vault
   /// @param _chainId Number of chain used
   /// @param _amount Amount in vaultcurrency that should be on given chainId
-  function setXChainAllocationVault(address _vault, uint16 _chainId, uint256 _amount) internal {
+  function setXAmountToSend(address _vault, uint16 _chainId, uint256 _amount) internal {
     if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }

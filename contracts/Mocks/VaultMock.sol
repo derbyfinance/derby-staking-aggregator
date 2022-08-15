@@ -16,8 +16,8 @@ contract VaultMock is Vault { // is VaultToken
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    string memory _ETFname,
-    uint256 _ETFnumber,
+    string memory _vaultName,
+    uint256 _vaultNumber,
     address _governed,
     address _Game, 
     address _controller, 
@@ -28,8 +28,8 @@ contract VaultMock is Vault { // is VaultToken
     _name,
     _symbol,
     _decimals,
-    _ETFname,
-    _ETFnumber,
+    _vaultName,
+    _vaultNumber,
     _governed,
     _Game,
     _controller,
@@ -62,12 +62,12 @@ contract VaultMock is Vault { // is VaultToken
     return game;
   }
 
-  function getETFnumber() external view returns(uint256) {
-    return ETFnumber;
+  function getvaultNumber() external view returns(uint256) {
+    return vaultNumber;
   }
 
   function balanceSharesTEST(uint256 _protocolNum, address _address) external view returns(uint256) {
-    return controller.balance(ETFnumber, _protocolNum, _address);
+    return controller.balance(vaultNumber, _protocolNum, _address);
   }
   
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {

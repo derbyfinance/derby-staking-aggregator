@@ -31,6 +31,7 @@ contract XProvider is ILayerZeroReceiver {
   uint16 public gameChain;
 
   mapping(uint16 => bytes) public trustedRemoteLookup;
+  mapping(address => bool) public vaultWhitelist;
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
@@ -44,6 +45,11 @@ contract XProvider is ILayerZeroReceiver {
     _;
   }
 
+  modifier onlyVaults {
+    require(vaultWhitelist[msg.sender], "LZProvider: only Controller");
+    _;
+  }
+
   modifier onlyGame {
     require(msg.sender == game, "LZProvider: only Game");
     _;
@@ -52,6 +58,15 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Solution for the low-level call in lzReceive that is seen as an external call
   modifier onlySelf() { 
     require(msg.sender == address(this), "LZProvider: only Self");
+    _;  
+  }
+
+  modifier onlySelfOrVault() { 
+    require(
+      msg.sender == address(this) ||
+      vaultWhitelist[msg.sender]
+      , "LZProvider: only Self or Vault"
+    );
     _;  
   }
   
@@ -90,7 +105,7 @@ contract XProvider is ILayerZeroReceiver {
     uint32 _originDomain,
     uint32 _destinationDomain,
     uint256 _amount
-  ) external {  
+  ) internal {
     require(IERC20(_asset).allowance(msg.sender, address(this)) >= _amount, "LZXProvider: Not approved");
 
     IERC20(_asset).transferFrom(msg.sender, address(this), _amount);    
@@ -182,9 +197,9 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
-  /// @param _vaultNumber number of the vault
+  /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
-  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
+  /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
   function callbackGetTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
@@ -218,32 +233,68 @@ contract XProvider is ILayerZeroReceiver {
     IVault(_vault).setXChainAllocation(_amountToSendBack);
   }
 
+  /// @notice Transfers funds from vault to xController for crosschain rebalance
+  /// @param _vaultNumber Address of the Derby Vault on given chainId 
+  /// @param _amount Number of the vault
+  /// @param _asset Address of the token to send e.g USDC 
+  function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external onlyVaults {
+    xTransfer(
+      xController,
+      _asset,
+      homeChainId,
+      xControllerChain,
+      _amount
+    );
+    pushFeedbackToXController(_vaultNumber); // vault Number
+  }
+
+  /// @notice Push crosschain feedback to xController to know when the vaultNumber has sent funds
+  /// @param _vaultNumber Number of the vault
+  function pushFeedbackToXController(uint256 _vaultNumber) internal {
+    bytes4 selector = bytes4(keccak256("receiveFeedbackToXController(uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber);
+
+    xSend(xControllerChain, callData);
+  }
+
+  /// @notice Receive crosschain feedback to xController to know when the vaultNumber has sent funds
+  /// @param _vaultNumber Number of the vault
+  function receiveFeedbackToXController(uint256 _vaultNumber) external onlySelfOrVault {
+    return IXChainController(xController).upFundsReceived(_vaultNumber);
+  }
+
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
-  /// @param _srcChainId chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
-  /// @param _srcAddress address of remote xprovider
+  /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
+  /// @param _srcAddress Address of remote xprovider
   function setTrustedRemote(uint16 _srcChainId, bytes calldata _srcAddress) external onlyDao {
     trustedRemoteLookup[_srcChainId] = _srcAddress;
     emit SetTrustedRemote(_srcChainId, _srcAddress);
   }
 
   /// @notice Setter for xControllerProvider address
-  /// @param _xControllerProvider new address of xProvider for xController chain
+  /// @param _xControllerProvider New address of xProvider for xController chain
   function setXControllerProvider(address _xControllerProvider) external onlyDao {
     xControllerProvider = _xControllerProvider;
   }
 
   /// @notice Setter for xControllerProvider address
-  /// @param _xControllerChain new address of xProvider for xController chain
+  /// @param _xControllerChain New address of xProvider for xController chain
   function setXControllerChainId(uint16 _xControllerChain) external onlyDao {
     xControllerChain = _xControllerChain;
   }
 
   /// @notice Setter for gameChain Id address
-  /// @param _gameChain new address of xProvider for xController chain
+  /// @param _gameChain New address of xProvider for xController chain
   function setGameChainId(uint16 _gameChain) external onlyDao {
     gameChain = _gameChain;
   }
 
+  /// @notice Whitelists vault address for onlyVault modifier
+  function toggleVaultWhitelist(address _vault) external onlyDao {
+    vaultWhitelist[_vault] = !vaultWhitelist[_vault];
+  }
+
+  /// @notice Setter for dao address
   function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
