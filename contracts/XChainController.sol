@@ -165,6 +165,8 @@ contract XChainController {
   }
 
   /// @notice Helper to settle the total current allocation with the delta allocations received from Game
+  /// @notice Will set a chainId on/off depending on the currentAllocation and incoming deltaAllocation
+  /// @dev if currentAllocation = 0 and deltaAllocation = 0, chainId will be set to Off
   /// @param _vaultNumber Number of Vault
   /// @param _chainId Number of chain used
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
