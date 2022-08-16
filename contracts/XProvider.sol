@@ -189,7 +189,6 @@ contract XProvider is ILayerZeroReceiver {
     uint16 _chainId, 
     uint256 _underlying
   ) external onlySelfOrVault {
-    console.log("receive totalUnderlying %s", _underlying);
     return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
   }
 

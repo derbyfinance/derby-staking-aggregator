@@ -212,7 +212,7 @@ contract XChainController {
     uint256 _vaultNumber, 
     uint16 _chainId, 
     uint256 _underlying
-  ) external onlyWhenAllocationsReceived(_vaultNumber) {
+  ) external onlyXProvider onlyWhenAllocationsReceived(_vaultNumber) {
     require(getTotalUnderlyingOnChain(_vaultNumber, _chainId) == 0, "TotalUnderlying already set");
 
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
