@@ -51,7 +51,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   uint256 public gasFeeLiquidity;
   
   uint256 public amountToSendXChain;
-  uint256 public homeChainId;
+  uint16 public homeChainId;
   uint256 public xControllerChainId;
 
   // total underlying of all protocols in vault, excluding vault balance
@@ -158,6 +158,19 @@ contract Vault is VaultToken, ReentrancyGuard {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
+  /// @notice Pushes totalUnderlying of the vault for this chainId to xController
+  function pushTotalUnderlyingToController() external {
+    if (state != State.WaitingForController) return;
+
+    uint256 underlying = savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
+
+    if (homeChainId == xControllerChainId) {
+      IXProvider(xProvider).receiveTotalUnderlying(vaultNumber, homeChainId, underlying);
+    } else {
+      IXProvider(xProvider).pushTotalUnderlying(vaultNumber, homeChainId, underlying);
+    }
+  }
+
   /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
@@ -183,11 +196,6 @@ contract Vault is VaultToken, ReentrancyGuard {
 
     amountToSendXChain = 0;
     state = State.RebalanceVault;
-  }
-
-  /// @notice Returns totalUnderlying plus balance from the vault in vaultCurrency e.g USDC
-  function getTotalUnderlyingIncBalance() public view returns(uint256) {
-    return savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice Withdraw from protocols on shortage in Vault

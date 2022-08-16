@@ -20,7 +20,8 @@ interface IXProvider {
 
   function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external;
 
-  function pushGetTotalUnderlying(uint256 _vaultNumber, address _vault, uint16 _chainId) external;
+  function pushTotalUnderlying(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external;
+  function receiveTotalUnderlying(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external;
   function pushSetXChainAllocation(address _vault, uint16 _chainId, uint256 _amountToWithdraw) external;
   function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external;
   function receiveFeedbackToXController(uint256 _vaultNumber) external;

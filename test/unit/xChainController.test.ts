@@ -208,7 +208,7 @@ describe.only("Testing XChainController, unit test", async () => {
   it("2) Game pushes delta allocations to xChainController", async function() {
     await xChainController.connect(dao).resetVaultStages(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
-    // chainIds = [10, 100, 1000];
+    // chainIds = [10, 100, 1000, 2000];
     await game.pushAllocationsToController(vaultNumber);
 
     // checking of allocations are correctly set in xChainController
@@ -229,7 +229,12 @@ describe.only("Testing XChainController, unit test", async () => {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
     await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
     
-    await xChainController.setTotalUnderlying(vaultNumber);
+    await vault1.pushTotalUnderlyingToController();
+    await vault2.pushTotalUnderlyingToController();
+    await vault3.pushTotalUnderlyingToController();
+
+    // Should revert if total Underlying is already set
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("LZProvider: lzReceive: No success");
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
