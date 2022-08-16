@@ -18,7 +18,7 @@ contract XChainController {
   IXProvider public xProvider;
 
   uint16 public homeChainId;
-  uint16[] public chainIds = [10, 100, 1000];
+  uint16[] public chainIds;
 
   struct vaultInfo {
     int256 totalCurrentAllocation;
@@ -173,7 +173,7 @@ contract XChainController {
     uint16 _chainId, 
     int256 _deltas
   ) internal returns(uint256 activeVault) {
-    if (vaults[_vaultNumber].totalCurrentAllocation == 0 && _deltas == 0) {
+    if (getCurrentAllocation(_vaultNumber, _chainId) == 0 && _deltas == 0) {
       vaults[_vaultNumber].chainIdOff[_chainId] = true;
       activeVault = 0;
     } else {
@@ -195,6 +195,8 @@ contract XChainController {
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
+      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
+
       address vault = getVaultAddress(_vaultNumber, chain);
       require(vault != address(0), "No vault on this chainId");
 
@@ -244,6 +246,8 @@ contract XChainController {
     
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
+      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
+      
       address vault = getVaultAddress(_vaultNumber, chain);
 
       int256 amountToChainVault = int(totalUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
@@ -314,6 +318,11 @@ contract XChainController {
   /// @notice Helper to get total current allocation of vaultNumber
   function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
     return vaults[_vaultNumber].totalCurrentAllocation;
+  }
+
+  /// @notice Helper to get if vault is active or not
+  function getVaultChainIdOff(uint256 _vaultNumber, uint16 _chainId) public view returns(bool) {
+    return vaults[_vaultNumber].chainIdOff[_chainId];
   }
 
   /// @notice Helper to set the amount to deposit in a chain vault
