@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-expressions */
 /* eslint-disable prefer-const */
 /* eslint-disable no-unused-vars */
 /* eslint-disable prettier/prettier */
@@ -14,7 +15,7 @@ import { vaultInfo } from "../helpers/vaultHelpers";
 
 
 const amount = 100_000;
-const chainIds = [10, 100, 1000];
+const chainIds = [10, 100, 1000, 2000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
@@ -22,7 +23,7 @@ const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing XChainController, unit test", async () => {
-  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, LZEndpoint1000: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
+  let vault1: VaultMock, vault2: VaultMock, vault3: VaultMock, vault4: VaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, xProvider2000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, LZEndpoint1000: LZEndpointMock, LZEndpoint2000: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -42,20 +43,23 @@ describe.only("Testing XChainController, unit test", async () => {
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
 
-    [LZEndpoint10, LZEndpoint100, LZEndpoint1000] = await Promise.all([
+    [LZEndpoint10, LZEndpoint100, LZEndpoint1000, LZEndpoint2000] = await Promise.all([
       deployLZEndpointMock(dao, 10),
       deployLZEndpointMock(dao, 100),
       deployLZEndpointMock(dao, 1000),
+      deployLZEndpointMock(dao, 2000),
     ]);
 
-    [xProvider10, xProvider100, xProvider1000] = await Promise.all([
+    [xProvider10, xProvider100, xProvider1000, xProvider2000] = await Promise.all([
       deployXProvider(dao, LZEndpoint10.address, connextHandler.address, daoAddr, game.address, xChainController.address, 10),
       deployXProvider(dao, LZEndpoint100.address, connextHandler.address, daoAddr, game.address, xChainController.address, 100),
-      deployXProvider(dao, LZEndpoint1000.address, connextHandler.address, daoAddr, game.address, xChainController.address, 1000)
+      deployXProvider(dao, LZEndpoint1000.address, connextHandler.address, daoAddr, game.address, xChainController.address, 1000),
+      deployXProvider(dao, LZEndpoint2000.address, connextHandler.address, daoAddr, game.address, xChainController.address, 2000),
     ]);
 
-    [vault1, vault2, vault3] = await Promise.all([
+    [vault1, vault2, vault3, vault4] = await Promise.all([
       deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
+      deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
       deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
       deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
     ]);
@@ -64,39 +68,56 @@ describe.only("Testing XChainController, unit test", async () => {
       xProvider10.setXControllerProvider(xProvider100.address),
       xProvider100.setXControllerProvider(xProvider100.address),
       xProvider1000.setXControllerProvider(xProvider100.address),
+      xProvider2000.setXControllerProvider(xProvider100.address),
       xProvider10.setXControllerChainId(100),
       xProvider100.setXControllerChainId(100),
       xProvider1000.setXControllerChainId(100),
+      xProvider2000.setXControllerChainId(100),
       xProvider10.setGameChainId(10),
       xProvider100.setGameChainId(10),
       xProvider1000.setGameChainId(10),
+      xProvider2000.setGameChainId(10),
       xProvider10.setTrustedRemote(100, xProvider100.address),
       xProvider10.setTrustedRemote(1000, xProvider1000.address),
+      xProvider10.setTrustedRemote(2000, xProvider2000.address),
       xProvider100.setTrustedRemote(10, xProvider10.address),
       xProvider100.setTrustedRemote(1000, xProvider1000.address),
+      xProvider100.setTrustedRemote(2000, xProvider2000.address),
       xProvider1000.setTrustedRemote(10, xProvider10.address),
       xProvider1000.setTrustedRemote(100, xProvider100.address),
+      xProvider1000.setTrustedRemote(2000, xProvider2000.address),
+      xProvider2000.setTrustedRemote(10, xProvider10.address),
+      xProvider2000.setTrustedRemote(100, xProvider100.address),
+      xProvider2000.setTrustedRemote(1000, xProvider1000.address),
       xProvider10.toggleVaultWhitelist(vault1.address),
       xProvider100.toggleVaultWhitelist(vault2.address),
       xProvider1000.toggleVaultWhitelist(vault3.address),
+      xProvider2000.toggleVaultWhitelist(vault4.address),
     ]);
 
     await Promise.all([
       game.connect(dao).setXProvider(xProvider10.address),
-      game.connect(dao).setChainIdArray([10, 100, 1000]),
+      game.connect(dao).setChainIdArray(chainIds),
       game.connect(dao).addETF(vault1.address),
       game.connect(dao).setLatestProtocolId(10, 5),
       game.connect(dao).setLatestProtocolId(100, 5),
       game.connect(dao).setLatestProtocolId(1000, 5),
+      game.connect(dao).setLatestProtocolId(2000, 5),
     ]);
 
     await Promise.all([
       LZEndpoint10.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
       LZEndpoint10.setDestLzEndpoint(xProvider1000.address, LZEndpoint1000.address),
+      LZEndpoint10.setDestLzEndpoint(xProvider2000.address, LZEndpoint2000.address),
       LZEndpoint100.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
       LZEndpoint100.setDestLzEndpoint(xProvider1000.address, LZEndpoint1000.address),
+      LZEndpoint100.setDestLzEndpoint(xProvider2000.address, LZEndpoint2000.address),
       LZEndpoint1000.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
       LZEndpoint1000.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
+      LZEndpoint1000.setDestLzEndpoint(xProvider2000.address, LZEndpoint2000.address),
+      LZEndpoint2000.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
+      LZEndpoint2000.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
+      LZEndpoint2000.setDestLzEndpoint(xProvider1000.address, LZEndpoint1000.address),
     ]);
 
     await Promise.all([
@@ -112,19 +133,24 @@ describe.only("Testing XChainController, unit test", async () => {
       vault1.setXControllerAddress(xChainController.address),
       vault2.setXControllerAddress(xChainController.address),
       vault3.setXControllerAddress(xChainController.address),
+      vault4.setXControllerAddress(xChainController.address),
       vault1.setHomeXProviderAddress(xProvider10.address),
       vault2.setHomeXProviderAddress(xProvider100.address),
       vault3.setHomeXProviderAddress(xProvider1000.address),
+      vault4.setHomeXProviderAddress(xProvider2000.address),
       vault1.setChainIds(10, 100),
       vault2.setChainIds(100, 100),
       vault3.setChainIds(1000, 100),
+      vault4.setChainIds(2000, 100),
     ]);
 
     await Promise.all([
       xChainController.setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
+      xChainController.setVaultChainAddress(vaultNumber, 2000, vault4.address, usdc),
       xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
+      xChainController.connect(dao).setChainIdArray(chainIds),
     ]);
   });
 
@@ -135,6 +161,7 @@ describe.only("Testing XChainController, unit test", async () => {
       [200, 0, 0, 200, 0], // 400
       [100, 0, 200, 100, 200], // 600
       [0, 100, 200, 300, 400], // 1000 
+      [0, 0, 0, 0, 0], // 0 
     ];
     const totalAllocations = 2000;
 
@@ -170,12 +197,18 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(false);
     expect(await xChainController.getUnderlyingState(vaultNumber)).to.be.equal(0);
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
+
+    // chainId on or off
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 1000)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 2000)).to.be.false;
   });
 
   it("2) Game pushes delta allocations to xChainController", async function() {
     await xChainController.connect(dao).resetVaultStages(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
-    // chainIds = [10, 100, 1000];
+    // chainIds = [10, 100, 1000, 2000];
     await game.pushAllocationsToController(vaultNumber);
 
     // checking of allocations are correctly set in xChainController
@@ -183,15 +216,25 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(400);
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(600);
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(1000);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[3])).to.be.equal(0);
+
+    // chainId on or off
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 1000)).to.be.false;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 2000)).to.be.true;
   });
 
   it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
     await vault1.connect(user).depositETF(amountUSDC); // 100k
     await vault2.connect(user).depositETF(amountUSDC.mul(2)); // 200k
-
-    await xChainController.setActiveVaultsTEST(vaultNumber, 3); // mocking 3 active vaults for now
     
-    await xChainController.setTotalUnderlying(vaultNumber);
+    await vault1.pushTotalUnderlyingToController();
+    await vault2.pushTotalUnderlyingToController();
+    await vault3.pushTotalUnderlyingToController();
+
+    // Should revert if total Underlying is already set
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("LZProvider: lzReceive: No success");
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
@@ -210,16 +253,19 @@ describe.only("Testing XChainController, unit test", async () => {
       100_000 - (400 / 2000 * 300_000), // vault 1
       200_000 - (600 / 2000 * 300_000), // vault 2
       0, // vault 3
+      0, // vault 4      
     ];
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.amountToSendXChain())).to.be.equal(expectedAmounts[2]);
+    expect(formatUSDC(await vault4.amountToSendXChain())).to.be.equal(expectedAmounts[3]);
 
     // Checking if vault states upped correctly
     expect(await vault1.state()).to.be.equal(1);
     expect(await vault2.state()).to.be.equal(1);
     expect(await vault3.state()).to.be.equal(2); // dont have to send any funds
+    expect(await vault4.state()).to.be.equal(0); // chainId off
   });
 
   it("4.1) Trigger vaults to transfer funds to xChainController", async function() {

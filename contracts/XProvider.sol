@@ -166,46 +166,30 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
-  /// @param _vaultNumber number of the vault
-  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
-  function pushGetTotalUnderlying(
+  /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
+  function pushTotalUnderlying(
     uint256 _vaultNumber, 
-    address _vault, 
-    uint16 _chainId
-  ) external onlyController {
-    bytes4 selector = bytes4(keccak256("receiveGetTotalUnderlying(uint256,address)"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _vault);
-
-    xSend(_chainId, callData);
-  }
-
-  /// @notice Receiver for the pushGetTotalUnderlying on each chainId
-  /// @dev Gets the totalUnderling plus vault balance and sends back a callback to callbackGetTotalUnderlying on mainchain
-  /// @param _vaultNumber number of the vault
-  /// @param _vault Address of the Derby Vault on given chainId 
-  function receiveGetTotalUnderlying(
-    uint256 _vaultNumber, 
-    address _vault
-  ) external onlySelf {
-    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
-
-    bytes4 selector = bytes4(keccak256("callbackGetTotalUnderlying(uint256,uint16,uint256)"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, homeChainId, underlying);
+    uint16 _chainId, 
+    uint256 _underlying
+  ) external onlyVaults {
+    bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _underlying);
 
     xSend(xControllerChain, callData);
   }
 
-  /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
+  /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
   /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
-  function callbackGetTotalUnderlying(
+  function receiveTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
     uint256 _underlying
-  ) external onlySelf {
-    return IXChainController(xController).setTotalUnderlyingCallback(_vaultNumber, _chainId, _underlying);
+  ) external onlySelfOrVault {
+    return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
   }
 
   /// @notice Pushes the amount the vault has to send back to the xChainController

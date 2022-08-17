@@ -18,11 +18,12 @@ contract XChainController {
   IXProvider public xProvider;
 
   uint16 public homeChainId;
-  uint16[] public chainIds = [10, 100, 1000];
+  uint16[] public chainIds;
 
   struct vaultInfo {
     int256 totalCurrentAllocation;
     uint256 totalUnderlying;
+    mapping(uint16 => bool) chainIdOff; // true == off // false == on
     mapping(uint16 => int256) currentAllocationPerChain; // chainId => allocation
     mapping(uint16 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint16 => address) vaultChainAddress; // chainId => vault address
@@ -130,7 +131,6 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// MODIFIER onlyProvider plus vault on same chain
   /// @notice Setter to tick up stage 3: 
   /// @notice FundsReceived; funds received from all active vault contracts
   function upFundsReceived(uint256 _vaultNumber) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
@@ -146,6 +146,17 @@ contract XChainController {
     vaultStage[_vaultNumber].fundsReceived = 0;
   }
 
+  /// @notice Resets underlying for a vaultNumber at the start of a rebalancing period
+  function resetVaultUnderlying(uint256 _vaultNumber) internal {
+    vaults[_vaultNumber].totalUnderlying = 0;
+    vaultStage[_vaultNumber].underlyingReceived = 0;
+  }
+
+  /// @notice Resets underlying for a vaultNumber per chainId at the start of a rebalancing period
+  function resetVaultUnderlyingForChain(uint256 _vaultNumber, uint16 _chainId) internal {
+    vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = 0;
+  }
+
   /// @notice Step 1; Used by game to send allocations to xChainController
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
@@ -153,66 +164,57 @@ contract XChainController {
     uint256 _vaultNumber, 
     int256[] memory _deltas
   ) external onlyXProvider onlyWhenReady(_vaultNumber) {
+    uint256 activeVaults;
+
     for (uint256 i = 0; i < chainIds.length; i++) {
-      settleCurrentAllocation(_vaultNumber, chainIds[i], _deltas[i]);
+      uint16 chain = chainIds[i];
+      activeVaults += settleCurrentAllocation(_vaultNumber, chain, _deltas[i]);
+      resetVaultUnderlyingForChain(_vaultNumber, chain);
     }
 
+    resetVaultUnderlying(_vaultNumber);
+    setActiveVaults(_vaultNumber, activeVaults);
     setAllocationsReceived(_vaultNumber, true);
     setReady(_vaultNumber, false);
   }
 
   /// @notice Helper to settle the total current allocation with the delta allocations received from Game
+  /// @notice Will set a chainId on/off depending on the currentAllocation and incoming deltaAllocation
+  /// @dev if currentAllocation = 0 and deltaAllocation = 0, chainId will be set to Off
   /// @param _vaultNumber Number of Vault
   /// @param _chainId Number of chain used
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
-  function settleCurrentAllocation(uint256 _vaultNumber, uint16 _chainId, int256 _deltas) internal {
+  function settleCurrentAllocation(
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    int256 _deltas
+  ) internal returns(uint256 activeVault) {
+    if (getCurrentAllocation(_vaultNumber, _chainId) == 0 && _deltas == 0) {
+      vaults[_vaultNumber].chainIdOff[_chainId] = true;
+      activeVault = 0;
+    } else {
+      vaults[_vaultNumber].chainIdOff[_chainId] = false;
+      activeVault = 1;
+    }
+
     vaults[_vaultNumber].totalCurrentAllocation += _deltas;
     vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
+
+    require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
-  /// @notice Step 2 trigger 
-  /// @notice Set total balance in vaultCurrency for an vaultNumber on all chains
-  function setTotalUnderlying(uint256 _vaultNumber) external onlyWhenAllocationsReceived(_vaultNumber) {
-    vaults[_vaultNumber].totalUnderlying = 0;
-    vaultStage[_vaultNumber].underlyingReceived = 0;
-
-    for (uint i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
-      address vault = getVaultAddress(_vaultNumber, chain);
-      require(vault != address(0), "No vault on this chainId");
-
-      if (chain == homeChainId) setTotalUnderlyingHomeChain(_vaultNumber, vault);
-      else xProvider.pushGetTotalUnderlying(_vaultNumber, vault, chain);
-    }
-  }
-
-  /// @notice Helper to get and set total underlying in XController from home chain
-  function setTotalUnderlyingHomeChain(uint256 _vaultNumber, address _vault) internal {
-    uint256 underlying = IVault(_vault).getTotalUnderlyingIncBalance();
-    setTotalUnderlyingCallback(_vaultNumber, underlying);
-  }
-
-  /// @notice Helper so only this contract can call setTotalUnderlyingCallbackInt
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint256 _underlying) internal {
-    setTotalUnderlyingCallbackInt(_vaultNumber, homeChainId, _underlying);
-  }
-
-  /// @notice Helper so only Provider can call setTotalUnderlyingCallbackInt
-  function setTotalUnderlyingCallback(uint256 _vaultNumber, uint16 _chainId, uint256 _underlying) external onlyXProvider {
-    setTotalUnderlyingCallbackInt(_vaultNumber, _chainId, _underlying);
-  }
-
-  /// @notice Step 2 callback
-  /// @notice Callback to receive and set totalUnderlyings from the vaults on mainChain
+  /// @notice Step 2 receiver, trigger in vaults.
+  /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
   /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
-  function setTotalUnderlyingCallbackInt(
+  function setTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
     uint256 _underlying
-  ) internal {
-    console.log("underlying callback %s chain %s", _underlying, _chainId);
+  ) external onlyXProvider onlyWhenAllocationsReceived(_vaultNumber) {
+    require(getTotalUnderlyingOnChain(_vaultNumber, _chainId) == 0, "TotalUnderlying already set");
+
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
     vaults[_vaultNumber].totalUnderlying += _underlying;
     vaultStage[_vaultNumber].underlyingReceived ++;
@@ -227,6 +229,8 @@ contract XChainController {
     
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
+      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
+      
       address vault = getVaultAddress(_vaultNumber, chain);
 
       int256 amountToChainVault = int(totalUnderlying) * getCurrentAllocation(_vaultNumber, chain) / totalAllocation;
@@ -298,6 +302,11 @@ contract XChainController {
   /// @notice Helper to get total current allocation of vaultNumber
   function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns(int256) {
     return vaults[_vaultNumber].totalCurrentAllocation;
+  }
+
+  /// @notice Helper to get if vault is active or not
+  function getVaultChainIdOff(uint256 _vaultNumber, uint16 _chainId) public view returns(bool) {
+    return vaults[_vaultNumber].chainIdOff[_chainId];
   }
 
   /// @notice Helper to set the amount to deposit in a chain vault
