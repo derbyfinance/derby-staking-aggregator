@@ -285,7 +285,7 @@ describe.only("Testing XChainController, unit test", async () => {
   });
 
   it("5) Trigger xChainController to send funds to vaults", async function() {
-    await xChainController.sendDepositsToVault(vaultNumber);
+    await xChainController.sendFundsToVault(vaultNumber);
 
     const expectedAmounts = [
       400 / 2000 * 300_000, // vault 1

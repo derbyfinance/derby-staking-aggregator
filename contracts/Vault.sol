@@ -203,6 +203,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     state = State.RebalanceVault;
   }
 
+  // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
     if (state != State.WaitingForFunds) return;
     state = State.RebalanceVault;

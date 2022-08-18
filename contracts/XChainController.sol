@@ -279,9 +279,9 @@ contract XChainController {
   }
 
   /// @notice Step 5 trigger
-  /// @notice Send amount to deposit from xController to vaults and reset all stages for the vault
+  /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
-  function sendDepositsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
+  function sendFundsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
       if (getVaultChainIdOff(_vaultNumber, chain)) continue;
@@ -350,7 +350,6 @@ contract XChainController {
     return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
   }
 
-
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
   /// @param _chainId Number of chain used
@@ -378,5 +377,4 @@ contract XChainController {
   function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
   }
-
 }
