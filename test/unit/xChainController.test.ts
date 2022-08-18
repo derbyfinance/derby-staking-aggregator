@@ -206,7 +206,7 @@ describe.only("Testing XChainController, unit test", async () => {
   });
 
   it("2) Game pushes delta allocations to xChainController", async function() {
-    await xChainController.connect(dao).resetVaultStages(vaultNumber);
+    await xChainController.connect(dao).resetVaultStagesDao(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000, 2000];
     await game.pushAllocationsToController(vaultNumber);
@@ -297,6 +297,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
 
+    expect(await vault3.state()).to.be.equal(3); // received funds, all vaults should be ready now
   });
 
 });

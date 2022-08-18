@@ -139,7 +139,12 @@ contract XChainController {
 
   /// @notice Resets all stages in vaultStage struct for a vaultNumber
   /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
-  function resetVaultStages(uint256 _vaultNumber) public onlyDao {
+  function resetVaultStagesDao(uint256 _vaultNumber) external onlyDao {
+    return resetVaultStages(_vaultNumber);
+  }
+
+  /// @notice Resets all stages in vaultStage struct for a vaultNumber
+  function resetVaultStages(uint256 _vaultNumber) internal {
     vaultStage[_vaultNumber].ready = true;
     vaultStage[_vaultNumber].allocationsReceived = false;
     vaultStage[_vaultNumber].underlyingReceived = 0;
@@ -274,9 +279,9 @@ contract XChainController {
   }
 
   /// @notice Step 5 trigger
-  /// @notice Sends amount to deposit to vaults in vaultcurrency
+  /// @notice Send amount to deposit from xController to vaults and reset all stages for the vault
   /// @param _vaultNumber Number of vault
-  function sendDepositsToVault(uint256 _vaultNumber) external {
+  function sendDepositsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
       if (getVaultChainIdOff(_vaultNumber, chain)) continue;
@@ -296,6 +301,8 @@ contract XChainController {
         setAmountToDeposit(_vaultNumber, chain, 0);
       }
     }
+
+    resetVaultStages(_vaultNumber);
   }
 
   /// @notice Helper to get total current allocation of vaultNumber

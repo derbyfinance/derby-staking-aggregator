@@ -247,7 +247,7 @@ contract XProvider is ILayerZeroReceiver {
     return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
-  /// @notice Transfers funds from vault to xController for crosschain rebalance
+  /// @notice Transfers funds from xController to vault for crosschain rebalance
   /// @param _chainId A
   /// @param _amount N
   /// @param _asset A 
@@ -259,6 +259,22 @@ contract XProvider is ILayerZeroReceiver {
       _chainId,
       _amount
     );
+    pushFeedbackToVault(_chainId, _vault);
+  }
+
+  /// @notice Push 
+  /// @param _chainId Number of the vault
+  function pushFeedbackToVault(uint16 _chainId, address _vault) internal {
+    bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vault);
+
+    xSend(_chainId, callData);
+  }
+
+  /// @notice Receive c
+  /// @param _vault Address of the vault
+  function receiveFeedbackToVault(address _vault) external onlySelfOrVault {
+    return IVault(_vault).receiveFunds();
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
