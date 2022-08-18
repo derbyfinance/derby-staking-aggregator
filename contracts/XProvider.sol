@@ -247,6 +247,20 @@ contract XProvider is ILayerZeroReceiver {
     return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
+  /// @notice Transfers funds from vault to xController for crosschain rebalance
+  /// @param _chainId A
+  /// @param _amount N
+  /// @param _asset A 
+  function xTransferToVaults(address _vault, uint16 _chainId, uint256 _amount, address _asset) external onlyController {
+    xTransfer(
+      _vault,
+      _asset,
+      homeChainId,
+      _chainId,
+      _amount
+    );
+  }
+
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
   /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
   /// @param _srcAddress Address of remote xprovider

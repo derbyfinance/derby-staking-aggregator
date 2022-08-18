@@ -285,6 +285,17 @@ describe.only("Testing XChainController, unit test", async () => {
   });
 
   it("5) Trigger xChainController to send funds to vaults", async function() {
+    await xChainController.sendDepositsToVault(vaultNumber);
+
+    const expectedAmounts = [
+      400 / 2000 * 300_000, // vault 1
+      600 / 2000 * 300_000, // vault 2
+      1000 / 2000 * 300_000, // vault 3 should have received 150k from controller    
+    ];
+
+    expect(formatUSDC(await IUSDc.balanceOf(vault1.address))).to.be.equal(expectedAmounts[0]);
+    expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
+    expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
 
   });
 

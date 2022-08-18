@@ -157,7 +157,7 @@ contract XChainController {
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = 0;
   }
 
-  /// @notice Step 1; Used by game to send allocations to xChainController
+  /// @notice Step 2; Used by game to send allocations to xChainController
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGame(
@@ -203,7 +203,7 @@ contract XChainController {
     require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
-  /// @notice Step 2 receiver, trigger in vaults.
+  /// @notice Step 3 receiver, trigger in vaults.
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -220,7 +220,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived ++;
   }
 
-  /// @notice Step 3 trigger
+  /// @notice Step 4 trigger
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
@@ -273,6 +273,31 @@ contract XChainController {
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }
 
+  /// @notice Step 5 trigger
+  /// @notice Sends amount to deposit to vaults in vaultcurrency
+  /// @param _vaultNumber Number of vault
+  function sendDepositsToVault(uint256 _vaultNumber) external {
+    for (uint i = 0; i < chainIds.length; i++) {
+      uint16 chain = chainIds[i];
+      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
+
+      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, chain);
+
+      if (amountToDeposit > 0) {
+        address underlying = getUnderlyingAddress(_vaultNumber, chain);
+
+        IERC20(underlying).safeIncreaseAllowance(xProviderAddr, amountToDeposit);
+        xProvider.xTransferToVaults(
+          getVaultAddress(_vaultNumber, chain), 
+          chain, 
+          amountToDeposit, 
+          underlying
+        );
+        setAmountToDeposit(_vaultNumber, chain, 0);
+      }
+    }
+  }
+
   /// @notice Helper to get total current allocation of vaultNumber
   function getTotalUnderlyingOnChain(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
     return vaults[_vaultNumber].totalUnderlyingPerChain[_chainId];
@@ -312,6 +337,12 @@ contract XChainController {
   function setAmountToDeposit(uint256 _vaultNumber, uint16 _chainId, int256 _amountToDeposit) internal {
     vaults[_vaultNumber].amountToDepositPerChain[_chainId] = uint256(_amountToDeposit);
   }
+
+  /// @notice Helper to get the amount to deposit in a chain vault
+  function getAmountToDeposit(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
+    return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
+  }
+
 
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
