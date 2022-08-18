@@ -178,7 +178,7 @@ describe.only("Testing Game", async () => {
 
   // Allocations in protocols are not resetted at this point
   it("Should push delta allocations from game to xChainController", async function() {
-    await xChainController.connect(dao).resetVaultStages(vaultNumber);
+    await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
     await game.pushAllocationsToController(vaultNumber);
