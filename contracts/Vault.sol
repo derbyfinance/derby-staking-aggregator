@@ -88,6 +88,11 @@ contract Vault is VaultToken, ReentrancyGuard {
     _;
   }
 
+  modifier onlyXProvider {
+    require(msg.sender == xProvider, "Vault: only xProvider");
+    _;
+  }
+
   modifier returnGasFee {
     uint256 gasStart = gasleft();
     _;
@@ -195,6 +200,12 @@ contract Vault is VaultToken, ReentrancyGuard {
     }
 
     amountToSendXChain = 0;
+    state = State.RebalanceVault;
+  }
+
+  // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
+  function receiveFunds() external onlyXProvider {
+    if (state != State.WaitingForFunds) return;
     state = State.RebalanceVault;
   }
 

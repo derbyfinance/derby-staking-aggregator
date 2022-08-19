@@ -139,7 +139,12 @@ contract XChainController {
 
   /// @notice Resets all stages in vaultStage struct for a vaultNumber
   /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
-  function resetVaultStages(uint256 _vaultNumber) public onlyDao {
+  function resetVaultStagesDao(uint256 _vaultNumber) external onlyDao {
+    return resetVaultStages(_vaultNumber);
+  }
+
+  /// @notice Resets all stages in vaultStage struct for a vaultNumber
+  function resetVaultStages(uint256 _vaultNumber) internal {
     vaultStage[_vaultNumber].ready = true;
     vaultStage[_vaultNumber].allocationsReceived = false;
     vaultStage[_vaultNumber].underlyingReceived = 0;
@@ -157,7 +162,7 @@ contract XChainController {
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = 0;
   }
 
-  /// @notice Step 1; Used by game to send allocations to xChainController
+  /// @notice Step 2; Used by game to send allocations to xChainController
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGame(
@@ -203,7 +208,7 @@ contract XChainController {
     require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
-  /// @notice Step 2 receiver, trigger in vaults.
+  /// @notice Step 3 receiver, trigger in vaults.
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -220,7 +225,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived ++;
   }
 
-  /// @notice Step 3 trigger
+  /// @notice Step 4 trigger
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
@@ -274,6 +279,33 @@ contract XChainController {
     else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }
 
+  /// @notice Step 5 trigger
+  /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
+  /// @param _vaultNumber Number of vault
+  function sendFundsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
+    for (uint i = 0; i < chainIds.length; i++) {
+      uint16 chain = chainIds[i];
+      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
+
+      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, chain);
+
+      if (amountToDeposit > 0) {
+        address underlying = getUnderlyingAddress(_vaultNumber, chain);
+
+        IERC20(underlying).safeIncreaseAllowance(xProviderAddr, amountToDeposit);
+        xProvider.xTransferToVaults(
+          getVaultAddress(_vaultNumber, chain), 
+          chain, 
+          amountToDeposit, 
+          underlying
+        );
+        setAmountToDeposit(_vaultNumber, chain, 0);
+      }
+    }
+
+    resetVaultStages(_vaultNumber);
+  }
+
   /// @notice Helper to get total current allocation of vaultNumber
   function getTotalUnderlyingOnChain(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
     return vaults[_vaultNumber].totalUnderlyingPerChain[_chainId];
@@ -314,6 +346,11 @@ contract XChainController {
     vaults[_vaultNumber].amountToDepositPerChain[_chainId] = uint256(_amountToDeposit);
   }
 
+  /// @notice Helper to get the amount to deposit in a chain vault
+  function getAmountToDeposit(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
+    return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
+  }
+
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
   /// @param _chainId Number of chain used
@@ -341,5 +378,4 @@ contract XChainController {
   function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
   }
-
 }

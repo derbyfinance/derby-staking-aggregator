@@ -247,6 +247,37 @@ contract XProvider is ILayerZeroReceiver {
     return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
+  /// @notice Transfers funds from xController to vault for crosschain rebalance
+  /// @param _chainId Number of chainId
+  /// @param _amount Amount to send to vault in vaultcurrency
+  /// @param _asset Addres of underlying e.g USDC
+  function xTransferToVaults(address _vault, uint16 _chainId, uint256 _amount, address _asset) external onlyController {
+    xTransfer(
+      _vault,
+      _asset,
+      homeChainId,
+      _chainId,
+      _amount
+    );
+    pushFeedbackToVault(_chainId, _vault);
+  }
+
+  /// @notice Push feedback message so the vault knows it has received funds and is ready to rebalance
+  /// @param _chainId Number of chainId
+  /// @param _vault Address of the vault on given chainId
+  function pushFeedbackToVault(uint16 _chainId, address _vault) internal {
+    bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address)"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vault);
+
+    xSend(_chainId, callData);
+  }
+
+  /// @notice Receive feedback message so the vault knows it has received funds and is ready to rebalance
+  /// @param _vault Address of the vault on given chainId
+  function receiveFeedbackToVault(address _vault) external onlySelfOrVault {
+    return IVault(_vault).receiveFunds();
+  }
+
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
   /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
   /// @param _srcAddress Address of remote xprovider

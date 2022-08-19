@@ -15,4 +15,5 @@ interface IVault {
   function vaultCurrencyAddress() external view returns(address);
   function setXChainAllocation(uint256 _amountToSend) external;
   function setVaultState(uint256 _state) external;
+  function receiveFunds() external;
 }
