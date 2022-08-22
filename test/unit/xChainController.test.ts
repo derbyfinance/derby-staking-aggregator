@@ -300,4 +300,8 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await vault3.state()).to.be.equal(3); // received funds, all vaults should be ready now
   });
 
+  it("6) Push allocations from game to vaults", async function() {
+    await game.pushAllocationsToVaults(vaultNumber);
+  });
+
 });

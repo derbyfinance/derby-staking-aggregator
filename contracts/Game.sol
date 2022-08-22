@@ -59,7 +59,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 public latestvaultNumber = 0;
 
     // array of chainIds e.g [10, 100, 1000];
-    uint256[] public chainIds;
+    uint16[] public chainIds;
 
     // vault addresses
     mapping(address => bool) vaultAddresses;
@@ -279,7 +279,7 @@ contract Game is ERC721, ReentrancyGuard {
     function rebalanceBasket(
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
-    ) external onlyBasketOwner(_basketId) nonReentrant  {    
+    ) external onlyBasketOwner(_basketId) nonReentrant {    
       // addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
 
@@ -305,7 +305,7 @@ contract Game is ERC721, ReentrancyGuard {
     ) internal returns(int256 totalDelta) {
       for (uint256 i = 0; i < _deltaAllocations.length; i++) {
         int256 chainTotal;
-        uint256 chain = chainIds[i];
+        uint16 chain = chainIds[i];
         uint256 latestProtocol = latestProtocolId[chain];
 
         require(_deltaAllocations[i].length == latestProtocol, "Invalid allocation length");
@@ -347,6 +347,7 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Trigger for Dao to push delta allocations to the xChainController
     /// @dev Sends over an array that should match the IDs in chainIds array
     function pushAllocationsToController(uint256 _vaultNumber) external {
+      require(!isXChainRebalancing[_vaultNumber], "Vault is already rebalancing");
       isXChainRebalancing[_vaultNumber] = true;
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);
@@ -360,9 +361,35 @@ contract Game is ERC721, ReentrancyGuard {
       deltas = new int[](chainIds.length);
 
       for (uint256 i = 0; i < chainIds.length; i++) {
-        uint256 chain = chainIds[i];
+        uint16 chain = chainIds[i];
         deltas[i] = getDeltaAllocationChain(_vaultNumber, chain);
         vaults[_vaultNumber].deltaAllocationChain[chain] = 0;
+      }
+    }
+
+    /// @notice Trigger
+    /// @dev Sends o
+    function pushAllocationsToVaults(uint256 _vaultNumber) external {
+      require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
+
+      for (uint256 i = 0; i < chainIds.length; i++) {
+        int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chainIds[i]);
+      }
+    }
+
+    /// @notice Creates 
+    /// @notice Resets del
+    /// @return deltas Array
+    function protocolAllocationsToArray(
+      uint256 _vaultNumber, 
+      uint16 _chainId
+    ) internal returns(int256[] memory deltas) {
+      uint256 latestId = latestProtocolId[_chainId];
+      deltas = new int[](latestId);
+
+      for (uint256 i = 0; i < latestId; i++) {
+        deltas[i] = getDeltaAllocationProtocol(_vaultNumber, _chainId, i);
+        // allocation to zero
       }
     }
 
@@ -398,13 +425,13 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Setter for latest protocol Id for given chainId.
     /// @param _chainId number of chain id set in chainIds array
     /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
-    function setLatestProtocolId(uint256 _chainId, uint256 _latestProtocolId) external onlyDao {
+    function setLatestProtocolId(uint16 _chainId, uint256 _latestProtocolId) external onlyDao {
       latestProtocolId[_chainId] = _latestProtocolId;
     }
 
     /// @notice Setter for chainId array
     /// @param _chainIds array of all the used chainIds
-    function setChainIdArray(uint256[] memory _chainIds) external onlyDao {
+    function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
       chainIds = _chainIds;
     }
 
