@@ -217,7 +217,7 @@ contract Vault is VaultToken, ReentrancyGuard {
       if (allocation == 0) continue;
       setDeltaAllocationsInt(i, allocation);
     }
-    console.log("next vault");
+
     deltaAllocationsReceived = true;
   }
 

@@ -369,8 +369,8 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
-    /// @notice Trigger
-    /// @dev Sends o
+    /// @notice Trigger to cross chain push delta allocations in protocols to vaults
+    /// @dev Sends over an array where the index is the protocolId
     function pushAllocationsToVaults(uint256 _vaultNumber) external {
       require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
 
@@ -384,11 +384,13 @@ contract Game is ERC721, ReentrancyGuard {
           deltas
         );
       }
+
+      vaults[_vaultNumber].rebalancingPeriod ++;
+      isXChainRebalancing[_vaultNumber] = false;
     }
 
-    /// @notice Creates 
-    /// @notice Resets del
-    /// @return deltas Array
+    /// @notice Creates array with delta allocations in protocols for given chainId
+    /// @return deltas Array with allocations where the index matches the protocolId
     function protocolAllocationsToArray(
       uint256 _vaultNumber, 
       uint16 _chainId
@@ -432,12 +434,14 @@ contract Game is ERC721, ReentrancyGuard {
       // IVault(vaults[baskets[_basketId].vaultNumber]).redeemRewards(msg.sender, uint256(amount));
     }
 
-    function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns(address) {
-      return vaults[_vaultNumber].vaultAddress[_chainId];
-    }
-
+    /// @notice setter to link a chainId to a vault address for cross chain functions
     function setVaultAddress(uint256 _vaultNumber, uint16 _chainId, address _address) external onlyDao {
       vaults[_vaultNumber].vaultAddress[_chainId] = _address;
+    }
+
+    /// @notice getter for vault address linked to a chainId
+    function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns(address) {
+      return vaults[_vaultNumber].vaultAddress[_chainId];
     }
 
     /// @notice Setter for latest protocol Id for given chainId.
