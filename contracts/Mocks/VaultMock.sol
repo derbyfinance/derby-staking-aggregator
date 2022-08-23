@@ -46,6 +46,10 @@ contract VaultMock is Vault { // is VaultToken
     return deltaAllocations[_protocolNum];
   }
 
+  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external {
+    return setDeltaAllocationsInt(_protocolNum, _allocation);
+  }
+
   function getMarginScale() external view returns(int256) {
     return marginScale;
   }

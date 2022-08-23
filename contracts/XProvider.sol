@@ -64,8 +64,8 @@ contract XProvider is ILayerZeroReceiver {
   modifier onlySelfOrVault() { 
     require(
       msg.sender == address(this) ||
-      vaultWhitelist[msg.sender]
-      , "LZProvider: only Self or Vault"
+      vaultWhitelist[msg.sender], 
+      "LZProvider: only Self or Vault"
     );
     _;  
   }
@@ -287,19 +287,18 @@ contract XProvider is ILayerZeroReceiver {
     int256[] memory _deltas
   ) external onlyGame {
     if (_chainId == homeChainId) {
-      receiveProtocolAllocationsToVault(_vault);
+      return IVault(_vault).receiveProtocolAllocations(_deltas);
     }
     else {
-      bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault);
+      bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address,int256[])"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault, _deltas);
 
       xSend(_chainId, callData);
     }
   }
 
-  function receiveProtocolAllocationsToVault(address _vault) public {
-    console.log("receive protocol allocations to vault");
-    // return IVault(_vault).receiveProtocolAllocations();
+  function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas) external onlySelf {
+    return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

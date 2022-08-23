@@ -106,6 +106,7 @@ describe.only("Testing XChainController, unit test", async () => {
       game.connect(dao).setVaultAddress(vaultNumber, 10, vault1.address),
       game.connect(dao).setVaultAddress(vaultNumber, 100, vault2.address),
       game.connect(dao).setVaultAddress(vaultNumber, 1000, vault3.address),
+      game.connect(dao).setVaultAddress(vaultNumber, 2000, vault4.address),
     ]);
 
     await Promise.all([
