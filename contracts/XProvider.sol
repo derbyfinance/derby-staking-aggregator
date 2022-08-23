@@ -145,7 +145,7 @@ contract XProvider is ILayerZeroReceiver {
     require(_srcAddress.length == trustedRemoteLookup[_srcChainId].length && keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]), "Not trusted");
 
     (bool success,) = address(this).call(_payload);
-    require(success, "LZProvider: lzReceive: No success");
+    require(success, "LZReceive: No success");
   }
 
   /// @notice Pushes the delta allocations from the game to the xChainController
@@ -276,6 +276,30 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vault Address of the vault on given chainId
   function receiveFeedbackToVault(address _vault) external onlySelfOrVault {
     return IVault(_vault).receiveFunds();
+  }
+
+  /// @notice Push 
+  /// @param _chainId Number
+  /// @param _vault Address
+  function pushProtocolAllocationsToVault(
+    uint16 _chainId, 
+    address _vault, 
+    int256[] memory _deltas
+  ) external onlyGame {
+    if (_chainId == homeChainId) {
+      receiveProtocolAllocationsToVault(_vault);
+    }
+    else {
+      bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault);
+
+      xSend(_chainId, callData);
+    }
+  }
+
+  function receiveProtocolAllocationsToVault(address _vault) public {
+    console.log("receive protocol allocations to vault");
+    // return IVault(_vault).receiveProtocolAllocations();
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

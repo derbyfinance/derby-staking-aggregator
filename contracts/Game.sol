@@ -38,7 +38,9 @@ contract Game is ERC721, ReentrancyGuard {
       // rebalance period of ETF, upped at vault rebalance
       uint256 rebalancingPeriod;
       // address of vault
-      address vaultAddress;
+      address vaultAddressOLD; // OLD will be changed //////////
+      // chainId => vaultAddress
+      mapping(uint16 => address) vaultAddress;
       // chainId => deltaAllocation
       mapping(uint256 => int256) deltaAllocationChain;
       // chainId => protocolNumber => deltaAllocation
@@ -233,7 +235,7 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _vaultAddress Address of the vault which is added.
     function addETF(address _vaultAddress) external onlyDao {
       require (!vaultAddresses[_vaultAddress], "ETFGame, ETF adres already added");
-      vaults[latestvaultNumber].vaultAddress = _vaultAddress;
+      vaults[latestvaultNumber].vaultAddressOLD = _vaultAddress;
       vaultAddresses[_vaultAddress] = true;
       latestvaultNumber++;
     }
@@ -373,7 +375,14 @@ contract Game is ERC721, ReentrancyGuard {
       require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
 
       for (uint256 i = 0; i < chainIds.length; i++) {
-        int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chainIds[i]);
+        uint16 chain = chainIds[i];
+        int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chain);
+        
+        IXProvider(xProvider).pushProtocolAllocationsToVault(
+          chain,
+          getVaultAddress(_vaultNumber, chain),
+          deltas
+        );
       }
     }
 
@@ -390,6 +399,7 @@ contract Game is ERC721, ReentrancyGuard {
       for (uint256 i = 0; i < latestId; i++) {
         deltas[i] = getDeltaAllocationProtocol(_vaultNumber, _chainId, i);
         // allocation to zero
+        setDeltaAllocationProtocol(_vaultNumber, _chainId, i, 0);
       }
     }
 
@@ -420,6 +430,14 @@ contract Game is ERC721, ReentrancyGuard {
       // baskets[_basketId].totalUnRedeemedRewards = 0;
 
       // IVault(vaults[baskets[_basketId].vaultNumber]).redeemRewards(msg.sender, uint256(amount));
+    }
+
+    function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns(address) {
+      return vaults[_vaultNumber].vaultAddress[_chainId];
+    }
+
+    function setVaultAddress(uint256 _vaultNumber, uint16 _chainId, address _address) external onlyDao {
+      vaults[_vaultNumber].vaultAddress[_chainId] = _address;
     }
 
     /// @notice Setter for latest protocol Id for given chainId.

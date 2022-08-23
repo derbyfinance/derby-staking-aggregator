@@ -103,6 +103,9 @@ describe.only("Testing XChainController, unit test", async () => {
       game.connect(dao).setLatestProtocolId(100, 5),
       game.connect(dao).setLatestProtocolId(1000, 5),
       game.connect(dao).setLatestProtocolId(2000, 5),
+      game.connect(dao).setVaultAddress(vaultNumber, 10, vault1.address),
+      game.connect(dao).setVaultAddress(vaultNumber, 100, vault2.address),
+      game.connect(dao).setVaultAddress(vaultNumber, 1000, vault3.address),
     ]);
 
     await Promise.all([
@@ -234,7 +237,7 @@ describe.only("Testing XChainController, unit test", async () => {
     await vault3.pushTotalUnderlyingToController();
 
     // Should revert if total Underlying is already set
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("LZProvider: lzReceive: No success");
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("LZReceive: No success");
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
