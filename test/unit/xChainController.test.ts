@@ -142,10 +142,10 @@ describe.only("Testing XChainController, unit test", async () => {
       vault2.setHomeXProviderAddress(xProvider100.address),
       vault3.setHomeXProviderAddress(xProvider1000.address),
       vault4.setHomeXProviderAddress(xProvider2000.address),
-      vault1.setChainIds(10, 100),
-      vault2.setChainIds(100, 100),
-      vault3.setChainIds(1000, 100),
-      vault4.setChainIds(2000, 100),
+      vault1.setChainIds(10),
+      vault2.setChainIds(100),
+      vault3.setChainIds(1000),
+      vault4.setChainIds(2000),
     ]);
 
     await Promise.all([

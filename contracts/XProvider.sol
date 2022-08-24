@@ -174,10 +174,15 @@ contract XProvider is ILayerZeroReceiver {
     uint16 _chainId, 
     uint256 _underlying
   ) external onlyVaults {
-    bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256)"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _underlying);
+    if (_chainId == xControllerChain) {
+      return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
+    }
+    else {
+      bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _underlying);
 
-    xSend(xControllerChain, callData);
+      xSend(xControllerChain, callData);
+    }
   }
 
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
@@ -188,7 +193,7 @@ contract XProvider is ILayerZeroReceiver {
     uint256 _vaultNumber, 
     uint16 _chainId, 
     uint256 _underlying
-  ) external onlySelfOrVault {
+  ) external onlySelf {
     return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
   }
 
@@ -201,10 +206,15 @@ contract XProvider is ILayerZeroReceiver {
     uint16 _chainId, 
     uint256 _amountToSendBack
   ) external onlyController {
-    bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack);
+    if (_chainId == homeChainId) {
+      return IVault(_vault).setXChainAllocation(_amountToSendBack);
+    }
+    else {
+      bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack);
 
-    xSend(_chainId, callData);
+      xSend(_chainId, callData);
+    }
   }
 
   /// @notice Receiver for the amount the vault has to send back to the xChainController
@@ -214,7 +224,7 @@ contract XProvider is ILayerZeroReceiver {
     address _vault,
     uint256 _amountToSendBack
   ) external onlySelf {
-    IVault(_vault).setXChainAllocation(_amountToSendBack);
+    return IVault(_vault).setXChainAllocation(_amountToSendBack);
   }
 
   /// @notice Transfers funds from vault to xController for crosschain rebalance
@@ -222,14 +232,20 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _amount Number of the vault
   /// @param _asset Address of the token to send e.g USDC 
   function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external onlyVaults {
-    xTransfer(
-      xController,
-      _asset,
-      homeChainId,
-      xControllerChain,
-      _amount
-    );
-    pushFeedbackToXController(_vaultNumber); // vault Number
+    if (homeChainId == xControllerChain) {
+      IERC20(_asset).transferFrom(msg.sender, xController, _amount);
+      IXChainController(xController).upFundsReceived(_vaultNumber);
+    }
+    else {
+      xTransfer(
+        xController,
+        _asset,
+        homeChainId,
+        xControllerChain,
+        _amount
+      );
+      pushFeedbackToXController(_vaultNumber); 
+    }
   }
 
   /// @notice Push crosschain feedback to xController to know when the vaultNumber has sent funds
@@ -243,7 +259,7 @@ contract XProvider is ILayerZeroReceiver {
 
   /// @notice Receive crosschain feedback to xController to know when the vaultNumber has sent funds
   /// @param _vaultNumber Number of the vault
-  function receiveFeedbackToXController(uint256 _vaultNumber) external onlySelfOrVault {
+  function receiveFeedbackToXController(uint256 _vaultNumber) external onlySelf {
     return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
