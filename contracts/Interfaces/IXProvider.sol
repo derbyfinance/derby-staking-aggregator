@@ -2,12 +2,6 @@
 pragma solidity ^0.8.11;
 
 interface IXProvider {
-  struct callParams {
-    address to;
-    uint256 chainId;
-    bytes callData;
-  }
-
   function xCall(    
     address _xProvider, 
     uint16 _chainId, 
@@ -24,5 +18,5 @@ interface IXProvider {
   function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external;
   function receiveFeedbackToXController(uint256 _vaultNumber) external;
   function xTransferToVaults(address _vault, uint16 _chainId, uint256 _amount, address _asset) external;
-
+  function pushProtocolAllocationsToVault(uint16 _chainId, address _vault, int256[] memory _deltas) external;
 }

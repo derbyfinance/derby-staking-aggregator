@@ -34,6 +34,8 @@ contract Vault is VaultToken, ReentrancyGuard {
   enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
   State public state;
 
+  bool public deltaAllocationsReceived; 
+
   address public vaultCurrencyAddr; 
   address public game;
   address public governed;
@@ -209,6 +211,18 @@ contract Vault is VaultToken, ReentrancyGuard {
     state = State.RebalanceVault;
   }
 
+  /// @notice Receives protocol allocation array from the game and settles the allocations
+  /// @param _deltas Array with delta allocations where the index matches the protocolId
+  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+    for (uint i = 0; i < _deltas.length; i++) {
+      int256 allocation = _deltas[i];
+      if (allocation == 0) continue;
+      setDeltaAllocationsInt(i, allocation);
+    }
+
+    deltaAllocationsReceived = true;
+  }
+
   /// @notice Withdraw from protocols on shortage in Vault
   /// @dev Keeps on withdrawing until the Vault balance > _value
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
@@ -247,6 +261,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   function rebalanceETF() external returnGasFee nonReentrant onlyDao {
     require(rebalanceNeeded(), "No rebalance needed");
     require(state == State.RebalanceVault, "Wrong state");
+    require(deltaAllocationsReceived, "Delta allocations not received");
     
     rebalancingPeriod++;
     
@@ -262,6 +277,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
     state = State.WaitingForController;
+    deltaAllocationsReceived = false;
   }
 
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
@@ -489,10 +505,9 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Allocation can be negative
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _allocation Delta allocation in tokens
-  function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external onlyGame {
+  function setDeltaAllocationsInt(uint256 _protocolNum, int256 _allocation) internal {
     require(!controller.getProtocolBlacklist(vaultNumber, _protocolNum), "Protocol on blacklist");
-    int256 deltaAllocation = deltaAllocations[_protocolNum] + _allocation;
-    deltaAllocations[_protocolNum] = deltaAllocation;
+    deltaAllocations[_protocolNum] += _allocation;
     deltaAllocatedTokens += _allocation; 
   }
 

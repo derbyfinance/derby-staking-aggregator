@@ -16,4 +16,5 @@ interface IVault {
   function setXChainAllocation(uint256 _amountToSend) external;
   function setVaultState(uint256 _state) external;
   function receiveFunds() external;
+  function receiveProtocolAllocations(int256[] memory _deltas) external;
 }
