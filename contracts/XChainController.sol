@@ -17,7 +17,6 @@ contract XChainController {
   address public xProviderAddr;
   IXProvider public xProvider;
 
-  uint16 public homeChainId;
   uint16[] public chainIds;
 
   struct vaultInfo {
@@ -98,12 +97,11 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao, uint16 _homeChainId) {
+  constructor(address _game, address _dao) {
     // feedback vault state back to controller
     // transfers via provider
     game = _game;
     dao = _dao;
-    homeChainId = _homeChainId;
   }
 
   /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
