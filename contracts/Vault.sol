@@ -54,7 +54,6 @@ contract Vault is VaultToken, ReentrancyGuard {
   
   uint256 public amountToSendXChain;
   uint16 public homeChainId;
-  uint256 public xControllerChainId;
 
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
@@ -165,17 +164,13 @@ contract Vault is VaultToken, ReentrancyGuard {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
+  /// @notice Step 3 trigger
   /// @notice Pushes totalUnderlying of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
     if (state != State.WaitingForController) return;
 
     uint256 underlying = savedTotalUnderlying + vaultCurrency.balanceOf(address(this));
-
-    if (homeChainId == xControllerChainId) {
-      IXProvider(xProvider).receiveTotalUnderlying(vaultNumber, homeChainId, underlying);
-    } else {
-      IXProvider(xProvider).pushTotalUnderlying(vaultNumber, homeChainId, underlying);
-    }
+    IXProvider(xProvider).pushTotalUnderlying(vaultNumber, homeChainId, underlying);
   }
 
   /// @notice Will set the amount to send back to the xController by the xController
@@ -193,14 +188,9 @@ contract Vault is VaultToken, ReentrancyGuard {
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
 
-    if (homeChainId == xControllerChainId) {
-      vaultCurrency.safeTransfer(xController, amountToSendXChain);
-      IXProvider(xProvider).receiveFeedbackToXController(vaultNumber);
-    } else {
-      vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-      IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
-    }
-
+    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    
     amountToSendXChain = 0;
     state = State.RebalanceVault;
   }
@@ -609,9 +599,8 @@ contract Vault is VaultToken, ReentrancyGuard {
   }
 
   /// @notice Setter for xController chainId and homeChain
-  function setChainIds(uint16 _homeChain, uint16 _xControllerChain) external onlyDao {
+  function setChainIds(uint16 _homeChain) external onlyDao {
     homeChainId = _homeChain;
-    xControllerChainId = _xControllerChain;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH

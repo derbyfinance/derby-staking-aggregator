@@ -17,7 +17,6 @@ contract XChainController {
   address public xProviderAddr;
   IXProvider public xProvider;
 
-  uint16 public homeChainId;
   uint16[] public chainIds;
 
   struct vaultInfo {
@@ -98,12 +97,11 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao, uint16 _homeChainId) {
+  constructor(address _game, address _dao) {
     // feedback vault state back to controller
     // transfers via provider
     game = _game;
     dao = _dao;
-    homeChainId = _homeChainId;
   }
 
   /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
@@ -242,14 +240,13 @@ contract XChainController {
 
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChainVault);
 
-      // deposit from the perspective of the xController
       if (amountToDeposit > 0) {
         setAmountToDeposit(_vaultNumber, chain, amountToDeposit);
-        setXAmountToSend(vault, chain, 0);
+        xProvider.pushSetXChainAllocation(vault, chain, 0);
         vaultStage[_vaultNumber].fundsReceived++;
       }
 
-      if (amountToWithdraw > 0) setXAmountToSend(vault, chain, amountToWithdraw);
+      if (amountToWithdraw > 0) xProvider.pushSetXChainAllocation(vault, chain, amountToWithdraw);
     }
   }
 
@@ -268,15 +265,6 @@ contract XChainController {
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - uint256(_amountToChain) : 0;
 
     return (amountToDeposit, amountToWithdraw);
-  }
-
-  /// @notice Sets the amounts to deposit or withdraw in vaultcurrency in the vaults
-  /// @param _vault Address of the vault
-  /// @param _chainId Number of chain used
-  /// @param _amount Amount in vaultcurrency that should be on given chainId
-  function setXAmountToSend(address _vault, uint16 _chainId, uint256 _amount) internal {
-    if (_chainId == homeChainId) IVault(_vault).setXChainAllocation(_amount);
-    else xProvider.pushSetXChainAllocation(_vault, _chainId, _amount);
   }
 
   /// @notice Step 5 trigger

@@ -39,7 +39,7 @@ describe.only("Testing Game", async () => {
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
     vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
 
     [LZEndpoint10, LZEndpoint100] = await Promise.all([
       deployLZEndpointMock(dao, 10),

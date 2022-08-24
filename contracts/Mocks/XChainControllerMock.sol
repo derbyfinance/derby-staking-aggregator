@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 import "../XChainController.sol";
 
 contract XChainControllerMock is XChainController {
-  constructor(address _game, address _dao, uint16 _homeChain) XChainController(_game, _dao, _homeChain) {} 
+  constructor(address _game, address _dao) XChainController(_game, _dao) {} 
 
   function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
     return setActiveVaults(_vaultNumber, _activeVaults);
