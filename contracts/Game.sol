@@ -369,7 +369,7 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
-    /// @notice Trigger to cross chain push delta allocations in protocols to vaults
+    /// @notice Trigger to push delta allocations in protocols to cross chain vaults
     /// @dev Sends over an array where the index is the protocolId
     function pushAllocationsToVaults(uint256 _vaultNumber) external {
       require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");

@@ -278,17 +278,15 @@ contract XProvider is ILayerZeroReceiver {
     return IVault(_vault).receiveFunds();
   }
 
-  /// @notice Push 
-  /// @param _chainId Number
-  /// @param _vault Address
+  /// @notice Push protocol allocation array from the game to all vaults/chains
+  /// @param _vault Address of the vault on given chainId
+  /// @param _deltas Array with delta allocations where the index matches the protocolId
   function pushProtocolAllocationsToVault(
     uint16 _chainId, 
     address _vault, 
     int256[] memory _deltas
   ) external onlyGame {
-    if (_chainId == homeChainId) {
-      return IVault(_vault).receiveProtocolAllocations(_deltas);
-    }
+    if (_chainId == homeChainId) return IVault(_vault).receiveProtocolAllocations(_deltas);
     else {
       bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _deltas);
@@ -297,6 +295,9 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
+  /// @notice Receives protocol allocation array from the game to all vaults/chains
+  /// @param _vault Address of the vault on given chainId
+  /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas) external onlySelf {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }

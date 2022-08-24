@@ -211,6 +211,8 @@ contract Vault is VaultToken, ReentrancyGuard {
     state = State.RebalanceVault;
   }
 
+  /// @notice Receives protocol allocation array from the game and settles the allocations
+  /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
     for (uint i = 0; i < _deltas.length; i++) {
       int256 allocation = _deltas[i];
