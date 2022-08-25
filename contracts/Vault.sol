@@ -292,6 +292,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _newTotalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
+
     for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
@@ -330,6 +331,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+    console.log("store price and rewards");
       uint256 price = price(_protocolId);
       historicalPrices[rebalancingPeriod][_protocolId] = price;
       if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
@@ -338,8 +340,10 @@ contract Vault is VaultToken, ReentrancyGuard {
       int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
       if (totalAllocatedTokens == 0) {
         rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+        console.log("rewardPerLockedToken[rebalancingPeriod][_protocolId] %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
       } else {
         rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+        console.log("rewardPerLockedToken[rebalancingPeriod][_protocolId] %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
       }
   }
 
