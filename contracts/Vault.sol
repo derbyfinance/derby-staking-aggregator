@@ -254,6 +254,8 @@ contract Vault is VaultToken, ReentrancyGuard {
     require(deltaAllocationsReceived, "Delta allocations not received");
     
     rebalancingPeriod++;
+
+    console.log("rebalancing Period %s", rebalancingPeriod);
     
     claimTokens();
     settleDeltaAllocation();
@@ -331,20 +333,22 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
-    console.log("store price and rewards");
-      uint256 price = price(_protocolId);
-      historicalPrices[rebalancingPeriod][_protocolId] = price;
-      if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
-      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
-      int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
-      if (totalAllocatedTokens == 0) {
-        rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
-        console.log("rewardPerLockedToken[rebalancingPeriod][_protocolId] %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
-      } else {
-        rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
-        console.log("rewardPerLockedToken[rebalancingPeriod][_protocolId] %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
-      }
+    console.log("store price and rewards underlying %s tokens %s", _totalUnderlying, uint(totalAllocatedTokens));
+    console.log("historicalPrices %s", historicalPrices[rebalancingPeriod - 1][_protocolId]);
+    uint256 price = price(_protocolId);
+    console.log("price %s", price);
+    historicalPrices[rebalancingPeriod][_protocolId] = price;
+    if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
+    int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
+    int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
+    int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
+    if (totalAllocatedTokens == 0) {
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+      console.log("total is 0 rewardPerLockedToken %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
+    } else {
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      console.log("rewardPerLockedToken nom %s, denom %s reward %s", uint(nominator), uint(denominator), uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
+    }
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao

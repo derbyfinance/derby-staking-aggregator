@@ -54,6 +54,10 @@ contract VaultMock is Vault { // is VaultToken
     deltaAllocationsReceived = _state;
   }
 
+  function setTotalAllocatedTokensTest(int256 _tokens) external {
+    totalAllocatedTokens = _tokens;
+  }
+
   function getMarginScale() external view returns(int256) {
     return marginScale;
   }

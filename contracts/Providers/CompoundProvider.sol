@@ -92,7 +92,7 @@ contract CompoundProvider is IProvider {
   }
 
   /// @notice Get balance from address in underlying token
-  /// @param _address Address to request balance from, most likely an Vault
+  /// @param _address Address to request balance from, most likely a Vault
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
   function balanceUnderlying(address _address, address _cToken) public view override returns(uint256) {

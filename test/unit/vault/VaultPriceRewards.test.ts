@@ -6,9 +6,9 @@ import { Signer, Contract, BigNumber } from "ethers";
 import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
 import type { Controller, VaultMock } from '../../../typechain-types';
 import { deployController, deployVaultMock } from '../../helpers/deploy';
-import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01, compoundUSDC, compoundDAI, aaveUSDC, yearnUSDC, aaveUSDT } from "../../helpers/addresses";
 import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
-import allProviders  from "../../helpers/allProvidersClass";
+import AllMockProviders from "../../helpers/allMockProvidersClass";
 import { ethers, network } from "hardhat";
 import { vaultInfo } from "../../helpers/vaultHelpers";
 import { Result } from "ethers/lib/utils";
@@ -53,58 +53,59 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
-      allProviders.deployAllProviders(dao, controller),
+      AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
       IUSDc.connect(user).approve(vault.address, amountUSDC.mul(10)),
     ]);
 
-    await controller.setClaimable(allProviders.compoundProvider.address, true);
-
     for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, allProviders);
-      await protocol.resetAllocation(vault);
+      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
     }
   });
 
-  it("Should store historical prices", async function() {
-    const amount = 1_000_000;
-    const amountUSDC = parseUSDC(amount.toString());
 
+  it.only("Should store historical prices2", async function() {
+    const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
+    
     await Promise.all([
-      compoundVault.setDeltaAllocation(vault, user, 20),
-      aaveVault.setDeltaAllocation(vault, user, 20),
-      yearnVault.setDeltaAllocation(vault, user, 20),
-      compoundDAIVault.setDeltaAllocation(vault, user, 20),
-      aaveUSDTVault.setDeltaAllocation(vault, user, 20),
+      compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(1000), 
+      compoundProvider.mock.exchangeRate.withArgs(compoundDAI).returns(2000), 
+      aaveProvider.mock.exchangeRate.withArgs(aaveUSDC).returns(3000), 
+      aaveProvider.mock.exchangeRate.withArgs(aaveUSDT).returns(4000), 
+      yearnProvider.mock.exchangeRate.withArgs(yearnUSDC).returns(5000), 
     ]);
 
-    // Deposit and rebalance with 1m 
+    await vault.setTotalAllocatedTokensTest(10_000);
     await vault.connect(user).depositETF(amountUSDC);
+    
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
+    await rebalanceETF(vault);
 
-    let gasUsed = await rebalanceETF(vault);
-    let gasUsedUSDC = formatUSDC(gasUsed)
+    await Promise.all([
+      compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(1100), 
+      compoundProvider.mock.exchangeRate.withArgs(compoundDAI).returns(2200), 
+      aaveProvider.mock.exchangeRate.withArgs(aaveUSDC).returns(3300), 
+      aaveProvider.mock.exchangeRate.withArgs(aaveUSDT).returns(4400), 
+      yearnProvider.mock.exchangeRate.withArgs(yearnUSDC).returns(5500), 
+    ]);
 
-    let totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
-    let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    console.log(`USDC Balance vault: ${balanceVault}`)
+    await vault.setVaultState(3);
+    await vault.setDeltaAllocationsReceivedTEST(true);
+    await rebalanceETF(vault);
 
-    // Check if balanceInProtocol === 
-    // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
-    for (const protocol of protocols.values()) {
-      const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance = (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+    await vault.setVaultState(3);
+    await vault.setDeltaAllocationsReceivedTEST(true);
+    await rebalanceETF(vault);
 
-      console.log(`---------------------------`)
-      console.log(protocol.name)
-      console.log(protocol.number)
-      console.log(protocol.allocation)
-      console.log({ totalAllocatedTokens })
-      console.log({ balanceUnderlying })
-      console.log({ expectedBalance })
-
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 100);
-    };
   });
 });
+
+
+// await Promise.all([
+//   compoundVault.setDeltaAllocation(vault, user, 20),
+//   aaveVault.setDeltaAllocation(vault, user, 20),
+//   yearnVault.setDeltaAllocation(vault, user, 20),
+//   compoundDAIVault.setDeltaAllocation(vault, user, 20),
+//   aaveUSDTVault.setDeltaAllocation(vault, user, 20),
+// ]);
