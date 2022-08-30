@@ -9,6 +9,7 @@ import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
+import "./Interfaces/IGame.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
 import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
@@ -46,7 +47,7 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   modifier onlyVaults {
-    require(vaultWhitelist[msg.sender], "LZProvider: only Controller");
+    require(vaultWhitelist[msg.sender], "LZProvider: only vault");
     _;
   }
 
@@ -316,6 +317,33 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas) external onlySelf {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
+  }
+
+  /// @notice Push
+  function pushPriceAndRewardsToGame(
+    // address _vault, 
+    uint16 _chainId
+    // uint256 _amountToSendBack
+  ) external onlyVaults {
+    if (_chainId == homeChainId) {
+      return IGame(game).settlePriceAndRewards();
+    }
+    else {
+      // bytes4 selector = bytes4(keccak256("settlePriceAndRewards()"));
+      // bytes memory callData = abi.encodeWithSelector(selector);
+
+      // xSend(_chainId, callData);
+    }
+  }
+
+  /// @notice Receiver 
+  /// @param _vault Address of the Derby Vault on given chainId 
+  /// @param _amountToSendBack Amount the vault has to send back
+  function receivePriceAndRewardsToGame(
+    address _vault,
+    uint256 _amountToSendBack
+  ) external onlySelf {
+    return IVault(_vault).setXChainAllocation(_amountToSendBack);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

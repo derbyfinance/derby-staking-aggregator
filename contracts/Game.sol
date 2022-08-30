@@ -405,6 +405,10 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    function settlePriceAndRewards() external {
+      console.log("settling in game");
+    }
+
     /// @notice rewards are calculated here.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {

@@ -351,6 +351,27 @@ contract Vault is VaultToken, ReentrancyGuard {
     }
   }
 
+  function sendPriceAndRewardsToGame() external {
+    uint256 latestId = controller.latestProtocolId(vaultNumber);
+    // require
+    (uint256[] memory prices, int256[] memory rewards) = pricesAndRewardsToArray(latestId);
+
+    IXProvider(xProvider).pushPriceAndRewardsToGame(homeChainId);
+  }
+
+  function pricesAndRewardsToArray(
+    uint256 _latestId
+  ) internal returns(uint256[] memory prices, int256[] memory rewards) {
+    prices = new uint[](_latestId);
+    rewards = new int[](_latestId);
+
+    for (uint256 i = 0; i < _latestId; i++) {
+      prices[i] = historicalPrices[rebalancingPeriod][i];
+      rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
+      console.log("prices %s, rewards %s", prices[i], uint(rewards[i]));
+    }
+  }
+
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
   /// @notice This way the vault will pay the gas for the RebalanceETF function
   /// @param _gasUsed total gas used by RebalanceETF

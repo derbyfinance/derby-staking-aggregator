@@ -6,4 +6,5 @@ interface IGame {
     function basketUnredeemedRewardsViaVault(uint256 _basketId, address _ownerAddr) external view returns(int256);
     function basketRedeemedRewards(uint256 _basketId) external view returns(int256);
     function setUnredeemedToRedeemed(uint256 _basketId, address _ownerAddr) external;
+    function settlePriceAndRewards() external;
 }
