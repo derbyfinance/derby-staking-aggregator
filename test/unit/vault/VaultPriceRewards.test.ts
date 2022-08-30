@@ -16,6 +16,7 @@ import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 
 const amount = 100_000;
+const homeChain = 10;
 const chainIds = [10, 100, 1000, 2000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
@@ -56,7 +57,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
-    xProvider = await deployXProvider(dao, controller.address, controller.address, daoAddr, game.address, controller.address, 10)
+    xProvider = await deployXProvider(dao, controller.address, controller.address, daoAddr, game.address, controller.address, homeChain)
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
@@ -67,8 +68,8 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
 
     await Promise.all([
       vault.setHomeXProviderAddress(xProvider.address),
-      vault.setChainIds(10),
-      xProvider.setGameChainId(10),
+      vault.setChainIds(homeChain),
+      xProvider.setGameChainId(homeChain),
       xProvider.toggleVaultWhitelist(vault.address),
     ]);
 
@@ -78,7 +79,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
   });
 
 
-  it.only("Should store historical prices2", async function() {
+  it("Should store historical prices2", async function() {
     const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
     
     await vault.setTotalAllocatedTokensTest(10_000);
@@ -96,6 +97,8 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await vault.setDeltaAllocationsReceivedTEST(true);
     await rebalanceETF(vault);
 
+    await vault.sendPriceAndRewardsToGame();
+
     await Promise.all([
       compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(1100), 
       compoundProvider.mock.exchangeRate.withArgs(compoundDAI).returns(2200), 
@@ -109,6 +112,11 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await rebalanceETF(vault);
 
     await vault.sendPriceAndRewardsToGame();
+
+    for (const protocol of protocols.values()) {
+      const price = await game.getHistoricalPriceTEST(vaultNumber, homeChain, 0, protocol.number);
+      console.log({ price })
+    }
 
   });
 });

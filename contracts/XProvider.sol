@@ -321,12 +321,13 @@ contract XProvider is ILayerZeroReceiver {
 
   /// @notice Push
   function pushPriceAndRewardsToGame(
-    // address _vault, 
-    uint16 _chainId
-    // uint256 _amountToSendBack
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    uint256[] memory prices,
+    int256[] memory rewards
   ) external onlyVaults {
     if (_chainId == homeChainId) {
-      return IGame(game).settlePriceAndRewards();
+      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, prices, rewards);
     }
     else {
       // bytes4 selector = bytes4(keccak256("settlePriceAndRewards()"));

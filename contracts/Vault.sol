@@ -333,10 +333,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
-    console.log("store price and rewards underlying %s tokens %s", _totalUnderlying, uint(totalAllocatedTokens));
-    console.log("historicalPrices %s", historicalPrices[rebalancingPeriod - 1][_protocolId]);
     uint256 price = price(_protocolId);
-    console.log("price %s", price);
     historicalPrices[rebalancingPeriod][_protocolId] = price;
     if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
     int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
@@ -344,31 +341,32 @@ contract Vault is VaultToken, ReentrancyGuard {
     int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
     if (totalAllocatedTokens == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
-      console.log("total is 0 rewardPerLockedToken %s", uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
-      console.log("rewardPerLockedToken nom %s, denom %s reward %s", uint(nominator), uint(denominator), uint(rewardPerLockedToken[rebalancingPeriod][_protocolId]));
     }
   }
 
   function sendPriceAndRewardsToGame() external {
-    uint256 latestId = controller.latestProtocolId(vaultNumber);
     // require
-    (uint256[] memory prices, int256[] memory rewards) = pricesAndRewardsToArray(latestId);
+    uint256 gasStart = gasleft();
+    
+    (uint256[] memory prices, int256[] memory rewards) = pricesAndRewardsToArray();
 
-    IXProvider(xProvider).pushPriceAndRewardsToGame(homeChainId);
+    IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, prices, rewards);
+
+    uint256 gasUsed = gasStart - gasleft();
+    console.log("Gas used %s", gasUsed);
   }
 
-  function pricesAndRewardsToArray(
-    uint256 _latestId
-  ) internal returns(uint256[] memory prices, int256[] memory rewards) {
-    prices = new uint[](_latestId);
-    rewards = new int[](_latestId);
+  function pricesAndRewardsToArray() internal view returns(uint256[] memory prices, int256[] memory rewards) {
+    uint256 latestId = controller.latestProtocolId(vaultNumber);
 
-    for (uint256 i = 0; i < _latestId; i++) {
+    prices = new uint[](latestId);
+    rewards = new int[](latestId);
+
+    for (uint256 i = 0; i < latestId; i++) {
       prices[i] = historicalPrices[rebalancingPeriod][i];
       rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
-      console.log("prices %s, rewards %s", prices[i], uint(rewards[i]));
     }
   }
 

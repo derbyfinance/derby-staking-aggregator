@@ -45,6 +45,11 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => int256) deltaAllocationChain;
       // chainId => protocolNumber => deltaAllocation
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
+
+      // chainId => rebalancing period => protocol id.
+      mapping(uint16 => mapping(uint256 => mapping(uint256 => uint256))) historicalPrices;
+      // chainId => rebalancing period => protocol id.
+      mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
     }
 
     address public derbyTokenAddress;
@@ -405,8 +410,39 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
-    function settlePriceAndRewards() external {
+    function settlePriceAndRewards(
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      uint256[] memory _prices, 
+      int256[] memory _rewards
+    ) external {
+      uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
       console.log("settling in game");
+
+      for (uint256 i = 0; i < _prices.length; i++) {
+        console.log("Game: prices %s, rewards %s", _prices[i], uint(_rewards[i]));
+
+        vaults[_vaultNumber].historicalPrices[_chainId][rebalancingPeriod][i] = _prices[i];
+        vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
+      }
+    }
+
+    function getHistoricalPrice(
+      uint256 _vaultNumber, 
+      uint16 _chainId, 
+      uint256 _rebalancingPeriod, 
+      uint256 _protocolId
+    ) internal view returns(uint256) {
+      return vaults[_vaultNumber].historicalPrices[_chainId][_rebalancingPeriod][_protocolId];
+    }
+
+    function getRewardsPerLockedToken(
+      uint256 _vaultNumber, 
+      uint16 _chainId, 
+      uint256 _rebalancingPeriod, 
+      uint256 _protocolId
+    ) internal view returns(int256) {
+      return vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId];
     }
 
     /// @notice rewards are calculated here.
