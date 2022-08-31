@@ -31,7 +31,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   // state 1 Allocation amount received and ready to send funds over to xController
   // state 2 Allocation amount 0 received => will receive funds from xController
   // state 3 Allocation amount sent or received and ready to rebalance the vault itself
-  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendPrices }
   State public state;
 
   bool public deltaAllocationsReceived; 
@@ -268,7 +268,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
-    state = State.WaitingForController;
+    state = State.SendPrices;
     deltaAllocationsReceived = false;
   }
 
@@ -346,18 +346,19 @@ contract Vault is VaultToken, ReentrancyGuard {
     }
   }
 
+  /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
   function sendPriceAndRewardsToGame() external {
-    // require
-    uint256 gasStart = gasleft();
-    
+    require(state == State.SendPrices, "Wrong state");
+
     (uint256[] memory prices, int256[] memory rewards) = pricesAndRewardsToArray();
-
     IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, prices, rewards);
-
-    uint256 gasUsed = gasStart - gasleft();
-    console.log("Gas used %s", gasUsed);
+    
+    state = State.WaitingForController;
   }
 
+  /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
+  /// @return prices Array with prices of all protocols => index matches protocolId
+  /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function pricesAndRewardsToArray() internal view returns(uint256[] memory prices, int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
 

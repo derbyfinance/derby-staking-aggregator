@@ -410,25 +410,28 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
+    /// @param _vaultNumber Number of the vault
+    /// @param _chainId Number of chain used
+    /// @param _prices Array with prices of all protocols => index matches protocolId
+    /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
     function settlePriceAndRewards(
       uint256 _vaultNumber,
       uint16 _chainId,
       uint256[] memory _prices, 
       int256[] memory _rewards
     ) external {
-      console.log("settling in game");
-      
       vaults[_vaultNumber].rebalancingPeriod ++;
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _prices.length; i++) {
         console.log("Game: prices %s, rewards %s", _prices[i], uint(_rewards[i]));
-
         vaults[_vaultNumber].historicalPrices[_chainId][rebalancingPeriod][i] = _prices[i];
         vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
       }
     }
 
+    /// @notice Getter for getHistoricalPrice for given vaultNumber => chainId => rebalancingPeriod => protocolId
     function getHistoricalPrice(
       uint256 _vaultNumber, 
       uint16 _chainId, 
@@ -438,6 +441,7 @@ contract Game is ERC721, ReentrancyGuard {
       return vaults[_vaultNumber].historicalPrices[_chainId][_rebalancingPeriod][_protocolId];
     }
 
+    /// @notice Getter for rewardsPerLockedToken for given vaultNumber => chainId => rebalancingPeriod => protocolId
     function getRewardsPerLockedToken(
       uint256 _vaultNumber, 
       uint16 _chainId, 

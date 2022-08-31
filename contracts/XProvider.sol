@@ -319,32 +319,40 @@ contract XProvider is ILayerZeroReceiver {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
-  /// @notice Push
+  /// @notice Push price and rewards array from vaults to the game
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _prices Array with prices of all protocols in vault => index matches protocolId
+  /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function pushPriceAndRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId,
-    uint256[] memory prices,
-    int256[] memory rewards
+    uint256[] memory _prices,
+    int256[] memory _rewards
   ) external onlyVaults {
     if (_chainId == homeChainId) {
-      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, prices, rewards);
+      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _prices, _rewards);
     }
     else {
-      // bytes4 selector = bytes4(keccak256("settlePriceAndRewards()"));
-      // bytes memory callData = abi.encodeWithSelector(selector);
+      bytes4 selector = bytes4(keccak256("receivePriceAndRewardsToGame(uint256,uint16,uint256[],int256[])"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _prices, _rewards);
 
-      // xSend(_chainId, callData);
+      xSend(gameChain, callData);
     }
   }
 
-  /// @notice Receiver 
-  /// @param _vault Address of the Derby Vault on given chainId 
-  /// @param _amountToSendBack Amount the vault has to send back
+  /// @notice Receives price and rewards array from vaults to the game
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _prices Array with prices of all protocols => index matches protocolId
+  /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function receivePriceAndRewardsToGame(
-    address _vault,
-    uint256 _amountToSendBack
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    uint256[] memory _prices,
+    int256[] memory _rewards
   ) external onlySelf {
-    return IVault(_vault).setXChainAllocation(_amountToSendBack);
+    return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _prices, _rewards);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
