@@ -2,6 +2,7 @@
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
 import { Controller, GameMock, VaultMock } from "typechain-types";
+import { parseEther } from "./helpers";
 
 export interface IProtocolVault {
   name: string;
@@ -22,6 +23,7 @@ export class ProtocolVault {
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
+  price: BigNumber = parseEther('0');
   scale: number;
 
   constructor({name, protocolToken, underlyingToken, govToken, decimals, chainId}: IProtocolVault) {
@@ -37,6 +39,10 @@ export class ProtocolVault {
   setExpectedBalance(balance: number) {
     this.expectedBalance = balance;
     return this;
+  }
+
+  setPrice(price: BigNumber) {
+    this.price = price;
   }
 
   async setDeltaAllocation(vault: VaultMock, game: Signer, allocation: number): Promise<void> {

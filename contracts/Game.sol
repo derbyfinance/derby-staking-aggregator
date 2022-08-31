@@ -416,8 +416,10 @@ contract Game is ERC721, ReentrancyGuard {
       uint256[] memory _prices, 
       int256[] memory _rewards
     ) external {
-      uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
       console.log("settling in game");
+      
+      vaults[_vaultNumber].rebalancingPeriod ++;
+      uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _prices.length; i++) {
         console.log("Game: prices %s, rewards %s", _prices[i], uint(_rewards[i]));
