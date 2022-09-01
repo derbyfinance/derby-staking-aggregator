@@ -202,10 +202,25 @@ describe.only("Testing Game", async () => {
     await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
   });
 
-  // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
-  //   let rewards = await generateUnredeemedRewards();
-  //   expect(rewards).to.be.closeTo('51111108', 500000);
-  // });
+  it.only("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
+    await game.connect(dao).addETF(vault.address);
+    await game.mintNewBasket(0);
+    // set liquidity vault to 0 for easy calculation
+    await vault.setLiquidityPerc(0);
+
+    const amount = 10_000;
+    const amountUSDC = parseUSDC(amount.toString());
+
+    const allocations = [ 
+      [200, 0, 0, 200, 0], // 400
+      [100, 0, 200, 100, 200], // 600
+      [0, 100, 200, 300, 400], // 1000 
+    ];
+    
+    await DerbyToken.increaseAllowance(game.address, 2000);
+    await game.rebalanceBasket(0, allocations);
+    // expect(rewards).to.be.closeTo('51111108', 500000);
+  });
 
   // it.skip("Should be able to redeem funds via vault function", async function() {
   //   let rewards = await generateUnredeemedRewards();

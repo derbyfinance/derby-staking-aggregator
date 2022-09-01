@@ -2,7 +2,7 @@
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
 import { Controller, GameMock, VaultMock } from "typechain-types";
-import { parseEther } from "./helpers";
+import { parseEther, parseUnits } from "./helpers";
 
 export interface IProtocolVault {
   name: string;
@@ -18,12 +18,13 @@ export class ProtocolVault {
   protocolToken: string;
   underlyingToken: string;
   govToken: string;
-  decimals: number;
+  decimals: number ;
   chainId: number;
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
   price: BigNumber = parseEther('0');
+  reward: BigNumber = parseEther('0')
   scale: number;
 
   constructor({name, protocolToken, underlyingToken, govToken, decimals, chainId}: IProtocolVault) {
@@ -43,6 +44,10 @@ export class ProtocolVault {
 
   setPrice(price: BigNumber) {
     this.price = price;
+  }
+
+  setReward(reward: BigNumber) {
+    this.reward = reward;
   }
 
   async setDeltaAllocation(vault: VaultMock, game: Signer, allocation: number): Promise<void> {

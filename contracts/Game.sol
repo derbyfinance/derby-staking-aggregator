@@ -236,7 +236,7 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Adding a vault to the game.
     /// @param _vaultAddress Address of the vault which is added.
     function addETF(address _vaultAddress) external onlyDao {
-      require (!vaultAddresses[_vaultAddress], "ETFGame, ETF adres already added");
+      require (!vaultAddresses[_vaultAddress], "Game: vault already added");
       vaults[latestvaultNumber].vaultAddressOLD = _vaultAddress;
       vaultAddresses[_vaultAddress] = true;
       latestvaultNumber++;
@@ -246,7 +246,7 @@ contract Game is ERC721, ReentrancyGuard {
     /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
     /// @param _vaultNumber Number of the vault. Same as in Router.
     function mintNewBasket(uint256 _vaultNumber) external {
-      require(_vaultNumber < latestvaultNumber, "ETFGame: invalid ETF number");
+      require(_vaultNumber < latestvaultNumber, "Game: invalid ETF number");
       // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
       baskets[latestBasketId].vaultNumber = _vaultNumber;
       baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
@@ -284,9 +284,8 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
     ) external onlyBasketOwner(_basketId) nonReentrant {    
-      // addToTotalRewards(_basketId);
+      addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
-
       require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
       int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
@@ -325,6 +324,27 @@ contract Game is ERC721, ReentrancyGuard {
 
         totalDelta += chainTotal;
         setDeltaAllocationChain(_vaultNumber, chain, chainTotal);
+      }
+    }
+
+    /// @notice rewards are calculated here.
+    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+    function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
+      // if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
+      uint256 vaultNumber = baskets[_basketId].vaultNumber;
+      uint256 currentRebalancingPeriod = vaults[vaultNumber].rebalancingPeriod;
+      uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
+
+      console.log("current rebalancing %s", currentRebalancingPeriod);
+      console.log("last basket rebalancing %s", lastRebalancingPeriod);
+
+      if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
+
+      for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
+        // for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].vaultNumber); i++) {
+        //   if (baskets[_basketId].allocations[i] == 0) continue;
+        //   baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
+        // }
       }
     }
 
@@ -433,24 +453,6 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _protocolId
     ) internal view returns(int256) {
       return vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId];
-    }
-
-    /// @notice rewards are calculated here.
-    /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-    function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
-        // if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
-        // address ETFaddress = vaults[baskets[_basketId].vaultNumber];
-        // uint256 currentRebalancingPeriod = IVault(ETFaddress).rebalancingPeriod();
-        // uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
-
-        // if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
-
-        // for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
-        //     for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].vaultNumber); i++) {
-        //         if (baskets[_basketId].allocations[i] == 0) continue;
-        //         baskets[_basketId].totalUnRedeemedRewards += IVault(ETFaddress).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
-        //     }
-        // }
     }
 
     /// @notice redeem funds from basket in the game.

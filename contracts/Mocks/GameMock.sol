@@ -55,6 +55,16 @@ contract GameMock is Game {
         return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
     }
 
+    function setRewardsPerLockedTokenTEST(
+      uint256 _vaultNumber, 
+      uint16 _chainId, 
+      uint256 _rebalancingPeriod, 
+      uint256 _protocolId,
+      int256 _reward
+    ) external {
+      vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId] = _reward;
+    }
+
     function getRewardsPerLockedTokenTEST(
       uint256 _vaultNumber, 
       uint16 _chainId, 
