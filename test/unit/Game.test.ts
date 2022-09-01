@@ -14,6 +14,7 @@ import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
 import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
 
+const basketNum = 0;
 const chainIds = [10, 100, 1000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
@@ -204,21 +205,26 @@ describe.only("Testing Game", async () => {
 
   it.only("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
     await game.connect(dao).addETF(vault.address);
-    await game.mintNewBasket(0);
+    await game.mintNewBasket(basketNum);
     // set liquidity vault to 0 for easy calculation
     await vault.setLiquidityPerc(0);
 
     const amount = 10_000;
     const amountUSDC = parseUSDC(amount.toString());
 
+    const totalAllocations = 2000;
     const allocations = [ 
       [200, 0, 0, 200, 0], // 400
       [100, 0, 200, 100, 200], // 600
       [0, 100, 200, 300, 400], // 1000 
     ];
     
-    await DerbyToken.increaseAllowance(game.address, 2000);
-    await game.rebalanceBasket(0, allocations);
+    await DerbyToken.increaseAllowance(game.address, totalAllocations * 2);
+    await game.rebalanceBasket(basketNum, allocations);
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.rebalanceBasket(basketNum, allocations);
     // expect(rewards).to.be.closeTo('51111108', 500000);
   });
 

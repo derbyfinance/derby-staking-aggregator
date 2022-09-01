@@ -45,7 +45,7 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => int256) deltaAllocationChain;
       // chainId => protocolNumber => deltaAllocation
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
-      // chainId => rebalancing period => protocol id.
+      // chainId => rebalancing period => protocol id => rewardPerLockedToken.
       mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
     }
 
@@ -330,9 +330,9 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice rewards are calculated here.
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
-      // if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
-      uint256 vaultNumber = baskets[_basketId].vaultNumber;
-      uint256 currentRebalancingPeriod = vaults[vaultNumber].rebalancingPeriod;
+      if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
+      uint256 vaultNum = baskets[_basketId].vaultNumber;
+      uint256 currentRebalancingPeriod = vaults[vaultNum].rebalancingPeriod;
       uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
       console.log("current rebalancing %s", currentRebalancingPeriod);
@@ -341,10 +341,17 @@ contract Game is ERC721, ReentrancyGuard {
       if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
 
       for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
-        // for (uint i = 0; i < controller.latestProtocolId(baskets[_basketId].vaultNumber); i++) {
-        //   if (baskets[_basketId].allocations[i] == 0) continue;
-        //   baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
-        // }
+        for (uint k = 0; k < chainIds.length; k++) {
+          uint16 chain = chainIds[k];
+
+          for (uint i = 0; i < latestProtocolId[chain]; i++) {
+            if (baskets[_basketId].allocations[chain][i] == 0) continue;
+            int256 reward = getRewardsPerLockedToken(vaultNum, chain, j, i);
+            console.log("reward %s", uint(reward));
+            baskets[_basketId].totalUnRedeemedRewards += reward;
+            // baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
+          }
+        }
       }
     }
 
@@ -427,6 +434,7 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    // Only provider modifier, basket should not be able to rebalance before this step
     /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used
@@ -436,11 +444,11 @@ contract Game is ERC721, ReentrancyGuard {
       uint16 _chainId,
       int256[] memory _rewards
     ) external {
-      vaults[_vaultNumber].rebalancingPeriod ++;
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {
         console.log("Game: rewards %s", uint(_rewards[i]));
+        int256 lastReward = getRewardsPerLockedToken(_vaultNumber, _chainId, rebalancingPeriod - 1, i);
         vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
       }
     }
