@@ -100,11 +100,12 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await vault.setDeltaAllocationsReceivedTEST(true);
     await rebalanceETF(vault);
 
+    await game.upRebalancingPeriod(vaultNumber);
     await vault.sendPriceAndRewardsToGame();
 
     for (const protocol of protocols.values()) {
       expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
-      expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 1, protocol.number)).to.be.equal(0);
+      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 1, protocol.number)).to.be.equal(0);
     }
   });
 
@@ -129,17 +130,19 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await vault.setDeltaAllocationsReceivedTEST(true);
     await rebalanceETF(vault);
 
+    await game.upRebalancingPeriod(vaultNumber);
     await vault.sendPriceAndRewardsToGame();
+
 
     for (const protocol of protocols.values()) {
       expect(await vault.getHistoricalPriceTEST(2, protocol.number)).to.be.equal(protocol.price);
     }
 
     // 1_000_000 - 100_000 (liq) * percentage gain
-    expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 2, compoundVault.number)).to.be.equal(899953);
-    expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 2, aaveVault.number)).to.be.equal(449976);
-    expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 2, yearnVault.number)).to.be.equal(89995);
-    expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 2, compoundDAIVault.number)).to.be.equal(8999);
-    expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 2, aaveUSDTVault.number)).to.be.equal(17999);
+    expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, compoundVault.number)).to.be.equal(899953);
+    expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, aaveVault.number)).to.be.equal(449976);
+    expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, yearnVault.number)).to.be.equal(89995);
+    expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, compoundDAIVault.number)).to.be.equal(8999);
+    expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, aaveUSDTVault.number)).to.be.equal(17999);
   });
 });
