@@ -103,7 +103,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await vault.sendPriceAndRewardsToGame();
 
     for (const protocol of protocols.values()) {
-      expect(await game.getHistoricalPriceTEST(0, homeChain, 1, protocol.number)).to.be.equal(protocol.price);
+      expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
       expect(await game.getRewardsPerLockedTokenTEST(0, homeChain, 1, protocol.number)).to.be.equal(0);
     }
   });
@@ -132,7 +132,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await vault.sendPriceAndRewardsToGame();
 
     for (const protocol of protocols.values()) {
-      expect(await game.getHistoricalPriceTEST(0, homeChain, 2, protocol.number)).to.be.equal(protocol.price);
+      expect(await vault.getHistoricalPriceTEST(2, protocol.number)).to.be.equal(protocol.price);
     }
 
     // 1_000_000 - 100_000 (liq) * percentage gain

@@ -254,8 +254,6 @@ contract Vault is VaultToken, ReentrancyGuard {
     require(deltaAllocationsReceived, "Delta allocations not received");
     
     rebalancingPeriod++;
-
-    console.log("rebalancing Period %s", rebalancingPeriod);
     
     claimTokens();
     settleDeltaAllocation();
@@ -350,23 +348,19 @@ contract Vault is VaultToken, ReentrancyGuard {
   function sendPriceAndRewardsToGame() external {
     require(state == State.SendPrices, "Wrong state");
 
-    (uint256[] memory prices, int256[] memory rewards) = pricesAndRewardsToArray();
-    IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, prices, rewards);
-    
+    int256[] memory rewards = pricesAndRewardsToArray();
+    IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, rewards);
+
     state = State.WaitingForController;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
-  /// @return prices Array with prices of all protocols => index matches protocolId
   /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-  function pricesAndRewardsToArray() internal view returns(uint256[] memory prices, int256[] memory rewards) {
+  function pricesAndRewardsToArray() internal view returns(int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
-
-    prices = new uint[](latestId);
     rewards = new int[](latestId);
 
     for (uint256 i = 0; i < latestId; i++) {
-      prices[i] = historicalPrices[rebalancingPeriod][i];
       rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
     }
   }

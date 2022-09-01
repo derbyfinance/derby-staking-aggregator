@@ -45,9 +45,6 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => int256) deltaAllocationChain;
       // chainId => protocolNumber => deltaAllocation
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
-
-      // chainId => rebalancing period => protocol id.
-      mapping(uint16 => mapping(uint256 => mapping(uint256 => uint256))) historicalPrices;
       // chainId => rebalancing period => protocol id.
       mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
     }
@@ -413,32 +410,19 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used
-    /// @param _prices Array with prices of all protocols => index matches protocolId
     /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
     function settlePriceAndRewards(
       uint256 _vaultNumber,
       uint16 _chainId,
-      uint256[] memory _prices, 
       int256[] memory _rewards
     ) external {
       vaults[_vaultNumber].rebalancingPeriod ++;
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
-      for (uint256 i = 0; i < _prices.length; i++) {
-        console.log("Game: prices %s, rewards %s", _prices[i], uint(_rewards[i]));
-        vaults[_vaultNumber].historicalPrices[_chainId][rebalancingPeriod][i] = _prices[i];
+      for (uint256 i = 0; i < _rewards.length; i++) {
+        console.log("Game: rewards %s", uint(_rewards[i]));
         vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
       }
-    }
-
-    /// @notice Getter for getHistoricalPrice for given vaultNumber => chainId => rebalancingPeriod => protocolId
-    function getHistoricalPrice(
-      uint256 _vaultNumber, 
-      uint16 _chainId, 
-      uint256 _rebalancingPeriod, 
-      uint256 _protocolId
-    ) internal view returns(uint256) {
-      return vaults[_vaultNumber].historicalPrices[_chainId][_rebalancingPeriod][_protocolId];
     }
 
     /// @notice Getter for rewardsPerLockedToken for given vaultNumber => chainId => rebalancingPeriod => protocolId

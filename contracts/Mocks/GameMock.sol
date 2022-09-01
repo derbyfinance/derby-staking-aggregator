@@ -54,15 +54,6 @@ contract GameMock is Game {
     ) external view returns(int256) {
         return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
     }
-        
-    function getHistoricalPriceTEST(
-      uint256 _vaultNumber, 
-      uint16 _chainId, 
-      uint256 _rebalancingPeriod, 
-      uint256 _protocolId
-    ) external view returns(uint256) {
-      return getHistoricalPrice(_vaultNumber, _chainId, _rebalancingPeriod, _protocolId);
-    }
 
     function getRewardsPerLockedTokenTEST(
       uint256 _vaultNumber, 

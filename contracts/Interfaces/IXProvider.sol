@@ -22,7 +22,6 @@ interface IXProvider {
   function pushPriceAndRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId, 
-    uint256[] memory _prices, 
     int256[] memory _rewards
   ) external;
 }

@@ -9,7 +9,6 @@ interface IGame {
     function settlePriceAndRewards(
       uint256 _vaultNumber, 
       uint16 _chainId, 
-      uint256[] memory prices, 
       int256[] memory rewards
     ) external;
 }

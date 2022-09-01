@@ -322,20 +322,18 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Push price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
-  /// @param _prices Array with prices of all protocols in vault => index matches protocolId
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function pushPriceAndRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId,
-    uint256[] memory _prices,
     int256[] memory _rewards
   ) external onlyVaults {
     if (_chainId == homeChainId) {
-      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _prices, _rewards);
+      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _rewards);
     }
     else {
-      bytes4 selector = bytes4(keccak256("receivePriceAndRewardsToGame(uint256,uint16,uint256[],int256[])"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _prices, _rewards);
+      bytes4 selector = bytes4(keccak256("receivePriceAndRewardsToGame(uint256,uint16,int256[])"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
       xSend(gameChain, callData);
     }
@@ -344,15 +342,13 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Receives price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
-  /// @param _prices Array with prices of all protocols => index matches protocolId
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function receivePriceAndRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId,
-    uint256[] memory _prices,
     int256[] memory _rewards
   ) external onlySelf {
-    return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _prices, _rewards);
+    return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
