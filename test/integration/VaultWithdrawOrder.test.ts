@@ -60,7 +60,7 @@ describe.skip("Testing VaultWithdrawOrder, integration test", async () => {
     ]);
 
     console.log('---------Deposit and rebalance with 100k----------');
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
     const gasUsed = formatUSDC(await rebalanceETF(vault));
     const vaultLiquidity = 10_000
 
@@ -85,7 +85,7 @@ describe.skip("Testing VaultWithdrawOrder, integration test", async () => {
     expect(formatUSDC(totalAave)).to.be.closeTo(45_000, 2);
 
     console.log('---------Withdraw 20k----------');
-    await vault.connect(user).withdrawETF(parseUSDC('20000'));
+    await vault.connect(user).withdraw(parseUSDC('20000'));
     let exchangeRate = await vault.exchangeRate();
     let tokensWithdrawed =  parseUSDC('20000').mul(exchangeRate).div(uScale)
     let expectedTotalUnderlying = amountUSDC.sub(tokensWithdrawed).toNumber() / uScale;
@@ -114,7 +114,7 @@ describe.skip("Testing VaultWithdrawOrder, integration test", async () => {
     expect(formatUSDC(totalYearn)).to.be.closeTo(15_000, 2);
 
     console.log('---------Withdraw 60k----------');
-    await vault.connect(user).withdrawETF(parseUSDC('60000'));
+    await vault.connect(user).withdraw(parseUSDC('60000'));
     exchangeRate = await vault.exchangeRate();
     tokensWithdrawed =  parseUSDC('80000').mul(exchangeRate).div(uScale)
     expectedTotalUnderlying = amountUSDC.sub(tokensWithdrawed).toNumber() / uScale;
@@ -144,7 +144,7 @@ describe.skip("Testing VaultWithdrawOrder, integration test", async () => {
 
     console.log('---------Withdraw 60k = more than balance----------');
     // Should be reverted
-    await expect(vault.connect(user).withdrawETF(parseUSDC('60000'))).to.be.reverted;
+    await expect(vault.connect(user).withdraw(parseUSDC('60000'))).to.be.reverted;
   });
   
 

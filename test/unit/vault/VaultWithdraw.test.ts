@@ -62,7 +62,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
       aaveVault.setCurrentAllocation(vault, 60),
       yearnVault.setCurrentAllocation(vault, 20),
     ]);
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
 
     // LP balance should be 9k
     expect(await vault.balanceOf(userAddr)).to.be.equal(amountUSDC);
@@ -77,7 +77,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     ]);
 
     await vault.setTotalUnderlying();
-    await vault.connect(user).withdrawETF(amountUSDC); // withdraw 9k == everything
+    await vault.connect(user).withdraw(amountUSDC); // withdraw 9k == everything
 
     expect(await vault.totalSupply()).to.be.equal(0);
     expect(await vault.balanceOf(userAddr)).to.be.equal(0);
@@ -88,7 +88,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     const mockedBalanceComp = parseUnits('5000', 8);
     const profit = parseUSDC('300');
     const profitComp = parseUnits('300', 8);
-    await vault.connect(user).depositETF(parseUSDC('20000'));
+    await vault.connect(user).deposit(parseUSDC('20000'));
 
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')));
     expect(Number(formatUSDC(await vault.totalSupply()))).to.be.equal(20_000);
@@ -104,7 +104,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     ]);
     
     await vault.setTotalUnderlying();
-    await vault.connect(user).withdrawETF(parseUSDC('2000')); 
+    await vault.connect(user).withdraw(parseUSDC('2000')); 
 
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('18000')); // TS == 20k - 2k
     expect(await vault.balanceOf(userAddr)).to.be.equal(parseUSDC('18000')); // LP balance == 20k - 2k

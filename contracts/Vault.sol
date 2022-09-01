@@ -133,7 +133,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function depositETF(uint256 _amount) external nonReentrant returns(uint256 shares) {
+  function deposit(uint256 _amount) external nonReentrant returns(uint256 shares) {
     uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
@@ -154,7 +154,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
   /// @return value Amount received by seller in vaultCurrency
-  function withdrawETF(uint256 _amount) external nonReentrant returns(uint256 value) {
+  function withdraw(uint256 _amount) external nonReentrant returns(uint256 value) {
     value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
 
