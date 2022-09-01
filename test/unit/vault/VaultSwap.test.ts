@@ -76,7 +76,7 @@ describe("Testing VaultSwap, unit test", async () => {
     const amountToDeposit = parseUSDC('100000');
 
     // Deposit and rebalance with 100k in only Compound
-    await vault.connect(user).depositETF(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit);
     await vault.setVaultState(3);
     await vault.rebalanceETF();
     // mine 100 blocks to gain COMP Tokens
@@ -170,7 +170,7 @@ describe("Testing VaultSwap, unit test", async () => {
     ]);
 
     // Deposit and rebalance with 100k 
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     let gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed)
@@ -238,7 +238,7 @@ describe("Testing VaultSwap, unit test", async () => {
       aaveVault.setDeltaAllocation(vault, user, 60),
       yearnVault.setDeltaAllocation(vault, user, 20),
     ]);
-    await vault.connect(user).depositETF(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit);
 
     const ETHBalanceBefore = await dao.getBalance();
     await vault.setVaultState(3);
@@ -262,7 +262,7 @@ describe("Testing VaultSwap, unit test", async () => {
     ]);
 
     // Deposit and rebalance with 100k 
-    await vault.connect(user).depositETF(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit);
     await vault.setVaultState(3);
     let gasUsed = formatUSDC(await rebalanceETF(vault));
 
@@ -280,7 +280,7 @@ describe("Testing VaultSwap, unit test", async () => {
       yearnVault.setDeltaAllocation(vault, user, 120),
     ]);
 
-    await vault.connect(user).withdrawETF(amountToWithdraw);
+    await vault.connect(user).withdraw(amountToWithdraw);
     await vault.setVaultState(3);
     gasUsed = formatUSDC(await rebalanceETF(vault));
 
@@ -293,7 +293,7 @@ describe("Testing VaultSwap, unit test", async () => {
 
     console.log("-----------------withdraw another 42k = 92k total-----------------")
     amountToWithdraw = parseUSDC('42000');
-    await vault.connect(user).withdrawETF(amountToWithdraw);
+    await vault.connect(user).withdraw(amountToWithdraw);
     await vault.setVaultState(3);
     await rebalanceETF(vault);
 

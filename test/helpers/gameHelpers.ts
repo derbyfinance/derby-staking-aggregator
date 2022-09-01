@@ -47,7 +47,7 @@
 //     ]);
 
 //     // await setDeltaAllocationsWithGame(vault, gameMock, allProtocols);
-//     await vault.connect(user).depositETF(amountUSDC);
+//     await vault.connect(user).deposit(amountUSDC);
 
 //     // set balance after
 //     price = Math.round(price * 1.1);
