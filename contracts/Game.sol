@@ -94,6 +94,10 @@ contract Game is ERC721, ReentrancyGuard {
       _;
     }
 
+    modifier onlyXProvider {
+      require(msg.sender == xProvider, "Vault: only xProvider");
+      _;
+    }
 
     constructor(
       string memory name_, 
@@ -411,11 +415,11 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used
     /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-    function settlePriceAndRewards(
+    function settleRewards (
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
-    ) external {
+    ) external onlyXProvider {
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {

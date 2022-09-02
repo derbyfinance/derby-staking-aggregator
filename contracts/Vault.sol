@@ -31,7 +31,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   // state 1 Allocation amount received and ready to send funds over to xController
   // state 2 Allocation amount 0 received => will receive funds from xController
   // state 3 Allocation amount sent or received and ready to rebalance the vault itself
-  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendPrices }
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendRewardsPerToken  }
   State public state;
 
   bool public deltaAllocationsReceived; 
@@ -266,7 +266,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
-    state = State.SendPrices;
+    state = State.SendRewardsPerToken ;
     deltaAllocationsReceived = false;
   }
 
@@ -345,18 +345,18 @@ contract Vault is VaultToken, ReentrancyGuard {
   }
 
   /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
-  function sendPriceAndRewardsToGame() external {
-    require(state == State.SendPrices, "Wrong state");
+  function sendRewardsToGame() external {
+    require(state == State.SendRewardsPerToken , "Wrong state");
 
-    int256[] memory rewards = pricesAndRewardsToArray();
-    IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, rewards);
+    int256[] memory rewards = rewardsToArray();
+    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
 
     state = State.WaitingForController;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
   /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-  function pricesAndRewardsToArray() internal view returns(int256[] memory rewards) {
+  function rewardsToArray() internal view returns(int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
     rewards = new int[](latestId);
 

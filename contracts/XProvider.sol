@@ -323,16 +323,16 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-  function pushPriceAndRewardsToGame(
+  function pushRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId,
     int256[] memory _rewards
   ) external onlyVaults {
     if (_chainId == homeChainId) {
-      return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _rewards);
+      return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     }
     else {
-      bytes4 selector = bytes4(keccak256("receivePriceAndRewardsToGame(uint256,uint16,int256[])"));
+      bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint16,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
       xSend(gameChain, callData);
@@ -343,12 +343,12 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-  function receivePriceAndRewardsToGame(
+  function receiveRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId,
     int256[] memory _rewards
   ) external onlySelf {
-    return IGame(game).settlePriceAndRewards(_vaultNumber, _chainId, _rewards);
+    return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

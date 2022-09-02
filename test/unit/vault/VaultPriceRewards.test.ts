@@ -67,6 +67,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
       vault.setChainIds(homeChain),
       xProvider.setGameChainId(homeChain),
       xProvider.toggleVaultWhitelist(vault.address),
+      game.connect(dao).setXProvider(xProvider.address),
     ]);
 
     for (const protocol of protocols.values()) {
@@ -101,7 +102,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await rebalanceETF(vault);
 
     await game.upRebalancingPeriod(vaultNumber);
-    await vault.sendPriceAndRewardsToGame();
+    await vault.sendRewardsToGame();
 
     for (const protocol of protocols.values()) {
       expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
@@ -131,7 +132,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     await rebalanceETF(vault);
 
     await game.upRebalancingPeriod(vaultNumber);
-    await vault.sendPriceAndRewardsToGame();
+    await vault.sendRewardsToGame();
 
 
     for (const protocol of protocols.values()) {
