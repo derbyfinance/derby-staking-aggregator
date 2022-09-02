@@ -340,17 +340,16 @@ contract Game is ERC721, ReentrancyGuard {
 
       if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
 
-      for (uint j = lastRebalancingPeriod; j <= currentRebalancingPeriod; j++) {
-        for (uint k = 0; k < chainIds.length; k++) {
-          uint16 chain = chainIds[k];
+      for (uint k = 0; k < chainIds.length; k++) {
+        uint16 chain = chainIds[k];
 
-          for (uint i = 0; i < latestProtocolId[chain]; i++) {
-            if (baskets[_basketId].allocations[chain][i] == 0) continue;
-            int256 reward = getRewardsPerLockedToken(vaultNum, chain, j, i);
-            console.log("reward %s", uint(reward));
-            baskets[_basketId].totalUnRedeemedRewards += reward;
-            // baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
-          }
+        for (uint i = 0; i < latestProtocolId[chain]; i++) {
+          if (baskets[_basketId].allocations[chain][i] == 0) continue;
+          int256 lastRebalanceReward = getRewardsPerLockedToken(vaultNum, chain, lastRebalancingPeriod, i);
+          int256 currentReward = getRewardsPerLockedToken(vaultNum, chain, currentRebalancingPeriod, i);
+          console.log("reward %s", uint(currentReward - lastRebalanceReward));
+          baskets[_basketId].totalUnRedeemedRewards += currentReward - lastRebalanceReward;
+          // baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
         }
       }
     }
@@ -443,13 +442,13 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
-    ) external {
+    ) public {
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {
-        console.log("Game: rewards %s", uint(_rewards[i]));
         int256 lastReward = getRewardsPerLockedToken(_vaultNumber, _chainId, rebalancingPeriod - 1, i);
-        vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
+        vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = lastReward + _rewards[i];
+        console.log("Game: cumulative rewards %s", uint(vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i]));
       }
     }
 

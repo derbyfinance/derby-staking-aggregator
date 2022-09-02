@@ -212,18 +212,31 @@ describe.only("Testing Game", async () => {
     const amount = 10_000;
     const amountUSDC = parseUSDC(amount.toString());
 
-    const totalAllocations = 2000;
-    const allocations = [ 
+    const totalAllocations = 1000;
+    let allocations = [ 
       [200, 0, 0, 200, 0], // 400
       [100, 0, 200, 100, 200], // 600
-      [0, 100, 200, 300, 400], // 1000 
     ];
     
     await DerbyToken.increaseAllowance(game.address, totalAllocations * 2);
     await game.rebalanceBasket(basketNum, allocations);
+
     await game.upRebalancingPeriod(vaultNumber);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[0], [100_000, 10_000, 5_000, 0, 1_000]);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[1], [20_000, 2_000, 1_000, 20_000, 2_000]);
+
     await game.upRebalancingPeriod(vaultNumber);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[0], [100_000, 10_000, 5_000, 0, 1_000]);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[1], [20_000, 2_000, 1_000, 20_000, 2_000]);
+
     await game.upRebalancingPeriod(vaultNumber);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[0], [100_000, 10_000, 5_000, 0, 1_000]);
+    await game.mockPriceAndRewards(vaultNumber, chainIds[1], [20_000, 2_000, 1_000, 20_000, 2_000]);
+
+    allocations = [ 
+      [200, 0, 0, 200, 0], // 400
+      [100, 0, 200, 100, 200], // 600
+    ];
     await game.rebalanceBasket(basketNum, allocations);
     // expect(rewards).to.be.closeTo('51111108', 500000);
   });
