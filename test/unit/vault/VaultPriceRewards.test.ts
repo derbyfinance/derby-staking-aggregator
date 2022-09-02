@@ -80,7 +80,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     
     // await vault.setTotalAllocatedTokensTest(parseEther("1")); 
     await vault.setTotalAllocatedTokensTest(10_000); // 10k
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
 
     compoundVault.setPrice(parseUnits("1000", compoundVault.decimals));
     aaveVault.setPrice(parseUnits("2000", aaveVault.decimals));
