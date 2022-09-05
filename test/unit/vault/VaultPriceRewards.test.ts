@@ -80,7 +80,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
     const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
     
     await vault.setTotalAllocatedTokensTest(parseEther("10000")); // 10k 
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
 
     compoundVault.setPrice(parseUnits("1000", compoundVault.decimals));
     aaveVault.setPrice(parseUnits("2000", aaveVault.decimals));
