@@ -332,12 +332,10 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
     function addToTotalRewards(uint256 _basketId) internal onlyBasketOwner(_basketId) {
       if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
+
       uint256 vaultNum = baskets[_basketId].vaultNumber;
       uint256 currentRebalancingPeriod = vaults[vaultNum].rebalancingPeriod;
       uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
-
-      console.log("current rebalancing %s", currentRebalancingPeriod);
-      console.log("last basket rebalancing %s", lastRebalancingPeriod);
 
       if(currentRebalancingPeriod <= lastRebalancingPeriod) return;
 
@@ -346,12 +344,14 @@ contract Game is ERC721, ReentrancyGuard {
         console.log("chain %s", chain);
 
         for (uint i = 0; i < latestProtocolId[chain]; i++) {
-          if (baskets[_basketId].allocations[chain][i] == 0) continue;
+          int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
+          if (allocation == 0) continue;
+
           int256 lastRebalanceReward = getRewardsPerLockedToken(vaultNum, chain, lastRebalancingPeriod, i);
           int256 currentReward = getRewardsPerLockedToken(vaultNum, chain, currentRebalancingPeriod, i);
-          int256 allocation = basketAllocationInProtocol(_basketId, chain, i);
-          console.log("reward %s", uint((currentReward - lastRebalanceReward) * (allocation  / 1E18 )));
-          baskets[_basketId].totalUnRedeemedRewards += (currentReward - lastRebalanceReward) * (allocation  / 1E18 );
+          baskets[_basketId].totalUnRedeemedRewards += (currentReward - lastRebalanceReward) * allocation;
+          
+          console.log("reward %s", uint((currentReward - lastRebalanceReward) * allocation));
         }
       }
     }

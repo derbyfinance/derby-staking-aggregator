@@ -214,11 +214,11 @@ describe.only("Testing Game", async () => {
   });
 
   it("Calculate rewards during rebalance Basket", async function() {
-    const totalAllocations = parseEther('1000');
     let allocations = [ 
-      [parseEther('200'), 0, 0, parseEther('200'), 0], // 400
-      [parseEther('100'), 0, parseEther('200'), parseEther('100'), parseEther('200')], // 600
+      [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
+      [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
     ];
+    const totalAllocations = parseEther('1000');
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
@@ -229,6 +229,7 @@ describe.only("Testing Game", async () => {
     await DerbyToken.increaseAllowance(game.address, totalAllocations);
     await game.rebalanceBasket(basketNum, allocations);
 
+    // This rebalance should be skipped for the basket
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
@@ -247,16 +248,25 @@ describe.only("Testing Game", async () => {
       game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
     ]);
 
-    allocations = [ 
+    const newAllocations = [ 
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0], 
     ];
-    await game.rebalanceBasket(basketNum, allocations);
+    await game.rebalanceBasket(basketNum, newAllocations);
 
     const rewards = await game.basketUnredeemedRewards(0);
-    console.log({ rewards })
 
-    // expect(rewards).to.be.equal(2120000); // rebalancing period not correct? CHECK
+    /*
+    Rewards * allocation = totalReward
+    4000 * 200 = 800_000
+    200 * 200 = 40_000
+    8_000 * 100 = 800_000
+    2_000 * 200 = 400_000
+    400 * 100 = 40_000
+    200 * 200 = 40_000
+    total = 2120000
+    */
+    expect(rewards).to.be.equal(2120000); // rebalancing period not correct? CHECK
   });
 
   // it.skip("Should be able to redeem funds via vault function", async function() {
