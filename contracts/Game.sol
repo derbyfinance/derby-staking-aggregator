@@ -284,9 +284,10 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _basketId, 
       int256[][] memory _deltaAllocations
     ) external onlyBasketOwner(_basketId) nonReentrant {    
-      addToTotalRewards(_basketId);
       uint256 vaultNumber = baskets[_basketId].vaultNumber;
       require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
+
+      addToTotalRewards(_basketId);
 
       int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
       lockOrUnlockTokens(_basketId, totalDelta);
@@ -342,14 +343,15 @@ contract Game is ERC721, ReentrancyGuard {
 
       for (uint k = 0; k < chainIds.length; k++) {
         uint16 chain = chainIds[k];
+        console.log("chain %s", chain);
 
         for (uint i = 0; i < latestProtocolId[chain]; i++) {
           if (baskets[_basketId].allocations[chain][i] == 0) continue;
           int256 lastRebalanceReward = getRewardsPerLockedToken(vaultNum, chain, lastRebalancingPeriod, i);
           int256 currentReward = getRewardsPerLockedToken(vaultNum, chain, currentRebalancingPeriod, i);
-          console.log("reward %s", uint(currentReward - lastRebalanceReward));
-          baskets[_basketId].totalUnRedeemedRewards += currentReward - lastRebalanceReward;
-          // baskets[_basketId].totalUnRedeemedRewards += IVault(vault).rewardPerLockedToken(j, i) * int256(baskets[_basketId].allocations[i]);
+          int256 allocation = basketAllocationInProtocol(_basketId, chain, i);
+          console.log("reward %s", uint((currentReward - lastRebalanceReward) * (allocation  / 1E18 )));
+          baskets[_basketId].totalUnRedeemedRewards += (currentReward - lastRebalanceReward) * (allocation  / 1E18 );
         }
       }
     }

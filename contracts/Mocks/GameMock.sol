@@ -36,6 +36,10 @@ contract GameMock is Game {
         IVault(_vault).setDeltaAllocations(_protocolNum, _allocation);
     }
 
+    function setXChainRebalanceState(uint256 _vaultNumber, bool _state) external {
+      isXChainRebalancing[_vaultNumber] = _state;
+    }
+
     function triggerRedeemedRewardsVault(address _vault, address user, uint256 amount) external {
         IVault(_vault).redeemRewards(user, amount);
     }
@@ -59,7 +63,7 @@ contract GameMock is Game {
         return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
     }
 
-    function mockPriceAndRewards(
+    function mockRewards(
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
