@@ -324,7 +324,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     else amountToProtocol = int(_totalUnderlying) * currentAllocations[_protocol] / totalAllocatedTokens; 
   }
 
-  /// @notice Stores the historical price and the reward per locked token.
+  /// @notice Stores the historical price and the reward per rounded locked token, ignoring decimals.
   /// @dev formula yield protocol i at time t: y(it) = (P(it) - P(it-1)) / P(it-1).
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t 
@@ -335,9 +335,10 @@ contract Vault is VaultToken, ReentrancyGuard {
     historicalPrices[rebalancingPeriod][_protocolId] = price;
     if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
     int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
-    int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-    int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
-    if (totalAllocatedTokens == 0) {
+    int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
+    int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
+    int256 denominator = totalAllocatedTokensRounded * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
+    if (totalAllocatedTokensRounded == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
