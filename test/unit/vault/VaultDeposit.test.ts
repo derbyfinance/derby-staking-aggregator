@@ -60,7 +60,7 @@ describe("Testing VaultDeposit, unit test", async () => {
       aaveVault.setCurrentAllocation(vault, 60),
       yearnVault.setCurrentAllocation(vault, 20),
     ]);
-    await vault.connect(user).depositETF(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
 
     const LPBalanceUser = await vault.balanceOf(userAddr);
     expect(LPBalanceUser).to.be.equal(amountUSDC);
@@ -77,7 +77,7 @@ describe("Testing VaultDeposit, unit test", async () => {
     ]);
 
     await vault.setTotalUnderlying();
-    await vault.connect(user).depositETF(parseUSDC('1000'));
+    await vault.connect(user).deposit(parseUSDC('1000'));
     
     // expect LP Token balance User == 9k + 1k because Expect price == 1 i.e 1:1
     expect(await vault.exchangeRate()).to.be.equal(parseUSDC('1'));
@@ -99,7 +99,7 @@ describe("Testing VaultDeposit, unit test", async () => {
 
     console.log(`Depositing 500 into the vault`);
     const LPBalanceBefore = await vault.balanceOf(userAddr);
-    await vault.connect(user).depositETF(parseUSDC('500'));
+    await vault.connect(user).deposit(parseUSDC('500'));
     // Expected shares to receive = 500 / 1.03 = 485.43
     const expectedShares = 500 / 1.03;
     const sharesReceived = formatUSDC((await vault.balanceOf(userAddr)).sub(LPBalanceBefore));

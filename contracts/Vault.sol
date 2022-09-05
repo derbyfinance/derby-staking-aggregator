@@ -31,7 +31,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   // state 1 Allocation amount received and ready to send funds over to xController
   // state 2 Allocation amount 0 received => will receive funds from xController
   // state 3 Allocation amount sent or received and ready to rebalance the vault itself
-  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendPrices }
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendRewardsPerToken  }
   State public state;
 
   bool public deltaAllocationsReceived; 
@@ -133,7 +133,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function depositETF(uint256 _amount) external nonReentrant returns(uint256 shares) {
+  function deposit(uint256 _amount) external nonReentrant returns(uint256 shares) {
     uint256 balanceBefore = vaultCurrency.balanceOf(address(this));
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = vaultCurrency.balanceOf(address(this));
@@ -154,7 +154,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
   /// @return value Amount received by seller in vaultCurrency
-  function withdrawETF(uint256 _amount) external nonReentrant returns(uint256 value) {
+  function withdraw(uint256 _amount) external nonReentrant returns(uint256 value) {
     value = _amount * exchangeRate() / uScale;
     require(value > 0, "no value");
 
@@ -266,7 +266,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
-    state = State.SendPrices;
+    state = State.SendRewardsPerToken ;
     deltaAllocationsReceived = false;
   }
 
@@ -346,18 +346,18 @@ contract Vault is VaultToken, ReentrancyGuard {
   }
 
   /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
-  function sendPriceAndRewardsToGame() external {
-    require(state == State.SendPrices, "Wrong state");
+  function sendRewardsToGame() external {
+    require(state == State.SendRewardsPerToken , "Wrong state");
 
-    int256[] memory rewards = pricesAndRewardsToArray();
-    IXProvider(xProvider).pushPriceAndRewardsToGame(vaultNumber, homeChainId, rewards);
+    int256[] memory rewards = rewardsToArray();
+    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
 
     state = State.WaitingForController;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
   /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-  function pricesAndRewardsToArray() internal view returns(int256[] memory rewards) {
+  function rewardsToArray() internal view returns(int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
     rewards = new int[](latestId);
 

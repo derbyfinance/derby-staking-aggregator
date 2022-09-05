@@ -40,6 +40,10 @@ contract GameMock is Game {
         IVault(_vault).redeemRewards(user, amount);
     }
 
+    function upRebalancingPeriod(uint256 _vaultNumber) external {
+        vaults[_vaultNumber].rebalancingPeriod ++;
+    }
+
     function getDeltaAllocationChainTEST(
         uint256 _ETFNumber, 
         uint256 _chainId 
