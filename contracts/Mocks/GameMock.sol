@@ -68,7 +68,12 @@ contract GameMock is Game {
       uint16 _chainId,
       int256[] memory _rewards
     ) external {
-      return settlePriceAndRewards(_vaultNumber, _chainId, _rewards);
+       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
+
+      for (uint256 i = 0; i < _rewards.length; i++) {
+        int256 lastReward = getRewardsPerLockedToken(_vaultNumber, _chainId, rebalancingPeriod - 1, i);
+        vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = lastReward + _rewards[i];
+      }
     }
 
     function getRewardsPerLockedTokenTEST(

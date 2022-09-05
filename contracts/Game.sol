@@ -448,7 +448,7 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
-    ) public onlyXProvider {
+    ) external onlyXProvider {
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {
