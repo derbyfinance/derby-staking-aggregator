@@ -40,6 +40,10 @@ contract GameMock is Game {
         IVault(_vault).redeemRewards(user, amount);
     }
 
+    function upRebalancingPeriod(uint256 _vaultNumber) external {
+        vaults[_vaultNumber].rebalancingPeriod ++;
+    }
+
     function getDeltaAllocationChainTEST(
         uint256 _ETFNumber, 
         uint256 _chainId 
@@ -53,5 +57,14 @@ contract GameMock is Game {
         uint256 _protocolNum
     ) external view returns(int256) {
         return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
+    }
+
+    function getRewardsPerLockedTokenTEST(
+      uint256 _vaultNumber, 
+      uint16 _chainId, 
+      uint256 _rebalancingPeriod, 
+      uint256 _protocolId
+    ) external view returns(int256) {
+      return getRewardsPerLockedToken(_vaultNumber, _chainId, _rebalancingPeriod, _protocolId);
     }
 }

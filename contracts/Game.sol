@@ -45,6 +45,8 @@ contract Game is ERC721, ReentrancyGuard {
       mapping(uint256 => int256) deltaAllocationChain;
       // chainId => protocolNumber => deltaAllocation
       mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
+      // chainId => rebalancing period => protocol id.
+      mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
     }
 
     address public derbyTokenAddress;
@@ -92,6 +94,10 @@ contract Game is ERC721, ReentrancyGuard {
       _;
     }
 
+    modifier onlyXProvider {
+      require(msg.sender == xProvider, "Vault: only xProvider");
+      _;
+    }
 
     constructor(
       string memory name_, 
@@ -403,6 +409,33 @@ contract Game is ERC721, ReentrancyGuard {
         // allocation to zero
         setDeltaAllocationProtocol(_vaultNumber, _chainId, i, 0);
       }
+    }
+
+    /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
+    /// @param _vaultNumber Number of the vault
+    /// @param _chainId Number of chain used
+    /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
+    function settleRewards (
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      int256[] memory _rewards
+    ) external onlyXProvider {
+      uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
+
+      for (uint256 i = 0; i < _rewards.length; i++) {
+        console.log("Game: rewards %s", uint(_rewards[i]));
+        vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = _rewards[i];
+      }
+    }
+
+    /// @notice Getter for rewardsPerLockedToken for given vaultNumber => chainId => rebalancingPeriod => protocolId
+    function getRewardsPerLockedToken(
+      uint256 _vaultNumber, 
+      uint16 _chainId, 
+      uint256 _rebalancingPeriod, 
+      uint256 _protocolId
+    ) internal view returns(int256) {
+      return vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId];
     }
 
     /// @notice rewards are calculated here.

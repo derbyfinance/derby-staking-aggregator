@@ -9,6 +9,7 @@ import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
+import "./Interfaces/IGame.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
 import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
@@ -46,7 +47,7 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   modifier onlyVaults {
-    require(vaultWhitelist[msg.sender], "LZProvider: only Controller");
+    require(vaultWhitelist[msg.sender], "LZProvider: only vault");
     _;
   }
 
@@ -316,6 +317,38 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas) external onlySelf {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
+  }
+
+  /// @notice Push price and rewards array from vaults to the game
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
+  function pushRewardsToGame(
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    int256[] memory _rewards
+  ) external onlyVaults {
+    if (_chainId == homeChainId) {
+      return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
+    }
+    else {
+      bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint16,int256[])"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
+
+      xSend(gameChain, callData);
+    }
+  }
+
+  /// @notice Receives price and rewards array from vaults to the game
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
+  function receiveRewardsToGame(
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    int256[] memory _rewards
+  ) external onlySelf {
+    return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

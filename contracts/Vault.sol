@@ -31,7 +31,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   // state 1 Allocation amount received and ready to send funds over to xController
   // state 2 Allocation amount 0 received => will receive funds from xController
   // state 3 Allocation amount sent or received and ready to rebalance the vault itself
-  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault }
+  enum State { WaitingForController, SendingFundsXChain, WaitingForFunds, RebalanceVault, SendRewardsPerToken  }
   State public state;
 
   bool public deltaAllocationsReceived; 
@@ -266,7 +266,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     
     if (vaultCurrency.balanceOf(address(this)) < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
     lastTimeStamp = block.timestamp;
-    state = State.WaitingForController;
+    state = State.SendRewardsPerToken ;
     deltaAllocationsReceived = false;
   }
 
@@ -292,6 +292,7 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _newTotalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
+
     for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
@@ -330,17 +331,38 @@ contract Vault is VaultToken, ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
-      uint256 price = price(_protocolId);
-      historicalPrices[rebalancingPeriod][_protocolId] = price;
-      if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
-      int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
-      int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
-      int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
-      if (totalAllocatedTokens == 0) {
-        rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
-      } else {
-        rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
-      }
+    uint256 price = price(_protocolId);
+    historicalPrices[rebalancingPeriod][_protocolId] = price;
+    if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
+    int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
+    int256 nominator = int256(_totalUnderlying * performanceFee) * priceDiff;
+    int256 denominator = totalAllocatedTokens * int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) * 100; // * 100 cause perfFee is in percentages
+    if (totalAllocatedTokens == 0) {
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+    } else {
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+    }
+  }
+
+  /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
+  function sendRewardsToGame() external {
+    require(state == State.SendRewardsPerToken , "Wrong state");
+
+    int256[] memory rewards = rewardsToArray();
+    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
+
+    state = State.WaitingForController;
+  }
+
+  /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
+  /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
+  function rewardsToArray() internal view returns(int256[] memory rewards) {
+    uint256 latestId = controller.latestProtocolId(vaultNumber);
+    rewards = new int[](latestId);
+
+    for (uint256 i = 0; i < latestId; i++) {
+      rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
+    }
   }
 
   /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
