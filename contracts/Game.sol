@@ -350,7 +350,7 @@ contract Game is ERC721, ReentrancyGuard {
           int256 lastRebalanceReward = getRewardsPerLockedToken(vaultNum, chain, lastRebalancingPeriod, i);
           int256 currentReward = getRewardsPerLockedToken(vaultNum, chain, currentRebalancingPeriod, i);
           baskets[_basketId].totalUnRedeemedRewards += (currentReward - lastRebalanceReward) * allocation;
-          
+
           console.log("reward %s", uint((currentReward - lastRebalanceReward) * allocation));
         }
       }
@@ -450,7 +450,8 @@ contract Game is ERC721, ReentrancyGuard {
       for (uint256 i = 0; i < _rewards.length; i++) {
         int256 lastReward = getRewardsPerLockedToken(_vaultNumber, _chainId, rebalancingPeriod - 1, i);
         vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] = lastReward + _rewards[i];
-        console.log("Game: cumulative rewards %s", uint(vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i]));
+
+        // console.log("Game: cumulative rewards %s", uint(vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i]));
       }
     }
 

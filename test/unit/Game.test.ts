@@ -254,8 +254,7 @@ describe.only("Testing Game", async () => {
     ];
     await game.rebalanceBasket(basketNum, newAllocations);
 
-    const rewards = await game.basketUnredeemedRewards(0);
-
+    
     /*
     Rewards * allocation = totalReward
     4000 * 200 = 800_000
@@ -264,9 +263,10 @@ describe.only("Testing Game", async () => {
     2_000 * 200 = 400_000
     400 * 100 = 40_000
     200 * 200 = 40_000
-    total = 2120000
+    total = 2_120_000
     */
-    expect(rewards).to.be.equal(2120000); // rebalancing period not correct? CHECK
+    const rewards = await game.basketUnredeemedRewards(0);
+    expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
   });
 
   // it.skip("Should be able to redeem funds via vault function", async function() {
