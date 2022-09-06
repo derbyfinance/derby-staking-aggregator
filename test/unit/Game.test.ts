@@ -14,6 +14,7 @@ import { ethers } from "hardhat";
 import { vaultInfo } from "../helpers/vaultHelpers";
 import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
 
+const basketNum = 0;
 const chainIds = [10, 100, 1000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
@@ -200,12 +201,73 @@ describe.only("Testing Game", async () => {
 
     // should not be able to rebalance when game is xChainRebalancing
     await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
+
+    // reset allocations and state for testing 
+    await game.setXChainRebalanceState(vaultNumber, false);
+    await game.rebalanceBasket(
+    0, 
+    [ 
+      [0, 0, 0, -200, 0], // 200
+      [-100, 0, -100, 0, 0], // 200
+      [0, -100, 0, -100, -300], // 500
+    ]);
   });
 
-  // it.skip("Can rebalance basket, adjust delta allocations and calculate rewards", async function() {
-  //   let rewards = await generateUnredeemedRewards();
-  //   expect(rewards).to.be.closeTo('51111108', 500000);
-  // });
+  it("Calculate rewards during rebalance Basket", async function() {
+    let allocations = [ 
+      [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
+      [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
+    ];
+    const totalAllocations = parseEther('1000');
+
+    await game.upRebalancingPeriod(vaultNumber);
+    await Promise.all([
+      await game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
+      await game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
+    ]);
+
+    await DerbyToken.increaseAllowance(game.address, totalAllocations);
+    await game.rebalanceBasket(basketNum, allocations);
+
+    // This rebalance should be skipped for the basket
+    await game.upRebalancingPeriod(vaultNumber);
+    await Promise.all([
+      game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    ]);
+
+    await game.upRebalancingPeriod(vaultNumber);
+    await Promise.all([
+      game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    ]);
+
+    await game.upRebalancingPeriod(vaultNumber);
+    await Promise.all([
+      game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    ]);
+
+    const newAllocations = [ 
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0], 
+    ];
+    await game.rebalanceBasket(basketNum, newAllocations);
+
+    
+    /*
+    Rewards * allocation = totalReward
+    4000 * 200 = 800_000
+    200 * 200 = 40_000
+    8_000 * 100 = 800_000
+    2_000 * 200 = 400_000
+    400 * 100 = 40_000
+    200 * 200 = 40_000
+    total = 2_120_000
+    */
+    const rewards = await game.basketUnredeemedRewards(0);
+    expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
+  });
 
   // it.skip("Should be able to redeem funds via vault function", async function() {
   //   let rewards = await generateUnredeemedRewards();

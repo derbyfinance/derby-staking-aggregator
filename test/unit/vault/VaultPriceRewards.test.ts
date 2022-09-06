@@ -79,8 +79,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
   it("Should store historical prices and rewards, rebalance: 1", async function() {
     const {yearnProvider, compoundProvider, aaveProvider} = AllMockProviders;
     
-    // await vault.setTotalAllocatedTokensTest(parseEther("1")); 
-    await vault.setTotalAllocatedTokensTest(10_000); // 10k
+    await vault.setTotalAllocatedTokensTest(parseEther("10000")); // 10k 
     await vault.connect(user).deposit(amountUSDC);
 
     compoundVault.setPrice(parseUnits("1000", compoundVault.decimals));
@@ -133,6 +132,7 @@ describe("Testing Vault Store Price and Rewards, unit test", async () => {
 
     await game.upRebalancingPeriod(vaultNumber);
     await vault.sendRewardsToGame();
+
 
 
     for (const protocol of protocols.values()) {
