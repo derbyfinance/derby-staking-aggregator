@@ -114,16 +114,19 @@ describe.only("Testing VaultWithdraw, unit test", async () => {
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')).add(parseUSDC('2090')));
   });
 
-  it.only("Should set allowance when not enough funds in vault", async function() {
+  it("Should set withdrawal request and withdraw the allowance later", async function() {
     const amountUSDC = parseUSDC('10000'); // 10k
 
     await vault.connect(user).deposit(amountUSDC);
-
     await vault.connect(user).withdrawalRequest(parseUSDC('10000'));
 
-    const allowance = await vault.connect(user).getWithdrawalAllowance();
+    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('10000'));
 
-    console.log({ allowance })
+    const balanceBefore = await IUSDc.balanceOf(userAddr);
+    await vault.connect(user).withdrawAllowance();
+    const balanceAfter = await IUSDc.balanceOf(userAddr);
+
+    expect(balanceAfter - balanceBefore).to.be.equal(parseUSDC('10000'))
   });
 
 });

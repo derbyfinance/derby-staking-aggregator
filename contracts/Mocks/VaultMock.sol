@@ -96,7 +96,10 @@ contract VaultMock is Vault { // is VaultToken
   function getTotalWithdrawalRequestsTEST() external view returns(uint256) {
     return totalWithdrawalRequests;
   }
-  
+
+  function upRebalancingPeriodTEST() external {
+    rebalancingPeriod ++;
+  }  
   
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
