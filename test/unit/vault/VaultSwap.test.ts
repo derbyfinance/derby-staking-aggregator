@@ -4,8 +4,8 @@
 import { expect, assert } from "chai";
 import { Signer, Contract, BigNumber } from "ethers";
 import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, VaultMock } from '../../../typechain-types';
-import { deployController, deployVaultMock } from '../../helpers/deploy';
+import type { Controller, MainVaultMock } from '../../../typechain-types';
+import { deployController, deployMainVaultMock } from '../../helpers/deploy';
 import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
 import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
 import allProviders  from "../../helpers/allProvidersClass";
@@ -20,7 +20,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing VaultSwap, unit test", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
+  let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
 
   const protocols = new Map<string, ProtocolVault>()
   .set('compound_usdc_01', compound_usdc_01)
@@ -49,7 +49,7 @@ describe("Testing VaultSwap, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
@@ -67,6 +67,7 @@ describe("Testing VaultSwap, unit test", async () => {
   });
   
   it("Claim function in vault should claim COMP and sell for more then minAmountOut in USDC", async function() {
+    await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, 60),
       aaveVault.setDeltaAllocation(vault, user, 0),
@@ -161,6 +162,8 @@ describe("Testing VaultSwap, unit test", async () => {
     const amount = 1_000_000;
     const amountUSDC = parseUSDC(amount.toString());
 
+    await vault.setDeltaAllocationsReceivedTEST(true);
+
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, 20),
       aaveVault.setDeltaAllocation(vault, user, 0),
@@ -205,6 +208,8 @@ describe("Testing VaultSwap, unit test", async () => {
       aaveUSDTVault.setDeltaAllocation(vault, user, -40),
     ]);
     await vault.setVaultState(3);
+    await vault.setDeltaAllocationsReceivedTEST(true);
+
     gasUsed = gasUsed.add(await rebalanceETF(vault));
     gasUsedUSDC = formatUSDC(gasUsed)
 
@@ -232,7 +237,8 @@ describe("Testing VaultSwap, unit test", async () => {
   });
 
   it("Swapping USDC to Ether, unwrap and send to DAO to cover gas costs", async function() {
-    const amountToDeposit = parseUSDC('100000')
+    const amountToDeposit = parseUSDC('100000');
+    await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, 40),
       aaveVault.setDeltaAllocation(vault, user, 60),
@@ -255,6 +261,7 @@ describe("Testing VaultSwap, unit test", async () => {
     const amountToDeposit = parseUSDC('100000');
     let amountToWithdraw = parseUSDC('50000');
 
+    await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, 40),
       aaveVault.setDeltaAllocation(vault, user, 60),
@@ -274,6 +281,7 @@ describe("Testing VaultSwap, unit test", async () => {
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed))
 
     console.log("-----------------withdraw 50k-----------------")
+    await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, user, -40),
       aaveVault.setDeltaAllocation(vault, user, -60),
@@ -294,6 +302,7 @@ describe("Testing VaultSwap, unit test", async () => {
     console.log("-----------------withdraw another 42k = 92k total-----------------")
     amountToWithdraw = parseUSDC('42000');
     await vault.connect(user).withdraw(amountToWithdraw);
+    await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.setVaultState(3);
     await rebalanceETF(vault);
 

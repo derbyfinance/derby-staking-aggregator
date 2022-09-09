@@ -4,8 +4,8 @@ import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
 import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '../../helpers/helpers';
-import type { Controller, VaultMock } from '../../../typechain-types';
-import { deployController, deployVaultMock } from '../../helpers/deploy';
+import type { Controller, MainVaultMock } from '../../../typechain-types';
+import { deployController, deployMainVaultMock } from '../../helpers/deploy';
 import { allProtocols, usdc, dai, usdt } from "../../helpers/addresses";
 import { rebalanceETF, vaultInfo } from "../../helpers/vaultHelpers";
 import { formatUnits } from "ethers/lib/utils";
@@ -19,7 +19,7 @@ const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity, l
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
 describe("Testing balanceUnderlying for every single protocol vault", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string, protocols: any;
+  let vault: MainVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string, protocols: any;
 
   beforeEach(async function() {
     [dao, game] = await ethers.getSigners();
@@ -32,7 +32,7 @@ describe("Testing balanceUnderlying for every single protocol vault", async () =
       deployController(dao, daoAddr),
     ]);
 
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       allProviders.deployAllProviders(dao, controller),

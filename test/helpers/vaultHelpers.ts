@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
-import type { VaultMock, Controller } from '../../typechain-types';
+import type { MainVaultMock, Controller } from '../../typechain-types';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { comptroller, dai, usdc, usdt } from "./addresses";
 import { Result } from 'ethers/lib/utils';
@@ -23,7 +23,7 @@ export const vaultInfo = {
   gasFeeLiquidity: 10_000 * 1E6,
 }
 
-export async function getAndLogBalances(vault: VaultMock, protocols: Protocol[]) {
+export async function getAndLogBalances(vault: MainVaultMock, protocols: Protocol[]) {
   const promises = protocols.map((protocol: Protocol) => {
     return vault.balanceUnderlying(protocol.number)
   });
@@ -36,22 +36,22 @@ export async function getAndLogBalances(vault: VaultMock, protocols: Protocol[])
   return balances;
 }
 
-export function setDeltaAllocations(signer: Signer, vault: VaultMock, protocols: Protocol[]) {
+export function setDeltaAllocations(signer: Signer, vault: MainVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) => 
     vault.connect(signer).setDeltaAllocations(protocol.number, protocol.allocation))
 )}
 
-export function getAllocations(vault: VaultMock, protocols: Protocol[]) {
+export function getAllocations(vault: MainVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) =>
     vault.getAllocationTEST(protocol.number))
 )}
 
-export function getDeltaAllocations(vault: VaultMock, protocols: Protocol[]) {
+export function getDeltaAllocations(vault: MainVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) =>
     vault.getDeltaAllocationTEST(protocol.number))
 )}
 
-export function setCurrentAllocations(vault: VaultMock, protocols: Protocol[]) {
+export function setCurrentAllocations(vault: MainVaultMock, protocols: Protocol[]) {
   return Promise.all(protocols.map((protocol: Protocol) => 
     vault.setCurrentAllocation(protocol.number, protocol.allocation))
 )}
@@ -89,8 +89,8 @@ export async function addAllProtocolsToController(
   };
 }
 
-export const rebalanceETF = async (vaultMock: VaultMock) => {
-  const tx = await vaultMock.rebalanceETF();
+export const rebalanceETF = async (MainVaultMock: MainVaultMock) => {
+  const tx = await MainVaultMock.rebalanceETF();
   const receipt = await tx.wait();
   const  { gasInVaultCurrency }  = receipt.events!.at(-1)!.args as Result;
 

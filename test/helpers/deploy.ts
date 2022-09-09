@@ -14,7 +14,7 @@ import type {
   Game, 
   DerbyToken, 
   IGoverned,
-  VaultMock,
+  MainVaultMock,
   CompoundProviderMock,
   GameMock,
   TokenTimelock,
@@ -40,7 +40,7 @@ import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/Compou
 import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
 import VaultArtifact from '../../artifacts/contracts/Vault.sol/Vault.json';
 import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
-import VaultArtifactMock from '../../artifacts/contracts/Mocks/VaultMock.sol/VaultMock.json';
+import MainVaultArtifactMock from '../../artifacts/contracts/Mocks/MainVaultMock.sol/MainVaultMock.json';
 import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
 import DerbyTokenArtifact from '../../artifacts/contracts/DerbyToken.sol/DerbyToken.json';
 import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
@@ -117,7 +117,7 @@ export const deployVault = (
     [name, symbol, decimals, vaultName, vaultNumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
   ) as Promise<Vault>;
 
-export const deployVaultMock = (
+export const deployMainVaultMock = (
   deployerSign: Signer, 
   name: string, 
   symbol: string, 
@@ -132,9 +132,9 @@ export const deployVaultMock = (
   gasFeeLiq: number,
   ) => deployContract(
     deployerSign, 
-    VaultArtifactMock, 
+    MainVaultArtifactMock, 
     [name, symbol, decimals, vaultName, vaultNumber, daoAddress, Game, controller, vaultCurrency, uScale, gasFeeLiq]
-  ) as Promise<VaultMock>;
+  ) as Promise<MainVaultMock>;
 
 export const deployController = (
   deployerSign: Signer, 

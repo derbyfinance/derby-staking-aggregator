@@ -4,8 +4,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, VaultMock } from '../../../typechain-types';
-import { deployController, deployVaultMock } from '../../helpers/deploy';
+import type { Controller, MainVaultMock } from '../../../typechain-types';
+import { deployController, deployMainVaultMock } from '../../helpers/deploy';
 import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
 import { initController } from "../../helpers/vaultHelpers";
 import AllMockProviders from "../../helpers/allMockProvidersClass";
@@ -18,7 +18,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.only("Testing VaultWithdraw, unit test", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+  let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -35,7 +35,7 @@ describe.only("Testing VaultWithdraw, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),

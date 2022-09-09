@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../Vault.sol";
+import "../MainVault.sol";
 import "hardhat/console.sol";
 
 // import "../libraries/ABDKMath64x64.sol";
 
-contract VaultMock is Vault { // is VaultToken
+contract MainVaultMock is MainVault { 
 
   mapping(uint256 => uint256) private players;
 
@@ -24,7 +24,7 @@ contract VaultMock is Vault { // is VaultToken
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) Vault(
+  ) MainVault(
     _name,
     _symbol,
     _decimals,

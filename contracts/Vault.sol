@@ -18,7 +18,7 @@ import "./libraries/swap.sol";
 import "hardhat/console.sol";
 
 
-contract Vault is VaultToken, ReentrancyGuard {
+contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
   string public vaultName;
@@ -63,17 +63,6 @@ contract Vault is VaultToken, ReentrancyGuard {
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
-  // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
-  // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
-  uint256 internal totalWithdrawalRequests;
-  // total amount of funds the vault reserved for users that made a withdrawalRequest
-  uint256 internal reservedFunds;
-    
-  // amount in vaultCurrency the vault owes to the user 
-  mapping(address => uint256) internal withdrawalAllowance;
-  // rebalancing period the withdrawal request is made
-  mapping(address => uint256) internal withdrawalRequestPeriod;
-
   // current allocations over the protocols 
   mapping(uint256 => int256) internal currentAllocations;
 
@@ -113,9 +102,6 @@ contract Vault is VaultToken, ReentrancyGuard {
   }
 
   constructor(
-    string memory _name,
-    string memory _symbol,
-    uint8 _decimals,
     string memory _vaultName,
     uint256 _vaultNumber,
     address _governed,
@@ -124,7 +110,7 @@ contract Vault is VaultToken, ReentrancyGuard {
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-    ) VaultToken (_name, _symbol, _decimals) {
+    ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
@@ -137,81 +123,6 @@ contract Vault is VaultToken, ReentrancyGuard {
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
-  }
-
-  /// @notice Deposit in Vault
-  /// @dev Deposit VaultCurrency to Vault and mint LP tokens
-  /// @param _amount Amount to deposit
-  /// @return shares Tokens received by buyer
-  function deposit(uint256 _amount) external nonReentrant returns(uint256 shares) {
-    uint256 balanceBefore = getVaultBalance();
-    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
-    uint256 balanceAfter = getVaultBalance();
-
-    uint256 amount = balanceAfter - balanceBefore;
-    uint256 totalSupply = totalSupply();
-
-    if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore ); 
-    } else {
-      shares = amount; 
-    }
-    
-    _mint(msg.sender, shares); 
-  }
-
-  /// @notice Withdraw from Vault
-  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
-  /// @param _amount Amount to withdraw in LP tokens
-  /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount) external nonReentrant returns(uint256 value) {
-    value = _amount * exchangeRate() / uScale;
-    require(value > 0, "no value");
-
-    _burn(msg.sender, _amount);
-
-    if (value > getVaultBalance()) pullFunds(value);  
-    require(getVaultBalance() >= value, "not enough funds");
-
-    vaultCurrency.safeTransfer(msg.sender, value);
-  }
-
-  /// @notice Withdrawal request for when the vault doesnt have enough funds available
-  /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP tokens
-  /// @return value Allowance received by seller in vaultCurrency
-  function withdrawalRequest(uint256 _amount) external nonReentrant returns(uint256 value) {
-    require(state == State.WaitingForController, "Vault is rebalancing");
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request this period");
-
-    value = _amount * exchangeRate() / uScale;
-    require(value > 0, "no value");
-
-    _burn(msg.sender, _amount);
-
-    withdrawalAllowance[msg.sender] = value;
-    withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
-    totalWithdrawalRequests += value;
-  }
-
-  /// @notice Withdraw the allowance the user requested on the last rebalancing period
-  /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant {
-    require(state == State.WaitingForController, "Vault is rebalancing");
-    require(withdrawalAllowance[msg.sender] > 0, "No allowance");
-    
-    uint256 value = withdrawalAllowance[msg.sender];
-    
-    if (withdrawalRequestPeriod[msg.sender] == rebalancingPeriod) {
-      require(getVaultBalance() >= value, "Not enough funds");
-      totalWithdrawalRequests -= value;
-    } else {
-      require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
-      reservedFunds -= value;
-    }
-
-    withdrawalAllowance[msg.sender] = 0;
-    vaultCurrency.safeTransfer(msg.sender, value);
   }
 
   /// @notice Step 3 trigger
@@ -281,13 +192,6 @@ contract Vault is VaultToken, ReentrancyGuard {
       
       if (_value <= getVaultBalance()) break;
     }
-  }
-
-  /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
-  /// @return Price per share of LP Token
-  function exchangeRate() public view returns(uint256) {
-    if (totalSupply() == 0) return 1;
-    return (savedTotalUnderlying + getVaultBalance())  * uScale / totalSupply();
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -673,13 +577,8 @@ contract Vault is VaultToken, ReentrancyGuard {
     homeChainId = _homeChain;
   }
 
-  /// @notice Returns the amount in vaultCurrency the user is able to withdraw
-  function getWithdrawalAllowance() external view returns(uint256) {
-    return withdrawalAllowance[msg.sender];
-  }
-
-  function getVaultBalance() public view returns(uint256) {
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+  function getVaultBalance() public virtual view returns(uint256) {
+    return vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
