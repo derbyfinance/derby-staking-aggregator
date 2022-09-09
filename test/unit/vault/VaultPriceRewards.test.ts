@@ -23,7 +23,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing Vault Store Price and Rewards, unit test", async () => {
+describe.skip("Testing Vault Store Price and Rewards, unit test", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, xProvider: XProvider, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken, game: GameMock;
 
   const protocols = new Map<string, ProtocolVault>()

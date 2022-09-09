@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { VaultMock } from '../typechain-types';
+import type { MainVaultMock } from '../typechain-types';
 import { vaultInfo } from "./helpers/vaultHelpers";
 
 const amount = 100_000;
@@ -13,7 +13,7 @@ const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } 
 
 // skipping Vault test for now
 describe.skip("Deploy Contracts and interact with Vault", async () => {
-  let vaultMock: VaultMock,
+  let vaultMock: MainVaultMock,
   user: Signer,
   dao: Signer,
   userAddr: string,

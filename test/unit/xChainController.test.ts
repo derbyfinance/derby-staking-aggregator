@@ -22,7 +22,7 @@ const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe.only("Testing XChainController, unit test", async () => {
+describe("Testing XChainController, unit test", async () => {
   let vault1: MainVaultMock, vault2: MainVaultMock, vault3: MainVaultMock, vault4: MainVaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, xProvider1000: XProvider, xProvider2000: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, LZEndpoint1000: LZEndpointMock, LZEndpoint2000: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
 
   before(async function() {

@@ -180,7 +180,7 @@ describe("Testing Vault, unit test", async () => {
   });
 });
 
-describe("Testing Vault, unit test, mock providers", async () => {
+describe.skip("Testing Vault, unit test, mock providers", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;

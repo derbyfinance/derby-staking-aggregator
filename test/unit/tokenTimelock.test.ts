@@ -11,7 +11,7 @@ const name = 'Derby Finance';
 const symbol = 'DRB';
 const totalSupply = 1_000_000;
 
-describe("Testing TokenTimeLock", async () => {
+describe.skip("Testing TokenTimeLock", async () => {
   let admin: Signer, vc: Signer, vcAddr: string, tokenTimelock: TokenTimelock, DerbyToken: DerbyToken;
  
   beforeEach(async function() {

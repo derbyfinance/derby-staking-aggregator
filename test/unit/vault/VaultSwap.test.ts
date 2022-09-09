@@ -19,7 +19,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing VaultSwap, unit test", async () => {
+describe.skip("Testing VaultSwap, unit test", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, compSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, IDAI: Contract, IComp: Contract;
 
   const protocols = new Map<string, ProtocolVault>()
@@ -271,6 +271,7 @@ describe("Testing VaultSwap, unit test", async () => {
     // Deposit and rebalance with 100k 
     await vault.connect(user).deposit(amountToDeposit);
     await vault.setVaultState(3);
+    
     let gasUsed = formatUSDC(await rebalanceETF(vault));
 
     let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
