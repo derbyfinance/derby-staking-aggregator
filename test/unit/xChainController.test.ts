@@ -229,7 +229,7 @@ describe.only("Testing XChainController, unit test", async () => {
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 2000)).to.be.true;
   });
 
-  it("3) Trigger xChainController to pull totalUnderlyings from all vaults", async function() {
+  it("3) Trigger vaults to push totalUnderlyings to xChainController", async function() {
     await vault1.connect(user).deposit(amountUSDC); // 100k
     await vault2.connect(user).deposit(amountUSDC.mul(2)); // 200k
     

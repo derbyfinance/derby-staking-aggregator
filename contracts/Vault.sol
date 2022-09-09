@@ -63,9 +63,10 @@ contract Vault is VaultToken, ReentrancyGuard {
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
-  // total amount of withdrawal requests for the vault to pull extra during rebalance
+  // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
+  // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-  // total amount of funds the vault reserved for users
+  // total amount of funds the vault reserved for users that made a withdrawalRequest
   uint256 internal reservedFunds;
     
   // amount in vaultCurrency the vault owes to the user 
