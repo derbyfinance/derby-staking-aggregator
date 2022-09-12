@@ -58,6 +58,10 @@ contract MainVaultMock is MainVault {
     totalAllocatedTokens = _tokens;
   }
 
+  function setAmountToSendXChainTEST(uint256 _amount) external {
+    amountToSendXChain = _amount;
+  }
+
   function getHistoricalPriceTEST(
     uint256 _rebalancingPeriod, 
     uint256 _protocolId
