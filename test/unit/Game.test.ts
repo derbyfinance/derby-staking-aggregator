@@ -5,8 +5,8 @@
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, GameMock, VaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '../../typechain-types';
-import { deployController, deployLZEndpointMock, deployVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
+import type { Controller, GameMock, MainVaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '../../typechain-types';
+import { deployController, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
 import { usdc } from "../helpers/addresses";
 import { initController } from "../helpers/vaultHelpers";
 import AllMockProviders from "../helpers/allMockProvidersClass";
@@ -23,8 +23,8 @@ const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString()); 
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe.only("Testing Game", async () => {
-  let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock ;
+describe("Testing Game", async () => {
+  let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock ;
 
   before(async function() {
     [dao, user] = await ethers.getSigners();
@@ -39,7 +39,7 @@ describe.only("Testing Game", async () => {
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
-    vault = await deployVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr);
 
     [LZEndpoint10, LZEndpoint100] = await Promise.all([

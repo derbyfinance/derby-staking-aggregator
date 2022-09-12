@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
-import { Controller, GameMock, VaultMock } from "typechain-types";
+import { Controller, GameMock, MainVaultMock } from "typechain-types";
 import { parseEther, parseUnits } from "./helpers";
 
 export interface IProtocolVault {
@@ -50,7 +50,7 @@ export class ProtocolVault {
     this.reward = reward;
   }
 
-  async setDeltaAllocation(vault: VaultMock, game: Signer, allocation: number): Promise<void> {
+  async setDeltaAllocation(vault: MainVaultMock, game: Signer, allocation: number): Promise<void> {
     this.allocation += allocation;
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   };
@@ -60,33 +60,33 @@ export class ProtocolVault {
     await game.setDeltaAllocations(vaultAddr, this.number, allocation);
   };
 
-  async setCurrentAllocation(vault: VaultMock, allocation: number): Promise<void> {
+  async setCurrentAllocation(vault: MainVaultMock, allocation: number): Promise<void> {
     this.allocation = allocation;
     await vault.setCurrentAllocation(this.number, allocation);
   };
 
-  async getDeltaAllocationTEST(vault: VaultMock): Promise<number> {
+  async getDeltaAllocationTEST(vault: MainVaultMock): Promise<number> {
     const allocation = await vault.getDeltaAllocationTEST(this.number);
     return allocation.toNumber();
   };
 
-  async getAllocation(vault: VaultMock): Promise<BigNumber> {
+  async getAllocation(vault: MainVaultMock): Promise<BigNumber> {
     return await vault.getAllocationTEST(this.number);
   };
 
-  async balanceUnderlying(vault: VaultMock): Promise<BigNumber> {
+  async balanceUnderlying(vault: MainVaultMock): Promise<BigNumber> {
     return await vault.balanceUnderlying(this.number);
   };
 
-  async calcShares(vault: VaultMock, amount: BigNumber): Promise<BigNumber> {
+  async calcShares(vault: MainVaultMock, amount: BigNumber): Promise<BigNumber> {
     return await vault.calcShares(this.number, amount);
   };
 
-  async balanceShares(vault: VaultMock, address: string): Promise<BigNumber> {
+  async balanceShares(vault: MainVaultMock, address: string): Promise<BigNumber> {
     return await vault.balanceSharesTEST(this.number, address);
   };
 
-  async resetAllocation(vault: VaultMock) {
+  async resetAllocation(vault: MainVaultMock) {
     this.allocation = 0;
     await vault.resetDeltaAllocations(this.number);
   }

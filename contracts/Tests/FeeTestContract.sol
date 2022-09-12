@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../Vault.sol";
+import "../MainVault.sol";
 import "hardhat/console.sol";
 
-contract FeeTestContract is Vault {
+contract FeeTestContract is MainVault {
     constructor(
     string memory _name,
     string memory _symbol,
@@ -17,7 +17,7 @@ contract FeeTestContract is Vault {
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) Vault(
+  ) MainVault(
     _name,
     _symbol,
     _decimals,
