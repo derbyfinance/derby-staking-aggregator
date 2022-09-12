@@ -17,7 +17,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing VaultWithdraw, unit test", async () => {
+describe.only("Testing VaultWithdraw, unit test", async () => {
   let vault: VaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
@@ -112,6 +112,21 @@ describe("Testing VaultWithdraw, unit test", async () => {
     // withdraw 2000 LP = 2000 x 1.045 => 2090 usdc
     // EndBalance = StartingBalance - 20k + 2000 + 90 profit 
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')).add(parseUSDC('2090')));
+  });
+
+  it("Should set withdrawal request and withdraw the allowance later", async function() {
+    const amountUSDC = parseUSDC('10000'); // 10k
+
+    await vault.connect(user).deposit(amountUSDC);
+    await vault.connect(user).withdrawalRequest(parseUSDC('10000'));
+
+    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('10000'));
+
+    const balanceBefore = await IUSDc.balanceOf(userAddr);
+    await vault.connect(user).withdrawAllowance();
+    const balanceAfter = await IUSDc.balanceOf(userAddr);
+
+    expect(balanceAfter - balanceBefore).to.be.equal(parseUSDC('10000'))
   });
 
 });
