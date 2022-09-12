@@ -396,7 +396,7 @@ contract Vault is ReentrancyGuard {
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
 
-    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ protocol.uScale), _protocolNum);
+    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
