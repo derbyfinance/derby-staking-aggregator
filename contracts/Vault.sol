@@ -149,6 +149,8 @@ contract Vault is ReentrancyGuard {
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
 
+    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
+
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
     IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
     
@@ -394,7 +396,7 @@ contract Vault is ReentrancyGuard {
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
 
-    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
+    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ protocol.uScale), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -402,31 +404,31 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    if (_amount > 0) {
-      IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    if (_amount <= 0) return;
+    
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(vaultNumber, _protocolNum);
 
-      _amount = _amount * protocol.uScale / uScale;
+    _amount = _amount * protocol.uScale / uScale;
 
-      uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
-      IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
+    uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
+    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
 
-      uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
+    uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
 
-      if (protocol.underlying != vaultCurrencyAddr) {
-        _amount = Swap.swapStableCoins(
-          amountReceived, 
-          protocol.underlying,
-          vaultCurrencyAddr, 
-          controller.underlyingUScale(protocol.underlying),
-          uScale,
-          controller.curveIndex(protocol.underlying), 
-          controller.curveIndex(vaultCurrencyAddr),
-          controller.curve3Pool(),
-          controller.curve3PoolFee()
-        );
-      }
+    if (protocol.underlying != vaultCurrencyAddr) {
+       _amount = Swap.swapStableCoins(
+        amountReceived, 
+        protocol.underlying,
+        vaultCurrencyAddr, 
+        controller.underlyingUScale(protocol.underlying),
+        uScale,
+        controller.curveIndex(protocol.underlying), 
+        controller.curveIndex(vaultCurrencyAddr),
+        controller.curve3Pool(),
+        controller.curve3PoolFee()
+      );
     }
-    console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / uScale), _protocolNum);
+    console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / protocol.uScale), _protocolNum);
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols
