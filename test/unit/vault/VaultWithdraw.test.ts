@@ -53,7 +53,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
 
     // withdrawal request for more then LP token balance
     await expect(vault.connect(user).withdrawalRequest(parseUSDC('10001')))
-     .to.be.revertedWith('ERC20: burn amount exceeds balance');
+      .to.be.revertedWith('ERC20: burn amount exceeds balance');
 
     // withdrawal request for 10k LP tokens
     await expect(() => vault.connect(user).withdrawalRequest(parseUSDC('10000')))
@@ -64,7 +64,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
 
     // trying to withdraw allowance before the vault reserved the funds
     await expect(vault.connect(user).withdrawAllowance())
-     .to.be.revertedWith('Funds not reserved yet');
+      .to.be.revertedWith('Funds not reserved yet');
 
     // Mocking vault settings, exchangerate to 0.9
     await vault.upRebalancingPeriodTEST();
