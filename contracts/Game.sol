@@ -68,10 +68,6 @@ contract Game is ERC721, ReentrancyGuard {
     // vault addresses
     mapping(address => bool) vaultAddresses;
 
-    // stores the total value locked per active locked derby token in the game. Stored per vault per period.
-    // first index is vault, second is rebalancing period.
-    mapping(uint256 => mapping(uint256 => uint256)) public cumTVLperToken;
-
     // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
     mapping(uint256 => Basket) private baskets;
     
