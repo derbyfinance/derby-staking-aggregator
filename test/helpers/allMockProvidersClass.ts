@@ -1,5 +1,4 @@
-/* eslint-disable prettier/prettier */
-import { MockContract } from "ethereum-waffle";
+import { MockContract } from "@ethereum-waffle/mock-contract";
 import { Signer } from "ethers";
 import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from "./deployMocks";
 

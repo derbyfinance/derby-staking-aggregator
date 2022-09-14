@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, formatEther, } from '../../helpers/helpers';
-import type { IdleProvider, Controller } from '../../../typechain-types';
-import { deployIdleProvider, deployController } from '../../helpers/deploy';
-import { usdc, idleUSDC as iusdc, idleDAI as idai, idleUSDT as iusdt, yearn, dai, usdt} from "../../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, formatEther, } from '@testhelp/helpers';
+import type { IdleProvider, Controller } from '@typechain';
+import { deployIdleProvider, deployController } from '@testhelp/deploy';
+import { usdc, idleUSDC as iusdc, idleDAI as idai, idleUSDT as iusdt, yearn, dai, usdt} from "@testhelp/addresses";
 
 // const amount = 100_000;
 const amount = Math.floor(Math.random() * 1000000);

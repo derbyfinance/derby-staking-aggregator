@@ -1,5 +1,3 @@
-/* eslint-disable no-useless-constructor */
-/* eslint-disable prettier/prettier */
 import { ProtocolVault } from "./protocolVaultClass";
 
 // Stable coins

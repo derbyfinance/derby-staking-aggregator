@@ -1,6 +1,5 @@
-/* eslint-disable prettier/prettier */
 import { Signer } from "ethers";
-import { AaveProvider, BetaProvider, CompoundProvider, Controller, HomoraProvider, IdleProvider, TruefiProvider, YearnProvider } from "typechain-types";
+import { AaveProvider, BetaProvider, CompoundProvider, Controller, HomoraProvider, IdleProvider, TruefiProvider, YearnProvider } from "@typechain";
 import { comptroller } from "./addresses";
 import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployHomoraProvider, deployIdleProvider, deployTruefiProvider, deployYearnProvider } from "./deploy";
 

@@ -1,6 +1,5 @@
-/* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from 'ethers';
-import type { MainVaultMock, Controller } from '../../typechain-types';
+import type { MainVaultMock, Controller } from '@typechain';
 import { deployYearnProvider, deployCompoundProvider, deployAaveProvider } from './deploy';
 import { comptroller, dai, usdc, usdt } from "./addresses";
 import { Result } from 'ethers/lib/utils';

@@ -1,8 +1,7 @@
-/* eslint-disable prettier/prettier */
 import { BigNumber, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
-import { Controller, GameMock, MainVaultMock } from "typechain-types";
-import { parseEther, parseUnits } from "./helpers";
+import { Controller, GameMock, MainVaultMock } from "@typechain";
+import { parseEther } from "./helpers";
 
 export interface IProtocolVault {
   name: string;

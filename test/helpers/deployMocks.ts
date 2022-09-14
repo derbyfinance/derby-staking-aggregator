@@ -1,11 +1,12 @@
-/* eslint-disable prettier/prettier */
-import { deployMockContract, MockContract } from "ethereum-waffle";
+import { waffle } from "hardhat";
+const { deployMockContract } = waffle;
+import { MockContract } from "@ethereum-waffle/mock-contract";
 import { Signer } from "ethers";
 
-import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
-import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
-import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
-import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
+import YearnProviderArtifact from '@artifacts/Providers/YearnProvider.sol/YearnProvider.json';
+import CompoundProviderArtifact from '@artifacts/Providers/CompoundProvider.sol/CompoundProvider.json';
+import AaveProviderArtifact from '@artifacts/Providers/AaveProvider.sol/AaveProvider.json';
+import ControllerArtifact from '@artifacts/Controller.sol/Controller.json';
 import erc20ABI from '../../abis/erc20.json';
 
 

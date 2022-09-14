@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { ethers } from "hardhat";
-import chai, { expect } from "chai";
-import { Contract, Signer, Wallet } from "ethers";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, getWhale, controllerAddProtocol } from '../../helpers/helpers';
-import type { CompoundProviderMock, ERC20, Controller } from '../../../typechain-types';
-import { deployCompoundProviderMock, deployController } from '../../helpers/deploy';
-import { usdc, compoundUSDC as cusdc, comptroller, compToken as compTokenAddr} from "../../helpers/addresses";
+import { expect } from "chai";
+import { Contract, Signer } from "ethers";
+import { getUSDCSigner, erc20, parseUSDC, getWhale, controllerAddProtocol } from '@testhelp/helpers';
+import type { CompoundProviderMock, Controller } from '@typechain';
+import { deployCompoundProviderMock, deployController } from '@testhelp/deploy';
+import { usdc, compoundUSDC as cusdc, comptroller, compToken as compTokenAddr} from "@testhelp/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());

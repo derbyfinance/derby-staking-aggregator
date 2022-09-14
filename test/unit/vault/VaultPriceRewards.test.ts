@@ -1,16 +1,13 @@
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
-import { expect } from "chai";
-import { Signer, Contract, BigNumber } from "ethers";
-import { erc20, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, DerbyToken, GameMock, MainVaultMock, XProvider } from '../../../typechain-types';
-import { deployController, deployDerbyToken, deployGameMock, deployMainVaultMock, deployXProvider } from '../../helpers/deploy';
-import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01, compoundUSDC, compoundDAI, aaveUSDC, yearnUSDC, aaveUSDT } from "../../helpers/addresses";
-import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
-import AllMockProviders from "../../helpers/allMockProvidersClass";
 import { ethers } from "hardhat";
-import { vaultInfo } from "../../helpers/vaultHelpers";
+import { expect } from "chai";
+import { Signer, Contract } from "ethers";
+import { erc20, getUSDCSigner, parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, DerbyToken, GameMock, MainVaultMock, XProvider } from '@typechain';
+import { deployController, deployDerbyToken, deployGameMock, deployMainVaultMock, deployXProvider } from '@testhelp/deploy';
+import { usdc, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01, compoundUSDC, compoundDAI, aaveUSDC, yearnUSDC, aaveUSDT } from "@testhelp/addresses";
+import { initController, rebalanceETF } from "@testhelp/vaultHelpers";
+import AllMockProviders from "@testhelp/allMockProvidersClass";
+import { vaultInfo } from "@testhelp/vaultHelpers";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 

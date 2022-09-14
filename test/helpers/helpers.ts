@@ -1,12 +1,11 @@
-/* eslint-disable prettier/prettier */
 import { BigNumber } from "ethers";
-import { ethers, network, waffle } from "hardhat";
+import { ethers, network } from "hardhat";
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
-import { Controller } from "typechain-types";
+import { Controller } from "@typechain";
 import { Result } from "ethers/lib/utils";
 
-const provider = waffle.provider;
+const provider = ethers.provider;
 
 const DAIWhale = '0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';

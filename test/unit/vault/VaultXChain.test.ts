@@ -1,17 +1,13 @@
-/* eslint-disable no-unused-expressions */
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
+import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '../../helpers/helpers';
-import type { ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, MainVaultMock, XChainControllerMock, XProvider } from '../../../typechain-types';
-import { deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '../../helpers/deploy';
-import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
-import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
-import allProviders  from "../../helpers/allProvidersClass";
-import { ethers } from "hardhat";
-import { vaultInfo } from "../../helpers/vaultHelpers";
+import { erc20, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
+import type { ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, MainVaultMock, XChainControllerMock, XProvider } from '@typechain';
+import { deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '@testhelp/deploy';
+import { usdc, starterProtocols as protocols } from "@testhelp/addresses";
+import { initController, rebalanceETF } from "@testhelp/vaultHelpers";
+import allProviders  from "@testhelp/allProvidersClass";
+import { vaultInfo } from "@testhelp/vaultHelpers";
 
 
 const amount = 100_000;
