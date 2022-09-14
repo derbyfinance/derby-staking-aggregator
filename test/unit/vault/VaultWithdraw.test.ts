@@ -66,10 +66,12 @@ describe("Testing VaultWithdraw, unit test", async () => {
     await expect(vault.connect(user).withdrawAllowance())
       .to.be.revertedWith('Funds not reserved yet');
 
-    // Mocking vault settings, exchangerate to 0.9
-    await vault.upRebalancingPeriodTEST();
-    await vault.setExchangeRateTEST(2, parseUSDC('0.9'));
-    await vault.setReservedFundsTEST(parseUSDC('10000'));
+    // mocking vault settings, exchangerate to 0.9
+    await Promise.all([
+      vault.upRebalancingPeriodTEST(),
+      vault.setExchangeRateTEST(2, parseUSDC('0.9')),
+      vault.setReservedFundsTEST(parseUSDC('10000')),
+    ]);
 
     // withdraw allowance should give 9k USDC
     await expect(() => vault.connect(user).withdrawAllowance())
