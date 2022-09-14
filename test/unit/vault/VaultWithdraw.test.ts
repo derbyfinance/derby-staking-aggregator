@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '@testhelp/helpers';
+
 import type { Controller, MainVaultMock } from '@typechain';
+import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '@testhelp/helpers';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
 import { usdc, starterProtocols as protocols } from "@testhelp/addresses";
 import { initController } from "@testhelp/vaultHelpers";
@@ -111,7 +112,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     expect(await IUSDc.balanceOf(userAddr)).to.be.equal(startingBalance.sub(parseUSDC('20000')).add(parseUSDC('2090')));
   });
 
-  it("Should set withdrawal request and withdraw the allowance later", async function() {
+  it.only("Should set withdrawal request and withdraw the allowance later", async function() {
     const amountUSDC = parseUSDC('10000'); // 10k
 
     await vault.connect(user).deposit(amountUSDC);
@@ -123,7 +124,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     await vault.connect(user).withdrawAllowance();
     const balanceAfter = await IUSDc.balanceOf(userAddr);
 
-    expect(balanceAfter - balanceBefore).to.be.equal(parseUSDC('10000'))
+    expect(balanceAfter - balanceBefore).to.be.equal(parseUSDC('10000'));
   });
 
 });
