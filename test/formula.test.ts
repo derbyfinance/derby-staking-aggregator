@@ -1,11 +1,8 @@
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from './helpers/helpers';
-import type { MainVaultMock } from '../typechain-types';
-import { vaultInfo } from "./helpers/vaultHelpers";
+import { formatUSDC, parseUSDC } from '@testhelp/helpers';
+import type { MainVaultMock } from '@typechain';
+import { vaultInfo } from "@testhelp/vaultHelpers";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());

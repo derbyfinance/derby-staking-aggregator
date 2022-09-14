@@ -1,5 +1,5 @@
-/* eslint-disable prettier/prettier */
-import { deployContract } from "ethereum-waffle";
+import { waffle } from "hardhat";
+const { deployContract } = waffle;
 import { Signer, BigNumber } from "ethers";
 import type { 
   YearnProvider,
@@ -28,34 +28,34 @@ import type {
   XChainControllerMock,
   LZEndpointMock,
   LZXProviderMock
- } from '../../typechain-types';
+ } from '@typechain';
 
-import YearnProviderArtifact from '../../artifacts/contracts/Providers/YearnProvider.sol/YearnProvider.json';
-import BetaProviderArtifact from '../../artifacts/contracts/Providers/BetaProvider.sol/BetaProvider.json';
-import IdleProviderArtifact from '../../artifacts/contracts/Providers/IdleProvider.sol/IdleProvider.json';
-import HomoraProviderArtifact from '../../artifacts/contracts/Providers/HomoraProvider.sol/HomoraProvider.json';
-import TruefiProviderArtifact from '../../artifacts/contracts/Providers/TruefiProvider.sol/TruefiProvider.json';
-import CompoundProviderArtifact from '../../artifacts/contracts/Providers/CompoundProvider.sol/CompoundProvider.json';
-import CompoundProviderMockArtifact from '../../artifacts/contracts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
-import AaveProviderArtifact from '../../artifacts/contracts/Providers/AaveProvider.sol/AaveProvider.json';
-import VaultArtifact from '../../artifacts/contracts/Vault.sol/Vault.json';
-import TokenTimelockArtifact from '../../artifacts/contracts/TokenTimelock.sol/TokenTimelock.json';
-import MainVaultArtifactMock from '../../artifacts/contracts/Mocks/MainVaultMock.sol/MainVaultMock.json';
-import IGovernedArtifact from '../../artifacts/contracts/Interfaces/IGoverned.sol/IGoverned.json';
-import DerbyTokenArtifact from '../../artifacts/contracts/DerbyToken.sol/DerbyToken.json';
-import GameArtifact from '../../artifacts/contracts/Game.sol/Game.json';
-import GameMockArtifact from '../../artifacts/contracts/Mocks/GameMock.sol/GameMock.json';
-import ControllerArtifact from '../../artifacts/contracts/Controller.sol/Controller.json';
-import XChainControllerArtifact from '../../artifacts/contracts/XChainController.sol/XChainController.json';
-import XChainControllerMockArtifact from '../../artifacts/contracts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
-import XProviderArtifact from '../../artifacts/contracts/XProvider.sol/XProvider.json';
-import ConnextXProviderMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextXProviderMock.sol/ConnextXProviderMock.json';
-import ConnextExecutorMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextExecutorMock.sol/ConnextExecutorMock.json';
-import ConnextHandlerMockArtifact from '../../artifacts/contracts/Mocks/Connext/ConnextHandlerMock.sol/ConnextHandlerMock.json';
-import LZEndpointMockArtifact  from "../../artifacts/contracts/Mocks/LayerZero/LZEndpointMock.sol/LZEndpointMock.json";
-import LZXProviderMockArtifact  from "../../artifacts/contracts/Mocks/LayerZero/LZXProviderMock.sol/LZXProviderMock.json";
-import XReceiveMockArtifact from '../../artifacts/contracts/Mocks/XReceiveMock.sol/XReceiveMock.json';
-import XSendMockArtifact from '../../artifacts/contracts/Mocks/XSendMock.sol/XSendMock.json';
+import YearnProviderArtifact from '@artifacts/Providers/YearnProvider.sol/YearnProvider.json';
+import BetaProviderArtifact from '@artifacts/Providers/BetaProvider.sol/BetaProvider.json';
+import IdleProviderArtifact from '@artifacts/Providers/IdleProvider.sol/IdleProvider.json';
+import HomoraProviderArtifact from '@artifacts/Providers/HomoraProvider.sol/HomoraProvider.json';
+import TruefiProviderArtifact from '@artifacts/Providers/TruefiProvider.sol/TruefiProvider.json';
+import CompoundProviderArtifact from '@artifacts/Providers/CompoundProvider.sol/CompoundProvider.json';
+import CompoundProviderMockArtifact from '@artifacts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
+import AaveProviderArtifact from '@artifacts/Providers/AaveProvider.sol/AaveProvider.json';
+import VaultArtifact from '@artifacts/Vault.sol/Vault.json';
+import TokenTimelockArtifact from '@artifacts/TokenTimelock.sol/TokenTimelock.json';
+import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
+import IGovernedArtifact from '@artifacts/Interfaces/IGoverned.sol/IGoverned.json';
+import DerbyTokenArtifact from '@artifacts/DerbyToken.sol/DerbyToken.json';
+import GameArtifact from '@artifacts/Game.sol/Game.json';
+import GameMockArtifact from '@artifacts/Mocks/GameMock.sol/GameMock.json';
+import ControllerArtifact from '@artifacts/Controller.sol/Controller.json';
+import XChainControllerArtifact from '@artifacts/XChainController.sol/XChainController.json';
+import XChainControllerMockArtifact from '@artifacts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
+import XProviderArtifact from '@artifacts/XProvider.sol/XProvider.json';
+import ConnextXProviderMockArtifact from '@artifacts/Mocks/Connext/ConnextXProviderMock.sol/ConnextXProviderMock.json';
+import ConnextExecutorMockArtifact from '@artifacts/Mocks/Connext/ConnextExecutorMock.sol/ConnextExecutorMock.json';
+import ConnextHandlerMockArtifact from '@artifacts/Mocks/Connext/ConnextHandlerMock.sol/ConnextHandlerMock.json';
+import LZEndpointMockArtifact  from "@artifacts/Mocks/LayerZero/LZEndpointMock.sol/LZEndpointMock.json";
+import LZXProviderMockArtifact  from "@artifacts/Mocks/LayerZero/LZXProviderMock.sol/LZXProviderMock.json";
+import XReceiveMockArtifact from '@artifacts/Mocks/XReceiveMock.sol/XReceiveMock.json';
+import XSendMockArtifact from '@artifacts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from "./addresses";
 
 

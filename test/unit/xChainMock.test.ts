@@ -1,13 +1,10 @@
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
-import { Signer, Contract } from "ethers";
-import { erc20, getUSDCSigner, parseUSDC } from '../helpers/helpers';
-import type { XSendMock, XReceiveMock, ConnextXProviderMock, ConnextExecutorMock, ConnextHandlerMock, LZEndpointMock, LZXProviderMock } from '../../typechain-types';
-import { deployXSendMock, deployXReceiveMock, deployConnextXProviderMock, deployConnextExecutorMock, deployConnextHandlerMock, deployLZEndpointMock, deployLZXProviderMock } from '../helpers/deploy';
-import { usdc } from "../helpers/addresses";
 import { ethers } from "hardhat";
+import { Signer, Contract } from "ethers";
+import { erc20, getUSDCSigner, parseUSDC } from '@testhelp/helpers';
+import type { XSendMock, XReceiveMock, ConnextXProviderMock, ConnextExecutorMock, ConnextHandlerMock, LZEndpointMock, LZXProviderMock } from '@typechain';
+import { deployXSendMock, deployXReceiveMock, deployConnextXProviderMock, deployConnextExecutorMock, deployConnextHandlerMock, deployLZEndpointMock, deployLZXProviderMock } from '@testhelp/deploy';
+import { usdc } from "@testhelp/addresses";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());

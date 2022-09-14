@@ -1,18 +1,16 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import type { FeeTestContract} from '../../typechain-types';
-import { controllerAddProtocol, erc20, getUSDCSigner } from "../helpers/helpers";
-import { deployController, deployMainVaultMock } from "../helpers/deploy";
-import { usdc, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "../helpers/addresses";
-import { setDeltaAllocations, getAllocations, getAndLogBalances } from "../helpers/vaultHelpers";
-import FeeTestContractArtifact from '../../artifacts/contracts/Tests/FeeTestContract.sol/FeeTestContract.json';
+import type { FeeTestContract} from '@typechain';
+import { controllerAddProtocol, erc20, getUSDCSigner } from "@testhelp/helpers";
+import { deployController, deployMainVaultMock } from "@testhelp/deploy";
+import { usdc, compToken, aave, yearn, compoundUSDC, aaveUSDC, yearnUSDC, compoundDAI, aaveUSDT, usdt, dai } from "@testhelp/addresses";
+import { setDeltaAllocations, getAllocations, getAndLogBalances } from "@testhelp/vaultHelpers";
+import FeeTestContractArtifact from '@artifacts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from "ethereum-waffle";
 import { Signer, Contract } from "ethers";
-import { formatUSDC, parseUSDC } from '../helpers/helpers';
+import { formatUSDC, parseUSDC } from '@testhelp/helpers';
 import type { MainVaultMock, Controller } from '../../typechain-types';
-import allProviders  from "../helpers/allProvidersClass";
+import allProviders  from "@testhelp/allProvidersClass";
 
 interface Protocol {
   number: number;

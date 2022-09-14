@@ -1,17 +1,14 @@
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
-import { expect, assert } from "chai";
-import { Signer, Contract, BigNumber } from "ethers";
-import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, MainVaultMock } from '../../../typechain-types';
-import { deployController, deployMainVaultMock } from '../../helpers/deploy';
-import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "../../helpers/addresses";
-import { initController, rebalanceETF } from "../../helpers/vaultHelpers";
-import allProviders  from "../../helpers/allProvidersClass";
 import { ethers, network } from "hardhat";
-import { vaultInfo } from "../../helpers/vaultHelpers";
+import { expect } from "chai";
+import { Signer, Contract } from "ethers";
 import { Result } from "ethers/lib/utils";
+import { erc20, formatUnits, formatUSDC, getUSDCSigner, getWhale, parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, MainVaultMock } from '@typechain';
+import { deployController, deployMainVaultMock } from '@testhelp/deploy';
+import { usdc, dai, compToken, CompWhale, compound_dai_01, aave_usdt_01, yearn_usdc_01, aave_usdc_01, compound_usdc_01 } from "@testhelp/addresses";
+import { initController, rebalanceETF } from "@testhelp/vaultHelpers";
+import allProviders  from "@testhelp/allProvidersClass";
+import { vaultInfo } from "@testhelp/vaultHelpers";
 import { ProtocolVault } from "@testhelp/protocolVaultClass";
 
 

@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, } from '../../helpers/helpers';
-import type { HomoraProvider, Controller } from '../../../typechain-types';
-import { deployHomoraProvider, deployController } from '../../helpers/deploy';
-import { usdc, homoraUSDC as husdc, homoraDAI as hdai, homoraUSDT as husdt, alpha, dai, usdt} from "../../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, getDAISigner, getUSDTSigner, parseDAI, formatDAI, } from '@testhelp/helpers';
+import type { HomoraProvider, Controller } from '@typechain';
+import { deployHomoraProvider, deployController } from '@testhelp/deploy';
+import { usdc, homoraUSDC as husdc, homoraDAI as hdai, homoraUSDT as husdt, alpha, dai, usdt} from "@testhelp/addresses";
 
 // const amount = 100_000;
 const amount = Math.floor(Math.random() * 100000);

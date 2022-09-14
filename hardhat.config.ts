@@ -1,12 +1,10 @@
 import * as dotenv from "dotenv";
+import "tsconfig-paths/register";
 
 import { HardhatUserConfig, task } from "hardhat/config";
-// import "hardhat-gas-reporter";
-import "solidity-coverage";
-import "@typechain/hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-etherscan";
 
 dotenv.config();
 

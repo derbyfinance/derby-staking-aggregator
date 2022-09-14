@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Contract, Signer } from "ethers";
 import { ethers } from "hardhat";
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '../../helpers/helpers';
-import type { TruefiProvider, Controller } from '../../../typechain-types';
-import { deployTruefiProvider, deployController } from '../../helpers/deploy';
-import { usdc, truefiUSDC as tusdc, truefi} from "../../helpers/addresses";
+import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol, } from '@testhelp/helpers';
+import type { TruefiProvider, Controller } from '@typechain';
+import { deployTruefiProvider, deployController } from '@testhelp/deploy';
+import { usdc, truefiUSDC as tusdc, truefi} from "@testhelp/addresses";
 
 const amount = Math.floor(Math.random() * 100000);
 // const amount = 100_000;

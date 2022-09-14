@@ -1,16 +1,13 @@
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
+import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '../../helpers/helpers';
-import type { Controller, MainVaultMock } from '../../../typechain-types';
-import { deployController, deployMainVaultMock } from '../../helpers/deploy';
-import { usdc, starterProtocols as protocols } from "../../helpers/addresses";
-import { initController } from "../../helpers/vaultHelpers";
-import AllMockProviders from "../../helpers/allMockProvidersClass";
-import { ethers } from "hardhat";
-import { vaultInfo } from "../../helpers/vaultHelpers";
+import { erc20, formatUSDC, getUSDCSigner, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, MainVaultMock } from '@typechain';
+import { deployController, deployMainVaultMock } from '@testhelp/deploy';
+import { usdc, starterProtocols as protocols } from "@testhelp/addresses";
+import { initController } from "@testhelp/vaultHelpers";
+import AllMockProviders from "@testhelp/allMockProvidersClass";
+import { vaultInfo } from "@testhelp/vaultHelpers";
 
 
 const amount = 100_000;

@@ -1,14 +1,12 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 import { ethers } from "hardhat";
 import { MockContract } from "ethereum-waffle";
-import { Controller } from '../../typechain-types';
-import { getUSDCSigner, erc20  } from '../helpers/helpers';
-import { deployController } from '../helpers/deploy';
-import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from '../helpers/deployMocks';
-import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, yearn, compToken, aave} from "../helpers/addresses";
+import { Controller } from '@typechain';
+import { getUSDCSigner, erc20  } from '@testhelp/helpers';
+import { deployController } from '@testhelp/deploy';
+import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from '@testhelp/deployMocks';
+import { usdc, yearnUSDC as yusdc, compoundUSDC as cusdc, aaveUSDC as ausdc, yearn, compToken, aave} from "@testhelp/addresses";
 
 const yearnMock = Math.floor(Math.random() * 100000);
 const compoundMock =  Math.floor(Math.random() * 100000);

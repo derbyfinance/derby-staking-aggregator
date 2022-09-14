@@ -1,18 +1,14 @@
-/* eslint-disable node/no-unsupported-features/es-syntax */
-/* eslint-disable prefer-const */
-/* eslint-disable no-unused-vars */
-/* eslint-disable prettier/prettier */
+import { ethers } from "hardhat";
 import { expect } from "chai";
 import { Signer, Contract } from "ethers";
-import { erc20, getUSDCSigner, parseEther, parseUSDC } from '../helpers/helpers';
-import type { Controller, GameMock, MainVaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '../../typechain-types';
-import { deployController, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '../helpers/deploy';
-import { usdc } from "../helpers/addresses";
-import { initController } from "../helpers/vaultHelpers";
-import AllMockProviders from "../helpers/allMockProvidersClass";
-import { ethers } from "hardhat";
-import { vaultInfo } from "../helpers/vaultHelpers";
-import { deployGameMock, deployDerbyToken } from "../helpers/deploy";
+import { erc20, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
+import type { Controller, GameMock, MainVaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '@typechain';
+import { deployController, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '@testhelp/deploy';
+import { usdc } from "@testhelp/addresses";
+import { initController } from "@testhelp/vaultHelpers";
+import AllMockProviders from "@testhelp/allMockProvidersClass";
+import { vaultInfo } from "@testhelp/vaultHelpers";
+import { deployGameMock, deployDerbyToken } from "@testhelp/deploy";
 
 const basketNum = 0;
 const chainIds = [10, 100, 1000];

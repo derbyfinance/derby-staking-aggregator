@@ -1,28 +1,25 @@
 {
   "compilerOptions": {
-    "target": "es2019",
+    "target": "es2020",
     "module": "commonjs",
-    "skipLibCheck": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
+    "skipLibCheck": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true,
     "outDir": "dist",
     "baseUrl": ".",
     "moduleResolution": "node",
     "paths": {
-      "@typechain/*": [
-        "typechain/*"
+      "@typechain": [
+        "typechain-types"
       ],
       "@artifacts/*": [
-        "artifacts/contracts/"
+        "artifacts/contracts/*"
       ],
       "@testhelp/*": [
         "test/helpers/*"
       ],
-      "@migrations/*": [
-        "test/migrations/*"
-      ]
     }
   },
   "include": [
