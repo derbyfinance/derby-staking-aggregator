@@ -61,22 +61,6 @@ contract MainVault is Vault, VaultToken {
     _mint(msg.sender, shares); 
   }
 
-  /// @notice Withdraw from Vault
-  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
-  /// @param _amount Amount to withdraw in LP tokens
-  /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount) external nonReentrant returns(uint256 value) {
-    value = _amount * exchangeRate() / uScale;
-    require(value > 0, "no value");
-
-    _burn(msg.sender, _amount);
-
-    if (value > getVaultBalance()) pullFunds(value);  
-    require(getVaultBalance() >= value, "not enough funds");
-
-    vaultCurrency.safeTransfer(msg.sender, value);
-  }
-
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP tokens
@@ -93,20 +77,21 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant returns(uint256 value){
+  function withdrawAllowance() external nonReentrant returns(uint256 value) {
     require(state == State.WaitingForController, "Vault is rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
-    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds still incoming");
+    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
     
     uint256 period = withdrawalRequestPeriod[msg.sender];
     uint256 price = exchangeRatePeriod[period + 1];
     value = withdrawalAllowance[msg.sender] * price / uScale;
-    
+
+    require(price > 0, "No exchangeRate");
     require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
 
     reservedFunds -= value;
-    withdrawalAllowance[msg.sender] = 0;
-    withdrawalRequestPeriod[msg.sender] = 0;
+    delete withdrawalAllowance[msg.sender];
+    delete withdrawalRequestPeriod[msg.sender];
 
     vaultCurrency.safeTransfer(msg.sender, value);
   }
