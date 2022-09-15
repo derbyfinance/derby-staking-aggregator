@@ -19,6 +19,8 @@ contract MainVault is Vault, VaultToken {
   mapping(address => uint256) internal withdrawalAllowance;
   // rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
+  // exchangerate of the vault for a given rebalancingPeriod
+  mapping(uint256 => uint256) public exchangeRatePerPeriod;
 
   constructor(
     string memory _name,
@@ -59,57 +61,38 @@ contract MainVault is Vault, VaultToken {
     _mint(msg.sender, shares); 
   }
 
-  /// @notice Withdraw from Vault
-  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
-  /// @param _amount Amount to withdraw in LP tokens
-  /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount) external nonReentrant returns(uint256 value) {
-    value = _amount * exchangeRate() / uScale;
-    require(value > 0, "no value");
-
-    _burn(msg.sender, _amount);
-
-    if (value > getVaultBalance()) pullFunds(value);  
-    require(getVaultBalance() >= value, "not enough funds");
-
-    vaultCurrency.safeTransfer(msg.sender, value);
-  }
-
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP tokens
-  /// @return value Allowance received by seller in vaultCurrency
-  function withdrawalRequest(uint256 _amount) external nonReentrant returns(uint256 value) {
+  function withdrawalRequest(uint256 _amount) external nonReentrant {
     require(state == State.WaitingForController, "Vault is rebalancing");
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request this period");
-
-    value = _amount * exchangeRate() / uScale;
-    require(value > 0, "no value");
+    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
     _burn(msg.sender, _amount);
 
-    withdrawalAllowance[msg.sender] = value;
+    withdrawalAllowance[msg.sender] = _amount;
     withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
-    totalWithdrawalRequests += value;
+    totalWithdrawalRequests += _amount;
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant {
+  function withdrawAllowance() external nonReentrant returns(uint256 value) {
     require(state == State.WaitingForController, "Vault is rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
+    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
     
-    uint256 value = withdrawalAllowance[msg.sender];
-    
-    if (withdrawalRequestPeriod[msg.sender] == rebalancingPeriod) {
-      require(getVaultBalance() >= value, "Not enough funds");
-      totalWithdrawalRequests -= value;
-    } else {
-      require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
-      reservedFunds -= value;
-    }
+    uint256 period = withdrawalRequestPeriod[msg.sender];
+    uint256 price = exchangeRatePerPeriod[period + 1];
+    value = withdrawalAllowance[msg.sender] * price / uScale;
 
-    withdrawalAllowance[msg.sender] = 0;
+    require(price > 0, "No exchangeRate");
+    require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
+
+    reservedFunds -= value;
+    delete withdrawalAllowance[msg.sender];
+    delete withdrawalRequestPeriod[msg.sender];
+
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 

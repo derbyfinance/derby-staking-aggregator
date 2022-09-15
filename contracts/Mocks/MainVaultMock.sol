@@ -101,6 +101,14 @@ contract MainVaultMock is MainVault {
     return totalWithdrawalRequests;
   }
 
+  function setExchangeRateTEST(uint256 _period, uint256 _exchangeRate) external {
+    exchangeRatePerPeriod[_period] = _exchangeRate;
+  }
+
+  function setReservedFundsTEST(uint256 _amount) external {
+    reservedFunds = _amount;
+  }
+
   function upRebalancingPeriodTEST() external {
     rebalancingPeriod ++;
   }  
