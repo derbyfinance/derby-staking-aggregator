@@ -53,7 +53,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     
     // check withdrawalAllowance user and totalsupply
     expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('10000'));
-    expect(await vault.totalSupply()).to.be.equal(parseUSDC('0')); // 1k
+    expect(await vault.totalSupply()).to.be.equal(parseUSDC('0'));
 
     // trying to withdraw allowance before the vault reserved the funds
     await expect(vault.connect(user).withdrawAllowance())
