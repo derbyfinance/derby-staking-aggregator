@@ -19,8 +19,8 @@ contract MainVault is Vault, VaultToken {
   mapping(address => uint256) internal withdrawalAllowance;
   // rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
-
-  mapping(uint256 => uint256) public exchangeRatePeriod;
+  // exchangerate of the vault for a given rebalancingPeriod
+  mapping(uint256 => uint256) public exchangeRatePerPeriod;
 
   constructor(
     string memory _name,
@@ -83,7 +83,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
     
     uint256 period = withdrawalRequestPeriod[msg.sender];
-    uint256 price = exchangeRatePeriod[period + 1];
+    uint256 price = exchangeRatePerPeriod[period + 1];
     value = withdrawalAllowance[msg.sender] * price / uScale;
 
     require(price > 0, "No exchangeRate");
