@@ -50,7 +50,7 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    uint256 totalSupply = totalSupply();
+    uint256 totalSupply = totalSupply() + totalWithdrawalRequests;
 
     if (totalSupply > 0) {
       shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore ); 
