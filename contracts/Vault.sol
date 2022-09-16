@@ -58,6 +58,8 @@ contract Vault is ReentrancyGuard {
   uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
   
+  uint256 public amountToSendXChain;
+
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
 
@@ -80,6 +82,7 @@ contract Vault is ReentrancyGuard {
   mapping(uint256 => mapping(uint256 => uint256)) public historicalPrices;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
+
 
   modifier onlyDao {
     require(msg.sender == governed, "Vault: only DAO");
@@ -121,6 +124,48 @@ contract Vault is ReentrancyGuard {
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
+  }
+
+  /// @notice Will set the amount to send back to the xController by the xController
+  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
+  /// @param _amountToSend amount to send in vaultCurrency
+  function setXChainAllocation(uint256 _amountToSend) external {
+    amountToSendXChain = _amountToSend;
+
+    if (_amountToSend == 0) state = State.WaitingForFunds;
+    else state = State.SendingFundsXChain;
+  }
+
+  /// @notice Send vaultcurrency to the xController for xChain rebalance
+  function rebalanceXChain() external {
+    if (state != State.SendingFundsXChain) return;
+
+    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
+
+    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    
+    amountToSendXChain = 0;
+    state = State.RebalanceVault;
+  }
+
+  // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
+  function receiveFunds() external onlyXProvider {
+    if (state != State.WaitingForFunds) return;
+    state = State.RebalanceVault;
+  }
+
+  /// @notice Receives protocol allocation array from the game and settles the allocations
+  /// @param _deltas Array with delta allocations where the index matches the protocolId
+  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+    for (uint i = 0; i < _deltas.length; i++) {
+      int256 allocation = _deltas[i];
+      if (allocation == 0) continue;
+      setDeltaAllocationsInt(i, allocation);
+    }
+
+    deltaAllocationsReceived = true;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -242,6 +287,27 @@ contract Vault is ReentrancyGuard {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+    }
+  }
+
+  /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
+  function sendRewardsToGame() external {
+    require(state == State.SendRewardsPerToken , "Wrong state");
+
+    int256[] memory rewards = rewardsToArray();
+    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
+
+    state = State.Idle;
+  }
+
+  /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
+  /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
+  function rewardsToArray() internal view returns(int256[] memory rewards) {
+    uint256 latestId = controller.latestProtocolId(vaultNumber);
+    rewards = new int[](latestId);
+
+    for (uint256 i = 0; i < latestId; i++) {
+      rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
     }
   }
 
@@ -479,6 +545,15 @@ contract Vault is ReentrancyGuard {
     blockRebalanceInterval = _blockInterval;
   }
 
+  /// @notice redeem funds for basket in the game
+  /// @dev function is implemented here because the vault holds the funds and can transfer them
+  /// @param _user user (msg.sender) that triggered the redeemRewards function on the game contract.
+  /// @param _amount the reward amount to be transferred to the user.
+  function redeemRewards(address _user, uint256 _amount) external onlyGame {
+      if (_amount > getVaultBalance()) pullFunds(_amount);
+      vaultCurrency.safeTransfer(_user, _amount);
+  }
+
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
   function setHomeXProviderAddress(address _xProvider) external onlyDao {
@@ -490,7 +565,7 @@ contract Vault is ReentrancyGuard {
   function setXControllerAddress(address _xController) external onlyDao {
     xController = _xController;
   }
-
+  
   function getVaultBalance() public virtual view returns(uint256) {
     return vaultCurrency.balanceOf(address(this));
   }
