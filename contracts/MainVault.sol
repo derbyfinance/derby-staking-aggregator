@@ -9,8 +9,6 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
-  uint16 public homeChainId;
-
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
@@ -38,9 +36,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
     ) 
     VaultToken(_name, _symbol, _decimals) 
-    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
-
-    }
+    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {}
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -101,16 +97,18 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 3 trigger
   /// @notice Pushes totalUnderlying of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
-    // revise state
-    if (state != State.Idle) return;
-    setTotalUnderlying();
-    // calc current underlying
-    // add totalwithdrawrequests to underlying
-    // also send totalsupply and totalwithdrawrequests
-    uint256 underlying = savedTotalUnderlying + getVaultBalance();
-    uint256 totalSupply = totalSupply() + totalWithdrawalRequests;
+    require(state == State.Idle, "Vault already rebalancing");
 
-    IXProvider(xProvider).pushTotalUnderlying(vaultNumber, homeChainId, underlying);
+    setTotalUnderlying();
+    uint256 underlying = savedTotalUnderlying + getVaultBalance();
+
+    IXProvider(xProvider).pushTotalUnderlying(
+      vaultNumber, 
+      homeChainId, 
+      underlying, 
+      totalSupply(), 
+      totalWithdrawalRequests
+    );
 
     state = State.PushedUnderlying;
   }

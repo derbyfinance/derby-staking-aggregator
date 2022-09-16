@@ -58,6 +58,7 @@ contract Vault is ReentrancyGuard {
   uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
   
+  uint16 public homeChainId;
   uint256 public amountToSendXChain;
 
   // total underlying of all protocols in vault, excluding vault balance
@@ -543,15 +544,6 @@ contract Vault is ReentrancyGuard {
   /// @param _blockInterval number of blocks
   function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
     blockRebalanceInterval = _blockInterval;
-  }
-
-  /// @notice redeem funds for basket in the game
-  /// @dev function is implemented here because the vault holds the funds and can transfer them
-  /// @param _user user (msg.sender) that triggered the redeemRewards function on the game contract.
-  /// @param _amount the reward amount to be transferred to the user.
-  function redeemRewards(address _user, uint256 _amount) external onlyGame {
-      if (_amount > getVaultBalance()) pullFunds(_amount);
-      vaultCurrency.safeTransfer(_user, _amount);
   }
 
   /// @notice Setter for xProvider address

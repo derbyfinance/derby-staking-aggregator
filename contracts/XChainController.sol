@@ -27,6 +27,8 @@ contract XChainController {
     mapping(uint16 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint16 => address) vaultChainAddress; // chainId => vault address
     mapping(uint16 => address) vaultUnderlyingAddress; // chainId => underlying address e.g USDC
+    mapping(uint16 => uint256) totalSupply; // chainId => totalSupply of LP Token
+    mapping(uint16 => uint256) withdrawalRequests; // chainId => total withdrawal requests in LP Token
     mapping(uint16 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
   }
 
@@ -211,14 +213,20 @@ contract XChainController {
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
   /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
+  /// @param _totalSupply Supply of the LP token of the vault on given chainId
+  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function setTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
-    uint256 _underlying
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
   ) external onlyXProvider onlyWhenAllocationsReceived(_vaultNumber) {
     require(getTotalUnderlyingOnChain(_vaultNumber, _chainId) == 0, "TotalUnderlying already set");
 
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
+    vaults[_vaultNumber].totalSupply[_chainId] = _totalSupply;
+    vaults[_vaultNumber].withdrawalRequests[_chainId] = _withdrawalRequests;
     vaults[_vaultNumber].totalUnderlying += _underlying;
     vaultStage[_vaultNumber].underlyingReceived ++;
   }
