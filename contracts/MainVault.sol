@@ -36,9 +36,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
     ) 
     VaultToken(_name, _symbol, _decimals) 
-    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
-
-    }
+    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {}
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -65,7 +63,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP tokens
   function withdrawalRequest(uint256 _amount) external nonReentrant {
-    require(state == State.WaitingForController, "Vault is rebalancing");
+    require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
     _burn(msg.sender, _amount);
@@ -78,7 +76,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant returns(uint256 value) {
-    require(state == State.WaitingForController, "Vault is rebalancing");
+    require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
     
@@ -96,6 +94,25 @@ contract MainVault is Vault, VaultToken {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
+  /// @notice Step 3 trigger
+  /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
+  function pushTotalUnderlyingToController() external {
+    require(state == State.Idle, "Vault already rebalancing");
+
+    setTotalUnderlying();
+    uint256 underlying = savedTotalUnderlying + getVaultBalance();
+
+    IXProvider(xProvider).pushTotalUnderlying(
+      vaultNumber, 
+      homeChainId, 
+      underlying, 
+      totalSupply(), 
+      totalWithdrawalRequests
+    );
+
+    state = State.PushedUnderlying;
+  }
+
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
   /// @return Price per share of LP Token
   function exchangeRate() public view returns(uint256) {
@@ -110,5 +127,10 @@ contract MainVault is Vault, VaultToken {
 
   function getVaultBalance() public override view returns(uint256) {
     return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+  }
+
+  /// @notice Setter for xController chainId and homeChain
+  function setChainIds(uint16 _homeChain) external onlyDao {
+    homeChainId = _homeChain;
   }
 }

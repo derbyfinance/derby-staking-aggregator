@@ -58,6 +58,14 @@ contract XChainControllerMock is XChainController {
     return getTotalUnderlyingOnChain(_vaultNumber, _chainId);
   }
 
+  function getTotalSupplyTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(uint256) {
+    return getTotalSupply(_vaultNumber, _chainId);
+  }
+
+  function getTotalWithdrawalRequestsTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(uint256) {
+    return getTotalWithdrawalRequests(_vaultNumber, _chainId);
+  }
+
   function getTotalUnderlyingVaultTEST(uint256 _vaultNumber) external view returns(uint256) {
     return getTotalUnderlyingVault(_vaultNumber);
   }

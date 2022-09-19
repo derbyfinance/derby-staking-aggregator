@@ -226,26 +226,32 @@ describe("Testing XChainController, unit test", async () => {
   });
 
   it("3) Trigger vaults to push totalUnderlyings to xChainController", async function() {
-    await vault1.connect(user).deposit(amountUSDC); // 100k
-    await vault2.connect(user).deposit(amountUSDC.mul(2)); // 200k
-    
+    await vault1.connect(user).deposit(100_000 * 1E6);
+    await vault2.connect(user).deposit(200_000 * 1E6);
+
+    await vault2.connect(user).withdrawalRequest(50_000 * 1E6) 
+
     await vault1.pushTotalUnderlyingToController();
     await vault2.pushTotalUnderlyingToController();
     await vault3.pushTotalUnderlyingToController();
 
-    // Should revert if total Underlying is already set
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("LZReceive: No success");
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 10)).to.be.equal(100_000 * 1E6);
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 100)).to.be.equal(150_000 * 1E6);
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 1000)).to.be.equal(0); 
+    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(50_000 * 1E6); 
 
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 1000)).to.be.equal(0); // 0
+    // // Should revert if total Underlying is already set
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("Vault already rebalancing");
+
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(100_000 * 1E6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(200_000 * 1E6); 
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 1000)).to.be.equal(0);
 
     const totalUnderlying = await xChainController.getTotalUnderlyingVaultTEST(vaultNumber);
-
-    expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
+    expect(totalUnderlying).to.be.equal(300_000 * 1E6); 
   });
 
-  it("4) Calc and set amount to deposit or withdraw in vault", async function() {
+  it.skip("4) Calc and set amount to deposit or withdraw in vault", async function() {
     await xChainController.pushVaultAmounts(vaultNumber);
 
     const expectedAmounts = [
@@ -267,7 +273,7 @@ describe("Testing XChainController, unit test", async () => {
     expect(await vault4.state()).to.be.equal(0); // chainId off
   });
 
-  it("4.5) Trigger vaults to transfer funds to xChainController", async function() {
+  it.skip("4.5) Trigger vaults to transfer funds to xChainController", async function() {
     await vault1.rebalanceXChain();
     await vault2.rebalanceXChain();
     await vault3.rebalanceXChain();
@@ -283,7 +289,7 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);
   });
 
-  it("5) Trigger xChainController to send funds to vaults", async function() {
+  it.skip("5) Trigger xChainController to send funds to vaults", async function() {
     await xChainController.sendFundsToVault(vaultNumber);
 
     const expectedAmounts = [
@@ -299,7 +305,7 @@ describe("Testing XChainController, unit test", async () => {
     expect(await vault3.state()).to.be.equal(3); // received funds, all vaults should be ready now
   });
 
-  it("6) Push allocations from game to vaults", async function() {
+  it.skip("6) Push allocations from game to vaults", async function() {
     expect(await game.isXChainRebalancing(vaultNumber)).to.be.true;
     await game.pushAllocationsToVaults(vaultNumber);
     expect(await game.isXChainRebalancing(vaultNumber)).to.be.false;

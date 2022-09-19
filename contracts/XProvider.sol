@@ -170,17 +170,34 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
   /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
+  /// @param _totalSupply Supply of the LP token of the vault on given chainId
+  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function pushTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
-    uint256 _underlying
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
   ) external onlyVaults {
     if (_chainId == xControllerChain) {
-      return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
+      return IXChainController(xController).setTotalUnderlying(
+        _vaultNumber, 
+        _chainId, 
+        _underlying,
+        _totalSupply,
+        _withdrawalRequests
+      );
     }
     else {
-      bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _underlying);
+      bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256,uint256,uint256)"));
+      bytes memory callData = abi.encodeWithSelector(
+        selector,
+        _vaultNumber, 
+        _chainId, 
+        _underlying,
+        _totalSupply,
+        _withdrawalRequests
+      );
 
       xSend(xControllerChain, callData);
     }
@@ -190,12 +207,22 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
   /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
+  /// @param _totalSupply Supply of the LP token of the vault on given chainId
+  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function receiveTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
-    uint256 _underlying
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
   ) external onlySelf {
-    return IXChainController(xController).setTotalUnderlying(_vaultNumber, _chainId, _underlying);
+    return IXChainController(xController).setTotalUnderlying(
+      _vaultNumber, 
+      _chainId, 
+      _underlying,
+      _totalSupply,
+      _withdrawalRequests
+    );
   }
 
   /// @notice Pushes the amount the vault has to send back to the xChainController
