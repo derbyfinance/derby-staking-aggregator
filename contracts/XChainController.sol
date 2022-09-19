@@ -347,12 +347,12 @@ contract XChainController {
     return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
   }
 
-  /// @notice Helper 
+  /// @notice Helper to get total supply from the vault on given chainId
   function getTotalSupply(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
     return vaults[_vaultNumber].totalSupply[_chainId];
   }
 
-  /// @notice Helper 
+  /// @notice Helper to get total withdrawal requests from the vault on given chainId
   function getTotalWithdrawalRequests(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
     return vaults[_vaultNumber].withdrawalRequests[_chainId];
   }

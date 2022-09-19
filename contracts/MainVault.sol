@@ -95,7 +95,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Step 3 trigger
-  /// @notice Pushes totalUnderlying of the vault for this chainId to xController
+  /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
     require(state == State.Idle, "Vault already rebalancing");
 
