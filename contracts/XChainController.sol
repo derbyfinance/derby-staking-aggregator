@@ -347,6 +347,16 @@ contract XChainController {
     return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
   }
 
+  /// @notice Helper 
+  function getTotalSupply(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
+    return vaults[_vaultNumber].totalSupply[_chainId];
+  }
+
+  /// @notice Helper 
+  function getTotalWithdrawalRequests(uint256 _vaultNumber, uint16 _chainId) internal view returns(uint256) {
+    return vaults[_vaultNumber].withdrawalRequests[_chainId];
+  }
+
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
   /// @param _chainId Number of chain used

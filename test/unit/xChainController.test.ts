@@ -226,23 +226,29 @@ describe("Testing XChainController, unit test", async () => {
   });
 
   it("3) Trigger vaults to push totalUnderlyings to xChainController", async function() {
-    await vault1.connect(user).deposit(amountUSDC); // 100k
-    await vault2.connect(user).deposit(amountUSDC.mul(2)); // 200k
-    
+    await vault1.connect(user).deposit(100_000 * 1E6);
+    await vault2.connect(user).deposit(200_000 * 1E6);
+
+    await vault2.connect(user).withdrawalRequest(50_000 * 1E6) 
+
     await vault1.pushTotalUnderlyingToController();
     await vault2.pushTotalUnderlyingToController();
     await vault3.pushTotalUnderlyingToController();
 
-    // Should revert if total Underlying is already set
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 10)).to.be.equal(100_000 * 1E6);
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 100)).to.be.equal(150_000 * 1E6);
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber, 1000)).to.be.equal(0); 
+    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(50_000 * 1E6); 
+
+    // // Should revert if total Underlying is already set
     await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("Vault already rebalancing");
 
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(amountUSDC); // 100k
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(amountUSDC.mul(2)); // 200k
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 1000)).to.be.equal(0); // 0
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(100_000 * 1E6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 100)).to.be.equal(200_000 * 1E6); 
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 1000)).to.be.equal(0);
 
     const totalUnderlying = await xChainController.getTotalUnderlyingVaultTEST(vaultNumber);
-
-    expect(totalUnderlying).to.be.equal(amountUSDC.mul(3)); // 300k
+    expect(totalUnderlying).to.be.equal(300_000 * 1E6); 
   });
 
   it.skip("4) Calc and set amount to deposit or withdraw in vault", async function() {
