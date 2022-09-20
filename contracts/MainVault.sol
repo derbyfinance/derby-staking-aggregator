@@ -52,20 +52,14 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    uint256 totalSupply = totalSupply() + totalWithdrawalRequests;
-
-    if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore );
-    } else {
-      shares = amount;
-    }
+    shares = amount * uScale / exchangeRate;
     
     _mint(msg.sender, shares); 
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in vaultCurrency e.g USDC
+  /// @param _amount Amount to withdraw in LP token
   function withdrawalRequest(uint256 _amount) external nonReentrant returns(uint256 value) {
     require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
