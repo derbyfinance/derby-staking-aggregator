@@ -14,6 +14,8 @@ contract MainVault is Vault, VaultToken {
   uint256 internal totalWithdrawalRequests;
   // total amount of funds the vault reserved for users that made a withdrawalRequest
   uint256 internal reservedFunds;
+
+  uint256 public exchangeRate;
     
   // amount in vaultCurrency the vault owes to the user 
   mapping(address => uint256) internal withdrawalAllowance;
@@ -36,7 +38,9 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
     ) 
     VaultToken(_name, _symbol, _decimals) 
-    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {}
+    Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
+      exchangeRate = _uScale;
+    }
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -51,9 +55,9 @@ contract MainVault is Vault, VaultToken {
     uint256 totalSupply = totalSupply() + totalWithdrawalRequests;
 
     if (totalSupply > 0) {
-      shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore ); 
+      shares = ( amount * totalSupply ) / ( savedTotalUnderlying + balanceBefore );
     } else {
-      shares = amount; 
+      shares = amount;
     }
     
     _mint(msg.sender, shares); 
@@ -61,16 +65,18 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP tokens
-  function withdrawalRequest(uint256 _amount) external nonReentrant {
+  /// @param _amount Amount to withdraw in vaultCurrency e.g USDC
+  function withdrawalRequest(uint256 _amount) external nonReentrant returns(uint256 value) {
     require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
+    value = _amount * exchangeRate / uScale;
+
     _burn(msg.sender, _amount);
 
-    withdrawalAllowance[msg.sender] = _amount;
+    withdrawalAllowance[msg.sender] = value;
     withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
-    totalWithdrawalRequests += _amount;
+    totalWithdrawalRequests += value;
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
@@ -80,11 +86,8 @@ contract MainVault is Vault, VaultToken {
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
     
-    uint256 period = withdrawalRequestPeriod[msg.sender];
-    uint256 price = exchangeRatePerPeriod[period + 1];
-    value = withdrawalAllowance[msg.sender] * price / uScale;
+    value = withdrawalAllowance[msg.sender];
 
-    require(price > 0, "No exchangeRate");
     require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
 
     reservedFunds -= value;
@@ -115,10 +118,9 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
   /// @return Price per share of LP Token
-  function exchangeRate() public view returns(uint256) {
-    if (totalSupply() == 0) return 1;
-    return (savedTotalUnderlying + getVaultBalance())  * uScale / totalSupply();
-  }
+  // function exchangeRate() public view returns(uint256) {
+  //   return exchangeRate;
+  // }
 
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
   function getWithdrawalAllowance() external view returns(uint256) {
