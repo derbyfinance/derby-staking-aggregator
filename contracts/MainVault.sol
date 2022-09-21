@@ -60,18 +60,14 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdraw from Vault
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
+  /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
   /// @return value Amount received by seller in vaultCurrency
   function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant returns(uint256 value) {
     value = _amount * exchangeRate / uScale;
-    require(value > 0, "no value");
+    require(value > 0, "No value");
 
-    if (!_pullFunds) {
-      require(getVaultBalance() >= value, "not enough funds");
-    }
-
-    if (_pullFunds) {
-      if (value > getVaultBalance()) pullFunds(value);  
-    }
+    if (_pullFunds && value > getVaultBalance()) pullFunds(value);  
+    require(getVaultBalance() >= value, "Not enough funds");
 
     _burn(msg.sender, _amount);
     vaultCurrency.safeTransfer(msg.sender, value);

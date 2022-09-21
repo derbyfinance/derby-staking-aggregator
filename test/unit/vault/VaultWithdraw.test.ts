@@ -3,11 +3,11 @@ import { expect } from "chai";
 import { Signer, Contract } from "ethers";
 
 import type { Controller, MainVaultMock } from '@typechain';
-import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '@testhelp/helpers';
+import { erc20, getUSDCSigner, parseUSDC } from '@testhelp/helpers';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
-import { usdc } from "@testhelp/addresses";
-import { initController } from "@testhelp/vaultHelpers";
-import AllMockProviders from "@testhelp/allMockProvidersClass";
+import { usdc, starterProtocols as protocols } from "@testhelp/addresses";
+import { initController, rebalanceETF } from "@testhelp/vaultHelpers";
+import allProviders  from "@testhelp/allProvidersClass";
 import { vaultInfo } from "@testhelp/vaultHelpers";
 
 
@@ -17,6 +17,10 @@ const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } 
 
 describe("Testing VaultWithdraw, unit test", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string;
+
+  const compoundVault = protocols.get('compound_usdc_01')!;
+  const aaveVault = protocols.get('aave_usdc_01')!;
+  const yearnVault = protocols.get('yearn_usdc_01')!;
 
   beforeEach(async function() {
     [dao, user] = await ethers.getSigners();
@@ -33,15 +37,19 @@ describe("Testing VaultWithdraw, unit test", async () => {
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),
-      AllMockProviders.deployAllMockProviders(dao),
+      allProviders.deployAllProviders(dao, controller),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
       IUSDc.connect(user).approve(vault.address, amountUSDC),
     ]);
+
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, vaultNumber, allProviders);
+    }
   });
 
-  it.only("Should be able to withdraw LP tokens from vault balance", async function() {
+  it("Should be able to withdraw LP tokens from vault balance", async function() {
     // 100k USDC to vault
-    await IUSDc.connect(USDCSigner).transfer(vault.address, 100_000 *1E6 )
+    await IUSDc.connect(USDCSigner).transfer(vault.address, 100_000 *1E6)
     // deposit 10k USDC
     await vault.connect(user).deposit(50_000 * 1E6); 
 
@@ -61,9 +69,40 @@ describe("Testing VaultWithdraw, unit test", async () => {
     expectedUSDCReceived = (30_000 * 1.20) * 1E6
     await expect(() => vault.connect(user).withdraw(30_000 * 1E6, false))
       .to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
-  
-
   });
+
+  it("Should be able to withdraw LP tokens from vault balance and protocols", async function() {
+    await vault.connect(user).deposit(100_000 * 1E6);
+
+    await Promise.all([
+      compoundVault.setDeltaAllocation(vault, dao, 40 * 1E6),
+      aaveVault.setDeltaAllocation(vault, dao, 60 * 1E6),
+      yearnVault.setDeltaAllocation(vault, dao, 20 * 1E6),
+    ]);
+
+    // mocking vault in correct state and exchangerate to 1.05
+    await Promise.all([
+      vault.setExchangeRateTEST(1.05 * 1E6),
+      vault.setVaultState(3),
+      vault.setDeltaAllocationsReceivedTEST(true),
+    ]);
+    await rebalanceETF(vault);
+
+    await expect(vault.connect(user).withdraw(20_000 * 1E6, false)).to.be.revertedWith(
+      "Not enough funds"
+    );
+
+    let expectedUSDCReceived = (20_000 * 1.05) * 1E6
+    await expect(() => vault.connect(user).withdraw(20_000 * 1E6, true))
+      .to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
+
+    // mocking exchangerate to 1.8
+    await vault.setExchangeRateTEST(1.80 * 1E6);
+
+    expectedUSDCReceived = (30_000 * 1.80) * 1E6
+    await expect(() => vault.connect(user).withdraw(30_000 * 1E6, true))
+      .to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
+  })
 
   it("Should set withdrawal request and withdraw the allowance later", async function() {
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
