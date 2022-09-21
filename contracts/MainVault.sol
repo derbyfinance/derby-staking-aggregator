@@ -57,6 +57,26 @@ contract MainVault is Vault, VaultToken {
     _mint(msg.sender, shares); 
   }
 
+  /// @notice Withdraw from Vault
+  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
+  /// @param _amount Amount to withdraw in LP tokens
+  /// @return value Amount received by seller in vaultCurrency
+  function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant returns(uint256 value) {
+    value = _amount * exchangeRate / uScale;
+    require(value > 0, "no value");
+
+    if (!_pullFunds) {
+      require(getVaultBalance() >= value, "not enough funds");
+    }
+
+    if (_pullFunds) {
+      if (value > getVaultBalance()) pullFunds(value);  
+    }
+
+    _burn(msg.sender, _amount);
+    vaultCurrency.safeTransfer(msg.sender, value);
+  }
+
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token

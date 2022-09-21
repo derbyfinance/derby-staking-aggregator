@@ -39,6 +39,32 @@ describe("Testing VaultWithdraw, unit test", async () => {
     ]);
   });
 
+  it.only("Should be able to withdraw LP tokens from vault balance", async function() {
+    // 100k USDC to vault
+    await IUSDc.connect(USDCSigner).transfer(vault.address, 100_000 *1E6 )
+    // deposit 10k USDC
+    await vault.connect(user).deposit(50_000 * 1E6); 
+
+    await expect(() => vault.connect(user).withdraw(10_000 * 1E6, false))
+      .to.changeTokenBalance(IUSDc, user, 10_000 * 1E6);
+
+    // mocking exchangerate to 1.05
+    await vault.setExchangeRateTEST(1.05 * 1E6);
+
+    let expectedUSDCReceived = (10_000 * 1.05) * 1E6
+    await expect(() => vault.connect(user).withdraw(10_000 * 1E6, false))
+      .to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
+
+    // mocking exchangerate to 1.05
+    await vault.setExchangeRateTEST(1.20 * 1E6);
+
+    expectedUSDCReceived = (30_000 * 1.20) * 1E6
+    await expect(() => vault.connect(user).withdraw(30_000 * 1E6, false))
+      .to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
+  
+
+  });
+
   it("Should set withdrawal request and withdraw the allowance later", async function() {
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
