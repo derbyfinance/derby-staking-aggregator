@@ -39,7 +39,7 @@ contract MainVault is Vault, VaultToken {
     ) 
     VaultToken(_name, _symbol, _decimals) 
     Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
-      exchangeRate = _uScale;
+      exchangeRate = 10 ** _decimals;
     }
 
   /// @notice Deposit in Vault
@@ -52,7 +52,7 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = amount * uScale / exchangeRate;
+    shares = amount * (10 ** decimals()) / exchangeRate;
     
     _mint(msg.sender, shares); 
   }
@@ -64,7 +64,7 @@ contract MainVault is Vault, VaultToken {
     require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
-    value = _amount * exchangeRate / uScale;
+    value = _amount * exchangeRate / (10 ** decimals());
 
     _burn(msg.sender, _amount);
 
