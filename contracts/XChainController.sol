@@ -239,12 +239,12 @@ contract XChainController {
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
-    uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
-    uint256 totalSupply = getTotalSupply(_vaultNumber) + totalWithdrawalRequests;
+    uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
+    uint256 totalSupply = getTotalSupply(_vaultNumber); /////////*
 
     uint256 newExchangeRate = totalUnderlying * 1E6 / totalSupply;
-    totalUnderlying -= totalWithdrawalRequests;
+    // totalUnderlying -= totalWithdrawalRequests;
 
     console.log("new ExchangeRate %s", newExchangeRate);
     console.log("totalUnderlying %s", totalUnderlying);
@@ -253,7 +253,7 @@ contract XChainController {
       uint16 chain = chainIds[i];
       if (getVaultChainIdOff(_vaultNumber, chain)) continue;
 
-      int256 amountToChain = calcAmountToChain(_vaultNumber, chain, totalUnderlying, totalAllocation, newExchangeRate);
+      int256 amountToChain = calcAmountToChain(_vaultNumber, chain, totalUnderlying, totalAllocation);
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChain);
 
       depositOrWithdraw(_vaultNumber, chain, amountToDeposit, amountToWithdraw);
@@ -281,14 +281,13 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chainId,
     uint256 _totalUnderlying,
-    int256 _totalAllocation,
-    uint256 _exchangeRate
-  ) internal returns(int256) {
+    int256 _totalAllocation
+  ) internal view returns(int256) {
     int256 allocation = getCurrentAllocation(_vaultNumber, _chainId);
     uint256 withdrawalRequests = getWithdrawalRequests(_vaultNumber, _chainId);
 
     int256 amountToChain = int(_totalUnderlying) * allocation / _totalAllocation;
-    amountToChain += int(withdrawalRequests * _exchangeRate / 1E6);
+    amountToChain += int(withdrawalRequests);
 
     console.log("amount to chain %s, on chain %s", uint(amountToChain), _chainId);
     return amountToChain;
@@ -307,9 +306,13 @@ contract XChainController {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0);
       vaultStage[_vaultNumber].fundsReceived++;
+      console.log("Deposit %s' on chain %s", uint(_amountDeposit));
     }
 
-    if (_amountToWithdraw > 0) xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw);
+    if (_amountToWithdraw > 0) {
+      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw);
+      console.log("withdraw %s' on chain %s", uint(_amountToWithdraw));
+    }
   }
 
   /// @notice Step 5 trigger
