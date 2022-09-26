@@ -127,17 +127,6 @@ contract Vault is ReentrancyGuard {
     lastTimeStamp = block.timestamp;
   }
 
-  /// @notice Will set the amount to send back to the xController by the xController
-  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
-  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
-  /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocation(uint256 _amountToSend) external {
-    amountToSendXChain = _amountToSend;
-
-    if (_amountToSend == 0) state = State.WaitingForFunds;
-    else state = State.SendingFundsXChain;
-  }
-
   /// @notice Send vaultcurrency to the xController for xChain rebalance
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;

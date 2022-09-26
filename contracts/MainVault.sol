@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
+  
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -124,6 +125,18 @@ contract MainVault is Vault, VaultToken {
     );
 
     state = State.PushedUnderlying;
+  }
+
+  /// @notice Will set the amount to send back to the xController by the xController
+  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
+  /// @param _amountToSend amount to send in vaultCurrency
+  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external {
+    amountToSendXChain = _amountToSend;
+    exchangeRate = _exchangeRate;
+
+    if (_amountToSend == 0) state = State.WaitingForFunds;
+    else state = State.SendingFundsXChain;
   }
 
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).

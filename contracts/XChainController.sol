@@ -241,13 +241,9 @@ contract XChainController {
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
-    uint256 totalSupply = getTotalSupply(_vaultNumber); /////////*
+    uint256 totalSupply = getTotalSupply(_vaultNumber); 
 
     uint256 newExchangeRate = totalUnderlying * 1E6 / totalSupply;
-    // totalUnderlying -= totalWithdrawalRequests;
-
-    console.log("new ExchangeRate %s", newExchangeRate);
-    console.log("totalUnderlying %s", totalUnderlying);
     
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
@@ -256,7 +252,7 @@ contract XChainController {
       int256 amountToChain = calcAmountToChain(_vaultNumber, chain, totalUnderlying, totalAllocation);
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChain);
 
-      depositOrWithdraw(_vaultNumber, chain, amountToDeposit, amountToWithdraw);
+      sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);
     }
   }
 
@@ -277,6 +273,9 @@ contract XChainController {
     return (amountToDeposit, amountToWithdraw);
   }
 
+  /// @notice Calculates the amounts the vaults has to send back to the xChainController
+  /// @param _totalUnderlying Total underlying on all chains for given vaultNumber
+  /// @param _totalAllocation Total allocation on all chains for given vaultNumber
   function calcAmountToChain(
     uint256 _vaultNumber,
     uint16 _chainId,
@@ -289,29 +288,31 @@ contract XChainController {
     int256 amountToChain = int(_totalUnderlying) * allocation / _totalAllocation;
     amountToChain += int(withdrawalRequests);
 
-    console.log("amount to chain %s, on chain %s", uint(amountToChain), _chainId);
     return amountToChain;
   }
 
-  
-  function depositOrWithdraw(
+  /// @notice Sends out cross-chain messages to vaults with the amount the vault has to send back
+  /// @dev if the xChainController needs to deposit, the amount will be 0 so the vault knows it will receive currency
+  /// @param _amountDeposit Amount the vault will receive from the xChainController
+  /// @param _amountToWithdraw Amount the vault will have to send back to the xChainController
+  /// @param _exchangeRate New exchangerate for vaults
+  function sendXChainAmount(
     uint256 _vaultNumber, 
     uint16 _chainId, 
     int256 _amountDeposit,
-    uint256 _amountToWithdraw
+    uint256 _amountToWithdraw,
+    uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
 
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
-      xProvider.pushSetXChainAllocation(vault, _chainId, 0);
+      xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
       vaultStage[_vaultNumber].fundsReceived++;
-      console.log("Deposit %s' on chain %s", uint(_amountDeposit));
     }
 
     if (_amountToWithdraw > 0) {
-      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw);
-      console.log("withdraw %s' on chain %s", uint(_amountToWithdraw));
+      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
   }
 

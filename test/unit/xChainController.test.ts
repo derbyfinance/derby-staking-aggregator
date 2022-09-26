@@ -229,7 +229,7 @@ describe("Testing XChainController, unit test", async () => {
     await vault1.connect(user).deposit(100_000 * 1E6);
     await vault2.connect(user).deposit(200_000 * 1E6);
 
-    await vault2.setExchangeRateTEST(2 * 1E6);
+    await vault2.setExchangeRateTEST(1.2 * 1E6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1E6) 
 
     await vault1.pushTotalUnderlyingToController();
@@ -237,8 +237,8 @@ describe("Testing XChainController, unit test", async () => {
     await vault3.pushTotalUnderlyingToController();
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1E6); 
-    expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(50_000 * 2 * 1E6); 
-    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber)).to.be.equal(50_000 * 2 * 1E6); 
+    expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(50_000 * 1.2 * 1E6); 
+    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber)).to.be.equal(50_000 * 1.2 * 1E6); 
 
     // // Should revert if total Underlying is already set
     await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith("Vault already rebalancing");
@@ -256,22 +256,27 @@ describe("Testing XChainController, unit test", async () => {
 
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
     const expectedAmounts = [
-      100_000 - (400 / 2000 * 200_000) - 0, // vault 1
-      200_000 - (600 / 2000 * 200_000) - 100_000, // vault 2
-      0, // vault 3
+      100_000 - (400 / 2000 * 240_000) - 0, // vault 1 = 52_000
+      200_000 - (600 / 2000 * 240_000) - 60_000, // vault 2 = 68_000
+      0, // vault 3 = Receiving 120_000
       0, // vault 4         
     ];
+    const expectedExchangeRate = 240_000 / 250_000 * 1E6; // == 0.96
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.amountToSendXChain())).to.be.equal(expectedAmounts[2]);
     expect(formatUSDC(await vault4.amountToSendXChain())).to.be.equal(expectedAmounts[3]);
+    
+    expect(await vault1.exchangeRate()).to.be.equal(expectedExchangeRate);
+    expect(await vault2.exchangeRate()).to.be.equal(expectedExchangeRate);
+    expect(await vault3.exchangeRate()).to.be.equal(expectedExchangeRate);
 
-    // // Checking if vault states upped correctly
-    // expect(await vault1.state()).to.be.equal(1);
-    // expect(await vault2.state()).to.be.equal(1);
-    // expect(await vault3.state()).to.be.equal(2); // dont have to send any funds
-    // expect(await vault4.state()).to.be.equal(0); // chainId off
+    // Checking if vault states upped correctly
+    expect(await vault1.state()).to.be.equal(2);
+    expect(await vault2.state()).to.be.equal(2);
+    expect(await vault3.state()).to.be.equal(3); // dont have to send any funds
+    expect(await vault4.state()).to.be.equal(0); // chainId off
   });
 
   it.skip("4.5) Trigger vaults to transfer funds to xChainController", async function() {
