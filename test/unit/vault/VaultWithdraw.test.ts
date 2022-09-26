@@ -43,28 +43,28 @@ describe("Testing VaultWithdraw, unit test", async () => {
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
 
+    // mocking exchangerate to 0.9
+    await vault.setExchangeRateTEST(parseUSDC('0.9'));
+
     // withdrawal request for more then LP token balance
     await expect(vault.connect(user).withdrawalRequest(parseUSDC('10001')))
       .to.be.revertedWith('ERC20: burn amount exceeds balance');
-
+      
     // withdrawal request for 10k LP tokens
     await expect(() => vault.connect(user).withdrawalRequest(parseUSDC('10000')))
       .to.changeTokenBalance(vault, user, - parseUSDC('10000'));
     
     // check withdrawalAllowance user and totalsupply
-    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('10000'));
+    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('9000'));
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('0'));
 
     // trying to withdraw allowance before the vault reserved the funds
     await expect(vault.connect(user).withdrawAllowance())
       .to.be.revertedWith('Funds not reserved yet');
 
-    // mocking vault settings, exchangerate to 0.9
-    await Promise.all([
-      vault.upRebalancingPeriodTEST(),
-      vault.setExchangeRateTEST(2, parseUSDC('0.9')),
-      vault.setReservedFundsTEST(parseUSDC('10000')),
-    ]);
+    // mocking vault settings
+    await vault.upRebalancingPeriodTEST();
+    await vault.setReservedFundsTEST(parseUSDC('10000'));
 
     // withdraw allowance should give 9k USDC
     await expect(() => vault.connect(user).withdrawAllowance())

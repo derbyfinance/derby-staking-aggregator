@@ -101,8 +101,8 @@ contract MainVaultMock is MainVault {
     return totalWithdrawalRequests;
   }
 
-  function setExchangeRateTEST(uint256 _period, uint256 _exchangeRate) external {
-    exchangeRatePerPeriod[_period] = _exchangeRate;
+  function setExchangeRateTEST(uint256 _exchangeRate) external {
+    exchangeRate = _exchangeRate;
   }
 
   function setReservedFundsTEST(uint256 _amount) external {
@@ -175,7 +175,6 @@ contract MainVaultMock is MainVault {
 
   function testLargeGameplayerSet(uint256 _amountOfPlayers) public {
     for (uint256 i = 0; i < _amountOfPlayers; i++){
-      uint256 exchangeRate = exchangeRate();
       players[i] = exchangeRate;
     }
   }
