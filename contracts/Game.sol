@@ -245,13 +245,15 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Mints a new NFT with a Basket of allocations.
     /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
     /// @param _vaultNumber Number of the vault. Same as in Router.
-    function mintNewBasket(uint256 _vaultNumber) external {
+    /// @return basketId The basket Id the user has minted. 
+    function mintNewBasket(uint256 _vaultNumber) external returns(uint256) {
       require(_vaultNumber < latestvaultNumber, "Game: invalid ETF number");
       // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
       baskets[latestBasketId].vaultNumber = _vaultNumber;
       baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
       _safeMint(msg.sender, latestBasketId);
       latestBasketId++;
+      return latestBasketId - 1;
     }
 
     /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated. 
