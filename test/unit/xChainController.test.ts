@@ -279,17 +279,20 @@ describe("Testing XChainController, unit test", async () => {
     expect(await vault4.state()).to.be.equal(0); // chainId off
   });
 
-  it.skip("4.5) Trigger vaults to transfer funds to xChainController", async function() {
+  it("4.5) Trigger vaults to transfer funds to xChainController", async function() {
     await vault1.rebalanceXChain();
     await vault2.rebalanceXChain();
     await vault3.rebalanceXChain();
 
     // 150k should be sent to xChainController
-    expect(formatUSDC(await IUSDc.balanceOf(xChainController.address))).to.be.equal(150_000);
+    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_000) * 1E6);
+    expect(await IUSDc.balanceOf(vault1.address)).to.be.equal(48_000 * 1E6); // 100k - 52k
+    expect(await IUSDc.balanceOf(vault2.address)).to.be.equal(132_000 * 1E6); // 200k - 68k
+    expect(await IUSDc.balanceOf(vault3.address)).to.be.equal(0);
 
-    expect(await vault1.state()).to.be.equal(3); // should have upped after sending funds
-    expect(await vault2.state()).to.be.equal(3); // should have upped after sending funds
-    expect(await vault3.state()).to.be.equal(2); // have to receive funds
+    expect(await vault1.state()).to.be.equal(4); // should have upped after sending funds
+    expect(await vault2.state()).to.be.equal(4); // should have upped after sending funds
+    expect(await vault3.state()).to.be.equal(3); // have to receive funds
 
     // all 3 vaults are ready
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);

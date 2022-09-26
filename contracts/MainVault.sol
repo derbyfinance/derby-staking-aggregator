@@ -139,6 +139,19 @@ contract MainVault is Vault, VaultToken {
     else state = State.SendingFundsXChain;
   }
 
+  /// @notice Send vaultcurrency to the xController for xChain rebalance
+  function rebalanceXChain() external {
+    if (state != State.SendingFundsXChain) return;
+
+    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
+
+    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    
+    amountToSendXChain = 0;
+    state = State.RebalanceVault;
+  }
+
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
   /// @return Price per share of LP Token
   // function exchangeRate() public view returns(uint256) {

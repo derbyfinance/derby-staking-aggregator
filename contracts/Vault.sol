@@ -127,19 +127,6 @@ contract Vault is ReentrancyGuard {
     lastTimeStamp = block.timestamp;
   }
 
-  /// @notice Send vaultcurrency to the xController for xChain rebalance
-  function rebalanceXChain() external {
-    if (state != State.SendingFundsXChain) return;
-
-    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
-
-    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
-    
-    amountToSendXChain = 0;
-    state = State.RebalanceVault;
-  }
-
   // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
     if (state != State.WaitingForFunds) return;

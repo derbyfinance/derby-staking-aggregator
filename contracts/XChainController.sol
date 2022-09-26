@@ -29,7 +29,6 @@ contract XChainController {
     mapping(uint16 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
     mapping(uint16 => address) vaultChainAddress; // chainId => vault address
     mapping(uint16 => address) vaultUnderlyingAddress; // chainId => underlying address e.g USDC
-    // mapping(uint16 => uint256) totalSupply; // chainId => totalSupply of LP Token
     mapping(uint16 => uint256) withdrawalRequests; // chainId => total withdrawal requests in LP Token
     mapping(uint16 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
   }
@@ -102,8 +101,6 @@ contract XChainController {
   }
 
   constructor(address _game, address _dao) {
-    // feedback vault state back to controller
-    // transfers via provider
     game = _game;
     dao = _dao;
   }
