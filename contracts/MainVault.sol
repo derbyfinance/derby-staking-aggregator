@@ -8,6 +8,7 @@ import "hardhat/console.sol";
 
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
+  
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -55,6 +56,22 @@ contract MainVault is Vault, VaultToken {
     shares = amount * (10 ** decimals()) / exchangeRate;
     
     _mint(msg.sender, shares); 
+  }
+
+  /// @notice Withdraw from Vault
+  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
+  /// @param _amount Amount to withdraw in LP tokens
+  /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
+  /// @return value Amount received by seller in vaultCurrency
+  function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant returns(uint256 value) {
+    value = _amount * exchangeRate / (10 ** decimals());
+    require(value > 0, "No value");
+
+    if (_pullFunds && value > getVaultBalance()) pullFunds(value);  
+    require(getVaultBalance() >= value, "Not enough funds");
+
+    _burn(msg.sender, _amount);
+    vaultCurrency.safeTransfer(msg.sender, value);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
@@ -108,6 +125,31 @@ contract MainVault is Vault, VaultToken {
     );
 
     state = State.PushedUnderlying;
+  }
+
+  /// @notice Will set the amount to send back to the xController by the xController
+  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
+  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
+  /// @param _amountToSend amount to send in vaultCurrency
+  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external {
+    amountToSendXChain = _amountToSend;
+    exchangeRate = _exchangeRate;
+
+    if (_amountToSend == 0) state = State.WaitingForFunds;
+    else state = State.SendingFundsXChain;
+  }
+
+  /// @notice Send vaultcurrency to the xController for xChain rebalance
+  function rebalanceXChain() external {
+    if (state != State.SendingFundsXChain) return;
+
+    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
+
+    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
+    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    
+    amountToSendXChain = 0;
+    state = State.RebalanceVault;
   }
 
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).

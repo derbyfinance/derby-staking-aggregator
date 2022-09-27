@@ -229,17 +229,19 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
   /// @param _amountToSendBack Amount the vault has to send back
+  /// @param _exchangeRate New exchangerate for vaults
   function pushSetXChainAllocation(
     address _vault, 
     uint16 _chainId, 
-    uint256 _amountToSendBack
+    uint256 _amountToSendBack,
+    uint256 _exchangeRate
   ) external onlyController {
     if (_chainId == homeChainId) {
-      return IVault(_vault).setXChainAllocation(_amountToSendBack);
+      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
     }
     else {
-      bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack);
+      bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256,uint256)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack, _exchangeRate);
 
       xSend(_chainId, callData);
     }
@@ -248,11 +250,13 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Receiver for the amount the vault has to send back to the xChainController
   /// @param _vault Address of the Derby Vault on given chainId 
   /// @param _amountToSendBack Amount the vault has to send back
+  /// @param _exchangeRate New exchangerate for vaults
   function receiveSetXChainAllocation(
     address _vault,
-    uint256 _amountToSendBack
+    uint256 _amountToSendBack,
+    uint256 _exchangeRate
   ) external onlySelf {
-    return IVault(_vault).setXChainAllocation(_amountToSendBack);
+    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
   }
 
   /// @notice Transfers funds from vault to xController for crosschain rebalance
@@ -376,6 +380,11 @@ contract XProvider is ILayerZeroReceiver {
     int256[] memory _rewards
   ) external onlySelf {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
+  }
+
+  /// @notice returns number of decimals for the vault
+  function getDecimals(address _vault) external view returns(uint256) {
+    return IVault(_vault).decimals();
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
