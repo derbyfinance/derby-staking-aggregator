@@ -130,7 +130,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// @notice Setter to tick up stage 3: 
+  /// @notice Step 4 end; Push funds from vaults to xChainController
   /// @notice FundsReceived; funds received from all active vault contracts
   function upFundsReceived(uint256 _vaultNumber) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
@@ -161,7 +161,7 @@ contract XChainController {
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = 0;
   }
 
-  /// @notice Step 2; Used by game to send allocations to xChainController
+  /// @notice Step 1 end; Game pushes totalDeltaAllocations to xChainController
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGame(
@@ -207,7 +207,7 @@ contract XChainController {
     require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
-  /// @notice Step 3 receiver, trigger in vaults.
+  /// @notice Step 2 end; Vaults push totalUnderlying to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -231,7 +231,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived ++;
   }
 
-  /// @notice Step 4 trigger
+  /// @notice Step 3 trigger; xChainController pushes the amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {
@@ -313,7 +313,7 @@ contract XChainController {
     }
   }
 
-  /// @notice Step 5 trigger
+  /// @notice Step 5 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
   function sendFundsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {

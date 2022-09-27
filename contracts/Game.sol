@@ -376,6 +376,7 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice Step 1 trigger; Game pushes totalDeltaAllocations to xChainController
     /// @notice Trigger for Dao to push delta allocations to the xChainController
     /// @dev Sends over an array that should match the IDs in chainIds array
     function pushAllocationsToController(uint256 _vaultNumber) external {
@@ -399,6 +400,7 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
     /// @notice Trigger to push delta allocations in protocols to cross chain vaults
     /// @dev Sends over an array where the index is the protocolId
     function pushAllocationsToVaults(uint256 _vaultNumber) external {
@@ -435,7 +437,8 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
-    // Only provider modifier, basket should not be able to rebalance before this step
+    // basket should not be able to rebalance before this step
+    /// @notice Step 8 end; Vaults push rewardsPerLockedToken to game
     /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used

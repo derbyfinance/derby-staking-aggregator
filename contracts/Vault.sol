@@ -139,6 +139,7 @@ contract Vault is ReentrancyGuard {
     }
   }
 
+  /// @notice Step 7 trigger, end; Vaults rebalance
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
