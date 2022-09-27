@@ -57,9 +57,6 @@ contract Vault is ReentrancyGuard {
   uint256 public blockRebalanceInterval = 1; // SHOULD BE REPLACED FOR REALISTIC NUMBER
   uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
-  
-  uint16 public homeChainId;
-  uint256 public amountToSendXChain;
 
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
@@ -87,11 +84,6 @@ contract Vault is ReentrancyGuard {
 
   modifier onlyDao {
     require(msg.sender == governed, "Vault: only DAO");
-    _;
-  }
-
-  modifier onlyXProvider {
-    require(msg.sender == xProvider, "Vault: only xProvider");
     _;
   }
 
@@ -127,24 +119,6 @@ contract Vault is ReentrancyGuard {
     lastTimeStamp = block.timestamp;
   }
 
-  // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
-  function receiveFunds() external onlyXProvider {
-    if (state != State.WaitingForFunds) return;
-    state = State.RebalanceVault;
-  }
-
-  /// @notice Receives protocol allocation array from the game and settles the allocations
-  /// @param _deltas Array with delta allocations where the index matches the protocolId
-  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
-    for (uint i = 0; i < _deltas.length; i++) {
-      int256 allocation = _deltas[i];
-      if (allocation == 0) continue;
-      setDeltaAllocationsInt(i, allocation);
-    }
-
-    deltaAllocationsReceived = true;
-  }
-
   /// @notice Withdraw from protocols on shortage in Vault
   /// @dev Keeps on withdrawing until the Vault balance > _value
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
@@ -171,7 +145,6 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() external returnGasFee nonReentrant onlyDao {
-    require(rebalanceNeeded(), "No rebalance needed");
     require(state == State.RebalanceVault, "Wrong state");
     require(deltaAllocationsReceived, "Delta allocations not received");
     
@@ -265,16 +238,6 @@ contract Vault is ReentrancyGuard {
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
-  }
-
-  /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
-  function sendRewardsToGame() external {
-    require(state == State.SendRewardsPerToken , "Wrong state");
-
-    int256[] memory rewards = rewardsToArray();
-    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
-
-    state = State.Idle;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
@@ -522,18 +485,6 @@ contract Vault is ReentrancyGuard {
     blockRebalanceInterval = _blockInterval;
   }
 
-  /// @notice Setter for xProvider address
-  /// @param _xProvider new address of xProvider on this chain
-  function setHomeXProviderAddress(address _xProvider) external onlyDao {
-    xProvider = _xProvider;
-  }
-
-  /// @notice Setter for xController address
-  /// @param _xController set controller address
-  function setXControllerAddress(address _xController) external onlyDao {
-    xController = _xController;
-  }
-  
   function getVaultBalance() public virtual view returns(uint256) {
     return vaultCurrency.balanceOf(address(this));
   }

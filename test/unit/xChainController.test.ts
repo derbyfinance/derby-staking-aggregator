@@ -298,23 +298,23 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);
   });
 
-  it.skip("5) Trigger xChainController to send funds to vaults", async function() {
+  it("5) Trigger xChainController to send funds to vaults", async function() {
     await xChainController.sendFundsToVault(vaultNumber);
 
     const expectedAmounts = [
-      400 / 2000 * 300_000, // vault 1
-      600 / 2000 * 300_000, // vault 2
-      1000 / 2000 * 300_000, // vault 3 should have received 150k from controller    
+      400 / 2000 * 240_000, // vault 1
+      (600 / 2000 * 240_000) + 60_000, // vault 2 should have the request of 60k
+      1000 / 2000 * 240_000, // vault 3 should have received 150k from controller    
     ];
 
     expect(formatUSDC(await IUSDc.balanceOf(vault1.address))).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
 
-    expect(await vault3.state()).to.be.equal(3); // received funds, all vaults should be ready now
+    expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
   });
 
-  it.skip("6) Push allocations from game to vaults", async function() {
+  it("6) Push allocations from game to vaults", async function() {
     expect(await game.isXChainRebalancing(vaultNumber)).to.be.true;
     await game.pushAllocationsToVaults(vaultNumber);
     expect(await game.isXChainRebalancing(vaultNumber)).to.be.false;
