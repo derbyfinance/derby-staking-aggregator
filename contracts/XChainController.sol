@@ -4,7 +4,6 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
@@ -18,6 +17,7 @@ contract XChainController {
   IXProvider public xProvider;
 
   uint16[] public chainIds;
+  uint16 public homeChain;
 
   struct vaultInfo {
     int256 totalCurrentAllocation;
@@ -100,9 +100,10 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao) {
+  constructor(address _game, address _dao, uint16 _homeChain) {
     game = _game;
     dao = _dao;
+    homeChain = _homeChain;
   }
 
   /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
@@ -240,7 +241,8 @@ contract XChainController {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
     uint256 totalSupply = getTotalSupply(_vaultNumber); 
 
-    uint256 newExchangeRate = totalUnderlying * 1E6 / totalSupply;
+    uint256 decimals = xProvider.getDecimals(getVaultAddress(_vaultNumber, homeChain));
+    uint256 newExchangeRate = totalUnderlying * (10 ** decimals) / totalSupply;
     
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];

@@ -17,4 +17,5 @@ interface IVault {
   function setVaultState(uint256 _state) external;
   function receiveFunds() external;
   function receiveProtocolAllocations(int256[] memory _deltas) external;
+  function decimals() external view returns(uint256);
 }
