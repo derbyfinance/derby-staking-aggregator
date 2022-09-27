@@ -64,7 +64,7 @@ contract MainVault is Vault, VaultToken {
   /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
   /// @return value Amount received by seller in vaultCurrency
   function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant returns(uint256 value) {
-    value = _amount * exchangeRate / uScale;
+    value = _amount * exchangeRate / (10 ** decimals());
     require(value > 0, "No value");
 
     if (_pullFunds && value > getVaultBalance()) pullFunds(value);  

@@ -382,6 +382,11 @@ contract XProvider is ILayerZeroReceiver {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
+  /// @notice returns number of decimals for the vault
+  function getDecimals(address _vault) external view returns(uint256) {
+    return IVault(_vault).decimals();
+  }
+
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
   /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
   /// @param _srcAddress Address of remote xprovider

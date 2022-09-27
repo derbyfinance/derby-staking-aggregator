@@ -18,6 +18,7 @@ interface IXProvider {
   function receiveFeedbackToXController(uint256 _vaultNumber) external;
   function xTransferToVaults(address _vault, uint16 _chainId, uint256 _amount, address _asset) external;
   function pushProtocolAllocationsToVault(uint16 _chainId, address _vault, int256[] memory _deltas) external;
+  function getDecimals(address _vault) external view returns(uint256);
   function pushTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
