@@ -212,13 +212,15 @@ contract XChainController {
   /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
   /// @param _state Bool if vault is turned on or off
   function sendFeedbackToVault(uint256 _vaultNumber, uint16 _chainId, bool _state) internal {
-    if (getVaultChainIdOff(_vaultNumber, _chainId) != _state) xProvider.pushStateFeedbackToVault(
-      getVaultAddress(_vaultNumber, _chainId),
-      _chainId,
-      _state
-    );
+    if (getVaultChainIdOff(_vaultNumber, _chainId) != _state) {
+      xProvider.pushStateFeedbackToVault(
+        getVaultAddress(_vaultNumber, _chainId),
+        _chainId,
+        _state
+      );
 
-    vaults[_vaultNumber].chainIdOff[_chainId] = _state;
+      vaults[_vaultNumber].chainIdOff[_chainId] = _state;
+    }
   }
 
   /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
