@@ -8,6 +8,8 @@ import "hardhat/console.sol";
 
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
+
+  bool public vaultOff;
   
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -49,11 +51,17 @@ contract MainVault is Vault, VaultToken {
     _;
   }
 
+  modifier onlyWhenVaultIsOn {
+    require(state == State.Idle, "Vault is rebalancing");
+    require(!vaultOff, "Vault is set to off by xChainController");
+    _;
+  }
+
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function deposit(uint256 _amount) external nonReentrant returns(uint256 shares) {
+  function deposit(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 shares) {
     uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
@@ -69,7 +77,7 @@ contract MainVault is Vault, VaultToken {
   /// @param _amount Amount to withdraw in LP tokens
   /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
   /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant returns(uint256 value) {
+  function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
     value = _amount * exchangeRate / uScale;
     require(value > 0, "No value");
 
@@ -83,8 +91,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
-  function withdrawalRequest(uint256 _amount) external nonReentrant returns(uint256 value) {
-    require(state == State.Idle, "Vault is rebalancing");
+  function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
     value = _amount * exchangeRate / uScale;
@@ -188,6 +195,10 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
 
     state = State.Idle;
+  }
+
+  function toggleVaultOnOff(bool _state) external onlyXProvider {
+    vaultOff = _state;
   }
 
   /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).

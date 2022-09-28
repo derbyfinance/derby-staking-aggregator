@@ -47,6 +47,15 @@ describe("Testing VaultWithdraw, unit test", async () => {
     }
   });
 
+  it("Should not be able to withdraw when vault is off", async function() {
+    await vault.toggleVaultOnOffTEST(true);
+    
+    await expect(vault.connect(user).withdraw(1 * 1E6, false)).to.be.revertedWith(
+      "Vault is set to off by xChainController"
+      );
+    await vault.toggleVaultOnOffTEST(false);
+  });
+
   it("Should be able to withdraw LP tokens from vault balance", async function() {
     // 100k USDC to vault
     await IUSDc.connect(USDCSigner).transfer(vault.address, 100_000 *1E6)
@@ -87,6 +96,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
       vault.setDeltaAllocationsReceivedTEST(true),
     ]);
     await rebalanceETF(vault);
+    await vault.setVaultState(0);
 
     await expect(vault.connect(user).withdraw(20_000 * 1E6, false)).to.be.revertedWith(
       "Not enough funds"
@@ -142,4 +152,5 @@ describe("Testing VaultWithdraw, unit test", async () => {
     await expect(vault.connect(user).withdrawAllowance())
       .to.be.revertedWith('No allowance');
   });
+
 });
