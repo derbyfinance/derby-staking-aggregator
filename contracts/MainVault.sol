@@ -114,7 +114,7 @@ contract MainVault is Vault, VaultToken {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
-  /// @notice Step 2 trigger; Vaults push totalUnderlying to xChainController
+  /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
     require(state == State.Idle, "Vault already rebalancing");
@@ -133,7 +133,7 @@ contract MainVault is Vault, VaultToken {
     state = State.PushedUnderlying;
   }
 
-  /// @notice Step 3 end; xChainController pushes the amount the vaults have to send back to all vaults
+  /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController

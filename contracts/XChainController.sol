@@ -207,7 +207,7 @@ contract XChainController {
     require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
   }
 
-  /// @notice Step 2 end; Vaults push totalUnderlying to xChainController
+  /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -231,7 +231,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived ++;
   }
 
-  /// @notice Step 3 trigger; xChainController pushes the amount the vaults have to send back to all vaults
+  /// @notice Step 3 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(uint256 _vaultNumber) external onlyWhenUnderlyingsReceived(_vaultNumber) {

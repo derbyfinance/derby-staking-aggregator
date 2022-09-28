@@ -168,7 +168,7 @@ contract XProvider is ILayerZeroReceiver {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
-  /// @notice Step 2 push; Vaults push totalUnderlying to xChainController
+  /// @notice Step 2 push; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -206,7 +206,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
-  /// @notice Step 2 receive; Vaults push totalUnderlying to xChainController
+  /// @notice Step 2 receive; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -229,7 +229,7 @@ contract XProvider is ILayerZeroReceiver {
     );
   }
 
-  /// @notice Step 3 push; xChainController pushes the amount the vaults have to send back to all vaults
+  /// @notice Step 3 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
   /// @param _amountToSendBack Amount the vault has to send back
@@ -251,7 +251,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
-  /// @notice Step 3 receive; xChainController pushes the amount the vaults have to send back to all vaults
+  /// @notice Step 3 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId 
   /// @param _amountToSendBack Amount the vault has to send back
   /// @param _exchangeRate New exchangerate for vaults
