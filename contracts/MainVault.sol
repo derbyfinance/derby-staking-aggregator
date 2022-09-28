@@ -197,6 +197,8 @@ contract MainVault is Vault, VaultToken {
     state = State.Idle;
   }
 
+  /// @notice Receive feedback for the vault if the vault is set to on or off
+  /// @param _state bool for chainId on or off
   function toggleVaultOnOff(bool _state) external onlyXProvider {
     vaultOff = _state;
   }
