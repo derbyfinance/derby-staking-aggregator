@@ -149,6 +149,7 @@ contract XProvider is ILayerZeroReceiver {
     require(success, "LZReceive: No success");
   }
 
+  /// @notice Step 1 push; Game pushes totalDeltaAllocations to xChainController
   /// @notice Pushes the delta allocations from the game to the xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
@@ -159,6 +160,7 @@ contract XProvider is ILayerZeroReceiver {
     xSend(xControllerChain, callData);
   }
 
+  /// @notice Step 1 receive; Game pushes totalDeltaAllocations to xChainController
   /// @notice Receives the delta allocations from the game and routes to xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
@@ -166,6 +168,7 @@ contract XProvider is ILayerZeroReceiver {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
+  /// @notice Step 2 push; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -203,6 +206,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
+  /// @notice Step 2 receive; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -225,7 +229,7 @@ contract XProvider is ILayerZeroReceiver {
     );
   }
 
-  /// @notice Pushes the amount the vault has to send back to the xChainController
+  /// @notice Step 3 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
   /// @param _amountToSendBack Amount the vault has to send back
@@ -247,7 +251,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
-  /// @notice Receiver for the amount the vault has to send back to the xChainController
+  /// @notice Step 3 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId 
   /// @param _amountToSendBack Amount the vault has to send back
   /// @param _exchangeRate New exchangerate for vaults
@@ -259,6 +263,7 @@ contract XProvider is ILayerZeroReceiver {
     return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
   }
 
+  /// @notice Step 4 push; Push funds from vaults to xChainController
   /// @notice Transfers funds from vault to xController for crosschain rebalance
   /// @param _vaultNumber Address of the Derby Vault on given chainId 
   /// @param _amount Number of the vault
@@ -280,6 +285,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
+  /// @notice Step 4 push; Push funds from vaults to xChainController
   /// @notice Push crosschain feedback to xController to know when the vaultNumber has sent funds
   /// @param _vaultNumber Number of the vault
   function pushFeedbackToXController(uint256 _vaultNumber) internal {
@@ -289,12 +295,14 @@ contract XProvider is ILayerZeroReceiver {
     xSend(xControllerChain, callData);
   }
 
+  /// @notice Step 4 receive; Push funds from vaults to xChainController
   /// @notice Receive crosschain feedback to xController to know when the vaultNumber has sent funds
   /// @param _vaultNumber Number of the vault
   function receiveFeedbackToXController(uint256 _vaultNumber) external onlySelf {
     return IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
+  /// @notice Step 5 push; Push funds from xChainController to vaults
   /// @notice Transfers funds from xController to vault for crosschain rebalance
   /// @param _chainId Number of chainId
   /// @param _amount Amount to send to vault in vaultcurrency
@@ -310,6 +318,7 @@ contract XProvider is ILayerZeroReceiver {
     pushFeedbackToVault(_chainId, _vault);
   }
 
+  /// @notice Step 5 push; Push funds from xChainController to vaults
   /// @notice Push feedback message so the vault knows it has received funds and is ready to rebalance
   /// @param _chainId Number of chainId
   /// @param _vault Address of the vault on given chainId
@@ -320,12 +329,14 @@ contract XProvider is ILayerZeroReceiver {
     xSend(_chainId, callData);
   }
 
+  /// @notice Step 5 receive; Push funds from xChainController to vaults
   /// @notice Receive feedback message so the vault knows it has received funds and is ready to rebalance
   /// @param _vault Address of the vault on given chainId
   function receiveFeedbackToVault(address _vault) external onlySelfOrVault {
     return IVault(_vault).receiveFunds();
   }
 
+  /// @notice Step 6 push; Game pushes deltaAllocations to vaults
   /// @notice Push protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
@@ -343,6 +354,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
+  /// @notice Step 6 receive; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
@@ -350,6 +362,7 @@ contract XProvider is ILayerZeroReceiver {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
+  /// @notice Step 8 push; Vaults push rewardsPerLockedToken to game
   /// @notice Push price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -370,6 +383,7 @@ contract XProvider is ILayerZeroReceiver {
     }
   }
 
+  /// @notice Step 8 receive; Vaults push rewardsPerLockedToken to game
   /// @notice Receives price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used

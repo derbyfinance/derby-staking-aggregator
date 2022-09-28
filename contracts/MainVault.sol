@@ -114,7 +114,7 @@ contract MainVault is Vault, VaultToken {
     vaultCurrency.safeTransfer(msg.sender, value);
   }
 
-  /// @notice Step 3 trigger
+  /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
     require(state == State.Idle, "Vault already rebalancing");
@@ -133,6 +133,7 @@ contract MainVault is Vault, VaultToken {
     state = State.PushedUnderlying;
   }
 
+  /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
@@ -145,6 +146,7 @@ contract MainVault is Vault, VaultToken {
     else state = State.SendingFundsXChain;
   }
 
+  /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
@@ -158,12 +160,14 @@ contract MainVault is Vault, VaultToken {
     state = State.RebalanceVault;
   }
 
-  // @notice Receiving feedback from xController when funds are received, so the vault can rebalance
+  /// @notice Step 5 end; Push funds from xChainController to vaults
+  /// @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
     if (state != State.WaitingForFunds) return;
     state = State.RebalanceVault;
   }
 
+  /// @notice Step 6 end; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game and settles the allocations
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
@@ -176,7 +180,7 @@ contract MainVault is Vault, VaultToken {
     deltaAllocationsReceived = true;
   }
 
-  /// @notice Trigger for the last step of the rebalance; sending back rewardsPerLockedToken to the game
+  /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external {
     require(state == State.SendRewardsPerToken , "Wrong state");
 
