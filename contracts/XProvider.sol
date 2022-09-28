@@ -424,6 +424,10 @@ contract XProvider is ILayerZeroReceiver {
     bool _state
   ) external onlySelf {
     return IVault(_vault).toggleVaultOnOff(_state);
+
+  /// @notice returns number of decimals for the vault
+  function getDecimals(address _vault) external view returns(uint256) {
+    return IVault(_vault).decimals();
   }
 
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.

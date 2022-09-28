@@ -50,7 +50,7 @@ contract MainVault is Vault, VaultToken {
     require(msg.sender == xProvider, "Vault: only xProvider");
     _;
   }
-
+  
   modifier onlyWhenVaultIsOn {
     require(state == State.Idle, "Vault is rebalancing");
     require(!vaultOff, "Vault is set to off by xChainController");
@@ -67,7 +67,7 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = amount * uScale / exchangeRate;
+    shares = amount * (10 ** decimals()) / exchangeRate;
     
     _mint(msg.sender, shares); 
   }
@@ -78,7 +78,8 @@ contract MainVault is Vault, VaultToken {
   /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
   /// @return value Amount received by seller in vaultCurrency
   function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
-    value = _amount * exchangeRate / uScale;
+    value = _amount * exchangeRate / (10 ** decimals());
+
     require(value > 0, "No value");
 
     if (_pullFunds && value > getVaultBalance()) pullFunds(value);  
@@ -94,7 +95,7 @@ contract MainVault is Vault, VaultToken {
   function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
-    value = _amount * exchangeRate / uScale;
+    value = _amount * exchangeRate / (10 ** decimals());
 
     _burn(msg.sender, _amount);
 
