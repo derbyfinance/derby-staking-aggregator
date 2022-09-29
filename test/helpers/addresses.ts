@@ -1,5 +1,18 @@
 import { ProtocolVault } from "./protocolVaultClass";
 
+export const testLayerzeroChainIds = {
+  bnbChain: 10102,
+  fuju: 10106,
+  mumbai: 10109,
+  fantom: 10112,
+  goerli: 10121,
+  arbitrumGoerli: 10143,
+  optimismGoerli: 10132,
+  harmony: 10133,
+  moonbeam: 10126,
+  celo: 10125,
+}
+
 // Stable coins
 export const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 export const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
