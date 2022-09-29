@@ -223,6 +223,8 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 1000)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 2000)).to.be.true;
+
+    expect(await vault4.vaultOff()).to.be.true;
   });
 
   it("3) Trigger vaults to push totalUnderlyings to xChainController", async function() {

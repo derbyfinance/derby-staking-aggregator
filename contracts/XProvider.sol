@@ -396,6 +396,36 @@ contract XProvider is ILayerZeroReceiver {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
+  /// @notice Push feedback to the vault if the vault is set to on or off
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _state bool for chainId on or off
+  function pushStateFeedbackToVault(
+    address _vault,
+    uint16 _chainId,
+    bool _state
+  ) external onlyController {
+    if (_chainId == homeChainId) {
+      return IVault(_vault).toggleVaultOnOff(_state);
+    }
+    else {
+      bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
+
+      xSend(_chainId, callData);
+    }
+  }
+
+  /// @notice Receive feedback for the vault if the vault is set to on or off
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _state bool for chainId on or off
+  function receiveStateFeedbackToVault(
+    address _vault,
+    bool _state
+  ) external onlySelf {
+    return IVault(_vault).toggleVaultOnOff(_state);
+  }
+
   /// @notice returns number of decimals for the vault
   function getDecimals(address _vault) external view returns(uint256) {
     return IVault(_vault).decimals();

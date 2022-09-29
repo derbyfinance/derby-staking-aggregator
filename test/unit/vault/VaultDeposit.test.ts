@@ -57,5 +57,13 @@ describe("Testing VaultDeposit, unit test", async () => {
     await expect(() => vault.connect(user).deposit(10_000 * 1E6))
       .to.changeTokenBalance(vault, user, expectedLPTokens);
   });
+
+  it("Should not be able to deposit when vault is off", async function() {
+    await vault.toggleVaultOnOffTEST(true);
+
+    await expect(vault.connect(user).deposit(10_000 * 1E6)).to.be.revertedWith(
+      "Vault is set to off by xChainController"
+    );
+  });
 });
 

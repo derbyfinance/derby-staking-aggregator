@@ -185,7 +185,7 @@ contract XChainController {
 
   /// @notice Helper to settle the total current allocation with the delta allocations received from Game
   /// @notice Will set a chainId on/off depending on the currentAllocation and incoming deltaAllocation
-  /// @dev if currentAllocation = 0 and deltaAllocation = 0, chainId will be set to Off
+  /// @dev if currentAllocation = 0 and deltaAllocation = 0, chainId will be set to Off and feedback will be send to vault
   /// @param _vaultNumber Number of Vault
   /// @param _chainId Number of chain used
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
@@ -195,10 +195,11 @@ contract XChainController {
     int256 _deltas
   ) internal returns(uint256 activeVault) {
     if (getCurrentAllocation(_vaultNumber, _chainId) == 0 && _deltas == 0) {
-      vaults[_vaultNumber].chainIdOff[_chainId] = true;
+      sendFeedbackToVault(_vaultNumber, _chainId, true);
       activeVault = 0;
-    } else {
-      vaults[_vaultNumber].chainIdOff[_chainId] = false;
+    } 
+    else {
+      sendFeedbackToVault(_vaultNumber, _chainId, false);
       activeVault = 1;
     }
 
@@ -206,6 +207,20 @@ contract XChainController {
     vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
 
     require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
+  }
+
+  /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
+  /// @param _state Bool if vault is turned on or off
+  function sendFeedbackToVault(uint256 _vaultNumber, uint16 _chainId, bool _state) internal {
+    if (getVaultChainIdOff(_vaultNumber, _chainId) != _state) {
+      xProvider.pushStateFeedbackToVault(
+        getVaultAddress(_vaultNumber, _chainId),
+        _chainId,
+        _state
+      );
+
+      vaults[_vaultNumber].chainIdOff[_chainId] = _state;
+    }
   }
 
   /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController

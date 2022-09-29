@@ -27,6 +27,12 @@ interface IXProvider {
     uint256 _withdrawalRequests
   ) external;
 
+  function pushStateFeedbackToVault(
+    address _vault, 
+    uint16 _chainId, 
+    bool _state
+  ) external;
+
   function pushRewardsToGame(
     uint256 _vaultNumber,
     uint16 _chainId, 

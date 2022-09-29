@@ -125,6 +125,11 @@ contract MainVaultMock is MainVault {
     vaultCurrency.transfer(governed, _balance);
   }
 
+  function toggleVaultOnOffTEST(bool _state) external {
+    vaultOff = _state;
+  }
+
+
   function swapTokensMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
     return Swap.swapTokensMulti(
       _amount, 
