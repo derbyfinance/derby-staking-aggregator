@@ -439,6 +439,12 @@ contract XChainController {
     xProviderAddr = _xProvider;
   }
 
+  /// @notice Setter for homeChain Id
+  /// @param _homeChainId New home chainId
+  function setHomeChainId(uint16 _homeChainId) external onlyDao {
+    homeChain = _homeChainId;
+  }
+
   /// @notice Setter for chainId array
   /// @param _chainIds array of all the used chainIds
   function setChainIdArray(uint16[] memory _chainIds) external onlyDao {

@@ -1,5 +1,6 @@
 import { ProtocolVault } from "./protocolVaultClass";
 
+// https://layerzero.gitbook.io/docs/technical-reference/testnet/testnet-addresses
 export const testLayerzeroChainIds = {
   bnbChain: 10102,
   fuju: 10106,
@@ -11,6 +12,13 @@ export const testLayerzeroChainIds = {
   harmony: 10133,
   moonbeam: 10126,
   celo: 10125,
+}
+
+// https://docs.connext.network/resources/supported-chains
+export const testConnextChainIds = {
+  goerli: 1735353714,
+  optimismGoerli: 1735356532,
+  mumbai: 9991,
 }
 
 // Stable coins

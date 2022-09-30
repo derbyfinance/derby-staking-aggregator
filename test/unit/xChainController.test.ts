@@ -4,14 +4,15 @@ import { Signer, Contract } from "ethers";
 import { erc20, formatUSDC, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, MainVaultMock, XChainControllerMock, XProvider } from '@typechain';
 import { deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '@testhelp/deploy';
-import { testLayerzeroChainIds, usdc } from "@testhelp/addresses";
+import { testConnextChainIds, testLayerzeroChainIds, usdc } from "@testhelp/addresses";
 import { initController } from "@testhelp/vaultHelpers";
 import allProviders  from "@testhelp/allProvidersClass";
 import { vaultInfo } from "@testhelp/vaultHelpers";
+import { json } from "hardhat/internal/core/params/argumentTypes";
 
+const { bnbChain, goerli, arbitrumGoerli, optimismGoerli } = testLayerzeroChainIds;
 
 const amount = 100_000;
-const { bnbChain, goerli, arbitrumGoerli, optimismGoerli } = testLayerzeroChainIds;
 const chainIds = [goerli, arbitrumGoerli, optimismGoerli, bnbChain];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
@@ -90,6 +91,16 @@ describe("Testing XChainController, unit test", async () => {
       xProviderArbitrum.toggleVaultWhitelist(vault2.address),
       xProviderOptimism.toggleVaultWhitelist(vault3.address),
       xProviderBnbChain.toggleVaultWhitelist(vault4.address),
+
+      xProviderGoerli.setConnextChainId(goerli, testConnextChainIds.goerli),
+      xProviderGoerli.setConnextChainId(optimismGoerli, testConnextChainIds.optimismGoerli), 
+      xProviderGoerli.setConnextChainId(arbitrumGoerli, testConnextChainIds.mumbai), // arbitrum not supported
+      xProviderArbitrum.setConnextChainId(goerli, testConnextChainIds.goerli),
+      xProviderArbitrum.setConnextChainId(optimismGoerli, testConnextChainIds.optimismGoerli), 
+      xProviderArbitrum.setConnextChainId(arbitrumGoerli, testConnextChainIds.mumbai), // arbitrum not supported
+      xProviderOptimism.setConnextChainId(goerli, testConnextChainIds.goerli),
+      xProviderOptimism.setConnextChainId(optimismGoerli, testConnextChainIds.optimismGoerli), 
+      xProviderOptimism.setConnextChainId(arbitrumGoerli, testConnextChainIds.mumbai), // arbitrum not supported
     ]);
 
     await Promise.all([
@@ -153,6 +164,12 @@ describe("Testing XChainController, unit test", async () => {
       xChainController.setHomeXProviderAddress(xProviderArbitrum.address), // xChainController on chain 100
       xChainController.connect(dao).setChainIdArray(chainIds),
     ]);
+  });
+
+  it("Testing provider settings", async function() {
+    expect(await xProviderGoerli.connextChainId(goerli)).to.be.equal(testConnextChainIds.goerli);
+    expect(await xProviderGoerli.connextChainId(optimismGoerli)).to.be.equal(testConnextChainIds.optimismGoerli); 
+    expect(await xProviderGoerli.connextChainId(arbitrumGoerli)).to.be.equal(testConnextChainIds.mumbai);
   });
 
   it("1) Store allocations in Game contract", async function() {
