@@ -18,7 +18,7 @@ contract MainVault is Vault, VaultToken {
   uint256 internal reservedFunds;
 
   uint256 public exchangeRate;
-  uint16 public homeChainId;
+  uint16 public homeChain;
   uint256 public amountToSendXChain;
     
   // amount in vaultCurrency the vault owes to the user 
@@ -132,7 +132,7 @@ contract MainVault is Vault, VaultToken {
 
     IXProvider(xProvider).pushTotalUnderlying(
       vaultNumber, 
-      homeChainId, 
+      homeChain, 
       underlying, 
       totalSupply(), 
       totalWithdrawalRequests
@@ -193,7 +193,7 @@ contract MainVault is Vault, VaultToken {
     require(state == State.SendRewardsPerToken , "Wrong state");
 
     int256[] memory rewards = rewardsToArray();
-    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChainId, rewards);
+    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
 
     state = State.Idle;
   }
@@ -226,13 +226,13 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Setter for xController address
-  /// @param _xController set controller address
+  /// @param _xController New address of controller
   function setXControllerAddress(address _xController) external onlyDao {
     xController = _xController;
   }
 
-  /// @notice Setter for xController chainId and homeChain
+  /// @notice Setter for new homeChain Id
   function setChainIds(uint16 _homeChain) external onlyDao {
-    homeChainId = _homeChain;
+    homeChain = _homeChain;
   }
 }

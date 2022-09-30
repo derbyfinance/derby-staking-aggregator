@@ -1,5 +1,26 @@
 import { ProtocolVault } from "./protocolVaultClass";
 
+// https://layerzero.gitbook.io/docs/technical-reference/testnet/testnet-addresses
+export const testLayerzeroChainIds = {
+  bnbChain: 10102,
+  fuju: 10106,
+  mumbai: 10109,
+  fantom: 10112,
+  goerli: 10121,
+  arbitrumGoerli: 10143,
+  optimismGoerli: 10132,
+  harmony: 10133,
+  moonbeam: 10126,
+  celo: 10125,
+}
+
+// https://docs.connext.network/resources/supported-chains
+export const testConnextChainIds = {
+  goerli: 1735353714,
+  optimismGoerli: 1735356532,
+  mumbai: 9991,
+}
+
 // Stable coins
 export const usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 export const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
