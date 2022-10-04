@@ -31,6 +31,10 @@ contract Vault is VaultToken {
         vaultCurrencyAddr = _vaultCurrencyAddr;
     }
 
+    function getVaultBalance() public virtual view returns(uint256) {
+        return IERC20(vaultCurrencyAddr).balanceOf(address(this));
+    }
+
     function setExchangeRate(uint256 _exchangeRate) external {
         exchangeRate = _exchangeRate;
     }
@@ -44,9 +48,9 @@ contract Vault is VaultToken {
     }
 
     function deposit(uint256 _amount) external returns(uint256 shares) {
-        uint256 balanceBefore = IERC20(vaultCurrencyAddr).balanceOf(address(this));
+        uint256 balanceBefore = getVaultBalance();
         IERC20(vaultCurrencyAddr).safeTransferFrom(msg.sender, address(this), _amount);
-        uint256 balanceAfter = IERC20(vaultCurrencyAddr).balanceOf(address(this));
+        uint256 balanceAfter = getVaultBalance();
 
         uint256 amount = balanceAfter - balanceBefore;
         shares = amount * (10 ** decimals()) / exchangeRate;
@@ -59,7 +63,7 @@ contract Vault is VaultToken {
 
         require(value > 0, "No value");
 
-        require(IERC20(vaultCurrencyAddr).balanceOf(address(this)) >= value, "Not enough funds");
+        require(getVaultBalance() >= value, "Not enough funds");
 
         _burn(msg.sender, _amount);
         IERC20(vaultCurrencyAddr).safeTransfer(msg.sender, value);
@@ -83,8 +87,8 @@ contract Vault is VaultToken {
         
         value = withdrawalAllowance[msg.sender];
 
-        require(IERC20(vaultCurrencyAddr).balanceOf(address(this)) >= value, "Not enough funds");
-        
+        require(getVaultBalance() >= value, "Not enough funds");
+
         delete withdrawalAllowance[msg.sender];
         delete withdrawalRequestPeriod[msg.sender];
 
