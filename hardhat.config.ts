@@ -65,7 +65,11 @@ const config: HardhatUserConfig = {
   //   coinmarketcap: process.env.CMC,
   // },
   etherscan: {
-    apiKey: process.env.BINANCESCAN_API_KEY
+    apiKey: {
+      goerli: process.env.ETHERSCAN_API_KEY as string,
+      bscTestnet: process.env.BINANCESCAN_API_KEY as string,
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY as string
+    }
   },
   mocha: {
     timeout: 3000000,
