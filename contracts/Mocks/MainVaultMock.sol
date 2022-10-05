@@ -101,6 +101,10 @@ contract MainVaultMock is MainVault {
     return totalWithdrawalRequests;
   }
 
+  function getReservedFundsTEST() external view returns(uint256) {
+    return reservedFunds;
+  }
+
   function setExchangeRateTEST(uint256 _exchangeRate) external {
     exchangeRate = _exchangeRate;
   }

@@ -250,7 +250,7 @@ describe("Testing XChainController, unit test", async () => {
     await vault2.connect(user).deposit(200_000 * 1E6);
 
     await vault2.setExchangeRateTEST(1.2 * 1E6);
-    await vault2.connect(user).withdrawalRequest(50_000 * 1E6) 
+    await vault2.connect(user).withdrawalRequest(50_000 * 1E6);
 
     await vault1.pushTotalUnderlyingToController();
     await vault2.pushTotalUnderlyingToController();
@@ -327,9 +327,17 @@ describe("Testing XChainController, unit test", async () => {
       1000 / 2000 * 240_000, // vault 3 should have received 150k from controller    
     ];
 
+    // reserved funds of vault2 should be 60k at this point
+    expect(await vault2.getReservedFundsTEST()).to.be.equal(60_000 * 1E6);
+    expect(await vault2.getTotalWithdrawalRequestsTEST()).to.be.equal(0);
+
     expect(formatUSDC(await IUSDc.balanceOf(vault1.address))).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
+    
+    expect(formatUSDC(await vault1.getVaultBalance())).to.be.equal(expectedAmounts[0]);
+    expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1] - 60_000);
+    expect(formatUSDC(await vault3.getVaultBalance())).to.be.equal(expectedAmounts[2]);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
   });

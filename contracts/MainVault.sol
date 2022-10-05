@@ -165,13 +165,20 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
     
     amountToSendXChain = 0;
-    state = State.RebalanceVault;
+    settleReservedFunds();
   }
 
   /// @notice Step 5 end; Push funds from xChainController to vaults
   /// @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
     if (state != State.WaitingForFunds) return;
+    settleReservedFunds();
+  }
+
+  /// @notice Helper to settle reserved funds when funds arrived and up to the next State
+  function settleReservedFunds() internal {
+    reservedFunds += totalWithdrawalRequests;
+    totalWithdrawalRequests = 0;
     state = State.RebalanceVault;
   }
 
