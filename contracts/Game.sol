@@ -509,4 +509,9 @@ contract Game is ERC721, ReentrancyGuard {
     function setXProvider(address _xProvider) external onlyDao {
       xProvider = _xProvider;
     }
+
+    //  ONLY GUARDIAN
+    function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyDao {
+      isXChainRebalancing[_vaultNumber] = _state;
+    }
 }

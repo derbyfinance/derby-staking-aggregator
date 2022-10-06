@@ -8,7 +8,6 @@ import { testConnextChainIds, testLayerzeroChainIds, usdc } from "@testhelp/addr
 import { initController } from "@testhelp/vaultHelpers";
 import allProviders  from "@testhelp/allProvidersClass";
 import { vaultInfo } from "@testhelp/vaultHelpers";
-import { json } from "hardhat/internal/core/params/argumentTypes";
 
 const { bnbChain, goerli, arbitrumGoerli, optimismGoerli } = testLayerzeroChainIds;
 
