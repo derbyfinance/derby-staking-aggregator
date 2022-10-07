@@ -79,6 +79,8 @@ contract Game is ERC721, ReentrancyGuard {
 
     mapping(uint256 => bool) public isXChainRebalancing;
 
+    event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
+
 
     modifier onlyDao {
       require(msg.sender == governed, "Game: only DAO");
@@ -343,7 +345,6 @@ contract Game is ERC721, ReentrancyGuard {
 
       for (uint k = 0; k < chainIds.length; k++) {
         uint16 chain = chainIds[k];
-        console.log("chain %s", chain);
 
         for (uint i = 0; i < latestProtocolId[chain]; i++) {
           int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
@@ -387,6 +388,8 @@ contract Game is ERC721, ReentrancyGuard {
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);
       IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+
+      emit PushedAllocationsToController(_vaultNumber, deltas);
     }
 
     /// @notice Creates delta allocation array for chains matching IDs in chainIds array
