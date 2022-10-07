@@ -13,6 +13,7 @@ contract XChainController {
 
   address public game;
   address public dao;
+  address public guardian;
   address public xProviderAddr;
   IXProvider public xProvider;
 
@@ -56,6 +57,11 @@ contract XChainController {
 
   modifier onlyDao {
     require(msg.sender == dao, "xController: only DAO");
+    _;
+  }
+
+  modifier onlyGuardian {
+    require(msg.sender == guardian, "xController: only Guardian");
     _;
   }
 
@@ -103,6 +109,7 @@ contract XChainController {
   constructor(address _game, address _dao, uint16 _homeChain) {
     game = _game;
     dao = _dao;
+    guardian = _dao;
     homeChain = _homeChain;
   }
 
@@ -169,6 +176,16 @@ contract XChainController {
     uint256 _vaultNumber, 
     int256[] memory _deltas
   ) external onlyXProvider onlyWhenReady(_vaultNumber) {
+    return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
+  }
+
+  /// @notice Step 1 end; Game pushes totalDeltaAllocations to xChainController
+  /// @param _vaultNumber Number of Vault
+  /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
+  function receiveAllocationsFromGameInt(
+    uint256 _vaultNumber, 
+    int256[] memory _deltas
+  ) internal {
     uint256 activeVaults;
 
     for (uint256 i = 0; i < chainIds.length; i++) {
@@ -427,7 +444,7 @@ contract XChainController {
     uint16 _chainId, 
     address _address, 
     address _underlying
-  ) external onlyDao{
+  ) external onlyDao {
     vaults[_vaultNumber].vaultChainAddress[_chainId] = _address; 
     vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
   }
@@ -449,5 +466,18 @@ contract XChainController {
   /// @param _chainIds array of all the used chainIds
   function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
     chainIds = _chainIds;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
+  }
+
+  function receiveAllocationsFromGameGuard(
+    uint256 _vaultNumber, 
+    int256[] memory _deltas
+  ) external onlyGuardian {
+    return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 }
