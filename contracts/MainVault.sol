@@ -158,12 +158,18 @@ contract MainVault is Vault, VaultToken {
     emit PushTotalUnderlying(vaultNumber, homeChain, underlying, totalSupply(), totalWithdrawalRequests);
   }
 
+  /// @notice See setXChainAllocationInt below
+  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external onlyXProvider {
+    require(state == State.PushedUnderlying, "Vault in wrong state");
+    setXChainAllocationInt(_amountToSend, _exchangeRate);
+  }
+
   /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
   /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external {
+  function setXChainAllocationInt(uint256 _amountToSend, uint256 _exchangeRate) internal {
     amountToSendXChain = _amountToSend;
     exchangeRate = _exchangeRate;
 
@@ -199,10 +205,15 @@ contract MainVault is Vault, VaultToken {
     state = State.RebalanceVault;
   }
 
+  /// @notice See receiveProtocolAllocations below
+  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+    receiveProtocolAllocationsInt(_deltas);
+  }
+
   /// @notice Step 6 end; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game and settles the allocations
   /// @param _deltas Array with delta allocations where the index matches the protocolId
-  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+  function receiveProtocolAllocationsInt(int256[] memory _deltas) internal {
     for (uint i = 0; i < _deltas.length; i++) {
       int256 allocation = _deltas[i];
       if (allocation == 0) continue;
@@ -258,5 +269,13 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter for new homeChain Id
   function setChainIds(uint16 _homeChain) external onlyDao {
     homeChain = _homeChain;
+  }
+
+  function setXChainAllocationGaurd(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
+    setXChainAllocationInt(_amountToSend, _exchangeRate);
+  }
+
+  function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
+    receiveProtocolAllocationsInt(_deltas);
   }
 }

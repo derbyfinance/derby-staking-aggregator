@@ -106,6 +106,13 @@ contract XChainController {
     _;
   }
 
+  event SendXChainAmount(
+    address _vault, 
+    uint16 _chainId, 
+    uint256 _amountToSendXChain,
+    uint256 _exchangeRate
+  );
+
   constructor(address _game, address _dao, uint16 _homeChain) {
     game = _game;
     dao = _dao;
@@ -240,13 +247,7 @@ contract XChainController {
     }
   }
 
-  /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
-  /// @notice Receive and set totalUnderlyings from the vaults for every chainId
-  /// @param _vaultNumber number of the vault
-  /// @param _chainId Number of chain used
-  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
-  /// @param _totalSupply Supply of the LP token of the vault on given chainId
-  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
+  /// @notice See setTotalUnderlyingInt below
   function setTotalUnderlying(
     uint256 _vaultNumber, 
     uint16 _chainId, 
@@ -258,6 +259,13 @@ contract XChainController {
     setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 
+  /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Receive and set totalUnderlyings from the vaults for every chainId
+  /// @param _vaultNumber number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _underlying totalUnderling plus vault balance in vaultcurrency e.g USDC
+  /// @param _totalSupply Supply of the LP token of the vault on given chainId
+  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function setTotalUnderlyingInt(
     uint256 _vaultNumber, 
     uint16 _chainId, 
@@ -292,7 +300,7 @@ contract XChainController {
       int256 amountToChain = calcAmountToChain(_vaultNumber, chain, totalUnderlying, totalAllocation);
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(_vaultNumber, chain, amountToChain);
 
-      sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);
+      sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);      
     }
   }
 
@@ -349,10 +357,12 @@ contract XChainController {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
       vaultStage[_vaultNumber].fundsReceived++;
+      emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
     }
 
     if (_amountToWithdraw > 0) {
       xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
+      emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
   }
 

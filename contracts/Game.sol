@@ -52,6 +52,7 @@ contract Game is ERC721, ReentrancyGuard {
     address public derbyTokenAddress;
     address public routerAddress;
     address public governed;
+    address public guardian;
     address public xProvider;
 
     IController public controller;
@@ -97,6 +98,11 @@ contract Game is ERC721, ReentrancyGuard {
       _;
     }
 
+    modifier onlyGuardian {
+      require(msg.sender == guardian, "xController: only Guardian");
+      _;
+    }
+
     constructor(
       string memory name_, 
       string memory symbol_, 
@@ -109,6 +115,7 @@ contract Game is ERC721, ReentrancyGuard {
       derbyTokenAddress = _derbyTokenAddress;
       routerAddress = _routerAddress;
       governed = _governed;
+      guardian = _governed;
       controller = IController(_controller);
     }
 
@@ -442,17 +449,26 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice See settleRewardsInt below
+    function settleRewards(
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      int256[] memory _rewards
+    ) external onlyXProvider {
+      settleRewardsInt(_vaultNumber, _chainId, _rewards);
+    }
+
     // basket should not be able to rebalance before this step
     /// @notice Step 8 end; Vaults push rewardsPerLockedToken to game
     /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used
     /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-    function settleRewards (
+    function settleRewardsInt(
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
-    ) external onlyXProvider {
+    ) internal {
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {
@@ -513,8 +529,15 @@ contract Game is ERC721, ReentrancyGuard {
       xProvider = _xProvider;
     }
 
-    //  ONLY GUARDIAN
-    function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyDao {
+    function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
       isXChainRebalancing[_vaultNumber] = _state;
+    }
+
+    function settleRewardsGuard(
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      int256[] memory _rewards
+    ) external onlyGuardian {
+      settleRewardsInt(_vaultNumber, _chainId, _rewards);
     }
 }

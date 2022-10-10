@@ -186,4 +186,31 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli)).to.be.equal(1000*1E6);  
   });
 
+  it("Step 3: xChainController pushes exchangeRate and amount the vaults have to send back to all vaults", async function() {
+    const expectedAmounts = [
+      400_000 - (400 / 500 * 401_000), 
+      0
+      // 1_000 - (100 / 500 * 401_000),       
+    ];
+
+    await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber))
+      .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
+      .withArgs(vault1.address, goerli, expectedAmounts[0]*1E6, 1*1E6);
+
+
+    expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
+    expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
+
+  });
+
+  it("Step 4", async function() {
+    // sending funds
+  });
+
+  it("Step 5", async function() {
+    // receiving funds
+  });
+
+
+
 });
