@@ -12,7 +12,7 @@ import { Result } from "ethers/lib/utils";
 
 const { goerli, arbitrumGoerli } = testLayerzeroChainIds;
 
-const amount = 100_000;
+const amount = 500_000;
 const chainIds = [goerli, arbitrumGoerli ];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
@@ -133,6 +133,10 @@ describe("Testing XChainController, unit test", async () => {
     expect(await game.basketTotalAllocatedTokens(vaultNumber)).to.be.equal(totalAllocations);
   });
 
+  it("Only be called by Guardian", async function() {
+
+  });
+
   it("Step 1: Game pushes totalDeltaAllocations to xChainController", async function() {
     // Setting a dummy Controller here so transaction below succeeds but doesnt arrive in the correct Controller
     // Will be corrected by the guardian
@@ -149,9 +153,37 @@ describe("Testing XChainController, unit test", async () => {
 
     await xChainController.receiveAllocationsFromGameGuard(vaultNumber, [400*1E6, 100*1E6]);
 
-    // checking of allocations are correctly set in xChainController
+    // Checking if allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(500*1E6);
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(400*1E6);
+  });
+
+  
+  it("Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController", async function() {
+    await vault1.connect(user).deposit(400_000*1E6);
+    await vault2.connect(user).deposit(1000*1E6);
+
+    await expect(vault1.pushTotalUnderlyingToController())
+      .to.emit(vault1, 'PushTotalUnderlying')
+      .withArgs(vaultNumber, goerli, 400_000*1E6, 400_000*1E6, 0);
+
+    await expect(vault2.pushTotalUnderlyingToController())
+      .to.emit(vault2, 'PushTotalUnderlying')
+      .withArgs(vaultNumber, arbitrumGoerli, 1000*1E6, 1000*1E6, 0);
+
+    // should have been send to DUMMY so this should be 0
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(0);
+
+    // Guardian calls manually
+    await Promise.all([
+      xChainController.setTotalUnderlyingGuard(vaultNumber, goerli, 400_000*1E6, 400_000*1E6, 0),
+      xChainController.setTotalUnderlyingGuard(vaultNumber, arbitrumGoerli, 1000*1E6, 1000*1E6, 0)
+    ]);
+
+    expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(401_000*1E6);
+    expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(401_000*1E6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(400_000*1E6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli)).to.be.equal(1000*1E6);  
   });
 
 });

@@ -255,7 +255,16 @@ contract XChainController {
     uint256 _withdrawalRequests
   ) external onlyXProvider onlyWhenAllocationsReceived(_vaultNumber) {
     require(getTotalUnderlyingOnChain(_vaultNumber, _chainId) == 0, "TotalUnderlying already set");
+    setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
+  }
 
+  function setTotalUnderlyingInt(
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
+  ) internal {
     vaults[_vaultNumber].totalUnderlyingPerChain[_chainId] = _underlying;
     vaults[_vaultNumber].withdrawalRequests[_chainId] = _withdrawalRequests;
     vaults[_vaultNumber].totalSupply += _totalSupply;
@@ -479,5 +488,15 @@ contract XChainController {
     int256[] memory _deltas
   ) external onlyGuardian {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
+  }
+
+  function setTotalUnderlyingGuard(
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
+  ) external onlyGuardian {
+    return setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 }

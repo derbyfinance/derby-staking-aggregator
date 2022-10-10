@@ -9,6 +9,7 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
+  address public guardian;
   bool public vaultOff;
   
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
@@ -44,6 +45,7 @@ contract MainVault is Vault, VaultToken {
   VaultToken(_name, _symbol, _decimals) 
   Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
     exchangeRate = _uScale;
+    guardian = _governed;
   }
 
   modifier onlyXProvider {
@@ -56,6 +58,19 @@ contract MainVault is Vault, VaultToken {
     require(!vaultOff, "Vault is set to off by xChainController");
     _;
   }
+
+  modifier onlyGuardian {
+    require(msg.sender == guardian, "xController: only Guardian");
+    _;
+  }
+
+  event PushTotalUnderlying(    
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
+  );
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -139,6 +154,8 @@ contract MainVault is Vault, VaultToken {
     );
 
     state = State.PushedUnderlying;
+
+    emit PushTotalUnderlying(vaultNumber, homeChain, underlying, totalSupply(), totalWithdrawalRequests);
   }
 
   /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
