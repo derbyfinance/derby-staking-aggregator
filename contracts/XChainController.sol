@@ -48,7 +48,7 @@ contract XChainController {
   }
 
   mapping(uint256 => vaultInfo) internal vaults;
-  mapping(uint256 => vaultStages) internal vaultStage;
+  mapping(uint256 => vaultStages) public vaultStage;
 
   modifier onlyGame {
     require(msg.sender == game, "xController: only Game");
@@ -508,5 +508,36 @@ contract XChainController {
     uint256 _withdrawalRequests
   ) external onlyGuardian {
     return setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
+  }
+
+  /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
+  /// @param _vaultNumber Number of the vault
+  /// @param _activeVaults Number active vaults, calculated in xChainRebalance
+  function setActiveVaultsGuard(uint256 _vaultNumber, uint256 _activeVaults) external onlyGuardian {
+    vaultStage[_vaultNumber].activeVaults = _activeVaults;
+  }
+
+  /// @notice Setter for stage 0: 
+  /// @notice Ready; waiting for game to send allocations
+  function setReadyGuard(uint256 _vaultNumber, bool _state) external onlyGuardian {
+    vaultStage[_vaultNumber].ready = _state;
+  }
+
+  /// @notice Setter for stage 1: 
+  /// @notice AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
+  function setAllocationsReceivedGuard(uint256 _vaultNumber, bool _state) external onlyGuardian {
+    vaultStage[_vaultNumber].allocationsReceived = _state;
+  }
+
+  /// @notice Setter to tick up stage 2: 
+  /// @notice UnderlyingReceived; underlyings received from all active vault contracts
+  function setUnderlyingReceivedGuard(uint256 _vaultNumber, uint256 _underlyingReceived) external onlyGuardian {
+    vaultStage[_vaultNumber].underlyingReceived = _underlyingReceived;
+  }
+
+  /// @notice Step 4 end; Push funds from vaults to xChainController
+  /// @notice FundsReceived; funds received from all active vault contracts
+  function setFundsReceivedGuard(uint256 _vaultNumber, uint256 _fundsReceived) external onlyGuardian {
+    vaultStage[_vaultNumber].fundsReceived = _fundsReceived;
   }
 }

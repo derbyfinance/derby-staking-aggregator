@@ -72,6 +72,8 @@ contract MainVault is Vault, VaultToken {
     uint256 _withdrawalRequests
   );
 
+  event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
+
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
@@ -189,6 +191,8 @@ contract MainVault is Vault, VaultToken {
     
     amountToSendXChain = 0;
     settleReservedFunds();
+
+    emit RebalanceXChain(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
   }
 
   /// @notice Step 5 end; Push funds from xChainController to vaults
@@ -271,7 +275,7 @@ contract MainVault is Vault, VaultToken {
     homeChain = _homeChain;
   }
 
-  function setXChainAllocationGaurd(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
+  function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 

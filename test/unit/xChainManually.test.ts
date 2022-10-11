@@ -137,6 +137,32 @@ describe("Testing XChainController, unit test", async () => {
 
   });
 
+  it("Test Guardian setters in xChainController", async function() {
+    // sending funds
+    let stages = await xChainController.vaultStage(vaultNumber);
+
+    expect(stages.activeVaults).to.be.equal(0);
+    expect(stages.ready).to.be.equal(false);
+    expect(stages.allocationsReceived).to.be.equal(false);
+    expect(stages.underlyingReceived).to.be.equal(0);
+    expect(stages.fundsReceived).to.be.equal(0);
+
+    await xChainController.setActiveVaultsGuard(vaultNumber, 5);
+    await xChainController.setReadyGuard(vaultNumber, true);
+    await xChainController.setAllocationsReceivedGuard(vaultNumber, true);
+    await xChainController.setUnderlyingReceivedGuard(vaultNumber, 10);
+    await xChainController.setFundsReceivedGuard(vaultNumber, 15);
+
+    stages = await xChainController.vaultStage(vaultNumber);
+
+    expect(stages.activeVaults).to.be.equal(5);
+    expect(stages.ready).to.be.equal(true);
+    expect(stages.allocationsReceived).to.be.equal(true);
+    expect(stages.underlyingReceived).to.be.equal(10);
+    expect(stages.fundsReceived).to.be.equal(15);
+  });
+
+
   it("Step 1: Game pushes totalDeltaAllocations to xChainController", async function() {
     // Setting a dummy Controller here so transaction below succeeds but doesnt arrive in the correct Controller
     // Will be corrected by the guardian
@@ -186,25 +212,37 @@ describe("Testing XChainController, unit test", async () => {
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli)).to.be.equal(1000*1E6);  
   });
 
-  it("Step 3: xChainController pushes exchangeRate and amount the vaults have to send back to all vaults", async function() {
+  it("Step 3: xChainController pushes exchangeRate amount to send X Chain", async function() {
     const expectedAmounts = [
       400_000 - (400 / 500 * 401_000), 
-      0
-      // 1_000 - (100 / 500 * 401_000),       
+      0      
     ];
 
+    // Sending values to dummy vaults
     await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber))
       .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
       .withArgs(vault1.address, goerli, expectedAmounts[0]*1E6, 1*1E6);
 
-
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
 
+    // Test guardian function
+    await vault1.setXChainAllocationGuard(2000, 1.5*1E6);
+    await vault2.setXChainAllocationGuard(1000, 1.5*1E6);
+
+    expect(await vault1.amountToSendXChain()).to.be.equal(2000);
+    expect(await vault2.amountToSendXChain()).to.be.equal(1000);
+    expect(await vault1.exchangeRate()).to.be.equal(1.5*1E6);
+    expect(await vault2.exchangeRate()).to.be.equal(1.5*1E6);
+
+    // set state back for next step
+    await vault1.setXChainAllocationGuard(expectedAmounts[0]*1E6, 1*1E6);
+    await vault2.setXChainAllocationGuard(0, 1*1E6);
   });
 
-  it("Step 4", async function() {
-    // sending funds
+  it("Step 4: Push funds from vaults to xChainControlle", async function() {
+    await vault1.rebalanceXChain();
+    await vault2.rebalanceXChain();
   });
 
   it("Step 5", async function() {
