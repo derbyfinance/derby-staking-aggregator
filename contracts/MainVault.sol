@@ -60,7 +60,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   modifier onlyGuardian {
-    require(msg.sender == guardian, "xController: only Guardian");
+    require(msg.sender == guardian, "Vault*: only Guardian");
     _;
   }
 

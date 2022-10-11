@@ -226,7 +226,9 @@ describe("Testing XChainController, unit test", async () => {
     await xChainController.connect(dao).resetVaultStagesDao(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000, 2000];
-    await game.pushAllocationsToController(vaultNumber);
+    await expect(game.pushAllocationsToController(vaultNumber))
+      .to.emit(game, 'PushedAllocationsToController')
+      .withArgs(vaultNumber, [400, 600, 1000]);
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(2000);

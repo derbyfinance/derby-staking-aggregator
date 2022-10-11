@@ -94,14 +94,16 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     modifier onlyXProvider {
-      require(msg.sender == xProvider, "Vault: only xProvider");
+      require(msg.sender == xProvider, "Game: only xProvider");
       _;
     }
 
     modifier onlyGuardian {
-      require(msg.sender == guardian, "xController: only Guardian");
+      require(msg.sender == guardian, "Game: only Guardian");
       _;
     }
+
+    event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
 
     constructor(
       string memory name_, 
@@ -427,6 +429,8 @@ contract Game is ERC721, ReentrancyGuard {
           getVaultAddress(_vaultNumber, chain),
           deltas
         );
+
+        emit PushProtocolAllocations(chain, getVaultAddress(_vaultNumber, chain), deltas);
       }
 
       vaults[_vaultNumber].rebalancingPeriod ++;

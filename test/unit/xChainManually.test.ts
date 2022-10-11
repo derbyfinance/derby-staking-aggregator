@@ -160,6 +160,9 @@ describe("Testing XChainController, unit test", async () => {
     expect(stages.allocationsReceived).to.be.equal(true);
     expect(stages.underlyingReceived).to.be.equal(10);
     expect(stages.fundsReceived).to.be.equal(15);
+
+    // Reset
+    await xChainController.setActiveVaultsGuard(vaultNumber, 0);
   });
 
 
@@ -243,12 +246,39 @@ describe("Testing XChainController, unit test", async () => {
   it("Step 4: Push funds from vaults to xChainControlle", async function() {
     await vault1.rebalanceXChain();
     await vault2.rebalanceXChain();
+
+    // Manually up funds received because feedback is sent to DUMMY controller
+    await xChainController.setFundsReceivedGuard(vaultNumber, 2);
   });
 
-  it("Step 5", async function() {
-    // receiving funds
+  it("Step 5: Push funds from xChainController to vaults", async function() {
+    ////////////////////////////////////
+    const test1 = await IUSDc.balanceOf(xChainController.address);
+    console.log({ test1 })
+    await xChainController.sendFundsToVault(vaultNumber);
   });
 
+  it("Step 6: Game pushes deltaAllocations to vaults", async function() {
+    const allocationArray = [100*1E6, 0, 200*1E6, 300*1E6, 400*1E6];
+    await vault1.receiveProtocolAllocationsGuard(allocationArray);
+
+    for (let i = 0; i < allocationArray.length; i++) {
+      expect(await vault1.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[i])
+    }
+
+    expect(await vault1.deltaAllocationsReceived()).to.be.true;
+  });
+
+  it("Step 8: Vaults push rewardsPerLockedToken to game", async function() {
+    await game.upRebalancingPeriod(vaultNumber);
+    
+    const vault1Rewards = [1*1E6, 0, 2*1E6, 3*1E6, 4*1E6];;
+    const vault2Rewards = [0, 0, 0, 6*1E6, 7*1E6];;
+
+    await game.connect(dao).settleRewardsGuard(vaultNumber, goerli, vault1Rewards);
+    await game.connect(dao).settleRewardsGuard(vaultNumber, arbitrumGoerli, vault2Rewards);
+
+  });
 
 
 });
