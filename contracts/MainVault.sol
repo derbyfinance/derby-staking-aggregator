@@ -74,6 +74,8 @@ contract MainVault is Vault, VaultToken {
 
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
 
+  event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
+
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
@@ -235,6 +237,8 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
 
     state = State.Idle;
+
+    emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
   }
 
   /// @notice Receive feedback for the vault if the vault is set to on or off
@@ -281,5 +285,9 @@ contract MainVault is Vault, VaultToken {
 
   function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
     receiveProtocolAllocationsInt(_deltas);
+  }
+
+  function receiveFundsGuard() external onlyGuardian {
+    settleReservedFunds();
   }
 }

@@ -113,6 +113,8 @@ contract XChainController {
     uint256 _exchangeRate
   );
 
+  event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
+
   constructor(address _game, address _dao, uint16 _homeChain) {
     game = _game;
     dao = _dao;
@@ -378,15 +380,18 @@ contract XChainController {
 
       if (amountToDeposit > 0) {
         address underlying = getUnderlyingAddress(_vaultNumber, chain);
+        address vault = getVaultAddress(_vaultNumber, chain);
 
         IERC20(underlying).safeIncreaseAllowance(xProviderAddr, amountToDeposit);
         xProvider.xTransferToVaults(
-          getVaultAddress(_vaultNumber, chain), 
+          vault, 
           chain, 
           amountToDeposit, 
           underlying
         );
         setAmountToDeposit(_vaultNumber, chain, 0);
+
+        emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }
     }
 
@@ -493,6 +498,7 @@ contract XChainController {
     guardian = _guardian;
   }
 
+  /// @notice Step 1: Guardian
   function receiveAllocationsFromGameGuard(
     uint256 _vaultNumber, 
     int256[] memory _deltas
@@ -500,6 +506,7 @@ contract XChainController {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 
+  /// @notice Step 2: Guardian
   function setTotalUnderlyingGuard(
     uint256 _vaultNumber, 
     uint16 _chainId, 

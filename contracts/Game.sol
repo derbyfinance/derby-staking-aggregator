@@ -80,9 +80,6 @@ contract Game is ERC721, ReentrancyGuard {
 
     mapping(uint256 => bool) public isXChainRebalancing;
 
-    event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
-
-
     modifier onlyDao {
       require(msg.sender == governed, "Game: only DAO");
       _;
@@ -104,6 +101,8 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+
+    event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
     constructor(
       string memory name_, 
