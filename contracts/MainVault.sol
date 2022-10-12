@@ -290,4 +290,8 @@ contract MainVault is Vault, VaultToken {
   function receiveFundsGuard() external onlyGuardian {
     settleReservedFunds();
   }
+
+  function setVaultStateGuard(uint256 _state) external onlyGuardian {
+    state = State(_state);
+  }
 }

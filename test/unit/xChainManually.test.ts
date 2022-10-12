@@ -8,7 +8,6 @@ import { testConnextChainIds, testLayerzeroChainIds, usdc } from "@testhelp/addr
 import { initController } from "@testhelp/vaultHelpers";
 import allProviders  from "@testhelp/allProvidersClass";
 import { vaultInfo } from "@testhelp/vaultHelpers";
-import { Result } from "ethers/lib/utils";
 
 const { goerli, arbitrumGoerli } = testLayerzeroChainIds;
 
@@ -161,8 +160,14 @@ describe("Testing XChainController, unit test", async () => {
     expect(stages.underlyingReceived).to.be.equal(10);
     expect(stages.fundsReceived).to.be.equal(15);
 
+    await vault1.setVaultStateGuard(2);
+    expect(await vault1.state()).to.be.equal(2);
+    await vault1.setVaultStateGuard(5);
+    expect(await vault1.state()).to.be.equal(5);
+
     // Reset
     await xChainController.setActiveVaultsGuard(vaultNumber, 0);
+    await vault1.setVaultStateGuard(0);
   });
 
 
