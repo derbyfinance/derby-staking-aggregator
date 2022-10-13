@@ -51,7 +51,7 @@ describe("Testing VaultWithdraw, unit test", async () => {
     await vault.toggleVaultOnOffTEST(true);
     
     await expect(vault.connect(user).withdraw(1 * 1E6, false)).to.be.revertedWith(
-      "Vault is set to off by xChainController"
+      "Vault is off"
       );
     await vault.toggleVaultOnOffTEST(false);
   });

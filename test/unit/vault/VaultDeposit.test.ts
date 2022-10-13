@@ -62,7 +62,7 @@ describe("Testing VaultDeposit, unit test", async () => {
     await vault.toggleVaultOnOffTEST(true);
 
     await expect(vault.connect(user).deposit(10_000 * 1E6)).to.be.revertedWith(
-      "Vault is set to off by xChainController"
+      "Vault is off"
     );
   });
 });
