@@ -5,9 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
-import "./Interfaces/IGoverned.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 
@@ -147,7 +145,7 @@ contract Vault is ReentrancyGuard {
   /// @dev Execute all withdrawals before deposits
   function rebalanceETF() external returnGasFee nonReentrant onlyDao {
     require(state == State.RebalanceVault, "Wrong state");
-    require(deltaAllocationsReceived, "Delta allocations not received");
+    require(deltaAllocationsReceived, "!Delta allocations");
     
     rebalancingPeriod++;
     
@@ -288,7 +286,7 @@ contract Vault is ReentrancyGuard {
   function setAllocation(uint256 _i) internal {
     currentAllocations[_i] += deltaAllocations[_i];
     deltaAllocations[_i] = 0;
-    require(currentAllocations[_i] >= 0, "Current Allocation underflow");
+    require(currentAllocations[_i] >= 0, "Allocation underflow");
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
@@ -328,8 +326,6 @@ contract Vault is ReentrancyGuard {
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
-
-    console.log("deposited: %s, Protocol: %s", (uint(_amount)/ uScale), _protocolNum);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -361,7 +357,6 @@ contract Vault is ReentrancyGuard {
         controller.curve3PoolFee()
       );
     }
-    console.log("withdrawed: %s, Protocol: %s", (uint(_amount) / protocol.uScale), _protocolNum);
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols

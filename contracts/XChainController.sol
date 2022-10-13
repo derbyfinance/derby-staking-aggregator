@@ -498,7 +498,7 @@ contract XChainController {
     guardian = _guardian;
   }
 
-  /// @notice Step 1: Guardian
+  /// @notice Step 1: Guardian function
   function receiveAllocationsFromGameGuard(
     uint256 _vaultNumber, 
     int256[] memory _deltas
@@ -506,7 +506,7 @@ contract XChainController {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 
-  /// @notice Step 2: Guardian
+  /// @notice Step 2: Guardian function
   function setTotalUnderlyingGuard(
     uint256 _vaultNumber, 
     uint16 _chainId, 
@@ -517,34 +517,28 @@ contract XChainController {
     return setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 
-  /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
-  /// @param _vaultNumber Number of the vault
-  /// @param _activeVaults Number active vaults, calculated in xChainRebalance
+  /// @notice Step 4: Guardian function
+  function setFundsReceivedGuard(uint256 _vaultNumber, uint256 _fundsReceived) external onlyGuardian {
+    vaultStage[_vaultNumber].fundsReceived = _fundsReceived;
+  }
+
+  /// @notice Guardian setter for number of active vaults for vaultNumber, set in xChainRebalance
   function setActiveVaultsGuard(uint256 _vaultNumber, uint256 _activeVaults) external onlyGuardian {
     vaultStage[_vaultNumber].activeVaults = _activeVaults;
   }
 
-  /// @notice Setter for stage 0: 
-  /// @notice Ready; waiting for game to send allocations
+  /// @notice Guardian setter for stage 0: 
   function setReadyGuard(uint256 _vaultNumber, bool _state) external onlyGuardian {
     vaultStage[_vaultNumber].ready = _state;
   }
 
-  /// @notice Setter for stage 1: 
-  /// @notice AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
+  /// @notice Guardian setter for stage 1: 
   function setAllocationsReceivedGuard(uint256 _vaultNumber, bool _state) external onlyGuardian {
     vaultStage[_vaultNumber].allocationsReceived = _state;
   }
 
-  /// @notice Setter to tick up stage 2: 
-  /// @notice UnderlyingReceived; underlyings received from all active vault contracts
+  /// @notice Guardian setter to tick up stage 2: 
   function setUnderlyingReceivedGuard(uint256 _vaultNumber, uint256 _underlyingReceived) external onlyGuardian {
     vaultStage[_vaultNumber].underlyingReceived = _underlyingReceived;
-  }
-
-  /// @notice Step 4 end; Push funds from vaults to xChainController
-  /// @notice FundsReceived; funds received from all active vault contracts
-  function setFundsReceivedGuard(uint256 _vaultNumber, uint256 _fundsReceived) external onlyGuardian {
-    vaultStage[_vaultNumber].fundsReceived = _fundsReceived;
   }
 }

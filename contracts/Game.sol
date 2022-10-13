@@ -532,10 +532,12 @@ contract Game is ERC721, ReentrancyGuard {
       xProvider = _xProvider;
     }
 
+    /// @notice Guardian function to set state when vault gets stuck for whatever reason
     function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
       isXChainRebalancing[_vaultNumber] = _state;
     }
 
+    /// @notice Step 8: Guardian function
     function settleRewardsGuard(
       uint256 _vaultNumber,
       uint16 _chainId,

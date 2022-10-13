@@ -55,7 +55,7 @@ contract MainVault is Vault, VaultToken {
   
   modifier onlyWhenVaultIsOn {
     require(state == State.Idle, "Vault is rebalancing");
-    require(!vaultOff, "Vault is set to off by xChainController");
+    require(!vaultOff, "Vault is off");
     _;
   }
 
@@ -71,9 +71,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   );
-
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
-
   event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
 
   /// @notice Deposit in Vault
@@ -112,7 +110,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
   function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
+    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
 
     value = _amount * exchangeRate / (10 ** decimals());
 
@@ -279,19 +277,23 @@ contract MainVault is Vault, VaultToken {
     homeChain = _homeChain;
   }
 
+  /// @notice Step 3: Guardian function
   function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 
-  function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
-    receiveProtocolAllocationsInt(_deltas);
-  }
-
+  /// @notice Step 5: Guardian function
   function receiveFundsGuard() external onlyGuardian {
     settleReservedFunds();
   }
 
-  function setVaultStateGuard(uint256 _state) external onlyGuardian {
-    state = State(_state);
+  /// @notice Step 6: Guardian function
+  function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
+    receiveProtocolAllocationsInt(_deltas);
+  }
+
+  /// @notice Guardian function to set state when vault gets stuck for whatever reason
+  function setVaultStateGuard(State _state) external onlyGuardian {
+    state = _state;
   }
 }
