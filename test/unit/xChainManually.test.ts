@@ -70,20 +70,8 @@ describe('Testing XChainController, unit test', async () => {
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(
-      dao,
-      daoAddr,
-      daoAddr,
-      daoAddr,
-      arbitrumGoerli,
-    );
-    xChainControllerDUMMY = await deployXChainControllerMock(
-      dao,
-      daoAddr,
-      daoAddr,
-      daoAddr,
-      arbitrumGoerli,
-    );
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, arbitrumGoerli);
+    xChainControllerDUMMY = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, arbitrumGoerli);
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(
@@ -182,10 +170,7 @@ describe('Testing XChainController, unit test', async () => {
     ]);
 
     await Promise.all([
-      LZEndpointGoerli.setDestLzEndpoint(
-        xProviderArbitrum.address,
-        LZEndpointArbitrumGoerli.address,
-      ),
+      LZEndpointGoerli.setDestLzEndpoint(xProviderArbitrum.address, LZEndpointArbitrumGoerli.address),
       LZEndpointArbitrumGoerli.setDestLzEndpoint(xProviderGoerli.address, LZEndpointGoerli.address),
     ]);
 
@@ -234,15 +219,11 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Only be called by Guardian', async function () {
-    await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith(
-      'Vault: only Guardian',
+    await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith('Vault: only Guardian');
+    await expect(game.connect(user).setRebalancingState(vaultNumber, true)).to.be.revertedWith('Game: only Guardian');
+    await expect(xChainController.connect(user).setReadyGuard(vaultNumber, true)).to.be.revertedWith(
+      'xController: only Guardian',
     );
-    await expect(game.connect(user).setRebalancingState(vaultNumber, true)).to.be.revertedWith(
-      'Game: only Guardian',
-    );
-    await expect(
-      xChainController.connect(user).setReadyGuard(vaultNumber, true),
-    ).to.be.revertedWith('xController: only Guardian');
   });
 
   it('Test Guardian setters in xChainController', async function () {
@@ -280,7 +261,7 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Step 1: Game pushes totalDeltaAllocations to xChainController', async function () {
-    // Setting a dummy Controller here so transaction below succeeds but doesnt arrive in the correct Controller
+    // Setting a dummy Controller here so transactions later succeeds but doesnt arrive in the correct Controller
     // Will be corrected by the guardian
     await xChainControllerDUMMY.connect(dao).resetVaultStagesDao(vaultNumber);
     await xChainController.connect(dao).resetVaultStagesDao(vaultNumber);
@@ -296,12 +277,8 @@ describe('Testing XChainController, unit test', async () => {
     await xChainController.receiveAllocationsFromGameGuard(vaultNumber, [400 * 1e6, 100 * 1e6]);
 
     // Checking if allocations are correctly set in xChainController
-    expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(
-      500 * 1e6,
-    );
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
-      400 * 1e6,
-    );
+    expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(500 * 1e6);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(400 * 1e6);
   });
 
   it('Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController', async function () {
@@ -321,32 +298,14 @@ describe('Testing XChainController, unit test', async () => {
 
     // Guardian calls manually
     await Promise.all([
-      xChainController.setTotalUnderlyingGuard(
-        vaultNumber,
-        goerli,
-        400_000 * 1e6,
-        400_000 * 1e6,
-        0,
-      ),
-      xChainController.setTotalUnderlyingGuard(
-        vaultNumber,
-        arbitrumGoerli,
-        1000 * 1e6,
-        1000 * 1e6,
-        0,
-      ),
+      xChainController.setTotalUnderlyingGuard(vaultNumber, goerli, 400_000 * 1e6, 400_000 * 1e6, 0),
+      xChainController.setTotalUnderlyingGuard(vaultNumber, arbitrumGoerli, 1000 * 1e6, 1000 * 1e6, 0),
     ]);
 
-    expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(
-      401_000 * 1e6,
-    );
+    expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(401_000 * 1e6);
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(401_000 * 1e6);
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(
-      400_000 * 1e6,
-    );
-    expect(
-      await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli),
-    ).to.be.equal(1000 * 1e6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(400_000 * 1e6);
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli)).to.be.equal(1000 * 1e6);
   });
 
   it('Step 3: xChainController pushes exchangeRate amount to send X Chain', async function () {
@@ -416,12 +375,17 @@ describe('Testing XChainController, unit test', async () => {
     await game.connect(dao).settleRewardsGuard(vaultNumber, arbitrumGoerli, vault2Rewards);
 
     for (let i = 0; i < vault1Rewards.length; i++) {
-      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, goerli, 1, i)).to.be.equal(
-        vault1Rewards[i],
-      );
-      expect(
-        await game.getRewardsPerLockedTokenTEST(vaultNumber, arbitrumGoerli, 1, i),
-      ).to.be.equal(vault2Rewards[i]);
+      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, goerli, 1, i)).to.be.equal(vault1Rewards[i]);
+      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, arbitrumGoerli, 1, i)).to.be.equal(vault2Rewards[i]);
     }
+  });
+
+  it('Both Game and Vault should revert when rebalance not needed', async function () {
+    // set very high interval so a rebalance is not needed
+    await vault1.connect(dao).setRebalanceInterval(100_000);
+    await game.connect(dao).setRebalanceInterval(100_000);
+
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith('No rebalance needed');
+    await expect(game.pushAllocationsToController(vaultNumber)).to.be.revertedWith('No rebalance needed');
   });
 });

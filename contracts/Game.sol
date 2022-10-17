@@ -66,6 +66,12 @@ contract Game is ERC721, ReentrancyGuard {
     // array of chainIds e.g [10, 100, 1000];
     uint16[] public chainIds;
 
+    // interval in Unix timeStamp
+    uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
+
+    // last rebalance timeStamp
+    uint256 public lastTimeStamp;
+
     // vault addresses
     mapping(address => bool) vaultAddresses;
 
@@ -119,6 +125,7 @@ contract Game is ERC721, ReentrancyGuard {
       governed = _governed;
       guardian = _guardian;
       controller = IController(_controller);
+      lastTimeStamp = block.timestamp;
     }
 
     /// @notice Setter for delta allocation in a particulair chainId
@@ -392,11 +399,14 @@ contract Game is ERC721, ReentrancyGuard {
     /// @notice Trigger for Dao to push delta allocations to the xChainController
     /// @dev Sends over an array that should match the IDs in chainIds array
     function pushAllocationsToController(uint256 _vaultNumber) external {
+      require(rebalanceNeeded(), "No rebalance needed");
       require(!isXChainRebalancing[_vaultNumber], "Vault is already rebalancing");
       isXChainRebalancing[_vaultNumber] = true;
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);
       IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+
+      lastTimeStamp = block.timestamp;
 
       emit PushedAllocationsToController(_vaultNumber, deltas);
     }
@@ -504,6 +514,12 @@ contract Game is ERC721, ReentrancyGuard {
       // IVault(vaults[baskets[_basketId].vaultNumber]).redeemRewards(msg.sender, uint256(amount));
     }
 
+    /// @notice Checks if a rebalance is needed based on the set interval 
+    /// @return bool True of rebalance is needed, false if not
+    function rebalanceNeeded() public view returns(bool) {
+      return (block.timestamp - lastTimeStamp) > rebalanceInterval;
+    }
+
     /// @notice setter to link a chainId to a vault address for cross chain functions
     function setVaultAddress(uint256 _vaultNumber, uint16 _chainId, address _address) external onlyDao {
       vaults[_vaultNumber].vaultAddress[_chainId] = _address;
@@ -545,5 +561,11 @@ contract Game is ERC721, ReentrancyGuard {
       int256[] memory _rewards
     ) external onlyGuardian {
       settleRewardsInt(_vaultNumber, _chainId, _rewards);
+    }
+
+    /// @notice Set minimum interval for the rebalance function
+    /// @param _timestampInternal UNIX timestamp
+    function setRebalanceInterval(uint256 _timestampInternal) external onlyDao {
+      rebalanceInterval = _timestampInternal;
     }
 }
