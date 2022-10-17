@@ -14,7 +14,6 @@ interface Protocol {
 export const vaultInfo = {
   name: 'DerbyUSDC',
   symbol: 'cUSDC',
-  ETFname: 'USDC_med_risk',
   vaultNumber: 0,
   decimals: 6,
   uScale: 1E6,

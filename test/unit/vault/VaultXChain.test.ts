@@ -16,7 +16,7 @@ const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing XChainController, unit test", async () => {
   let vault1: MainVaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
@@ -38,10 +38,10 @@ describe("Testing XChainController, unit test", async () => {
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
+    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, daoAddr, controller.address);
 
     [LZEndpoint10, LZEndpoint100] = await Promise.all([
       deployLZEndpointMock(dao, 10),
@@ -54,7 +54,7 @@ describe("Testing XChainController, unit test", async () => {
     ]);
 
     [vault1] = await Promise.all([
-      deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
+      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
     ]);
 
     await Promise.all([

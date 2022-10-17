@@ -32,7 +32,7 @@ describe.skip("Testing Vault, integration test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [userAddr, vault.address]),

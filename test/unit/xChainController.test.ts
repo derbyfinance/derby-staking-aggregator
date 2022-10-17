@@ -8,7 +8,6 @@ import { testConnextChainIds, testLayerzeroChainIds, usdc } from "@testhelp/addr
 import { initController } from "@testhelp/vaultHelpers";
 import allProviders  from "@testhelp/allProvidersClass";
 import { vaultInfo } from "@testhelp/vaultHelpers";
-import { json } from "hardhat/internal/core/params/argumentTypes";
 
 const { bnbChain, goerli, arbitrumGoerli, optimismGoerli } = testLayerzeroChainIds;
 
@@ -18,7 +17,7 @@ const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing XChainController, unit test", async () => {
   let vault1: MainVaultMock, vault2: MainVaultMock, vault3: MainVaultMock, vault4: MainVaultMock, controller: Controller, xChainController: XChainControllerMock, xProviderGoerli: XProvider, xProviderArbitrum: XProvider, xProviderOptimism: XProvider, xProviderBnbChain: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpointGoerli: LZEndpointMock, LZEndpointArbitrumGoerli: LZEndpointMock, LZEndpointOptimismGoerli: LZEndpointMock, LZEndpointBnbChain: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
@@ -36,10 +35,10 @@ describe("Testing XChainController, unit test", async () => {
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, arbitrumGoerli);
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, arbitrumGoerli);
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
+    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, daoAddr, controller.address);
 
     [LZEndpointGoerli, LZEndpointArbitrumGoerli, LZEndpointOptimismGoerli, LZEndpointBnbChain] = await Promise.all([
       deployLZEndpointMock(dao, goerli),
@@ -56,10 +55,10 @@ describe("Testing XChainController, unit test", async () => {
     ]);
 
     [vault1, vault2, vault3, vault4] = await Promise.all([
-      deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
-      deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
-      deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
+      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
+      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity),
     ]);
 
     await Promise.all([
@@ -227,7 +226,9 @@ describe("Testing XChainController, unit test", async () => {
     await xChainController.connect(dao).resetVaultStagesDao(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000, 2000];
-    await game.pushAllocationsToController(vaultNumber);
+    await expect(game.pushAllocationsToController(vaultNumber))
+      .to.emit(game, 'PushedAllocationsToController')
+      .withArgs(vaultNumber, [400, 600, 1000]);
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(2000);

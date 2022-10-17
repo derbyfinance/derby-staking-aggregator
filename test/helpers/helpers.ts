@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, ContractFunction } from "ethers";
 import { ethers, network } from "hardhat";
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
@@ -61,6 +61,11 @@ export const controllerAddProtocol = async (
   return Number(protocolNumber)
 }
 
+export const getEvent = async (tx: Promise<any>): Promise<Result> => {
+  const transaction = await tx;
+  const receipt = await transaction.wait();
+  return receipt.events![0].args as Result;
+}
 
 export const erc20 = (tokenAddress: string) => {
   return new ethers.Contract(tokenAddress, erc20ABI, provider);

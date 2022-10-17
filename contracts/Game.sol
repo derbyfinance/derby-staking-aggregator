@@ -52,6 +52,7 @@ contract Game is ERC721, ReentrancyGuard {
     address public derbyTokenAddress;
     address public routerAddress;
     address public governed;
+    address public guardian;
     address public xProvider;
 
     IController public controller;
@@ -79,7 +80,6 @@ contract Game is ERC721, ReentrancyGuard {
 
     mapping(uint256 => bool) public isXChainRebalancing;
 
-
     modifier onlyDao {
       require(msg.sender == governed, "Game: only DAO");
       _;
@@ -91,9 +91,18 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     modifier onlyXProvider {
-      require(msg.sender == xProvider, "Vault: only xProvider");
+      require(msg.sender == xProvider, "Game: only xProvider");
       _;
     }
+
+    modifier onlyGuardian {
+      require(msg.sender == guardian, "Game: only Guardian");
+      _;
+    }
+
+    event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+
+    event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
     constructor(
       string memory name_, 
@@ -101,12 +110,14 @@ contract Game is ERC721, ReentrancyGuard {
       address _derbyTokenAddress, 
       address _routerAddress,
       address _governed,
+      address _guardian,
       address _controller
     ) 
       ERC721(name_, symbol_) {
       derbyTokenAddress = _derbyTokenAddress;
       routerAddress = _routerAddress;
       governed = _governed;
+      guardian = _guardian;
       controller = IController(_controller);
     }
 
@@ -343,7 +354,6 @@ contract Game is ERC721, ReentrancyGuard {
 
       for (uint k = 0; k < chainIds.length; k++) {
         uint16 chain = chainIds[k];
-        console.log("chain %s", chain);
 
         for (uint i = 0; i < latestProtocolId[chain]; i++) {
           int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
@@ -387,6 +397,8 @@ contract Game is ERC721, ReentrancyGuard {
 
       int256[] memory deltas = allocationsToArray(_vaultNumber);
       IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+
+      emit PushedAllocationsToController(_vaultNumber, deltas);
     }
 
     /// @notice Creates delta allocation array for chains matching IDs in chainIds array
@@ -417,6 +429,8 @@ contract Game is ERC721, ReentrancyGuard {
           getVaultAddress(_vaultNumber, chain),
           deltas
         );
+
+        emit PushProtocolAllocations(chain, getVaultAddress(_vaultNumber, chain), deltas);
       }
 
       vaults[_vaultNumber].rebalancingPeriod ++;
@@ -439,17 +453,26 @@ contract Game is ERC721, ReentrancyGuard {
       }
     }
 
+    /// @notice See settleRewardsInt below
+    function settleRewards(
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      int256[] memory _rewards
+    ) external onlyXProvider {
+      settleRewardsInt(_vaultNumber, _chainId, _rewards);
+    }
+
     // basket should not be able to rebalance before this step
     /// @notice Step 8 end; Vaults push rewardsPerLockedToken to game
     /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
     /// @param _vaultNumber Number of the vault
     /// @param _chainId Number of chain used
     /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
-    function settleRewards (
+    function settleRewardsInt(
       uint256 _vaultNumber,
       uint16 _chainId,
       int256[] memory _rewards
-    ) external onlyXProvider {
+    ) internal {
       uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
       for (uint256 i = 0; i < _rewards.length; i++) {
@@ -508,5 +531,19 @@ contract Game is ERC721, ReentrancyGuard {
     /// @param _xProvider new address of xProvider on this chain
     function setXProvider(address _xProvider) external onlyDao {
       xProvider = _xProvider;
+    }
+
+    /// @notice Guardian function to set state when vault gets stuck for whatever reason
+    function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
+      isXChainRebalancing[_vaultNumber] = _state;
+    }
+
+    /// @notice Step 8: Guardian function
+    function settleRewardsGuard(
+      uint256 _vaultNumber,
+      uint16 _chainId,
+      int256[] memory _rewards
+    ) external onlyGuardian {
+      settleRewardsInt(_vaultNumber, _chainId, _rewards);
     }
 }

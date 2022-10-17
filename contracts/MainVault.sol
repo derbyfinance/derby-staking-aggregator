@@ -9,6 +9,7 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
+  address public guardian;
   bool public vaultOff;
   
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
@@ -32,9 +33,9 @@ contract MainVault is Vault, VaultToken {
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    string memory _vaultName,
     uint256 _vaultNumber,
     address _governed,
+    address _guardian,
     address _game, 
     address _controller, 
     address _vaultCurrency,
@@ -42,8 +43,9 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
   ) 
   VaultToken(_name, _symbol, _decimals) 
-  Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
+  Vault(_vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
     exchangeRate = _uScale;
+    guardian = _guardian;
   }
 
   modifier onlyXProvider {
@@ -53,9 +55,24 @@ contract MainVault is Vault, VaultToken {
   
   modifier onlyWhenVaultIsOn {
     require(state == State.Idle, "Vault is rebalancing");
-    require(!vaultOff, "Vault is set to off by xChainController");
+    require(!vaultOff, "Vault is off");
     _;
   }
+
+  modifier onlyGuardian {
+    require(msg.sender == guardian, "Vault: only Guardian");
+    _;
+  }
+
+  event PushTotalUnderlying(    
+    uint256 _vaultNumber, 
+    uint16 _chainId, 
+    uint256 _underlying,
+    uint256 _totalSupply,
+    uint256 _withdrawalRequests
+  );
+  event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
+  event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -93,7 +110,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
   function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
+    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
 
     value = _amount * exchangeRate / (10 ** decimals());
 
@@ -139,6 +156,14 @@ contract MainVault is Vault, VaultToken {
     );
 
     state = State.PushedUnderlying;
+
+    emit PushTotalUnderlying(vaultNumber, homeChain, underlying, totalSupply(), totalWithdrawalRequests);
+  }
+
+  /// @notice See setXChainAllocationInt below
+  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external onlyXProvider {
+    require(state == State.PushedUnderlying, "Vault in wrong state");
+    setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 
   /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
@@ -146,7 +171,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
   /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external {
+  function setXChainAllocationInt(uint256 _amountToSend, uint256 _exchangeRate) internal {
     amountToSendXChain = _amountToSend;
     exchangeRate = _exchangeRate;
 
@@ -166,6 +191,8 @@ contract MainVault is Vault, VaultToken {
     
     amountToSendXChain = 0;
     settleReservedFunds();
+
+    emit RebalanceXChain(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
   }
 
   /// @notice Step 5 end; Push funds from xChainController to vaults
@@ -182,10 +209,15 @@ contract MainVault is Vault, VaultToken {
     state = State.RebalanceVault;
   }
 
+  /// @notice See receiveProtocolAllocations below
+  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+    receiveProtocolAllocationsInt(_deltas);
+  }
+
   /// @notice Step 6 end; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game and settles the allocations
   /// @param _deltas Array with delta allocations where the index matches the protocolId
-  function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
+  function receiveProtocolAllocationsInt(int256[] memory _deltas) internal {
     for (uint i = 0; i < _deltas.length; i++) {
       int256 allocation = _deltas[i];
       if (allocation == 0) continue;
@@ -203,6 +235,8 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
 
     state = State.Idle;
+
+    emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
   }
 
   /// @notice Receive feedback for the vault if the vault is set to on or off
@@ -241,5 +275,25 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter for new homeChain Id
   function setChainIds(uint16 _homeChain) external onlyDao {
     homeChain = _homeChain;
+  }
+
+  /// @notice Step 3: Guardian function
+  function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
+    setXChainAllocationInt(_amountToSend, _exchangeRate);
+  }
+
+  /// @notice Step 5: Guardian function
+  function receiveFundsGuard() external onlyGuardian {
+    settleReservedFunds();
+  }
+
+  /// @notice Step 6: Guardian function
+  function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
+    receiveProtocolAllocationsInt(_deltas);
+  }
+
+  /// @notice Guardian function to set state when vault gets stuck for whatever reason
+  function setVaultStateGuard(State _state) external onlyGuardian {
+    state = _state;
   }
 }
