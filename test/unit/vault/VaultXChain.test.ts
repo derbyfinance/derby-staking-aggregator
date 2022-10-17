@@ -1,38 +1,70 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { Signer, Contract } from "ethers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { Signer, Contract } from 'ethers';
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
-import type { ConnextHandlerMock, Controller, DerbyToken, GameMock, LZEndpointMock, MainVaultMock, XChainControllerMock, XProvider } from '@typechain';
-import { deployConnextHandlerMock, deployController, deployDerbyToken, deployGameMock, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '@testhelp/deploy';
-import { usdc, starterProtocols as protocols } from "@testhelp/addresses";
-import { initController, rebalanceETF } from "@testhelp/vaultHelpers";
-import allProviders  from "@testhelp/allProvidersClass";
-import { vaultInfo } from "@testhelp/vaultHelpers";
-
+import type {
+  ConnextHandlerMock,
+  Controller,
+  DerbyToken,
+  GameMock,
+  LZEndpointMock,
+  MainVaultMock,
+  XChainControllerMock,
+  XProvider,
+} from '@typechain';
+import {
+  deployConnextHandlerMock,
+  deployController,
+  deployDerbyToken,
+  deployGameMock,
+  deployLZEndpointMock,
+  deployMainVaultMock,
+  deployXChainControllerMock,
+  deployXProvider,
+} from '@testhelp/deploy';
+import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
+import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
+import allProviders from '@testhelp/allProvidersClass';
+import { vaultInfo } from '@testhelp/vaultHelpers';
 
 const amount = 100_000;
 const chainIds = [10, 100, 1000, 2000];
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
-const totalDerbySupply = parseEther(1E8.toString());
+const totalDerbySupply = parseEther((1e8).toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing XChainController, unit test", async () => {
-  let vault1: MainVaultMock, controller: Controller, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock, connextHandler: ConnextHandlerMock, DerbyToken: DerbyToken,  game: GameMock;
+describe('Testing XChainController, unit test', async () => {
+  let vault1: MainVaultMock,
+    controller: Controller,
+    xChainController: XChainControllerMock,
+    xProvider10: XProvider,
+    xProvider100: XProvider,
+    dao: Signer,
+    user: Signer,
+    USDCSigner: Signer,
+    IUSDc: Contract,
+    daoAddr: string,
+    userAddr: string,
+    LZEndpoint10: LZEndpointMock,
+    LZEndpoint100: LZEndpointMock,
+    connextHandler: ConnextHandlerMock,
+    DerbyToken: DerbyToken,
+    game: GameMock;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     [dao, user] = await ethers.getSigners();
 
     [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
       getUSDCSigner(),
       erc20(usdc),
       dao.getAddress(),
-      user.getAddress()
+      user.getAddress(),
     ]);
 
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
@@ -41,20 +73,55 @@ describe("Testing XChainController, unit test", async () => {
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, daoAddr, controller.address);
+    game = await deployGameMock(
+      user,
+      nftName,
+      nftSymbol,
+      DerbyToken.address,
+      controller.address,
+      daoAddr,
+      daoAddr,
+      controller.address,
+    );
 
-    [LZEndpoint10, LZEndpoint100] = await Promise.all([
-      deployLZEndpointMock(dao, 10),
-      deployLZEndpointMock(dao, 100),
-    ]);
+    [LZEndpoint10, LZEndpoint100] = await Promise.all([deployLZEndpointMock(dao, 10), deployLZEndpointMock(dao, 100)]);
 
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, LZEndpoint10.address, connextHandler.address, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, LZEndpoint100.address, connextHandler.address, daoAddr, game.address, xChainController.address, 100),
+      deployXProvider(
+        dao,
+        LZEndpoint10.address,
+        connextHandler.address,
+        daoAddr,
+        game.address,
+        xChainController.address,
+        10,
+      ),
+      deployXProvider(
+        dao,
+        LZEndpoint100.address,
+        connextHandler.address,
+        daoAddr,
+        game.address,
+        xChainController.address,
+        100,
+      ),
     ]);
 
     [vault1] = await Promise.all([
-      deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity,),
+      deployMainVaultMock(
+        dao,
+        name,
+        symbol,
+        decimals,
+        vaultNumber,
+        daoAddr,
+        daoAddr,
+        userAddr,
+        controller.address,
+        usdc,
+        uScale,
+        gasFeeLiquidity,
+      ),
     ]);
 
     await Promise.all([
@@ -80,7 +147,6 @@ describe("Testing XChainController, unit test", async () => {
     await Promise.all([
       LZEndpoint10.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
       LZEndpoint100.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
-
     ]);
 
     await Promise.all([
@@ -107,7 +173,7 @@ describe("Testing XChainController, unit test", async () => {
     }
   });
 
-  it("Testing vault rebalanceXChain", async function() {
+  it('Testing vault rebalanceXChain', async function () {
     // Rebalancing the vault for setup funds in protocols
     await vault1.setDeltaAllocationsReceivedTEST(true);
     await vault1.connect(user).deposit(amountUSDC);
@@ -129,5 +195,4 @@ describe("Testing XChainController, unit test", async () => {
     const balance = await IUSDc.balanceOf(xChainController.address);
     expect(balance).to.be.equal(amountUSDC.div(2)); // 50k
   });
-
 });

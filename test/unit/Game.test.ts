@@ -1,14 +1,28 @@
-import { ethers } from "hardhat";
-import { expect } from "chai";
-import { Signer, Contract } from "ethers";
+import { ethers } from 'hardhat';
+import { expect } from 'chai';
+import { Signer, Contract } from 'ethers';
 import { erc20, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
-import type { Controller, GameMock, MainVaultMock, DerbyToken, XProvider, XChainControllerMock, LZEndpointMock } from '@typechain';
-import { deployController, deployLZEndpointMock, deployMainVaultMock, deployXChainControllerMock, deployXProvider } from '@testhelp/deploy';
-import { usdc } from "@testhelp/addresses";
-import { initController } from "@testhelp/vaultHelpers";
-import AllMockProviders from "@testhelp/allMockProvidersClass";
-import { vaultInfo } from "@testhelp/vaultHelpers";
-import { deployGameMock, deployDerbyToken } from "@testhelp/deploy";
+import type {
+  Controller,
+  GameMock,
+  MainVaultMock,
+  DerbyToken,
+  XProvider,
+  XChainControllerMock,
+  LZEndpointMock,
+} from '@typechain';
+import {
+  deployController,
+  deployLZEndpointMock,
+  deployMainVaultMock,
+  deployXChainControllerMock,
+  deployXProvider,
+} from '@testhelp/deploy';
+import { usdc } from '@testhelp/addresses';
+import { initController } from '@testhelp/vaultHelpers';
+import AllMockProviders from '@testhelp/allMockProvidersClass';
+import { vaultInfo } from '@testhelp/vaultHelpers';
+import { deployGameMock, deployDerbyToken } from '@testhelp/deploy';
 
 const basketNum = 0;
 const chainIds = [10, 100, 1000];
@@ -16,37 +30,70 @@ const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
-const totalDerbySupply = parseEther(1E8.toString()); 
+const totalDerbySupply = parseEther((1e8).toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe("Testing Game", async () => {
-  let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock ;
+describe('Testing Game', async () => {
+  let vault: MainVaultMock,
+    controller: Controller,
+    dao: Signer,
+    user: Signer,
+    USDCSigner: Signer,
+    IUSDc: Contract,
+    daoAddr: string,
+    userAddr: string,
+    DerbyToken: DerbyToken,
+    game: GameMock,
+    xChainController: XChainControllerMock,
+    xProvider10: XProvider,
+    xProvider100: XProvider,
+    LZEndpoint10: LZEndpointMock,
+    LZEndpoint100: LZEndpointMock;
 
-  before(async function() {
+  before(async function () {
     [dao, user] = await ethers.getSigners();
 
     [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
       getUSDCSigner(),
       erc20(usdc),
       dao.getAddress(),
-      user.getAddress()
+      user.getAddress(),
     ]);
 
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, daoAddr, controller.address);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    game = await deployGameMock(
+      user,
+      nftName,
+      nftSymbol,
+      DerbyToken.address,
+      controller.address,
+      daoAddr,
+      daoAddr,
+      controller.address,
+    );
+    vault = await deployMainVaultMock(
+      dao,
+      name,
+      symbol,
+      decimals,
+      vaultNumber,
+      daoAddr,
+      daoAddr,
+      game.address,
+      controller.address,
+      usdc,
+      uScale,
+      gasFeeLiquidity,
+    );
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
-    [LZEndpoint10, LZEndpoint100] = await Promise.all([
-      deployLZEndpointMock(dao, 10),
-      deployLZEndpointMock(dao, 100),
-    ]);
+    [LZEndpoint10, LZEndpoint100] = await Promise.all([deployLZEndpointMock(dao, 10), deployLZEndpointMock(dao, 100)]);
 
     [xProvider10, xProvider100] = await Promise.all([
       deployXProvider(dao, LZEndpoint10.address, daoAddr, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, LZEndpoint100.address, daoAddr, daoAddr, game.address, xChainController.address, 100)
-    ])
+      deployXProvider(dao, LZEndpoint100.address, daoAddr, daoAddr, game.address, xChainController.address, 100),
+    ]);
 
     await Promise.all([
       xProvider10.setXControllerProvider(xProvider100.address),
@@ -90,18 +137,18 @@ describe("Testing Game", async () => {
     // }
   });
 
-  it("DerbyToken should have name, symbol and totalSupply set", async function() {
+  it('DerbyToken should have name, symbol and totalSupply set', async function () {
     expect(await DerbyToken.name()).to.be.equal(name);
     expect(await DerbyToken.symbol()).to.be.equal(symbol);
-    expect(await DerbyToken.totalSupply()).to.be.equal(totalDerbySupply); 
+    expect(await DerbyToken.totalSupply()).to.be.equal(totalDerbySupply);
   });
 
-  it("game should have DerbyToken contract addresses set", async function() {
+  it('game should have DerbyToken contract addresses set', async function () {
     expect(await game.derbyTokenAddress()).to.be.equal(DerbyToken.address);
   });
-  
-  it("Can add a vault", async function() {
-    await expect(game.connect(user).addETF(vault.address)).to.be.revertedWith("Game: only DAO");
+
+  it('Can add a vault', async function () {
+    await expect(game.connect(user).addETF(vault.address)).to.be.revertedWith('Game: only DAO');
     let latestNumber = await game.latestvaultNumber();
     expect(latestNumber).to.be.equal(0);
     await game.connect(dao).addETF(vault.address);
@@ -109,17 +156,19 @@ describe("Testing Game", async () => {
     expect(latestNumber).to.be.equal(1);
   });
 
-  it("Should Lock tokens, mint basket and set correct deltas", async function() {
-    await game.mintNewBasket(vaultNumber); 
+  it('Should Lock tokens, mint basket and set correct deltas', async function () {
+    await game.mintNewBasket(vaultNumber);
 
-    const allocationArray = [ 
+    const allocationArray = [
       [100, 0, 0, 200, 0], // 300
       [100, 0, 200, 100, 200], // 600
-      [0, 100, 200, 300, 400], // 1000 
+      [0, 100, 200, 300, 400], // 1000
     ];
     const totalAllocations = 1900;
     await DerbyToken.increaseAllowance(game.address, totalAllocations);
-    await expect(game.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith('Game: Not the owner of the basket');
+    await expect(game.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith(
+      'Game: Not the owner of the basket',
+    );
 
     const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
     await game.rebalanceBasket(0, allocationArray);
@@ -140,20 +189,20 @@ describe("Testing Game", async () => {
     });
   });
 
-  it("Should Unlock lokens and read allocations in basket", async function() {
-    const allocationDeltaArray = [ 
+  it('Should Unlock lokens and read allocations in basket', async function () {
+    const allocationDeltaArray = [
       [-100, 0, 0, 0, 0],
       [0, 0, -100, -100, -200],
       [0, 0, -200, -200, -100],
     ];
 
-    const allocationTestArray = [ 
+    const allocationTestArray = [
       [0, 0, 0, 200, 0], // 200
       [100, 0, 100, 0, 0], // 200
       [0, 100, 0, 100, 300], // 500
     ];
 
-    const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);    
+    const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
     await game.rebalanceBasket(0, allocationDeltaArray);
     const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
 
@@ -174,7 +223,7 @@ describe("Testing Game", async () => {
   });
 
   // Allocations in protocols are not resetted at this point
-  it("Should push delta allocations from game to xChainController", async function() {
+  it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
@@ -196,21 +245,19 @@ describe("Testing Game", async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(0, [[0,1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
+    await expect(game.rebalanceBasket(0, [[0, 1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
 
-    // reset allocations and state for testing 
+    // reset allocations and state for testing
     await game.setXChainRebalanceState(vaultNumber, false);
-    await game.rebalanceBasket(
-    0, 
-    [ 
+    await game.rebalanceBasket(0, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
       [0, -100, 0, -100, -300], // 500
     ]);
   });
 
-  it("Calculate rewards during rebalance Basket", async function() {
-    let allocations = [ 
+  it('Calculate rewards during rebalance Basket', async function () {
+    let allocations = [
       [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
       [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
     ];
@@ -244,13 +291,12 @@ describe("Testing Game", async () => {
       game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
     ]);
 
-    const newAllocations = [ 
+    const newAllocations = [
       [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0], 
+      [0, 0, 0, 0, 0],
     ];
     await game.rebalanceBasket(basketNum, newAllocations);
 
-    
     /*
     Rewards * allocation = totalReward
     4000 * 200 = 800_000
@@ -283,7 +329,7 @@ describe("Testing Game", async () => {
   //   let rewards = await generateUnredeemedRewards();
   //   let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
   //   let userBalanceBefore = await IUSDc.balanceOf(userAddr);
-    
+
   //   await gameMock.redeemRewards(0);
 
   //   let userBalanceAfter = await IUSDc.balanceOf(userAddr);
@@ -296,5 +342,5 @@ describe("Testing Game", async () => {
 
   //   expect(unredeemedRewards).to.be.equal(0);
   //   expect(redeemedRewards).to.be.equal(rewards);
-  // });   
+  // });
 });
