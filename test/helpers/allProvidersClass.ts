@@ -1,7 +1,24 @@
-import { Signer } from "ethers";
-import { AaveProvider, BetaProvider, CompoundProvider, Controller, HomoraProvider, IdleProvider, TruefiProvider, YearnProvider } from "@typechain";
-import { comptroller } from "./addresses";
-import { deployAaveProvider, deployBetaProvider, deployCompoundProvider, deployHomoraProvider, deployIdleProvider, deployTruefiProvider, deployYearnProvider } from "./deploy";
+import { Signer } from 'ethers';
+import {
+  AaveProvider,
+  BetaProvider,
+  CompoundProvider,
+  Controller,
+  HomoraProvider,
+  IdleProvider,
+  TruefiProvider,
+  YearnProvider,
+} from '@typechain';
+import { comptroller } from './addresses';
+import {
+  deployAaveProvider,
+  deployBetaProvider,
+  deployCompoundProvider,
+  deployHomoraProvider,
+  deployIdleProvider,
+  deployTruefiProvider,
+  deployYearnProvider,
+} from './deploy';
 
 class AllProviders {
   yearnProvider!: YearnProvider;
@@ -14,13 +31,13 @@ class AllProviders {
 
   async deployAllProviders(dao: Signer, controller: Controller): Promise<void> {
     [
-      this.yearnProvider, 
-      this.compoundProvider, 
-      this.aaveProvider, 
-      this.truefiProvider, 
-      this.homoraProvider, 
-      this.idleProvider, 
-      this.betaProvider
+      this.yearnProvider,
+      this.compoundProvider,
+      this.aaveProvider,
+      this.truefiProvider,
+      this.homoraProvider,
+      this.idleProvider,
+      this.betaProvider,
     ] = await Promise.all([
       deployYearnProvider(dao, controller.address),
       deployCompoundProvider(dao, controller.address, comptroller),

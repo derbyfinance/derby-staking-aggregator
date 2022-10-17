@@ -1,6 +1,6 @@
-import { MockContract } from "@ethereum-waffle/mock-contract";
-import { Signer } from "ethers";
-import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from "./deployMocks";
+import { MockContract } from '@ethereum-waffle/mock-contract';
+import { Signer } from 'ethers';
+import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './deployMocks';
 
 class AllMockProviders {
   yearnProvider!: MockContract;
@@ -8,11 +8,7 @@ class AllMockProviders {
   aaveProvider!: MockContract;
 
   async deployAllMockProviders(dao: Signer): Promise<void> {
-    [
-      this.yearnProvider, 
-      this.compoundProvider, 
-      this.aaveProvider, 
-    ] = await Promise.all([
+    [this.yearnProvider, this.compoundProvider, this.aaveProvider] = await Promise.all([
       deployYearnProviderMock(dao),
       deployCompoundProviderMock(dao),
       deployAaveProviderMock(dao),
