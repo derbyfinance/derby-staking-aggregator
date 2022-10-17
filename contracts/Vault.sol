@@ -18,7 +18,6 @@ import "hardhat/console.sol";
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
   // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
-  string public vaultName;
   uint256 public vaultNumber;
 
   IERC20 public vaultCurrency;
@@ -52,8 +51,6 @@ contract Vault is ReentrancyGuard {
   uint256 public uScale;
   int256 public marginScale = 1E10; // 10000 USDC
 
-  uint256 public blockRebalanceInterval = 1; // SHOULD BE REPLACED FOR REALISTIC NUMBER
-  uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
 
   // total underlying of all protocols in vault, excluding vault balance
@@ -94,7 +91,6 @@ contract Vault is ReentrancyGuard {
   }
 
   constructor(
-    string memory _vaultName,
     uint256 _vaultNumber,
     address _governed,
     address _game, 
@@ -107,14 +103,12 @@ contract Vault is ReentrancyGuard {
     vaultCurrency = IERC20(_vaultCurrency);
     vaultCurrencyAddr = _vaultCurrency;
 
-    vaultName = _vaultName;
     vaultNumber = _vaultNumber;
 
     governed = _governed;
     game = _game;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
-    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -159,7 +153,7 @@ contract Vault is ReentrancyGuard {
     setTotalUnderlying();
     
     if (getVaultBalance() < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
-    lastTimeStamp = block.timestamp;
+
     state = State.SendRewardsPerToken ;
     deltaAllocationsReceived = false;
   }
@@ -273,12 +267,6 @@ contract Vault is ReentrancyGuard {
     Swap.unWrapWETHtoGov(payable(governed), wethReceived);
 
     emit GasPaidRebalanceETF(amountEtherToVaultCurrency);
-  }
-
-  /// @notice Checks if a rebalance is needed based on the set block interval 
-  /// @return bool True of rebalance is needed, false if not
-  function rebalanceNeeded() public view returns(bool) {
-    return (block.timestamp - lastTimeStamp) > blockRebalanceInterval;
   }
 
   /// @notice Helper function to set allocations
@@ -473,12 +461,6 @@ contract Vault is ReentrancyGuard {
   /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
   function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
     gasFeeLiquidity = _gasFeeLiquidity;
-  }  
-
-  /// @notice Set minimum block interval for the rebalance function
-  /// @param _blockInterval number of blocks
-  function setRebalanceInterval(uint256 _blockInterval) external onlyDao {
-    blockRebalanceInterval = _blockInterval;
   }
 
   function getVaultBalance() public virtual view returns(uint256) {

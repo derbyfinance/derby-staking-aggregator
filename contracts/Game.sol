@@ -110,13 +110,14 @@ contract Game is ERC721, ReentrancyGuard {
       address _derbyTokenAddress, 
       address _routerAddress,
       address _governed,
+      address _guardian,
       address _controller
     ) 
       ERC721(name_, symbol_) {
       derbyTokenAddress = _derbyTokenAddress;
       routerAddress = _routerAddress;
       governed = _governed;
-      guardian = _governed;
+      guardian = _guardian;
       controller = IController(_controller);
     }
 

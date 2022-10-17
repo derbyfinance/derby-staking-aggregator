@@ -10,6 +10,7 @@ contract GameMock is Game {
         address _derbyTokenAddress, 
         address _routerAddress,
         address _governed,
+        address _guardian,
         address _controller
     ) Game (
         name_, 
@@ -17,6 +18,7 @@ contract GameMock is Game {
         _derbyTokenAddress,
         _routerAddress,
         _governed,
+        _guardian,
         _controller
     ) {}
 

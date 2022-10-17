@@ -33,9 +33,9 @@ contract MainVault is Vault, VaultToken {
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
-    string memory _vaultName,
     uint256 _vaultNumber,
     address _governed,
+    address _guardian,
     address _game, 
     address _controller, 
     address _vaultCurrency,
@@ -43,9 +43,9 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
   ) 
   VaultToken(_name, _symbol, _decimals) 
-  Vault(_vaultName, _vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
+  Vault(_vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
     exchangeRate = _uScale;
-    guardian = _governed;
+    guardian = _guardian;
   }
 
   modifier onlyXProvider {
@@ -60,7 +60,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   modifier onlyGuardian {
-    require(msg.sender == guardian, "Vault*: only Guardian");
+    require(msg.sender == guardian, "Vault: only Guardian");
     _;
   }
 

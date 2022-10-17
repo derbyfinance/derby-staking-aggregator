@@ -115,10 +115,10 @@ contract XChainController {
 
   event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
 
-  constructor(address _game, address _dao, uint16 _homeChain) {
+  constructor(address _game, address _dao, address _guardian, uint16 _homeChain) {
     game = _game;
     dao = _dao;
-    guardian = _dao;
+    guardian = _guardian;
     homeChain = _homeChain;
   }
 

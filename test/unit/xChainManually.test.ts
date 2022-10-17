@@ -35,7 +35,7 @@ const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther((1e8).toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe('Testing XChainController, unit test', async () => {
   let vault1: MainVaultMock,
@@ -70,8 +70,20 @@ describe('Testing XChainController, unit test', async () => {
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, arbitrumGoerli);
-    xChainControllerDUMMY = await deployXChainControllerMock(dao, daoAddr, daoAddr, arbitrumGoerli);
+    xChainController = await deployXChainControllerMock(
+      dao,
+      daoAddr,
+      daoAddr,
+      daoAddr,
+      arbitrumGoerli,
+    );
+    xChainControllerDUMMY = await deployXChainControllerMock(
+      dao,
+      daoAddr,
+      daoAddr,
+      daoAddr,
+      arbitrumGoerli,
+    );
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(
@@ -80,6 +92,7 @@ describe('Testing XChainController, unit test', async () => {
       nftSymbol,
       DerbyToken.address,
       controller.address,
+      daoAddr,
       daoAddr,
       controller.address,
     );
@@ -116,8 +129,8 @@ describe('Testing XChainController, unit test', async () => {
         name,
         symbol,
         decimals,
-        ETFname,
         vaultNumber,
+        daoAddr,
         daoAddr,
         userAddr,
         controller.address,
@@ -130,8 +143,8 @@ describe('Testing XChainController, unit test', async () => {
         name,
         symbol,
         decimals,
-        ETFname,
         vaultNumber,
+        daoAddr,
         daoAddr,
         userAddr,
         controller.address,
@@ -220,7 +233,17 @@ describe('Testing XChainController, unit test', async () => {
     expect(await game.basketTotalAllocatedTokens(vaultNumber)).to.be.equal(totalAllocations);
   });
 
-  it('Only be called by Guardian', async function () {});
+  it('Only be called by Guardian', async function () {
+    await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith(
+      'Vault: only Guardian',
+    );
+    await expect(game.connect(user).setRebalancingState(vaultNumber, true)).to.be.revertedWith(
+      'Game: only Guardian',
+    );
+    await expect(
+      xChainController.connect(user).setReadyGuard(vaultNumber, true),
+    ).to.be.revertedWith('xController: only Guardian');
+  });
 
   it('Test Guardian setters in xChainController', async function () {
     // sending funds

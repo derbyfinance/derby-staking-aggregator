@@ -17,7 +17,7 @@ const nftSymbol = 'DRBNFT';
 const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther(1E8.toString()); 
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing Game", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, user: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, userAddr: string, DerbyToken: DerbyToken,  game: GameMock, xChainController: XChainControllerMock, xProvider10: XProvider, xProvider100: XProvider, LZEndpoint10: LZEndpointMock, LZEndpoint100: LZEndpointMock ;
@@ -34,9 +34,9 @@ describe("Testing Game", async () => {
 
     controller = await deployController(dao, daoAddr);
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, controller.address);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, 100);
+    game = await deployGameMock(user, nftName, nftSymbol, DerbyToken.address, controller.address, daoAddr, daoAddr, controller.address);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, game.address, controller.address, usdc, uScale, gasFeeLiquidity);
+    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
     [LZEndpoint10, LZEndpoint100] = await Promise.all([
       deployLZEndpointMock(dao, 10),

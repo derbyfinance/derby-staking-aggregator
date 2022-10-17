@@ -13,7 +13,7 @@ import { vaultInfo } from "@testhelp/vaultHelpers";
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe("Testing Vault, unit test", async () => {
   let vault: MainVaultMock, controller: Controller, dao: Signer, game: Signer, USDCSigner: Signer, IUSDc: Contract, daoAddr: string, gameAddr: string;
@@ -33,7 +33,7 @@ describe("Testing Vault, unit test", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       initController(controller, [gameAddr, vault.address]),
@@ -195,7 +195,7 @@ describe.skip("Testing Vault, unit test, mock providers", async () => {
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, vaultNumber, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, vaultNumber, daoAddr, daoAddr, gameAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     // With MOCK Providers
     await Promise.all([

@@ -119,7 +119,7 @@ describe.skip("Testing feeTest. Simulate looping through game players and calcul
     ]);
 
     controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFname, ETFnumber, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
+    vault = await deployMainVaultMock(dao, name, symbol, decimals, ETFnumber, daoAddr, daoAddr, userAddr, controller.address, usdc, uScale, gasFeeLiquidity);
 
     await Promise.all([
       allProviders.deployAllProviders(dao, controller),
