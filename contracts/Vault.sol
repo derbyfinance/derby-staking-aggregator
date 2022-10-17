@@ -51,6 +51,9 @@ contract Vault is ReentrancyGuard {
   uint256 public uScale;
   int256 public marginScale = 1E10; // 10000 USDC
 
+  // UNIX timestamp
+  uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
+  uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
 
   // total underlying of all protocols in vault, excluding vault balance
@@ -109,6 +112,7 @@ contract Vault is ReentrancyGuard {
     game = _game;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
+    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -426,6 +430,12 @@ contract Vault is ReentrancyGuard {
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 
+  /// @notice Checks if a rebalance is needed based on the set interval 
+  /// @return bool True of rebalance is needed, false if not
+  function rebalanceNeeded() public view returns(bool) {
+    return (block.timestamp - lastTimeStamp) > rebalanceInterval;
+  }
+
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals. 
   /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
   /// @dev Take into account the uScale (scale of the underlying).
@@ -461,6 +471,12 @@ contract Vault is ReentrancyGuard {
   /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
   function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
     gasFeeLiquidity = _gasFeeLiquidity;
+  }
+
+  /// @notice Set minimum interval for the rebalance function
+  /// @param _timestampInternal UNIX timestamp
+  function setRebalanceInterval(uint256 _timestampInternal) external onlyDao {
+    rebalanceInterval = _timestampInternal;
   }
 
   function getVaultBalance() public virtual view returns(uint256) {

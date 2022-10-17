@@ -6,6 +6,7 @@ import "./Vault.sol";
 import "hardhat/console.sol";
 
 
+
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
@@ -142,6 +143,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
+    require(rebalanceNeeded(), "No rebalance needed");
     require(state == State.Idle, "Vault already rebalancing");
 
     setTotalUnderlying();
@@ -156,6 +158,7 @@ contract MainVault is Vault, VaultToken {
     );
 
     state = State.PushedUnderlying;
+    lastTimeStamp = block.timestamp;
 
     emit PushTotalUnderlying(vaultNumber, homeChain, underlying, totalSupply(), totalWithdrawalRequests);
   }

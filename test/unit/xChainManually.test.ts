@@ -280,7 +280,7 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Step 1: Game pushes totalDeltaAllocations to xChainController', async function () {
-    // Setting a dummy Controller here so transaction below succeeds but doesnt arrive in the correct Controller
+    // Setting a dummy Controller here so transactions later succeeds but doesnt arrive in the correct Controller
     // Will be corrected by the guardian
     await xChainControllerDUMMY.connect(dao).resetVaultStagesDao(vaultNumber);
     await xChainController.connect(dao).resetVaultStagesDao(vaultNumber);
@@ -423,5 +423,18 @@ describe('Testing XChainController, unit test', async () => {
         await game.getRewardsPerLockedTokenTEST(vaultNumber, arbitrumGoerli, 1, i),
       ).to.be.equal(vault2Rewards[i]);
     }
+  });
+
+  it('Both Game and Vault should revert when rebalance not needed', async function () {
+    // set very high interval so a rebalance is not needed
+    await vault1.connect(dao).setRebalanceInterval(100_000);
+    await game.connect(dao).setRebalanceInterval(100_000);
+
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith(
+      'No rebalance needed',
+    );
+    await expect(game.pushAllocationsToController(vaultNumber)).to.be.revertedWith(
+      'No rebalance needed',
+    );
   });
 });
