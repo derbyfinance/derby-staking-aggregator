@@ -11,8 +11,7 @@ import { vaultInfo } from '@testhelp/vaultHelpers';
 
 const amount = 200_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } =
-  vaultInfo;
+const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
 describe.skip('Testing Vault, integration test', async () => {
   let vault: MainVaultMock,

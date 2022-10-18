@@ -245,7 +245,6 @@ describe('Testing XChainController, unit test', async () => {
     await Promise.all([
       game.connect(dao).setXProvider(xProviderGoerli.address),
       game.connect(dao).setChainIdArray(chainIds),
-      game.connect(dao).addETF(vault1.address),
       game.connect(dao).setLatestProtocolId(goerli, 5),
       game.connect(dao).setLatestProtocolId(arbitrumGoerli, 5),
       game.connect(dao).setLatestProtocolId(optimismGoerli, 5),
