@@ -297,7 +297,7 @@ contract Vault is ReentrancyGuard {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number.
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    uint256 latestID =controller.latestProtocolId(vaultNumber);
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;

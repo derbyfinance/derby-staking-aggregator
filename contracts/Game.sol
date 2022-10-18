@@ -52,6 +52,7 @@ contract Game is ERC721, ReentrancyGuard {
   address public governed;
   address public guardian;
   address public xProvider;
+  address public homeVault;
 
   IController public controller;
 
@@ -66,9 +67,6 @@ contract Game is ERC721, ReentrancyGuard {
 
   // last rebalance timeStamp
   uint256 public lastTimeStamp;
-
-  // vault addresses
-  mapping(address => bool) vaultAddresses;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   mapping(uint256 => Basket) private baskets;
@@ -524,9 +522,13 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev makes a call to the vault to make the actual transfer because the vault holds the funds.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
-    // int256 amount = baskets[_basketId].totalUnRedeemedRewards;
-    // baskets[_basketId].totalRedeemedRewards += amount;
-    // baskets[_basketId].totalUnRedeemedRewards = 0;
+    int256 amount = baskets[_basketId].totalUnRedeemedRewards;
+    console.log("amount to redeem %s", uint(amount));
+    baskets[_basketId].totalRedeemedRewards += amount;
+    baskets[_basketId].totalUnRedeemedRewards = 0;
+
+    IVault(homeVault).withdrawalRequest(amount);
+
     // IVault(vaults[baskets[_basketId].vaultNumber]).redeemRewards(msg.sender, uint256(amount));
   }
 
@@ -567,6 +569,12 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _xProvider new address of xProvider on this chain
   function setXProvider(address _xProvider) external onlyDao {
     xProvider = _xProvider;
+  }
+
+  /// @notice Setter for homeVault address
+  /// @param _homeVault new address of xProvider on this chain
+  function setHomeVault(address _homeVault) external onlyDao {
+    homeVault = _homeVault;
   }
 
   /// @notice Guardian function to set state when vault gets stuck for whatever reason

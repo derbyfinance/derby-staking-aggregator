@@ -19,7 +19,7 @@ import {
   deployXProvider,
 } from '@testhelp/deploy';
 import { usdc } from '@testhelp/addresses';
-import { initController } from '@testhelp/vaultHelpers';
+import { getAllocations, initController } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/allMockProvidersClass';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 import { deployGameMock, deployDerbyToken } from '@testhelp/deploy';
@@ -144,6 +144,7 @@ describe('Testing Game', async () => {
       game.connect(dao).setLatestProtocolId(10, 5),
       game.connect(dao).setLatestProtocolId(100, 5),
       game.connect(dao).setLatestProtocolId(1000, 5),
+      game.connect(dao).setHomeVault(vault.address),
     ]);
 
     await Promise.all([
@@ -333,19 +334,20 @@ describe('Testing Game', async () => {
     expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
   });
 
-  // it.skip("Should be able to redeem funds via vault function", async function() {
-  //   let rewards = await generateUnredeemedRewards();
-  //   let userBalanceBefore = await IUSDc.balanceOf(userAddr);
-  //   let vaultBalanceBefore = await IUSDc.balanceOf(vault.address);
+  it('Should be able to redeem funds via vault function', async function () {
+    await game.redeemRewards(basketNum);
+    // let rewards = await generateUnredeemedRewards();
+    // let userBalanceBefore = await IUSDc.balanceOf(userAddr);
+    // let vaultBalanceBefore = await IUSDc.balanceOf(vault.address);
 
-  //   await gameMock.triggerRedeemedRewardsVault(vault.address, userAddr, rewards);
+    // await gameMock.triggerRedeemedRewardsVault(vault.address, userAddr, rewards);
 
-  //   let userBalanceAfter = await IUSDc.balanceOf(userAddr);
-  //   let vaultBalanceAfter = await IUSDc.balanceOf(vault.address);
+    // let userBalanceAfter = await IUSDc.balanceOf(userAddr);
+    // let vaultBalanceAfter = await IUSDc.balanceOf(vault.address);
 
-  //   expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
-  //   expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
-  // });
+    // expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
+    // expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
+  });
 
   // it.skip("Should be able to redeem funds via game", async function() {
   //   let rewards = await generateUnredeemedRewards();
