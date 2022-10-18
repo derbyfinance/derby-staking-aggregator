@@ -190,7 +190,7 @@ contract Vault is ReentrancyGuard {
 
       storePriceAndRewards(_newTotalUnderlying, i);
 
-      if (deltaAllocations[i] == 0 || isBlacklisted) continue;
+      if (isBlacklisted) continue;
   
       setAllocation(i);
 
