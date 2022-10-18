@@ -49,18 +49,23 @@ contract MainVault is Vault, VaultToken {
   }
 
   modifier onlyXProvider() {
-    require(msg.sender == xProvider, "Vault: only xProvider");
+    require(msg.sender == xProvider, "only xProvider");
     _;
   }
 
   modifier onlyWhenVaultIsOn() {
-    require(state == State.Idle, "Vault is rebalancing");
+    require(state == State.Idle, "Rebalancing");
     require(!vaultOff, "Vault is off");
     _;
   }
 
   modifier onlyGuardian() {
-    require(msg.sender == guardian, "Vault: only Guardian");
+    require(msg.sender == guardian, "only Guardian");
+    _;
+  }
+
+  modifier onlyGame() {
+    require(msg.sender == game, "only game");
     _;
   }
 
@@ -119,33 +124,50 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
-  function withdrawalRequest(uint256 _amount)
-    external
-    nonReentrant
-    onlyWhenVaultIsOn
-    returns (uint256 value)
-  {
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
-
-    value = (_amount * exchangeRate) / (10**decimals());
-
+  function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn {
+    uint256 value = (_amount * exchangeRate) / (10**decimals());
     _burn(msg.sender, _amount);
 
-    withdrawalAllowance[msg.sender] = value;
-    withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
-    totalWithdrawalRequests += value;
+    return setWithdrawalRequest(value, msg.sender);
+  }
+
+  /// @notice Withdrawal request for when the vault doesnt have enough funds available
+  /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
+  /// @param _value Amount to set a request in vaultCurrency
+  /// @param _user Address of the user
+  function setWithdrawalRequest(uint256 _value, address _user) internal {
+    require(
+      withdrawalRequestPeriod[_user] == 0 || withdrawalRequestPeriod[_user] == rebalancingPeriod,
+      "Withdraw allowance first"
+    );
+
+    withdrawalAllowance[_user] += _value;
+    withdrawalRequestPeriod[_user] = rebalancingPeriod;
+    totalWithdrawalRequests += _value;
+  }
+
+  /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
+  /// @param _value Amount to set a request in vaultCurrency
+  /// @param _user Address of the user
+  function redeemRewardsGame(uint256 _value, address _user)
+    external
+    onlyGame
+    nonReentrant
+    onlyWhenVaultIsOn
+  {
+    return setWithdrawalRequest(_value, _user);
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant returns (uint256 value) {
-    require(state == State.Idle, "Vault is rebalancing");
+    require(state == State.Idle, "Rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
-    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
+    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender]);
 
     value = withdrawalAllowance[msg.sender];
 
-    require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
+    require(vaultCurrency.balanceOf(address(this)) >= value, "No funds");
 
     reservedFunds -= value;
     delete withdrawalAllowance[msg.sender];
@@ -158,7 +180,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external {
     require(rebalanceNeeded(), "No rebalance needed");
-    require(state == State.Idle, "Vault already rebalancing");
+    require(state == State.Idle, "Rebalancing");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance();
@@ -188,7 +210,7 @@ contract MainVault is Vault, VaultToken {
     external
     onlyXProvider
   {
-    require(state == State.PushedUnderlying, "Vault in wrong state");
+    require(state == State.PushedUnderlying, "Wrong state");
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 

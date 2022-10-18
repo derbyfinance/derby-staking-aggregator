@@ -44,7 +44,7 @@ contract GameMock is Game {
     address user,
     uint256 amount
   ) external {
-    IVault(_vault).redeemRewards(user, amount);
+    IVault(_vault).redeemRewardsGame(amount, user);
   }
 
   function upRebalancingPeriod(uint256 _vaultNumber) external {

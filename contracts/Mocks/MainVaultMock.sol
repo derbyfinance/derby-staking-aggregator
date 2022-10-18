@@ -2,7 +2,6 @@
 pragma solidity ^0.8.11;
 
 import "../MainVault.sol";
-import "hardhat/console.sol";
 
 contract MainVaultMock is MainVault {
   mapping(uint256 => uint256) private players;

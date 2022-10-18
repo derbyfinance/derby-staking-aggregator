@@ -478,7 +478,7 @@ contract Vault is ReentrancyGuard {
   /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale.
   /// @param _liquidityPerc Value at which to set the liquidityPerc.
   function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
-    require(_liquidityPerc <= 100, "Percentage cannot exceed 100%");
+    require(_liquidityPerc <= 100, "Cannot exceed 100%");
     liquidityPerc = _liquidityPerc;
   }
 
@@ -486,7 +486,7 @@ contract Vault is ReentrancyGuard {
   /// @dev The actual performanceFee could be a bit more or a bit less than the performanceFee set here due to approximations in the game.
   /// @param _performanceFee Value at which to set the performanceFee.
   function setPerformanceFee(uint256 _performanceFee) external onlyDao {
-    require(_performanceFee <= 100, "Percentage cannot exceed 100%");
+    require(_performanceFee <= 100, "Cannot exceed 100%");
     performanceFee = _performanceFee;
   }
 

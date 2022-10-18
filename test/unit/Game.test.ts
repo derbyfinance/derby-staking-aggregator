@@ -177,12 +177,12 @@ describe('Testing Game', async () => {
     ];
     const totalAllocations = 1900;
     await DerbyToken.increaseAllowance(game.address, totalAllocations);
-    await expect(game.connect(dao).rebalanceBasket(0, allocationArray)).to.be.revertedWith(
+    await expect(game.connect(dao).rebalanceBasket(basketNum, allocationArray)).to.be.revertedWith(
       'Game: Not the owner of the basket',
     );
 
     const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
-    await game.rebalanceBasket(0, allocationArray);
+    await game.rebalanceBasket(basketNum, allocationArray);
     const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
 
     expect(tokenBalanceBefore.sub(tokenBalanceAfter)).to.be.equal(1900);
@@ -190,7 +190,7 @@ describe('Testing Game', async () => {
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(300);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(600);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(1000);
-    expect(await game.basketTotalAllocatedTokens(0)).to.be.equal(totalAllocations);
+    expect(await game.basketTotalAllocatedTokens(basketNum)).to.be.equal(totalAllocations);
 
     // looping through all of allocationArray
     allocationArray.forEach(async (chainIdArray, i) => {
@@ -216,7 +216,7 @@ describe('Testing Game', async () => {
     ];
 
     const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
-    await game.rebalanceBasket(0, allocationDeltaArray);
+    await game.rebalanceBasket(basketNum, allocationDeltaArray);
     const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
 
     // received 1000 tokens
@@ -225,7 +225,7 @@ describe('Testing Game', async () => {
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(200);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(200);
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(500);
-    expect(await game.basketTotalAllocatedTokens(0)).to.be.equal(1900 - 1000);
+    expect(await game.basketTotalAllocatedTokens(basketNum)).to.be.equal(1900 - 1000);
 
     // looping through all of allocationArray
     allocationTestArray.forEach(async (chainIdArray, i) => {
@@ -266,13 +266,13 @@ describe('Testing Game', async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(0, [[0, 1]])).to.be.revertedWith(
+    await expect(game.rebalanceBasket(basketNum, [[0, 1]])).to.be.revertedWith(
       'Game: vault is xChainRebalancing',
     );
 
     // reset allocations and state for testing
     await game.setXChainRebalanceState(vaultNumber, false);
-    await game.rebalanceBasket(0, [
+    await game.rebalanceBasket(basketNum, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
       [0, -100, 0, -100, -300], // 500
@@ -330,23 +330,23 @@ describe('Testing Game', async () => {
     200 * 200 = 40_000
     total = 2_120_000
     */
-    const rewards = await game.basketUnredeemedRewards(0);
+    const rewards = await game.basketUnredeemedRewards(basketNum);
     expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
   });
 
   it('Should be able to redeem funds via vault function', async function () {
     await game.redeemRewards(basketNum);
-    // let rewards = await generateUnredeemedRewards();
-    // let userBalanceBefore = await IUSDc.balanceOf(userAddr);
-    // let vaultBalanceBefore = await IUSDc.balanceOf(vault.address);
+    await expect(game.redeemRewards(basketNum)).to.be.revertedWith('Nothing to claim');
 
-    // await gameMock.triggerRedeemedRewardsVault(vault.address, userAddr, rewards);
+    expect(await vault.getWithdrawalAllowanceTEST(userAddr)).to.be.equal(2_120_000);
 
-    // let userBalanceAfter = await IUSDc.balanceOf(userAddr);
-    // let vaultBalanceAfter = await IUSDc.balanceOf(vault.address);
+    // Mock upping the rebalancingPeriod
+    await vault.upRebalancingPeriodTEST();
 
-    // expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
-    // expect(rewards).to.be.equal(vaultBalanceBefore.sub(vaultBalanceAfter));
+    await vault.connect(user).deposit(10_000);
+    await expect(vault.connect(user).withdrawalRequest(5_000)).to.be.revertedWith(
+      'Withdraw allowance first',
+    );
   });
 
   // it.skip("Should be able to redeem funds via game", async function() {

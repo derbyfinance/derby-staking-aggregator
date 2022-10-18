@@ -40,5 +40,5 @@ interface IVault {
 
   function decimals() external view returns (uint256);
 
-  function withdrawalRequest(uint256 _amount) external returns (uint256);
+  function redeemRewardsGame(uint256 _amount, address _user) external;
 }
