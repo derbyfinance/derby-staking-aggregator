@@ -120,7 +120,8 @@ contract Vault is ReentrancyGuard {
   /// @param _value The total value of vaultCurrency an user is trying to withdraw. 
   /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
   function pullFunds(uint256 _value) internal {
-    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
       
       uint256 shortage = _value - getVaultBalance();
@@ -184,8 +185,8 @@ contract Vault is ReentrancyGuard {
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number. 
   function rebalanceCheckProtocols(uint256 _newTotalUnderlying) internal returns(uint256[] memory){
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
-
-    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       storePriceAndRewards(_newTotalUnderlying, i);
@@ -285,7 +286,8 @@ contract Vault is ReentrancyGuard {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number. 
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+    uint256 latestID =controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
       // console.log("protocol: %s, deposit: %s", i, amount);
@@ -354,7 +356,8 @@ contract Vault is ReentrancyGuard {
   /// @notice Set total balance in VaultCurrency in all underlying protocols
   function setTotalUnderlying() public {
     uint totalUnderlying;
-    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
       totalUnderlying += balanceUnderlying(i);
     }
@@ -400,7 +403,8 @@ contract Vault is ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    for (uint i = 0; i < controller.latestProtocolId(vaultNumber); i++) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
       bool claim = controller.claim(vaultNumber, i);
 
