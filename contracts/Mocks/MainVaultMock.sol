@@ -61,12 +61,8 @@ contract MainVaultMock is MainVault {
     amountToSendXChain = _amount;
   }
 
-  function getHistoricalPriceTEST(uint256 _rebalancingPeriod, uint256 _protocolId)
-    external
-    view
-    returns (uint256)
-  {
-    return historicalPrices[_rebalancingPeriod][_protocolId];
+  function getLastPriceTEST(uint256 _protocolId) external view returns (uint256) {
+    return lastPrices[_protocolId];
   }
 
   function getMarginScale() external view returns (int256) {

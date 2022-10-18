@@ -73,8 +73,8 @@ contract Vault is ReentrancyGuard {
   // first index is rebalancing period, second index is protocol id.
   mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken;
 
-  // historical prices, first index is rebalancing period, second index is protocol id.
-  mapping(uint256 => mapping(uint256 => uint256)) public historicalPrices;
+  // historical prices, index is protocol id.
+  mapping(uint256 => uint256) public lastPrices;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
@@ -233,19 +233,17 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     uint256 price = price(_protocolId);
-    historicalPrices[rebalancingPeriod][_protocolId] = price;
-    if (historicalPrices[rebalancingPeriod - 1][_protocolId] == 0) return;
-    int256 priceDiff = int256(price - historicalPrices[rebalancingPeriod - 1][_protocolId]);
+    if (lastPrices[_protocolId] == 0) return;
+    int256 priceDiff = int256(price - lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
-    int256 denominator = totalAllocatedTokensRounded *
-      int256(historicalPrices[rebalancingPeriod - 1][_protocolId]) *
-      100; // * 100 cause perfFee is in percentages
+    int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
     if (totalAllocatedTokensRounded == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
+    lastPrices[_protocolId] = price;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
@@ -296,7 +294,7 @@ contract Vault is ReentrancyGuard {
   /// @dev Executes and resets all deposits set in mapping(protocolToDeposit) by rebalanceETF
   /// @param protocolToDeposit array with amounts to deposit in protocols, the index being the protocol number.
   function executeDeposits(uint256[] memory protocolToDeposit) internal {
-    uint256 latestID =controller.latestProtocolId(vaultNumber);
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
