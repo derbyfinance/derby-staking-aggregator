@@ -124,7 +124,9 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await rebalanceETF(vault);
     await vault.setVaultState(0);
 
-    await expect(vault.connect(user).withdraw(20_000 * 1e6, false)).to.be.revertedWith('Not enough funds');
+    await expect(vault.connect(user).withdraw(20_000 * 1e6, false)).to.be.revertedWith(
+      'Not enough funds',
+    );
 
     let expectedUSDCReceived = 20_000 * 1.05 * 1e6;
     await expect(() => vault.connect(user).withdraw(20_000 * 1e6, true)).to.changeTokenBalance(
@@ -160,25 +162,29 @@ describe('Testing VaultWithdraw, unit test', async () => {
     );
 
     // withdrawal request for 10k LP tokens
-    await expect(() => vault.connect(user).withdrawalRequest(parseUSDC('10000'))).to.changeTokenBalance(
-      vault,
-      user,
-      -parseUSDC('10000'),
-    );
+    await expect(() =>
+      vault.connect(user).withdrawalRequest(parseUSDC('10000')),
+    ).to.changeTokenBalance(vault, user, -parseUSDC('10000'));
 
     // check withdrawalAllowance user and totalsupply
     expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('9000'));
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('0'));
 
     // trying to withdraw allowance before the vault reserved the funds
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('Funds not reserved yet');
+    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith(
+      'Funds not reserved yet',
+    );
 
     // mocking vault settings
     await vault.upRebalancingPeriodTEST();
     await vault.setReservedFundsTEST(parseUSDC('10000'));
 
     // withdraw allowance should give 9k USDC
-    await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(IUSDc, user, parseUSDC('9000'));
+    await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
+      IUSDc,
+      user,
+      parseUSDC('9000'),
+    );
 
     // trying to withdraw allowance again
     await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('No allowance');

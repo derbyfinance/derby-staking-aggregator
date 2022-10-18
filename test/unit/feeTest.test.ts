@@ -188,7 +188,13 @@ describe.skip('Testing feeTest. Simulate looping through game players and calcul
     const protocolAaveUSDT = { number: 0, allocation: 0, address: aaveUSDT };
 
     // loop 9 times, so in total there are 25 protocols in the vault
-    const protocols = [protocolCompound, protocolAave, protocolYearn, protocolCompoundDAI, protocolAaveUSDT];
+    const protocols = [
+      protocolCompound,
+      protocolAave,
+      protocolYearn,
+      protocolCompoundDAI,
+      protocolAaveUSDT,
+    ];
     let p: Protocol;
     for (let i = 1; i < 5; i++) {
       await Promise.all([

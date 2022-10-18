@@ -58,28 +58,52 @@ import XReceiveMockArtifact from '@artifacts/Mocks/XReceiveMock.sol/XReceiveMock
 import XSendMockArtifact from '@artifacts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from './addresses';
 
-export const deployTokenTimeLock = (deployerSign: Signer, tokenAddr: string): Promise<TokenTimelock> => {
+export const deployTokenTimeLock = (
+  deployerSign: Signer,
+  tokenAddr: string,
+): Promise<TokenTimelock> => {
   return deployContract(deployerSign, TokenTimelockArtifact, [tokenAddr]) as Promise<TokenTimelock>;
 };
 
-export const deployBetaProvider = (deployerSign: Signer, controller: string): Promise<BetaProvider> => {
+export const deployBetaProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<BetaProvider> => {
   return deployContract(deployerSign, BetaProviderArtifact, [controller]) as Promise<BetaProvider>;
 };
 
-export const deployIdleProvider = (deployerSign: Signer, controller: string): Promise<IdleProvider> => {
+export const deployIdleProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<IdleProvider> => {
   return deployContract(deployerSign, IdleProviderArtifact, [controller]) as Promise<IdleProvider>;
 };
 
-export const deployHomoraProvider = (deployerSign: Signer, controller: string): Promise<HomoraProvider> => {
-  return deployContract(deployerSign, HomoraProviderArtifact, [controller]) as Promise<HomoraProvider>;
+export const deployHomoraProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<HomoraProvider> => {
+  return deployContract(deployerSign, HomoraProviderArtifact, [
+    controller,
+  ]) as Promise<HomoraProvider>;
 };
 
-export const deployYearnProvider = (deployerSign: Signer, controller: string): Promise<YearnProvider> => {
-  return deployContract(deployerSign, YearnProviderArtifact, [controller]) as Promise<YearnProvider>;
+export const deployYearnProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<YearnProvider> => {
+  return deployContract(deployerSign, YearnProviderArtifact, [
+    controller,
+  ]) as Promise<YearnProvider>;
 };
 
-export const deployTruefiProvider = (deployerSign: Signer, controller: string): Promise<TruefiProvider> => {
-  return deployContract(deployerSign, TruefiProviderArtifact, [controller]) as Promise<TruefiProvider>;
+export const deployTruefiProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<TruefiProvider> => {
+  return deployContract(deployerSign, TruefiProviderArtifact, [
+    controller,
+  ]) as Promise<TruefiProvider>;
 };
 
 export const deployCompoundProvider = (
@@ -87,7 +111,10 @@ export const deployCompoundProvider = (
   controller: string,
   comptroller: string,
 ): Promise<CompoundProvider> => {
-  return deployContract(deployerSign, CompoundProviderArtifact, [controller, comptroller]) as Promise<CompoundProvider>;
+  return deployContract(deployerSign, CompoundProviderArtifact, [
+    controller,
+    comptroller,
+  ]) as Promise<CompoundProvider>;
 };
 
 export const deployCompoundProviderMock = (
@@ -101,7 +128,10 @@ export const deployCompoundProviderMock = (
   ]) as Promise<CompoundProviderMock>;
 };
 
-export const deployAaveProvider = (deployerSign: Signer, controller: string): Promise<AaveProvider> => {
+export const deployAaveProvider = (
+  deployerSign: Signer,
+  controller: string,
+): Promise<AaveProvider> => {
   return deployContract(deployerSign, AaveProviderArtifact, [controller]) as Promise<AaveProvider>;
 };
 
@@ -224,7 +254,10 @@ export const deployIGoverned = (
   daoAddress: string,
   guardianAddress: string,
 ): Promise<IGoverned> => {
-  return deployContract(deployerSign, IGovernedArtifact, [daoAddress, guardianAddress]) as Promise<IGoverned>;
+  return deployContract(deployerSign, IGovernedArtifact, [
+    daoAddress,
+    guardianAddress,
+  ]) as Promise<IGoverned>;
 };
 
 export const deployDerbyToken = (
@@ -233,7 +266,11 @@ export const deployDerbyToken = (
   symbol: string,
   totalDerbySupply: BigNumber,
 ): Promise<DerbyToken> => {
-  return deployContract(deployerSign, DerbyTokenArtifact, [name, symbol, totalDerbySupply]) as Promise<DerbyToken>;
+  return deployContract(deployerSign, DerbyTokenArtifact, [
+    name,
+    symbol,
+    totalDerbySupply,
+  ]) as Promise<DerbyToken>;
 };
 
 export const deployGame = (
@@ -291,14 +328,24 @@ export const deployConnextExecutorMock = (
   deployerSign: Signer,
   handlerAddress: string,
 ): Promise<ConnextExecutorMock> => {
-  return deployContract(deployerSign, ConnextExecutorMockArtifact, [handlerAddress]) as Promise<ConnextExecutorMock>;
+  return deployContract(deployerSign, ConnextExecutorMockArtifact, [
+    handlerAddress,
+  ]) as Promise<ConnextExecutorMock>;
 };
 
-export const deployConnextHandlerMock = (deployerSign: Signer, daoAddress: string): Promise<ConnextHandlerMock> => {
-  return deployContract(deployerSign, ConnextHandlerMockArtifact, [daoAddress]) as Promise<ConnextHandlerMock>;
+export const deployConnextHandlerMock = (
+  deployerSign: Signer,
+  daoAddress: string,
+): Promise<ConnextHandlerMock> => {
+  return deployContract(deployerSign, ConnextHandlerMockArtifact, [
+    daoAddress,
+  ]) as Promise<ConnextHandlerMock>;
 };
 
-export const deployLZEndpointMock = (deployerSign: Signer, chainID: number): Promise<LZEndpointMock> => {
+export const deployLZEndpointMock = (
+  deployerSign: Signer,
+  chainID: number,
+): Promise<LZEndpointMock> => {
   return deployContract(deployerSign, LZEndpointMockArtifact, [chainID]) as Promise<LZEndpointMock>;
 };
 
@@ -315,7 +362,10 @@ export const deployLZXProviderMock = (
   ]) as Promise<LZXProviderMock>;
 };
 
-export const deployXReceiveMock = (deployerSign: Signer, daoAddress: string): Promise<XReceiveMock> => {
+export const deployXReceiveMock = (
+  deployerSign: Signer,
+  daoAddress: string,
+): Promise<XReceiveMock> => {
   return deployContract(deployerSign, XReceiveMockArtifact, [daoAddress]) as Promise<XReceiveMock>;
 };
 

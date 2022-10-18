@@ -10,7 +10,11 @@ const symbol = 'DRB';
 const totalSupply = 1_000_000;
 
 describe.skip('Testing TokenTimeLock', async () => {
-  let admin: Signer, vc: Signer, vcAddr: string, tokenTimelock: TokenTimelock, DerbyToken: DerbyToken;
+  let admin: Signer,
+    vc: Signer,
+    vcAddr: string,
+    tokenTimelock: TokenTimelock,
+    DerbyToken: DerbyToken;
 
   beforeEach(async function () {
     [admin, vc] = await ethers.getSigners();
@@ -32,9 +36,9 @@ describe.skip('Testing TokenTimeLock', async () => {
 
     await expect(tokenTimelock.release()).to.be.revertedWith('!beneficiary');
 
-    await expect(tokenTimelock.init(vcAddr, amount, timestamp, numberOfMonths, monthDurationUnix)).to.be.revertedWith(
-      'already initialized',
-    );
+    await expect(
+      tokenTimelock.init(vcAddr, amount, timestamp, numberOfMonths, monthDurationUnix),
+    ).to.be.revertedWith('already initialized');
   });
 
   it('Should return 0 before startTimestamp is reached', async function () {

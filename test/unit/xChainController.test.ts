@@ -75,7 +75,13 @@ describe('Testing XChainController, unit test', async () => {
     connextHandler = await deployConnextHandlerMock(dao, daoAddr);
 
     controller = await deployController(dao, daoAddr);
-    xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, arbitrumGoerli);
+    xChainController = await deployXChainControllerMock(
+      dao,
+      daoAddr,
+      daoAddr,
+      daoAddr,
+      arbitrumGoerli,
+    );
 
     DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
     game = await deployGameMock(
@@ -89,12 +95,13 @@ describe('Testing XChainController, unit test', async () => {
       controller.address,
     );
 
-    [LZEndpointGoerli, LZEndpointArbitrumGoerli, LZEndpointOptimismGoerli, LZEndpointBnbChain] = await Promise.all([
-      deployLZEndpointMock(dao, goerli),
-      deployLZEndpointMock(dao, arbitrumGoerli),
-      deployLZEndpointMock(dao, optimismGoerli),
-      deployLZEndpointMock(dao, bnbChain),
-    ]);
+    [LZEndpointGoerli, LZEndpointArbitrumGoerli, LZEndpointOptimismGoerli, LZEndpointBnbChain] =
+      await Promise.all([
+        deployLZEndpointMock(dao, goerli),
+        deployLZEndpointMock(dao, arbitrumGoerli),
+        deployLZEndpointMock(dao, optimismGoerli),
+        deployLZEndpointMock(dao, bnbChain),
+      ]);
 
     [xProviderGoerli, xProviderArbitrum, xProviderOptimism, xProviderBnbChain] = await Promise.all([
       deployXProvider(
@@ -250,22 +257,52 @@ describe('Testing XChainController, unit test', async () => {
     ]);
 
     await Promise.all([
-      LZEndpointGoerli.setDestLzEndpoint(xProviderArbitrum.address, LZEndpointArbitrumGoerli.address),
-      LZEndpointGoerli.setDestLzEndpoint(xProviderOptimism.address, LZEndpointOptimismGoerli.address),
+      LZEndpointGoerli.setDestLzEndpoint(
+        xProviderArbitrum.address,
+        LZEndpointArbitrumGoerli.address,
+      ),
+      LZEndpointGoerli.setDestLzEndpoint(
+        xProviderOptimism.address,
+        LZEndpointOptimismGoerli.address,
+      ),
       LZEndpointGoerli.setDestLzEndpoint(xProviderBnbChain.address, LZEndpointBnbChain.address),
       LZEndpointArbitrumGoerli.setDestLzEndpoint(xProviderGoerli.address, LZEndpointGoerli.address),
-      LZEndpointArbitrumGoerli.setDestLzEndpoint(xProviderOptimism.address, LZEndpointOptimismGoerli.address),
-      LZEndpointArbitrumGoerli.setDestLzEndpoint(xProviderBnbChain.address, LZEndpointBnbChain.address),
+      LZEndpointArbitrumGoerli.setDestLzEndpoint(
+        xProviderOptimism.address,
+        LZEndpointOptimismGoerli.address,
+      ),
+      LZEndpointArbitrumGoerli.setDestLzEndpoint(
+        xProviderBnbChain.address,
+        LZEndpointBnbChain.address,
+      ),
       LZEndpointOptimismGoerli.setDestLzEndpoint(xProviderGoerli.address, LZEndpointGoerli.address),
-      LZEndpointOptimismGoerli.setDestLzEndpoint(xProviderArbitrum.address, LZEndpointArbitrumGoerli.address),
-      LZEndpointOptimismGoerli.setDestLzEndpoint(xProviderBnbChain.address, LZEndpointBnbChain.address),
+      LZEndpointOptimismGoerli.setDestLzEndpoint(
+        xProviderArbitrum.address,
+        LZEndpointArbitrumGoerli.address,
+      ),
+      LZEndpointOptimismGoerli.setDestLzEndpoint(
+        xProviderBnbChain.address,
+        LZEndpointBnbChain.address,
+      ),
       LZEndpointBnbChain.setDestLzEndpoint(xProviderGoerli.address, LZEndpointGoerli.address),
-      LZEndpointBnbChain.setDestLzEndpoint(xProviderArbitrum.address, LZEndpointArbitrumGoerli.address),
-      LZEndpointBnbChain.setDestLzEndpoint(xProviderOptimism.address, LZEndpointOptimismGoerli.address),
+      LZEndpointBnbChain.setDestLzEndpoint(
+        xProviderArbitrum.address,
+        LZEndpointArbitrumGoerli.address,
+      ),
+      LZEndpointBnbChain.setDestLzEndpoint(
+        xProviderOptimism.address,
+        LZEndpointOptimismGoerli.address,
+      ),
     ]);
 
     await Promise.all([
-      initController(controller, [userAddr, game.address, vault1.address, vault2.address, vault3.address]),
+      initController(controller, [
+        userAddr,
+        game.address,
+        vault1.address,
+        vault2.address,
+        vault3.address,
+      ]),
 
       allProviders.deployAllProviders(dao, controller),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(5)),
@@ -300,8 +337,12 @@ describe('Testing XChainController, unit test', async () => {
 
   it('Testing provider settings', async function () {
     expect(await xProviderGoerli.connextChainId(goerli)).to.be.equal(testConnextChainIds.goerli);
-    expect(await xProviderGoerli.connextChainId(optimismGoerli)).to.be.equal(testConnextChainIds.optimismGoerli);
-    expect(await xProviderGoerli.connextChainId(arbitrumGoerli)).to.be.equal(testConnextChainIds.mumbai);
+    expect(await xProviderGoerli.connextChainId(optimismGoerli)).to.be.equal(
+      testConnextChainIds.optimismGoerli,
+    );
+    expect(await xProviderGoerli.connextChainId(arbitrumGoerli)).to.be.equal(
+      testConnextChainIds.mumbai,
+    );
   });
 
   it('1) Store allocations in Game contract', async function () {
@@ -323,7 +364,9 @@ describe('Testing XChainController, unit test', async () => {
     // looping through all of allocationArray
     allocationArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(
+          chainIdArray[j],
+        );
       }
     });
   });
@@ -365,10 +408,18 @@ describe('Testing XChainController, unit test', async () => {
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(2000);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(400);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(600);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(1000);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[3])).to.be.equal(0);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
+      400,
+    );
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(
+      600,
+    );
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(
+      1000,
+    );
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[3])).to.be.equal(
+      0,
+    );
 
     // chainId on or off
     expect(await xChainController.getVaultChainIdOff(vaultNumber, goerli)).to.be.false;
@@ -391,19 +442,27 @@ describe('Testing XChainController, unit test', async () => {
     await vault3.pushTotalUnderlyingToController();
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1e6);
-    expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, arbitrumGoerli)).to.be.equal(
+    expect(
+      await xChainController.getWithdrawalRequestsTEST(vaultNumber, arbitrumGoerli),
+    ).to.be.equal(50_000 * 1.2 * 1e6);
+    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber)).to.be.equal(
       50_000 * 1.2 * 1e6,
     );
-    expect(await xChainController.getTotalWithdrawalRequestsTEST(vaultNumber)).to.be.equal(50_000 * 1.2 * 1e6);
 
     // // Should revert if total Underlying is already set
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith('Vault already rebalancing');
-
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(100_000 * 1e6);
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli)).to.be.equal(
-      200_000 * 1e6,
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith(
+      'Vault already rebalancing',
     );
-    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, optimismGoerli)).to.be.equal(0);
+
+    expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(
+      100_000 * 1e6,
+    );
+    expect(
+      await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, arbitrumGoerli),
+    ).to.be.equal(200_000 * 1e6);
+    expect(
+      await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, optimismGoerli),
+    ).to.be.equal(0);
 
     const totalUnderlying = await xChainController.getTotalUnderlyingVaultTEST(vaultNumber);
     expect(totalUnderlying).to.be.equal(300_000 * 1e6);

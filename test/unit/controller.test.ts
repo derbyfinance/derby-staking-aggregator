@@ -5,7 +5,11 @@ import { MockContract } from 'ethereum-waffle';
 import { Controller } from '@typechain';
 import { getUSDCSigner, erc20 } from '@testhelp/helpers';
 import { deployController } from '@testhelp/deploy';
-import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from '@testhelp/deployMocks';
+import {
+  deployAaveProviderMock,
+  deployCompoundProviderMock,
+  deployYearnProviderMock,
+} from '@testhelp/deployMocks';
 import {
   usdc,
   yearnUSDC as yusdc,
@@ -47,13 +51,14 @@ describe.skip('Testing controller', async () => {
     controller = await deployController(dao, daoAddr);
 
     // Deploy vault and all providers
-    [yearnProviderMock, compoundProviderMock, aaveProviderMock, USDCSigner, IUSDc] = await Promise.all([
-      deployYearnProviderMock(dao),
-      deployCompoundProviderMock(dao),
-      deployAaveProviderMock(dao),
-      getUSDCSigner(),
-      erc20(usdc),
-    ]);
+    [yearnProviderMock, compoundProviderMock, aaveProviderMock, USDCSigner, IUSDc] =
+      await Promise.all([
+        deployYearnProviderMock(dao),
+        deployCompoundProviderMock(dao),
+        deployAaveProviderMock(dao),
+        getUSDCSigner(),
+        erc20(usdc),
+      ]);
 
     await controller.addVault(vaultAddr);
 
@@ -106,7 +111,9 @@ describe.skip('Testing controller', async () => {
     ]);
 
     expect(protocol1.provider.toUpperCase()).to.be.equal(yearnProviderMock.address.toUpperCase());
-    expect(protocol2.provider.toUpperCase()).to.be.equal(compoundProviderMock.address.toUpperCase());
+    expect(protocol2.provider.toUpperCase()).to.be.equal(
+      compoundProviderMock.address.toUpperCase(),
+    );
     expect(protocol3.provider.toUpperCase()).to.be.equal(aaveProviderMock.address.toUpperCase());
   });
 
@@ -156,8 +163,12 @@ describe.skip('Testing controller', async () => {
       aaveProviderMock.mock.deposit.returns(aaveMock),
     ]);
 
-    let returnValueYearn = await controller.connect(vaultSigner).deposit(ETFnumber, 0, vaultAddr, 0);
-    let returnValueCompound = await controller.connect(vaultSigner).deposit(ETFnumber, 1, vaultAddr, 0);
+    let returnValueYearn = await controller
+      .connect(vaultSigner)
+      .deposit(ETFnumber, 0, vaultAddr, 0);
+    let returnValueCompound = await controller
+      .connect(vaultSigner)
+      .deposit(ETFnumber, 1, vaultAddr, 0);
     let returnValueAave = await controller.connect(vaultSigner).deposit(ETFnumber, 2, vaultAddr, 0);
 
     expect(returnValueYearn.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
@@ -172,9 +183,15 @@ describe.skip('Testing controller', async () => {
       aaveProviderMock.mock.withdraw.returns(aaveMock),
     ]);
 
-    let returnValueYearn = await controller.connect(vaultSigner).withdraw(ETFnumber, 0, vaultAddr, 0);
-    let returnValueCompound = await controller.connect(vaultSigner).withdraw(ETFnumber, 1, vaultAddr, 0);
-    let returnValueAave = await controller.connect(vaultSigner).withdraw(ETFnumber, 2, vaultAddr, 0);
+    let returnValueYearn = await controller
+      .connect(vaultSigner)
+      .withdraw(ETFnumber, 0, vaultAddr, 0);
+    let returnValueCompound = await controller
+      .connect(vaultSigner)
+      .withdraw(ETFnumber, 1, vaultAddr, 0);
+    let returnValueAave = await controller
+      .connect(vaultSigner)
+      .withdraw(ETFnumber, 2, vaultAddr, 0);
 
     expect(returnValueYearn.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
     expect(returnValueCompound.from.toUpperCase()).to.be.equal(vaultAddr.toUpperCase());
@@ -189,7 +206,9 @@ describe.skip('Testing controller', async () => {
     ]);
 
     expect(await controller.connect(vaultSigner).exchangeRate(ETFnumber, 0)).to.be.equal(yearnMock);
-    expect(await controller.connect(vaultSigner).exchangeRate(ETFnumber, 1)).to.be.equal(compoundMock);
+    expect(await controller.connect(vaultSigner).exchangeRate(ETFnumber, 1)).to.be.equal(
+      compoundMock,
+    );
     expect(await controller.connect(vaultSigner).exchangeRate(ETFnumber, 2)).to.be.equal(aaveMock);
   });
 
@@ -200,9 +219,15 @@ describe.skip('Testing controller', async () => {
       aaveProviderMock.mock.balance.returns(aaveMock),
     ]);
 
-    expect(await controller.connect(vaultSigner).balance(ETFnumber, 0, vaultAddr)).to.be.equal(yearnMock);
-    expect(await controller.connect(vaultSigner).balance(ETFnumber, 1, vaultAddr)).to.be.equal(compoundMock);
-    expect(await controller.connect(vaultSigner).balance(ETFnumber, 2, vaultAddr)).to.be.equal(aaveMock);
+    expect(await controller.connect(vaultSigner).balance(ETFnumber, 0, vaultAddr)).to.be.equal(
+      yearnMock,
+    );
+    expect(await controller.connect(vaultSigner).balance(ETFnumber, 1, vaultAddr)).to.be.equal(
+      compoundMock,
+    );
+    expect(await controller.connect(vaultSigner).balance(ETFnumber, 2, vaultAddr)).to.be.equal(
+      aaveMock,
+    );
   });
 
   it('Should correctly set controller to balanceUnderlying', async function () {
@@ -212,9 +237,15 @@ describe.skip('Testing controller', async () => {
       aaveProviderMock.mock.balanceUnderlying.returns(aaveMock),
     ]);
 
-    expect(await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 0, vaultAddr)).to.be.equal(yearnMock);
-    expect(await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 1, vaultAddr)).to.be.equal(compoundMock);
-    expect(await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 2, vaultAddr)).to.be.equal(aaveMock);
+    expect(
+      await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 0, vaultAddr),
+    ).to.be.equal(yearnMock);
+    expect(
+      await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 1, vaultAddr),
+    ).to.be.equal(compoundMock);
+    expect(
+      await controller.connect(vaultSigner).balanceUnderlying(ETFnumber, 2, vaultAddr),
+    ).to.be.equal(aaveMock);
   });
 
   it('Should correctly set controller to calcShares', async function () {
@@ -224,8 +255,12 @@ describe.skip('Testing controller', async () => {
       aaveProviderMock.mock.calcShares.returns(aaveMock),
     ]);
 
-    expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 0, 0)).to.be.equal(yearnMock);
-    expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 1, 0)).to.be.equal(compoundMock);
+    expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 0, 0)).to.be.equal(
+      yearnMock,
+    );
+    expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 1, 0)).to.be.equal(
+      compoundMock,
+    );
     expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 2, 0)).to.be.equal(aaveMock);
   });
 });

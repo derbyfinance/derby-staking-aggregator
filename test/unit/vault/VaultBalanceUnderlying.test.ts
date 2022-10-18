@@ -32,7 +32,11 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     daoAddr = await dao.getAddress();
     gameAddr = await game.getAddress();
 
-    [USDCSigner, IUSDc, controller] = await Promise.all([getUSDCSigner(), erc20(usdc), deployController(dao, daoAddr)]);
+    [USDCSigner, IUSDc, controller] = await Promise.all([
+      getUSDCSigner(),
+      erc20(usdc),
+      deployController(dao, daoAddr),
+    ]);
 
     vault = await deployMainVaultMock(
       dao,
@@ -87,7 +91,8 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     // using to.be.closeTo because of the slippage from swapping USDT and DAI
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance = (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
+      const expectedBalance =
+        (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
 
       console.log(`---------------------------`);
       console.log(protocol.name);
@@ -122,8 +127,14 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     for (const protocol of allProtocols.values()) {
       const balanceUnderlying = await protocol.balanceUnderlying(vault);
       const balUnderlying = Number(formatUSDC(balanceUnderlying));
-      const calculateShares = formatUnits(await protocol.calcShares(vault, balanceUnderlying), protocol.decimals);
-      const balanceShares = formatUnits(await protocol.balanceShares(vault, vault.address), protocol.decimals);
+      const calculateShares = formatUnits(
+        await protocol.calcShares(vault, balanceUnderlying),
+        protocol.decimals,
+      );
+      const balanceShares = formatUnits(
+        await protocol.balanceShares(vault, vault.address),
+        protocol.decimals,
+      );
 
       console.log(`---------------------------`);
       console.log(protocol.name);

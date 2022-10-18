@@ -1,10 +1,21 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { Contract, Signer } from 'ethers';
-import { getUSDCSigner, erc20, parseUSDC, getWhale, controllerAddProtocol } from '@testhelp/helpers';
+import {
+  getUSDCSigner,
+  erc20,
+  parseUSDC,
+  getWhale,
+  controllerAddProtocol,
+} from '@testhelp/helpers';
 import type { CompoundProviderMock, Controller } from '@typechain';
 import { deployCompoundProviderMock, deployController } from '@testhelp/deploy';
-import { usdc, compoundUSDC as cusdc, comptroller, compToken as compTokenAddr } from '@testhelp/addresses';
+import {
+  usdc,
+  compoundUSDC as cusdc,
+  comptroller,
+  compToken as compTokenAddr,
+} from '@testhelp/addresses';
 
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
@@ -30,15 +41,16 @@ describe.skip('Testing Compound provider', async () => {
     daoAddr = await dao.getAddress();
     controller = await deployController(dao, daoAddr);
 
-    [vaultAddr, compoundProviderMock, USDCSigner, cusdcWhale, IUSDc, cToken, compToken] = await Promise.all([
-      vault.getAddress(),
-      deployCompoundProviderMock(dao, controller.address, comptroller),
-      getUSDCSigner(),
-      getWhale(cusdcWhaleAddr),
-      erc20(usdc),
-      erc20(cusdc),
-      erc20(compTokenAddr),
-    ]);
+    [vaultAddr, compoundProviderMock, USDCSigner, cusdcWhale, IUSDc, cToken, compToken] =
+      await Promise.all([
+        vault.getAddress(),
+        deployCompoundProviderMock(dao, controller.address, comptroller),
+        getUSDCSigner(),
+        getWhale(cusdcWhaleAddr),
+        erc20(usdc),
+        erc20(cusdc),
+        erc20(compTokenAddr),
+      ]);
 
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumber] = await Promise.all([
@@ -99,15 +111,15 @@ describe.skip('Testing Compound provider', async () => {
   });
 
   it('Should fail when !controller is calling the Provider', async function () {
-    await expect(compoundProviderMock.connect(vault).deposit(vaultAddr, amountUSDC, usdc, cusdc)).to.be.revertedWith(
-      'ETFProvider: only controller',
-    );
+    await expect(
+      compoundProviderMock.connect(vault).deposit(vaultAddr, amountUSDC, usdc, cusdc),
+    ).to.be.revertedWith('ETFProvider: only controller');
   });
 
   it('Should fail when !Vault is calling the controller', async function () {
-    await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC)).to.be.revertedWith(
-      'Controller: only Vault',
-    );
+    await expect(
+      controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC),
+    ).to.be.revertedWith('Controller: only Vault');
   });
 
   it('Should get Compound exchangeRate through controller', async function () {
