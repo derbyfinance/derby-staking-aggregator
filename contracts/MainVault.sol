@@ -5,14 +5,12 @@ import "./Vault.sol";
 
 import "hardhat/console.sol";
 
-
-
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
   address public guardian;
   bool public vaultOff;
-  
+
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
@@ -22,8 +20,8 @@ contract MainVault is Vault, VaultToken {
   uint256 public exchangeRate;
   uint16 public homeChain;
   uint256 public amountToSendXChain;
-    
-  // amount in vaultCurrency the vault owes to the user 
+
+  // amount in vaultCurrency the vault owes to the user
   mapping(address => uint256) internal withdrawalAllowance;
   // rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
@@ -37,37 +35,38 @@ contract MainVault is Vault, VaultToken {
     uint256 _vaultNumber,
     address _governed,
     address _guardian,
-    address _game, 
-    address _controller, 
+    address _game,
+    address _controller,
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) 
-  VaultToken(_name, _symbol, _decimals) 
-  Vault(_vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity) {
+  )
+    VaultToken(_name, _symbol, _decimals)
+    Vault(_vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
+  {
     exchangeRate = _uScale;
     guardian = _guardian;
   }
 
-  modifier onlyXProvider {
+  modifier onlyXProvider() {
     require(msg.sender == xProvider, "Vault: only xProvider");
     _;
   }
-  
-  modifier onlyWhenVaultIsOn {
+
+  modifier onlyWhenVaultIsOn() {
     require(state == State.Idle, "Vault is rebalancing");
     require(!vaultOff, "Vault is off");
     _;
   }
 
-  modifier onlyGuardian {
+  modifier onlyGuardian() {
     require(msg.sender == guardian, "Vault: only Guardian");
     _;
   }
 
-  event PushTotalUnderlying(    
-    uint256 _vaultNumber, 
-    uint16 _chainId, 
+  event PushTotalUnderlying(
+    uint256 _vaultNumber,
+    uint16 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
@@ -79,15 +78,20 @@ contract MainVault is Vault, VaultToken {
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function deposit(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 shares) {
+  function deposit(uint256 _amount)
+    external
+    nonReentrant
+    onlyWhenVaultIsOn
+    returns (uint256 shares)
+  {
     uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = amount * (10 ** decimals()) / exchangeRate;
-    
-    _mint(msg.sender, shares); 
+    shares = (amount * (10**decimals())) / exchangeRate;
+
+    _mint(msg.sender, shares);
   }
 
   /// @notice Withdraw from Vault
@@ -95,12 +99,17 @@ contract MainVault is Vault, VaultToken {
   /// @param _amount Amount to withdraw in LP tokens
   /// @param _pullFunds True when the user wants to pull funds from available protocols (higher gas fee)
   /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount, bool _pullFunds) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
-    value = _amount * exchangeRate / (10 ** decimals());
+  function withdraw(uint256 _amount, bool _pullFunds)
+    external
+    nonReentrant
+    onlyWhenVaultIsOn
+    returns (uint256 value)
+  {
+    value = (_amount * exchangeRate) / (10**decimals());
 
     require(value > 0, "No value");
 
-    if (_pullFunds && value > getVaultBalance()) pullFunds(value);  
+    if (_pullFunds && value > getVaultBalance()) pullFunds(value);
     require(getVaultBalance() >= value, "Not enough funds");
 
     _burn(msg.sender, _amount);
@@ -110,10 +119,15 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
-  function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn returns(uint256 value) {
+  function withdrawalRequest(uint256 _amount)
+    external
+    nonReentrant
+    onlyWhenVaultIsOn
+    returns (uint256 value)
+  {
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
 
-    value = _amount * exchangeRate / (10 ** decimals());
+    value = (_amount * exchangeRate) / (10**decimals());
 
     _burn(msg.sender, _amount);
 
@@ -124,11 +138,11 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant returns(uint256 value) {
+  function withdrawAllowance() external nonReentrant returns (uint256 value) {
     require(state == State.Idle, "Vault is rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not reserved yet");
-    
+
     value = withdrawalAllowance[msg.sender];
 
     require(vaultCurrency.balanceOf(address(this)) >= value, "Not enough funds");
@@ -150,21 +164,30 @@ contract MainVault is Vault, VaultToken {
     uint256 underlying = savedTotalUnderlying + getVaultBalance();
 
     IXProvider(xProvider).pushTotalUnderlying(
-      vaultNumber, 
-      homeChain, 
-      underlying, 
-      totalSupply(), 
+      vaultNumber,
+      homeChain,
+      underlying,
+      totalSupply(),
       totalWithdrawalRequests
     );
 
     state = State.PushedUnderlying;
     lastTimeStamp = block.timestamp;
 
-    emit PushTotalUnderlying(vaultNumber, homeChain, underlying, totalSupply(), totalWithdrawalRequests);
+    emit PushTotalUnderlying(
+      vaultNumber,
+      homeChain,
+      underlying,
+      totalSupply(),
+      totalWithdrawalRequests
+    );
   }
 
   /// @notice See setXChainAllocationInt below
-  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external onlyXProvider {
+  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate)
+    external
+    onlyXProvider
+  {
     require(state == State.PushedUnderlying, "Vault in wrong state");
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
@@ -187,11 +210,11 @@ contract MainVault is Vault, VaultToken {
   function rebalanceXChain() external {
     if (state != State.SendingFundsXChain) return;
 
-    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);  
+    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
 
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
     IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
-    
+
     amountToSendXChain = 0;
     settleReservedFunds();
 
@@ -232,7 +255,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external {
-    require(state == State.SendRewardsPerToken , "Wrong state");
+    require(state == State.SendRewardsPerToken, "Wrong state");
 
     int256[] memory rewards = rewardsToArray();
     IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
@@ -255,11 +278,11 @@ contract MainVault is Vault, VaultToken {
   // }
 
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
-  function getWithdrawalAllowance() external view returns(uint256) {
+  function getWithdrawalAllowance() external view returns (uint256) {
     return withdrawalAllowance[msg.sender];
   }
 
-  function getVaultBalance() public override view returns(uint256) {
+  function getVaultBalance() public view override returns (uint256) {
     return vaultCurrency.balanceOf(address(this)) - reservedFunds;
   }
 
@@ -281,7 +304,10 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Step 3: Guardian function
-  function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate) external onlyGuardian {
+  function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate)
+    external
+    onlyGuardian
+  {
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 

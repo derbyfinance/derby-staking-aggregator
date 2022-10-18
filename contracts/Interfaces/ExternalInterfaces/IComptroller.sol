@@ -2,6 +2,5 @@
 pragma solidity ^0.8.11;
 
 interface IComptroller {
-    function claimComp(address holder, address[] memory cTokens) external;
-
+  function claimComp(address holder, address[] memory cTokens) external;
 }

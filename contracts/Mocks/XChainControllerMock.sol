@@ -4,7 +4,12 @@ pragma solidity ^0.8.11;
 import "../XChainController.sol";
 
 contract XChainControllerMock is XChainController {
-  constructor(address _game, address _dao, address _guardian, uint16 _homeChain) XChainController(_game, _dao, _guardian, _homeChain) {} 
+  constructor(
+    address _game,
+    address _dao,
+    address _guardian,
+    uint16 _homeChain
+  ) XChainController(_game, _dao, _guardian, _homeChain) {}
 
   function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
     return setActiveVaults(_vaultNumber, _activeVaults);
@@ -30,47 +35,59 @@ contract XChainControllerMock is XChainController {
   //   return upFundsReceived(_vaultNumber);
   // }
 
-  function getVaultReadyState(uint256 _vaultNumber) external view returns(bool) {
+  function getVaultReadyState(uint256 _vaultNumber) external view returns (bool) {
     return vaultStage[_vaultNumber].ready;
   }
 
-  function getAllocationState(uint256 _vaultNumber) external view returns(bool) {
+  function getAllocationState(uint256 _vaultNumber) external view returns (bool) {
     return vaultStage[_vaultNumber].allocationsReceived;
   }
 
-  function getUnderlyingState(uint256 _vaultNumber) external view returns(uint256) {
+  function getUnderlyingState(uint256 _vaultNumber) external view returns (uint256) {
     return vaultStage[_vaultNumber].underlyingReceived;
   }
 
-  function getFundsReceivedState(uint256 _vaultNumber) external view returns(uint256) {
+  function getFundsReceivedState(uint256 _vaultNumber) external view returns (uint256) {
     return vaultStage[_vaultNumber].fundsReceived;
   }
 
-  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns(int256) {
+  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns (int256) {
     return getCurrentTotalAllocation(_vaultNumber);
   }
 
-  function getCurrentAllocationTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(int256) {
+  function getCurrentAllocationTEST(uint256 _vaultNumber, uint16 _chainId)
+    external
+    view
+    returns (int256)
+  {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
-  function getTotalUnderlyingOnChainTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(uint256) {
+  function getTotalUnderlyingOnChainTEST(uint256 _vaultNumber, uint16 _chainId)
+    external
+    view
+    returns (uint256)
+  {
     return getTotalUnderlyingOnChain(_vaultNumber, _chainId);
   }
 
-  function getTotalSupplyTEST(uint256 _vaultNumber) external view returns(uint256) {
+  function getTotalSupplyTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getTotalSupply(_vaultNumber);
   }
 
-  function getWithdrawalRequestsTEST(uint256 _vaultNumber, uint16 _chainId) external view returns(uint256) {
+  function getWithdrawalRequestsTEST(uint256 _vaultNumber, uint16 _chainId)
+    external
+    view
+    returns (uint256)
+  {
     return getWithdrawalRequests(_vaultNumber, _chainId);
   }
 
-  function getTotalWithdrawalRequestsTEST(uint256 _vaultNumber) external view returns(uint256) {
+  function getTotalWithdrawalRequestsTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getTotalWithdrawalRequests(_vaultNumber);
   }
 
-  function getTotalUnderlyingVaultTEST(uint256 _vaultNumber) external view returns(uint256) {
+  function getTotalUnderlyingVaultTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getTotalUnderlyingVault(_vaultNumber);
   }
 }

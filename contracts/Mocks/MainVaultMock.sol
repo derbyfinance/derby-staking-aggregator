@@ -4,9 +4,7 @@ pragma solidity ^0.8.11;
 import "../MainVault.sol";
 import "hardhat/console.sol";
 
-
-contract MainVaultMock is MainVault { 
-
+contract MainVaultMock is MainVault {
   mapping(uint256 => uint256) private players;
 
   event MinAmountOut(uint256 minAmountOut);
@@ -18,30 +16,32 @@ contract MainVaultMock is MainVault {
     uint256 _vaultNumber,
     address _governed,
     address _guardian,
-    address _Game, 
-    address _controller, 
+    address _Game,
+    address _controller,
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) MainVault(
-    _name,
-    _symbol,
-    _decimals,
-    _vaultNumber,
-    _governed,
-    _guardian,
-    _Game,
-    _controller,
-    _vaultCurrency,
-    _uScale,
-    _gasFeeLiquidity
-  ) {}
+  )
+    MainVault(
+      _name,
+      _symbol,
+      _decimals,
+      _vaultNumber,
+      _governed,
+      _guardian,
+      _Game,
+      _controller,
+      _vaultCurrency,
+      _uScale,
+      _gasFeeLiquidity
+    )
+  {}
 
-  function getAllocationTEST(uint256 _protocolNum) external view returns(int256) {
+  function getAllocationTEST(uint256 _protocolNum) external view returns (int256) {
     return currentAllocations[_protocolNum];
   }
 
-  function getDeltaAllocationTEST(uint256 _protocolNum) external view returns(int256) {
+  function getDeltaAllocationTEST(uint256 _protocolNum) external view returns (int256) {
     return deltaAllocations[_protocolNum];
   }
 
@@ -61,46 +61,51 @@ contract MainVaultMock is MainVault {
     amountToSendXChain = _amount;
   }
 
-  function getHistoricalPriceTEST(
-    uint256 _rebalancingPeriod, 
-    uint256 _protocolId
-  ) external view returns(uint256) {
+  function getHistoricalPriceTEST(uint256 _rebalancingPeriod, uint256 _protocolId)
+    external
+    view
+    returns (uint256)
+  {
     return historicalPrices[_rebalancingPeriod][_protocolId];
   }
 
-  function getMarginScale() external view returns(int256) {
+  function getMarginScale() external view returns (int256) {
     return marginScale;
   }
 
-  function getLiquidityPerc() external view returns(uint256) {
+  function getLiquidityPerc() external view returns (uint256) {
     return liquidityPerc;
   }
 
-  function getPerformanceFee() external view returns(uint256) {
+  function getPerformanceFee() external view returns (uint256) {
     return performanceFee;
   }
 
-  function getGame() external view returns(address) {
+  function getGame() external view returns (address) {
     return game;
   }
 
-  function getvaultNumber() external view returns(uint256) {
+  function getvaultNumber() external view returns (uint256) {
     return vaultNumber;
   }
 
-  function balanceSharesTEST(uint256 _protocolNum, address _address) external view returns(uint256) {
+  function balanceSharesTEST(uint256 _protocolNum, address _address)
+    external
+    view
+    returns (uint256)
+  {
     return controller.balance(vaultNumber, _protocolNum, _address);
   }
 
-  function getWithdrawalAllowanceTEST(address _address) external view returns(uint256) {
+  function getWithdrawalAllowanceTEST(address _address) external view returns (uint256) {
     return withdrawalAllowance[_address];
   }
 
-  function getTotalWithdrawalRequestsTEST() external view returns(uint256) {
+  function getTotalWithdrawalRequestsTEST() external view returns (uint256) {
     return totalWithdrawalRequests;
   }
 
-  function getReservedFundsTEST() external view returns(uint256) {
+  function getReservedFundsTEST() external view returns (uint256) {
     return reservedFunds;
   }
 
@@ -113,9 +118,9 @@ contract MainVaultMock is MainVault {
   }
 
   function upRebalancingPeriodTEST() external {
-    rebalancingPeriod ++;
-  }  
-  
+    rebalancingPeriod++;
+  }
+
   function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }
@@ -132,30 +137,43 @@ contract MainVaultMock is MainVault {
     vaultOff = _state;
   }
 
-
-  function swapTokensMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
-    return Swap.swapTokensMulti(
-      _amount, 
-      _tokenIn, 
-      _tokenOut, 
-      controller.uniswapRouter(),
-      controller.uniswapQuoter(),
-      controller.uniswapPoolFee()
-    );
+  function swapTokensMultiTest(
+    uint256 _amount,
+    address _tokenIn,
+    address _tokenOut
+  ) external returns (uint256) {
+    return
+      Swap.swapTokensMulti(
+        _amount,
+        _tokenIn,
+        _tokenOut,
+        controller.uniswapRouter(),
+        controller.uniswapQuoter(),
+        controller.uniswapPoolFee()
+      );
   }
 
-  function swapTokensSingle(uint256 _amount, address _tokenIn, address _tokenOut) external returns(uint256) {
-    return Swap.swapTokensSingle(
-      _amount, 
-      _tokenIn, 
-      _tokenOut,
-      controller.uniswapRouter(),
-      controller.uniswapQuoter(),
-      controller.uniswapPoolFee()
-    );
+  function swapTokensSingle(
+    uint256 _amount,
+    address _tokenIn,
+    address _tokenOut
+  ) external returns (uint256) {
+    return
+      Swap.swapTokensSingle(
+        _amount,
+        _tokenIn,
+        _tokenOut,
+        controller.uniswapRouter(),
+        controller.uniswapQuoter(),
+        controller.uniswapPoolFee()
+      );
   }
 
-  function swapMinAmountOutMultiTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
+  function swapMinAmountOutMultiTest(
+    uint256 _amount,
+    address _tokenIn,
+    address _tokenOut
+  ) external {
     uint256 minAmountOut = Swap.amountOutMultiSwap(
       _amount,
       _tokenIn,
@@ -167,10 +185,14 @@ contract MainVaultMock is MainVault {
     emit MinAmountOut(minAmountOut);
   }
 
-  function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
+  function curveSwapTest(
+    uint256 _amount,
+    address _tokenIn,
+    address _tokenOut
+  ) external {
     Swap.swapStableCoins(
-      _amount, 
-      _tokenIn, 
+      _amount,
+      _tokenIn,
       _tokenOut,
       uScale,
       1000000000000000000,
@@ -182,7 +204,7 @@ contract MainVaultMock is MainVault {
   }
 
   function testLargeGameplayerSet(uint256 _amountOfPlayers) public {
-    for (uint256 i = 0; i < _amountOfPlayers; i++){
+    for (uint256 i = 0; i < _amountOfPlayers; i++) {
       players[i] = exchangeRate;
     }
   }

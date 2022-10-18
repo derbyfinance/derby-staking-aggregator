@@ -7,7 +7,7 @@ import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Controller is IController {
-  mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;  // first index is ETFNumber, second index is protocolNumber
+  mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo; // first index is ETFNumber, second index is protocolNumber
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
   mapping(address => bool) public vaultWhitelist;
@@ -35,8 +35,8 @@ contract Controller is IController {
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
   constructor(
-    address _dao, 
-    address _curve3Pool, 
+    address _dao,
+    address _curve3Pool,
     address _uniswapRouter,
     address _uniswapQuoter,
     uint24 _poolFee,
@@ -54,18 +54,21 @@ contract Controller is IController {
   }
 
   // Modifier for only vault?
-  modifier onlyDao {
+  modifier onlyDao() {
     require(msg.sender == dao, "Controller: only DAO");
     _;
   }
 
-  modifier onlyVault {
+  modifier onlyVault() {
     require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
     _;
   }
 
-  modifier onlyVaultOrGame {
-    require(vaultWhitelist[msg.sender] == true || msg.sender == game, "Controller: only Vault or Game");
+  modifier onlyVaultOrGame() {
+    require(
+      vaultWhitelist[msg.sender] == true || msg.sender == game,
+      "Controller: only Vault or Game"
+    );
     _;
   }
 
@@ -77,17 +80,17 @@ contract Controller is IController {
   /// @return Deposit function for requested protocol
   function deposit(
     uint256 _ETFnumber,
-    uint256 _protocolNumber, 
-    address _vault, 
+    uint256 _protocolNumber,
+    address _vault,
     uint256 _amount
-  ) external override onlyVault returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .deposit(
-                _vault, 
-                _amount, 
-                protocolInfo[_ETFnumber][_protocolNumber].LPToken, 
-                protocolInfo[_ETFnumber][_protocolNumber].underlying
-              );
+  ) external override onlyVault returns (uint256) {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).deposit(
+        _vault,
+        _amount,
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken,
+        protocolInfo[_ETFnumber][_protocolNumber].underlying
+      );
   }
 
   /// @notice Withdraw the underlying asset in given protocol number
@@ -98,29 +101,34 @@ contract Controller is IController {
   /// @return Withdraw function for requested protocol
   function withdraw(
     uint256 _ETFnumber,
-    uint256 _protocolNumber, 
-    address _vault, 
+    uint256 _protocolNumber,
+    address _vault,
     uint256 _amount
-  ) external override onlyVault returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .withdraw(
-                _vault, 
-                _amount, 
-                protocolInfo[_ETFnumber][_protocolNumber].LPToken, 
-                protocolInfo[_ETFnumber][_protocolNumber].underlying
-              );
+  ) external override onlyVault returns (uint256) {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).withdraw(
+        _vault,
+        _amount,
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken,
+        protocolInfo[_ETFnumber][_protocolNumber].underlying
+      );
   }
 
   /// @notice Exchange rate of underyling protocol token
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNumber Protocol number linked to protocol vault
   /// @return ExchangeRate function for requested protocol
-  function exchangeRate(
-    uint256 _ETFnumber,
-    uint256 _protocolNumber
-  ) external override onlyVaultOrGame view returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .exchangeRate(protocolInfo[_ETFnumber][_protocolNumber].LPToken);
+  function exchangeRate(uint256 _ETFnumber, uint256 _protocolNumber)
+    external
+    view
+    override
+    onlyVaultOrGame
+    returns (uint256)
+  {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).exchangeRate(
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken
+      );
   }
 
   /// @notice Balance of  underlying Token from address
@@ -132,12 +140,12 @@ contract Controller is IController {
     uint256 _ETFnumber,
     uint256 _protocolNumber,
     address _address
-  ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .balance(
-                _address, 
-                protocolInfo[_ETFnumber][_protocolNumber].LPToken
-              );
+  ) external view override onlyVault returns (uint256) {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).balance(
+        _address,
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken
+      );
   }
 
   /// @notice Get balance from address in shares i.e LP tokens
@@ -149,12 +157,12 @@ contract Controller is IController {
     uint256 _ETFnumber,
     uint256 _protocolNumber,
     address _address
-  ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .balanceUnderlying(
-                _address, 
-                protocolInfo[_ETFnumber][_protocolNumber].LPToken
-              );
+  ) external view override onlyVault returns (uint256) {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).balanceUnderlying(
+        _address,
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken
+      );
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -166,35 +174,39 @@ contract Controller is IController {
     uint256 _ETFnumber,
     uint256 _protocolNumber,
     uint256 _amount
-  ) external override onlyVault view returns(uint256) {
-      return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-              .calcShares(
-                _amount, 
-                protocolInfo[_ETFnumber][_protocolNumber].LPToken
-              );
+  ) external view override onlyVault returns (uint256) {
+    return
+      IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).calcShares(
+        _amount,
+        protocolInfo[_ETFnumber][_protocolNumber].LPToken
+      );
   }
 
   /// @notice Harvest tokens from underlying protocols
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNumber Protocol number linked to protocol vault
-  function claim(
-    uint256 _ETFnumber,
-    uint256 _protocolNumber
-  ) external override onlyVault returns(bool) {
-      if (claimable[protocolInfo[_ETFnumber][_protocolNumber].provider]) {
-        return IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider)
-                .claim(protocolInfo[_ETFnumber][_protocolNumber].LPToken, msg.sender);
-      } else {
-        return false;
-      }
+  function claim(uint256 _ETFnumber, uint256 _protocolNumber)
+    external
+    override
+    onlyVault
+    returns (bool)
+  {
+    if (claimable[protocolInfo[_ETFnumber][_protocolNumber].provider]) {
+      return
+        IProvider(protocolInfo[_ETFnumber][_protocolNumber].provider).claim(
+          protocolInfo[_ETFnumber][_protocolNumber].LPToken,
+          msg.sender
+        );
+    } else {
+      return false;
+    }
   }
 
   /// @notice Set if provider have claimable tokens
   /// @param _provider Address of the underlying protocol
   /// @param _bool True of the underlying protocol has claimable tokens
-  function setClaimable(address _provider, bool _bool) 
-    external onlyDao { 
-      claimable[_provider] = _bool;
+  function setClaimable(address _provider, bool _bool) external onlyDao {
+    claimable[_provider] = _bool;
   }
 
   /// @notice Add protocol and vault to Controller
@@ -212,13 +224,13 @@ contract Controller is IController {
     address _underlying,
     address _govToken,
     uint256 _uScale
-  ) external onlyDao returns(uint256) {
+  ) external onlyDao returns (uint256) {
     uint256 protocolNumber = latestProtocolId[_ETFnumber];
 
     protocolNames[_ETFnumber][protocolNumber] = _name;
     protocolInfo[_ETFnumber][protocolNumber] = ProtocolInfoS(
       _protocolLPToken,
-      _provider, 
+      _provider,
       _underlying,
       _govToken,
       _uScale
@@ -281,27 +293,42 @@ contract Controller is IController {
   /// @notice Getter for protocol blacklist, given an ETFnumber and protocol number returns true if blacklisted. Can only be called by vault.
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault view returns(bool) {
+  function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    view
+    override
+    onlyVault
+    returns (bool)
+  {
     return protocolBlacklist[_ETFnumber][_protocolNum];
   }
 
   /// @notice Getter for the ProtocolInfo struct
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum) external override view returns(ProtocolInfoS memory) {
+  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    view
+    override
+    returns (ProtocolInfoS memory)
+  {
     return protocolInfo[_ETFnumber][_protocolNum];
   }
 
   /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
   /// @param _ETFnumber Number of the ETF
   /// @param _protocolNum Protocol number linked to protocol vault
-  function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external override onlyVault {
+  function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    override
+    onlyVault
+  {
     protocolBlacklist[_ETFnumber][_protocolNum] = true;
   }
 
   /// @notice Gets the gas price from Chainlink oracle
   /// @return gasPrice latest gas price from oracle
-  function getGasPrice() external override returns(uint256) {
+  function getGasPrice() external override returns (uint256) {
     return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
   }
 

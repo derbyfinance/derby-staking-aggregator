@@ -23,24 +23,26 @@ contract ConnextXProviderMock is IXProviderMock {
   address executor;
   IConnextHandler public immutable connext;
 
-  modifier onlyDao {
-      require(msg.sender == dao, "ConnextProvider: only DAO");
-      _;
+  modifier onlyDao() {
+    require(msg.sender == dao, "ConnextProvider: only DAO");
+    _;
   }
 
-  modifier onlyExecutor() { 
-    require(IExecutorMock(msg.sender).originSender() == xSendMock && 
-    IExecutorMock(msg.sender).origin() == xSendMockChainID && 
-    msg.sender == executor, 
-    "Expected origin contract on origin domain called by Executor"); 
-    _;  
+  modifier onlyExecutor() {
+    require(
+      IExecutorMock(msg.sender).originSender() == xSendMock &&
+        IExecutorMock(msg.sender).origin() == xSendMockChainID &&
+        msg.sender == executor,
+      "Expected origin contract on origin domain called by Executor"
+    );
+    _;
   }
-  
+
   constructor(
     address _executor, // disabled on testnet
     address _dao,
     address _connextHandler
-  ){
+  ) {
     executor = _executor; // disabled on testnet
     dao = _dao;
     connext = IConnextHandler(_connextHandler);
@@ -75,31 +77,29 @@ contract ConnextXProviderMock is IXProviderMock {
 
   /// @notice Function to send an integer value crosschain
   /// @param _value Value to send crosschain.
-  function xSend(
-    uint256 _value
-  ) external {
-    bytes4 selector = bytes4(keccak256("xReceive(uint256)"));    
+  function xSend(uint256 _value) external {
+    bytes4 selector = bytes4(keccak256("xReceive(uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _value);
     CallParams memory callParams = CallParams({
-      to: receiveProvider,      
-      callData: callData,      
-      originDomain: xSendMockChainID,      
-      destinationDomain: xReceiveMockChainID,      
-      agent: receiveProvider,      
-      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier 
-      // recovery: receiveProvider, // on testnet         
-      forceSlow: true,      
-      receiveLocal: false,      
-      callback: address(0),      
-      callbackFee: 0,      
-      relayerFee: 0,      
-      slippageTol: 9995    
+      to: receiveProvider,
+      callData: callData,
+      originDomain: xSendMockChainID,
+      destinationDomain: xReceiveMockChainID,
+      agent: receiveProvider,
+      recovery: msg.sender, // misused here for mocking purposes --> in this context it is the originSender contract used for the onlyExecutor modifier
+      // recovery: receiveProvider, // on testnet
+      forceSlow: true,
+      receiveLocal: false,
+      callback: address(0),
+      callbackFee: 0,
+      relayerFee: 0,
+      slippageTol: 9995
     });
 
     XCallArgs memory xcallArgs = XCallArgs({
-      params: callParams,      
+      params: callParams,
       transactingAssetId: address(0), // The asset the caller sent with the transfer.
-      amount: 0    
+      amount: 0
     });
     connext.xcall(xcallArgs);
   }
@@ -110,5 +110,11 @@ contract ConnextXProviderMock is IXProviderMock {
     IXReceiveMock(xReceiveMock).xReceiveAndSetSomeValue(_value);
   }
 
-  function xTransfer(address to, address asset, uint32 originDomain, uint32 destinationDomain, uint256 amount) external {}
+  function xTransfer(
+    address to,
+    address asset,
+    uint32 originDomain,
+    uint32 destinationDomain,
+    uint256 amount
+  ) external {}
 }
