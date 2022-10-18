@@ -12,6 +12,7 @@
     "@openzeppelin/contracts": "^4.7.3",
     "dotenv": "^16.0.2",
     "hardhat": "^2.11.1",
+    "prettier": "^2.7.1",
     "tsconfig-paths": "^4.1.0"
   }
 }
