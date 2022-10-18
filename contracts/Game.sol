@@ -354,8 +354,8 @@ contract Game is ERC721, ReentrancyGuard {
 
       for (uint k = 0; k < chainIds.length; k++) {
         uint16 chain = chainIds[k];
-
-        for (uint i = 0; i < latestProtocolId[chain]; i++) {
+        uint256 latestProtocol = latestProtocolId[chain];
+        for (uint i = 0; i < latestProtocol; i++) {
           int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
           if (allocation == 0) continue;
 
