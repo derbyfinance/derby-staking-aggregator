@@ -8,13 +8,13 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract YearnProvider is IProvider{
+contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
-  
-  address public controller; 
+
+  address public controller;
   mapping(uint256 => uint256) public historicalPrices;
 
-  modifier onlyController {
+  modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");
     _;
   }
@@ -31,11 +31,11 @@ contract YearnProvider is IProvider{
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault, 
+    address _vault,
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyController returns(uint256) {
+  ) external override onlyController returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -58,20 +58,26 @@ contract YearnProvider is IProvider{
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault, 
+    address _vault,
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyController returns(uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
+  ) external override onlyController returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
 
-    require(IYearn(_yToken).transferFrom(_vault, address(this), _amount) == true, "Error transferFrom");
+    require(
+      IYearn(_yToken).transferFrom(_vault, address(this), _amount) == true,
+      "Error transferFrom"
+    );
 
-    uint256 uAmountReceived = IYearn(_yToken).withdraw(_amount); 
+    uint256 uAmountReceived = IYearn(_yToken).withdraw(_amount);
     IERC20(_uToken).safeTransfer(_vault, uAmountReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
-    require((balanceAfter - balanceBefore - uAmountReceived) == 0, "Error Withdraw: under/overflow");
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
+    require(
+      (balanceAfter - balanceBefore - uAmountReceived) == 0,
+      "Error Withdraw: under/overflow"
+    );
 
     return uAmountReceived;
   }
@@ -80,10 +86,15 @@ contract YearnProvider is IProvider{
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return Balance in VaultCurrency e.g USDC
-  function balanceUnderlying(address _address, address _yToken) public view override returns (uint256) {
+  function balanceUnderlying(address _address, address _yToken)
+    public
+    view
+    override
+    returns (uint256)
+  {
     uint256 balanceShares = balance(_address, _yToken);
     uint256 price = exchangeRate(_yToken);
-    return balanceShares * price / 10 ** IYearn(_yToken).decimals();
+    return (balanceShares * price) / 10**IYearn(_yToken).decimals();
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -92,7 +103,7 @@ contract YearnProvider is IProvider{
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _yToken) external view override returns (uint256) {
-    uint256 shares = (_amount  * (10 ** IYearn(_yToken).decimals())) / exchangeRate(_yToken);
+    uint256 shares = (_amount * (10**IYearn(_yToken).decimals())) / exchangeRate(_yToken);
     return shares;
   }
 
@@ -108,12 +119,10 @@ contract YearnProvider is IProvider{
   /// @notice Exchange rate of underyling protocol token
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @return price of LP token
-  function exchangeRate(address _yToken) public view override returns(uint256) {
+  function exchangeRate(address _yToken) public view override returns (uint256) {
     uint256 price = IYearn(_yToken).pricePerShare();
     return price;
   }
 
-  function claim(address _yToken, address _claimer) public override returns(bool) {
-
-  }
+  function claim(address _yToken, address _claimer) public override returns (bool) {}
 }

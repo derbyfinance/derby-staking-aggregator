@@ -5,31 +5,33 @@ import "../MainVault.sol";
 import "hardhat/console.sol";
 
 contract FeeTestContract is MainVault {
-    constructor(
+  constructor(
     string memory _name,
     string memory _symbol,
     uint8 _decimals,
     string memory _vaultName,
     uint256 _vaultNumber,
     address _governed,
-    address _Game, 
-    address _router, 
+    address _Game,
+    address _router,
     address _vaultCurrency,
     uint256 _uScale,
     uint256 _gasFeeLiquidity
-  ) MainVault(
-    _name,
-    _symbol,
-    _decimals,
-    _vaultNumber,
-    _governed,
-    _governed,
-    _Game,
-    _router,
-    _vaultCurrency,
-    _uScale,
-    _gasFeeLiquidity
-  ) {}
+  )
+    MainVault(
+      _name,
+      _symbol,
+      _decimals,
+      _vaultNumber,
+      _governed,
+      _governed,
+      _Game,
+      _router,
+      _vaultCurrency,
+      _uScale,
+      _gasFeeLiquidity
+    )
+  {}
 
   uint256 public latestProtocol;
 
@@ -37,7 +39,7 @@ contract FeeTestContract is MainVault {
 
   uint256[] public protocolsInETF;
 
-  mapping(uint256 => int256) private test; 
+  mapping(uint256 => int256) private test;
 
   function loopArray() public {
     for (uint i = 0; i < protocolsInETF.length; i++) {
@@ -70,4 +72,3 @@ contract FeeTestContract is MainVault {
     delete protocolsInETF;
   }
 }
-

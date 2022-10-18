@@ -9,20 +9,20 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract AaveProvider is IProvider{
+contract AaveProvider is IProvider {
   using SafeERC20 for IERC20;
 
   uint16 private aaveReferral;
-  address public controller; 
+  address public controller;
 
   mapping(uint256 => uint256) public historicalPrices;
 
-  modifier onlyController {
+  modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");
     _;
   }
 
-  constructor(address _controller) {    
+  constructor(address _controller) {
     controller = _controller;
     aaveReferral = 0;
   }
@@ -40,11 +40,11 @@ contract AaveProvider is IProvider{
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault, 
-    uint256 _amount, 
+    address _vault,
+    uint256 _amount,
     address _aToken,
     address _uToken
-  ) external override onlyController returns(uint256) {
+  ) external override onlyController returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
@@ -53,8 +53,12 @@ contract AaveProvider is IProvider{
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
-    IALendingPool(IAToken(_aToken).POOL())
-      .deposit(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault, aaveReferral);
+    IALendingPool(IAToken(_aToken).POOL()).deposit(
+      IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(),
+      _amount,
+      _vault,
+      aaveReferral
+    );
 
     return _amount;
   }
@@ -67,20 +71,29 @@ contract AaveProvider is IProvider{
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault, 
-    uint256 _amount, 
+    address _vault,
+    uint256 _amount,
     address _aToken,
     address _uToken
-  ) external override onlyController returns(uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault); 
+  ) external override onlyController returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
 
-    require(IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true, "Error: transferFrom");
-    uint256 uTokensReceived = IALendingPool(IAToken(_aToken).POOL())
-      .withdraw(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(), _amount, _vault);
+    require(
+      IAToken(_aToken).transferFrom(_vault, address(this), _amount) == true,
+      "Error: transferFrom"
+    );
+    uint256 uTokensReceived = IALendingPool(IAToken(_aToken).POOL()).withdraw(
+      IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(),
+      _amount,
+      _vault
+    );
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault); 
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
 
-    require((balanceAfter - balanceBefore - uTokensReceived) == 0, "Error Withdraw: under/overflow");
+    require(
+      (balanceAfter - balanceBefore - uTokensReceived) == 0,
+      "Error Withdraw: under/overflow"
+    );
 
     return uTokensReceived;
   }
@@ -89,7 +102,12 @@ contract AaveProvider is IProvider{
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _aToken) public view override returns (uint256) {
+  function balanceUnderlying(address _address, address _aToken)
+    public
+    view
+    override
+    returns (uint256)
+  {
     uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }
@@ -117,12 +135,9 @@ contract AaveProvider is IProvider{
   /// @dev Aave exchangeRate is always 1
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return price of LP token
-  function exchangeRate(address _aToken) public pure override returns(uint256) {
+  function exchangeRate(address _aToken) public pure override returns (uint256) {
     return 1;
   }
 
-  function claim(address _aToken, address _claimer) public override returns(bool){
-    
-  }
-
+  function claim(address _aToken, address _claimer) public override returns (bool) {}
 }

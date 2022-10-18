@@ -22,30 +22,30 @@ contract TokenTimelock {
 
   bool public initialized;
 
-  modifier onlyAdmin {
+  modifier onlyAdmin() {
     require(msg.sender == admin, "!admin");
     _;
   }
 
-  modifier onlyBeneficiary {
+  modifier onlyBeneficiary() {
     require(msg.sender == beneficiary, "!beneficiary");
     _;
   }
 
   constructor(address _token) {
     admin = msg.sender;
-    token = IERC20(_token);      
+    token = IERC20(_token);
   }
 
   function init(
-    address _beneficiary, 
+    address _beneficiary,
     uint256 _amount,
     uint256 _startTimestamp, // timestamp after the cliff
     uint256 _numberOfMonths,
     uint256 _monthDurationUnix
   ) external onlyAdmin {
     require(!initialized, "already initialized");
-    
+
     token.safeTransferFrom(msg.sender, address(this), _amount);
 
     startTimestamp = _startTimestamp;
@@ -58,7 +58,7 @@ contract TokenTimelock {
   function claimableTokens() public view returns (uint256) {
     require(initialized, "!initialized");
     if (startTimestamp > block.timestamp) return 0;
-    
+
     uint256 timePassed = block.timestamp - startTimestamp;
     uint256 monthsPassed = timePassed / monthDuration;
     uint256 tokenBalance = token.balanceOf(address(this));

@@ -8,4 +8,3 @@ interface IUniswapV3Factory {
     uint24 fee
   ) external view returns (address pool);
 }
-

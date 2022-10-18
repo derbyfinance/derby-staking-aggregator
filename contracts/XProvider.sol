@@ -37,41 +37,40 @@ contract XProvider is ILayerZeroReceiver {
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
-  modifier onlyDao {
+  modifier onlyDao() {
     require(msg.sender == dao, "LZProvider: only DAO");
     _;
   }
 
-  modifier onlyController {
+  modifier onlyController() {
     require(msg.sender == xController, "LZProvider: only Controller");
     _;
   }
 
-  modifier onlyVaults {
+  modifier onlyVaults() {
     require(vaultWhitelist[msg.sender], "LZProvider: only vault");
     _;
   }
 
-  modifier onlyGame {
+  modifier onlyGame() {
     require(msg.sender == game, "LZProvider: only Game");
     _;
   }
 
   /// @notice Solution for the low-level call in lzReceive that is seen as an external call
-  modifier onlySelf() { 
+  modifier onlySelf() {
     require(msg.sender == address(this), "LZProvider: only Self");
-    _;  
+    _;
   }
 
-  modifier onlySelfOrVault() { 
+  modifier onlySelfOrVault() {
     require(
-      msg.sender == address(this) ||
-      vaultWhitelist[msg.sender], 
+      msg.sender == address(this) || vaultWhitelist[msg.sender],
       "LZProvider: only Self or Vault"
     );
-    _;  
+    _;
   }
-  
+
   constructor(
     address _endpoint,
     address _connextHandler,
@@ -91,14 +90,18 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Function to send function selectors crossChain
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
-  function xSend(
-    uint16 _destinationDomain,
-    bytes memory _callData
-  ) internal {
-    bytes memory trustedRemote = trustedRemoteLookup[_destinationDomain]; // same chainID as the provider on the receiverChain 
+  function xSend(uint16 _destinationDomain, bytes memory _callData) internal {
+    bytes memory trustedRemote = trustedRemoteLookup[_destinationDomain]; // same chainID as the provider on the receiverChain
     require(trustedRemote.length != 0, "LZProvider: destination chain not trusted");
 
-    endpoint.send(_destinationDomain, trustedRemote, _callData, payable(msg.sender), address(0x0), bytes(""));
+    endpoint.send(
+      _destinationDomain,
+      trustedRemote,
+      _callData,
+      payable(msg.sender),
+      address(0x0),
+      bytes("")
+    );
   }
 
   function xTransfer(
@@ -108,9 +111,12 @@ contract XProvider is ILayerZeroReceiver {
     uint32 _destinationDomain,
     uint256 _amount
   ) internal {
-    require(IERC20(_asset).allowance(msg.sender, address(this)) >= _amount, "LZXProvider: Not approved");
+    require(
+      IERC20(_asset).allowance(msg.sender, address(this)) >= _amount,
+      "LZXProvider: Not approved"
+    );
 
-    IERC20(_asset).transferFrom(msg.sender, address(this), _amount);    
+    IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
     IERC20(_asset).approve(address(connext), _amount);
 
     CallParams memory callParams = CallParams({
@@ -132,21 +138,25 @@ contract XProvider is ILayerZeroReceiver {
       params: callParams,
       transactingAssetId: _asset,
       amount: _amount
-    });  
+    });
 
     connext.xcall(xcallArgs);
   }
 
   function lzReceive(
-    uint16 _srcChainId, 
-    bytes calldata _srcAddress, 
-    uint64 _nonce, 
+    uint16 _srcChainId,
+    bytes calldata _srcAddress,
+    uint64 _nonce,
     bytes calldata _payload
   ) external {
     require(msg.sender == address(endpoint), "Not an endpoint");
-    require(_srcAddress.length == trustedRemoteLookup[_srcChainId].length && keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]), "Not trusted");
+    require(
+      _srcAddress.length == trustedRemoteLookup[_srcChainId].length &&
+        keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]),
+      "Not trusted"
+    );
 
-    (bool success,) = address(this).call(_payload);
+    (bool success, ) = address(this).call(_payload);
     require(success, "LZReceive: No success");
   }
 
@@ -177,27 +187,29 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _totalSupply Supply of the LP token of the vault on given chainId
   /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function pushTotalUnderlying(
-    uint256 _vaultNumber, 
-    uint16 _chainId, 
+    uint256 _vaultNumber,
+    uint16 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   ) external onlyVaults {
     if (_chainId == xControllerChain) {
-      return IXChainController(xController).setTotalUnderlying(
-        _vaultNumber, 
-        _chainId, 
-        _underlying,
-        _totalSupply,
-        _withdrawalRequests
+      return
+        IXChainController(xController).setTotalUnderlying(
+          _vaultNumber,
+          _chainId,
+          _underlying,
+          _totalSupply,
+          _withdrawalRequests
+        );
+    } else {
+      bytes4 selector = bytes4(
+        keccak256("receiveTotalUnderlying(uint256,uint16,uint256,uint256,uint256)")
       );
-    }
-    else {
-      bytes4 selector = bytes4(keccak256("receiveTotalUnderlying(uint256,uint16,uint256,uint256,uint256)"));
       bytes memory callData = abi.encodeWithSelector(
         selector,
-        _vaultNumber, 
-        _chainId, 
+        _vaultNumber,
+        _chainId,
         _underlying,
         _totalSupply,
         _withdrawalRequests
@@ -215,19 +227,20 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _totalSupply Supply of the LP token of the vault on given chainId
   /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function receiveTotalUnderlying(
-    uint256 _vaultNumber, 
-    uint16 _chainId, 
+    uint256 _vaultNumber,
+    uint16 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   ) external onlySelf {
-    return IXChainController(xController).setTotalUnderlying(
-      _vaultNumber, 
-      _chainId, 
-      _underlying,
-      _totalSupply,
-      _withdrawalRequests
-    );
+    return
+      IXChainController(xController).setTotalUnderlying(
+        _vaultNumber,
+        _chainId,
+        _underlying,
+        _totalSupply,
+        _withdrawalRequests
+      );
   }
 
   /// @notice Step 3 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
@@ -236,24 +249,28 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _amountToSendBack Amount the vault has to send back
   /// @param _exchangeRate New exchangerate for vaults
   function pushSetXChainAllocation(
-    address _vault, 
-    uint16 _chainId, 
+    address _vault,
+    uint16 _chainId,
     uint256 _amountToSendBack,
     uint256 _exchangeRate
   ) external onlyController {
     if (_chainId == homeChain) {
       return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
-    }
-    else {
+    } else {
       bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256,uint256)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault, _amountToSendBack, _exchangeRate);
+      bytes memory callData = abi.encodeWithSelector(
+        selector,
+        _vault,
+        _amountToSendBack,
+        _exchangeRate
+      );
 
       xSend(_chainId, callData);
     }
   }
 
   /// @notice Step 3 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
-  /// @param _vault Address of the Derby Vault on given chainId 
+  /// @param _vault Address of the Derby Vault on given chainId
   /// @param _amountToSendBack Amount the vault has to send back
   /// @param _exchangeRate New exchangerate for vaults
   function receiveSetXChainAllocation(
@@ -266,15 +283,18 @@ contract XProvider is ILayerZeroReceiver {
 
   /// @notice Step 4 push; Push funds from vaults to xChainController
   /// @notice Transfers funds from vault to xController for crosschain rebalance
-  /// @param _vaultNumber Address of the Derby Vault on given chainId 
+  /// @param _vaultNumber Address of the Derby Vault on given chainId
   /// @param _amount Number of the vault
-  /// @param _asset Address of the token to send e.g USDC 
-  function xTransferToController(uint256 _vaultNumber, uint256 _amount, address _asset) external onlyVaults {
+  /// @param _asset Address of the token to send e.g USDC
+  function xTransferToController(
+    uint256 _vaultNumber,
+    uint256 _amount,
+    address _asset
+  ) external onlyVaults {
     if (homeChain == xControllerChain) {
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
-    }
-    else {
+    } else {
       xTransfer(
         xController,
         _asset,
@@ -282,7 +302,7 @@ contract XProvider is ILayerZeroReceiver {
         connextChainId[xControllerChain],
         _amount
       );
-      pushFeedbackToXController(_vaultNumber); 
+      pushFeedbackToXController(_vaultNumber);
     }
   }
 
@@ -308,14 +328,13 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _chainId Number of chainId
   /// @param _amount Amount to send to vault in vaultcurrency
   /// @param _asset Addres of underlying e.g USDC
-  function xTransferToVaults(address _vault, uint16 _chainId, uint256 _amount, address _asset) external onlyController {
-    xTransfer(
-      _vault,
-      _asset,
-      connextChainId[homeChain],
-      connextChainId[_chainId],
-      _amount
-    );
+  function xTransferToVaults(
+    address _vault,
+    uint16 _chainId,
+    uint256 _amount,
+    address _asset
+  ) external onlyController {
+    xTransfer(_vault, _asset, connextChainId[homeChain], connextChainId[_chainId], _amount);
     pushFeedbackToVault(_chainId, _vault);
   }
 
@@ -342,8 +361,8 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function pushProtocolAllocationsToVault(
-    uint16 _chainId, 
-    address _vault, 
+    uint16 _chainId,
+    address _vault,
     int256[] memory _deltas
   ) external onlyGame {
     if (_chainId == homeChain) return IVault(_vault).receiveProtocolAllocations(_deltas);
@@ -359,7 +378,10 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Receives protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
-  function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas) external onlySelf {
+  function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas)
+    external
+    onlySelf
+  {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
@@ -375,8 +397,7 @@ contract XProvider is ILayerZeroReceiver {
   ) external onlyVaults {
     if (_chainId == homeChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
-    }
-    else {
+    } else {
       bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint16,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
@@ -408,8 +429,7 @@ contract XProvider is ILayerZeroReceiver {
   ) external onlyController {
     if (_chainId == homeChain) {
       return IVault(_vault).toggleVaultOnOff(_state);
-    }
-    else {
+    } else {
       bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
 
@@ -420,15 +440,12 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Receive feedback for the vault if the vault is set to on or off
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _state bool for chainId on or off
-  function receiveStateFeedbackToVault(
-    address _vault,
-    bool _state
-  ) external onlySelf {
+  function receiveStateFeedbackToVault(address _vault, bool _state) external onlySelf {
     return IVault(_vault).toggleVaultOnOff(_state);
   }
 
   /// @notice returns number of decimals for the vault
-  function getDecimals(address _vault) external view returns(uint256) {
+  function getDecimals(address _vault) external view returns (uint256) {
     return IVault(_vault).decimals();
   }
 
