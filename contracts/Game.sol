@@ -37,8 +37,6 @@ contract Game is ERC721, ReentrancyGuard {
     struct vaultInfo {
       // rebalance period of ETF, upped at vault rebalance
       uint256 rebalancingPeriod;
-      // address of vault
-      address vaultAddressOLD; // OLD will be changed //////////
       // chainId => vaultAddress
       mapping(uint16 => address) vaultAddress;
       // chainId => deltaAllocation
@@ -59,9 +57,6 @@ contract Game is ERC721, ReentrancyGuard {
 
     // latest basket id
     uint256 private latestBasketId;
-
-    // latest vaultNumber
-    uint256 public latestvaultNumber = 0;
 
     // array of chainIds e.g [10, 100, 1000];
     uint16[] public chainIds;
@@ -251,21 +246,11 @@ contract Game is ERC721, ReentrancyGuard {
       return baskets[_basketId].totalRedeemedRewards;
     }
 
-    /// @notice Adding a vault to the game.
-    /// @param _vaultAddress Address of the vault which is added.
-    function addETF(address _vaultAddress) external onlyDao {
-      require (!vaultAddresses[_vaultAddress], "Game: vault already added");
-      vaults[latestvaultNumber].vaultAddressOLD = _vaultAddress;
-      vaultAddresses[_vaultAddress] = true;
-      latestvaultNumber++;
-    }
-
     /// @notice Mints a new NFT with a Basket of allocations.
     /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
     /// @param _vaultNumber Number of the vault. Same as in Router.
     /// @return basketId The basket Id the user has minted. 
     function mintNewBasket(uint256 _vaultNumber) external returns(uint256) {
-      require(_vaultNumber < latestvaultNumber, "Game: invalid ETF number");
       // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
       baskets[latestBasketId].vaultNumber = _vaultNumber;
       baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;

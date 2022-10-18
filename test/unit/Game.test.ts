@@ -166,15 +166,6 @@ describe('Testing Game', async () => {
     expect(await game.derbyTokenAddress()).to.be.equal(DerbyToken.address);
   });
 
-  it('Can add a vault', async function () {
-    await expect(game.connect(user).addETF(vault.address)).to.be.revertedWith('Game: only DAO');
-    let latestNumber = await game.latestvaultNumber();
-    expect(latestNumber).to.be.equal(0);
-    await game.connect(dao).addETF(vault.address);
-    latestNumber = await game.latestvaultNumber();
-    expect(latestNumber).to.be.equal(1);
-  });
-
   it('Should Lock tokens, mint basket and set correct deltas', async function () {
     await game.mintNewBasket(vaultNumber);
 
