@@ -88,11 +88,30 @@ describe('Testing Game', async () => {
     );
     xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
-    [LZEndpoint10, LZEndpoint100] = await Promise.all([deployLZEndpointMock(dao, 10), deployLZEndpointMock(dao, 100)]);
+    [LZEndpoint10, LZEndpoint100] = await Promise.all([
+      deployLZEndpointMock(dao, 10),
+      deployLZEndpointMock(dao, 100),
+    ]);
 
     [xProvider10, xProvider100] = await Promise.all([
-      deployXProvider(dao, LZEndpoint10.address, daoAddr, daoAddr, game.address, xChainController.address, 10),
-      deployXProvider(dao, LZEndpoint100.address, daoAddr, daoAddr, game.address, xChainController.address, 100),
+      deployXProvider(
+        dao,
+        LZEndpoint10.address,
+        daoAddr,
+        daoAddr,
+        game.address,
+        xChainController.address,
+        10,
+      ),
+      deployXProvider(
+        dao,
+        LZEndpoint100.address,
+        daoAddr,
+        daoAddr,
+        game.address,
+        xChainController.address,
+        100,
+      ),
     ]);
 
     await Promise.all([
@@ -184,7 +203,9 @@ describe('Testing Game', async () => {
     // looping through all of allocationArray
     allocationArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(
+          chainIdArray[j],
+        );
       }
     });
   });
@@ -217,7 +238,9 @@ describe('Testing Game', async () => {
     // looping through all of allocationArray
     allocationTestArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(chainIdArray[j]);
+        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(
+          chainIdArray[j],
+        );
       }
     });
   });
@@ -231,9 +254,15 @@ describe('Testing Game', async () => {
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(200);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(200);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(500);
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
+      200,
+    );
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(
+      200,
+    );
+    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(
+      500,
+    );
 
     // delta allocations for chain in game should be resetted
     expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(0);
@@ -245,7 +274,9 @@ describe('Testing Game', async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(0, [[0, 1]])).to.be.revertedWith('Game: vault is xChainRebalancing');
+    await expect(game.rebalanceBasket(0, [[0, 1]])).to.be.revertedWith(
+      'Game: vault is xChainRebalancing',
+    );
 
     // reset allocations and state for testing
     await game.setXChainRebalanceState(vaultNumber, false);

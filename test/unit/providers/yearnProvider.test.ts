@@ -1,7 +1,13 @@
 import { expect } from 'chai';
 import { Contract, Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC, controllerAddProtocol } from '@testhelp/helpers';
+import {
+  getUSDCSigner,
+  erc20,
+  formatUSDC,
+  parseUSDC,
+  controllerAddProtocol,
+} from '@testhelp/helpers';
 import type { YearnProvider, Controller } from '@typechain';
 import { deployYearnProvider, deployController } from '@testhelp/deploy';
 import { usdc, yearnUSDC as yusdc, yearn } from '@testhelp/addresses';
@@ -77,15 +83,15 @@ describe.skip('Testing Yearn provider', async () => {
   });
 
   it('Should fail when !controller is calling the Provider', async function () {
-    await expect(yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC, yusdc, usdc)).to.be.revertedWith(
-      'ETFProvider: only controller',
-    );
+    await expect(
+      yearnProvider.connect(vault).deposit(vaultAddr, amountUSDC, yusdc, usdc),
+    ).to.be.revertedWith('ETFProvider: only controller');
   });
 
   it('Should fail when !Vault is calling the controller', async function () {
-    await expect(controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC)).to.be.revertedWith(
-      'Controller: only Vault',
-    );
+    await expect(
+      controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC),
+    ).to.be.revertedWith('Controller: only Vault');
   });
 
   it('Should get exchangeRate through controller', async function () {

@@ -26,7 +26,14 @@ export class ProtocolVault {
   reward: BigNumber = parseEther('0');
   scale: number;
 
-  constructor({ name, protocolToken, underlyingToken, govToken, decimals, chainId }: IProtocolVault) {
+  constructor({
+    name,
+    protocolToken,
+    underlyingToken,
+    govToken,
+    decimals,
+    chainId,
+  }: IProtocolVault) {
     this.name = name;
     this.protocolToken = protocolToken;
     this.underlyingToken = underlyingToken;
@@ -54,7 +61,11 @@ export class ProtocolVault {
     await vault.connect(game).setDeltaAllocations(this.number, allocation);
   }
 
-  async setDeltaAllocationsWithGame(game: GameMock, vaultAddr: string, allocation: number): Promise<void> {
+  async setDeltaAllocationsWithGame(
+    game: GameMock,
+    vaultAddr: string,
+    allocation: number,
+  ): Promise<void> {
     this.allocation += allocation;
     await game.setDeltaAllocations(vaultAddr, this.number, allocation);
   }

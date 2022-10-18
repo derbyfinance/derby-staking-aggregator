@@ -1,6 +1,10 @@
 import { MockContract } from '@ethereum-waffle/mock-contract';
 import { Signer } from 'ethers';
-import { deployAaveProviderMock, deployCompoundProviderMock, deployYearnProviderMock } from './deployMocks';
+import {
+  deployAaveProviderMock,
+  deployCompoundProviderMock,
+  deployYearnProviderMock,
+} from './deployMocks';
 
 class AllMockProviders {
   yearnProvider!: MockContract;

@@ -224,7 +224,8 @@ describe.skip('Testing VaultSwap, unit test', async () => {
     // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance = (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+      const expectedBalance =
+        (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
 
       console.log(`---------------------------`);
       console.log(protocol.name);
@@ -259,7 +260,8 @@ describe.skip('Testing VaultSwap, unit test', async () => {
     // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance = (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+      const expectedBalance =
+        (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
 
       console.log(`---------------------------`);
       console.log(protocol.name);

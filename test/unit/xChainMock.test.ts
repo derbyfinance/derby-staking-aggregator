@@ -70,9 +70,19 @@ describe('Testing XProviderMocks, unit test', async () => {
     await ConnextXProviderSend.setReceiveProvider(ConnextXProviderReceive.address);
 
     LZEndpointSend = await deployLZEndpointMock(dao, 1);
-    LZXProviderSend = await deployLZXProviderMock(dao, LZEndpointSend.address, daoAddr, ConnextHandler.address);
+    LZXProviderSend = await deployLZXProviderMock(
+      dao,
+      LZEndpointSend.address,
+      daoAddr,
+      ConnextHandler.address,
+    );
     LZEndpointReceive = await deployLZEndpointMock(dao, 2);
-    LZXProviderReceive = await deployLZXProviderMock(dao, LZEndpointReceive.address, daoAddr, ConnextHandler.address);
+    LZXProviderReceive = await deployLZXProviderMock(
+      dao,
+      LZEndpointReceive.address,
+      daoAddr,
+      ConnextHandler.address,
+    );
     await LZEndpointSend.setDestLzEndpoint(LZXProviderReceive.address, LZEndpointReceive.address);
     await LZXProviderSend.setTrustedRemote(2, LZXProviderReceive.address);
     await LZXProviderReceive.setTrustedRemote(1, LZXProviderSend.address);

@@ -15,7 +15,15 @@ import {
 } from '@testhelp/helpers';
 import type { IdleProvider, Controller } from '@typechain';
 import { deployIdleProvider, deployController } from '@testhelp/deploy';
-import { usdc, idleUSDC as iusdc, idleDAI as idai, idleUSDT as iusdt, yearn, dai, usdt } from '@testhelp/addresses';
+import {
+  usdc,
+  idleUSDC as iusdc,
+  idleDAI as idai,
+  idleUSDT as iusdt,
+  yearn,
+  dai,
+  usdt,
+} from '@testhelp/addresses';
 
 // const amount = 100_000;
 const amount = Math.floor(Math.random() * 1000000);
@@ -50,16 +58,17 @@ describe.skip('Testing Idle provider', async () => {
     daoAddr = await dao.getAddress();
     controller = await deployController(dao, daoAddr);
 
-    [vaultAddr, idleProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] = await Promise.all([
-      vault.getAddress(),
-      deployIdleProvider(dao, controller.address),
-      getUSDCSigner(),
-      getDAISigner(),
-      getUSDTSigner(),
-      erc20(usdc),
-      erc20(dai),
-      erc20(usdt),
-    ]);
+    [vaultAddr, idleProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] =
+      await Promise.all([
+        vault.getAddress(),
+        deployIdleProvider(dao, controller.address),
+        getUSDCSigner(),
+        getDAISigner(),
+        getUSDTSigner(),
+        erc20(usdc),
+        erc20(dai),
+        erc20(usdt),
+      ]);
 
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
@@ -124,11 +133,16 @@ describe.skip('Testing Idle provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
 
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), 2);
+    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatUSDC(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should deposit and withdraw DAI to idle through controller', async function () {
@@ -148,11 +162,16 @@ describe.skip('Testing Idle provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2);
+    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatDAI(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should deposit and withdraw USDT to idle through controller', async function () {
@@ -172,27 +191,34 @@ describe.skip('Testing Idle provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2);
+    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatDAI(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should fail when !controller is calling the Provider', async function () {
-    await expect(idleProvider.connect(vault).deposit(vaultAddr, amountUSDC, iusdc, usdc)).to.be.revertedWith(
-      'ETFProvider: only controller',
-    );
+    await expect(
+      idleProvider.connect(vault).deposit(vaultAddr, amountUSDC, iusdc, usdc),
+    ).to.be.revertedWith('ETFProvider: only controller');
   });
 
   it('Should fail when !Vault is calling the controller', async function () {
-    await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC)).to.be.revertedWith(
-      'Controller: only Vault',
-    );
+    await expect(
+      controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC),
+    ).to.be.revertedWith('Controller: only Vault');
   });
 
   it('Should get exchangeRate through controller', async function () {
-    const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC);
+    const exchangeRate = await controller
+      .connect(vault)
+      .exchangeRate(ETFnumber, protocolNumberUSDC);
     console.log(`Exchange rate ${exchangeRate}`);
   });
 });

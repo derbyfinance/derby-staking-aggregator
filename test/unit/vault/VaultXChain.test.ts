@@ -84,7 +84,10 @@ describe('Testing XChainController, unit test', async () => {
       controller.address,
     );
 
-    [LZEndpoint10, LZEndpoint100] = await Promise.all([deployLZEndpointMock(dao, 10), deployLZEndpointMock(dao, 100)]);
+    [LZEndpoint10, LZEndpoint100] = await Promise.all([
+      deployLZEndpointMock(dao, 10),
+      deployLZEndpointMock(dao, 100),
+    ]);
 
     [xProvider10, xProvider100] = await Promise.all([
       deployXProvider(

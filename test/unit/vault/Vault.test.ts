@@ -107,10 +107,14 @@ describe('Testing Vault, unit test', async () => {
 
   it('Should not be able to set the liquidityPerc or performanceFee higher than 100%', async function () {
     const lp = Math.floor(Math.random() * 100) * 1000;
-    await expect(vault.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Percentage cannot exceed 100%');
+    await expect(vault.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith(
+      'Percentage cannot exceed 100%',
+    );
 
     const pf = Math.floor(Math.random() * 100) * 1000;
-    await expect(vault.connect(dao).setPerformanceFee(pf)).to.be.revertedWith('Percentage cannot exceed 100%');
+    await expect(vault.connect(dao).setPerformanceFee(pf)).to.be.revertedWith(
+      'Percentage cannot exceed 100%',
+    );
   });
 
   it('Should be able to blacklist protocol and pull all funds', async function () {
@@ -147,7 +151,9 @@ describe('Testing Vault, unit test', async () => {
   it('Should not be able to set delta on blacklisted protocol', async function () {
     await controller.addVault(daoAddr); // use dao signer as vault signer
     await vault.connect(dao).blacklistProtocol(0);
-    await expect(vault.connect(game).setDeltaAllocations(0, 30)).to.be.revertedWith('Protocol on blacklist');
+    await expect(vault.connect(game).setDeltaAllocations(0, 30)).to.be.revertedWith(
+      'Protocol on blacklist',
+    );
   });
 
   it('Should not be able to rebalance in blacklisted protocol', async function () {

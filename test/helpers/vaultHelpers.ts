@@ -43,16 +43,22 @@ export function setDeltaAllocations(signer: Signer, vault: MainVaultMock, protoc
 }
 
 export function getAllocations(vault: MainVaultMock, protocols: Protocol[]) {
-  return Promise.all(protocols.map((protocol: Protocol) => vault.getAllocationTEST(protocol.number)));
+  return Promise.all(
+    protocols.map((protocol: Protocol) => vault.getAllocationTEST(protocol.number)),
+  );
 }
 
 export function getDeltaAllocations(vault: MainVaultMock, protocols: Protocol[]) {
-  return Promise.all(protocols.map((protocol: Protocol) => vault.getDeltaAllocationTEST(protocol.number)));
+  return Promise.all(
+    protocols.map((protocol: Protocol) => vault.getDeltaAllocationTEST(protocol.number)),
+  );
 }
 
 export function setCurrentAllocations(vault: MainVaultMock, protocols: Protocol[]) {
   return Promise.all(
-    protocols.map((protocol: Protocol) => vault.setCurrentAllocation(protocol.number, protocol.allocation)),
+    protocols.map((protocol: Protocol) =>
+      vault.setCurrentAllocation(protocol.number, protocol.allocation),
+    ),
   );
 }
 
@@ -65,7 +71,9 @@ export function deployAllProviders(dao: Signer, controller: Controller) {
 }
 
 export function initController(controller: Controller, addVaultAddresses: string[]) {
-  const addVaultPromise = Promise.all(addVaultAddresses.map((address) => controller.addVault(address)));
+  const addVaultPromise = Promise.all(
+    addVaultAddresses.map((address) => controller.addVault(address)),
+  );
   return Promise.all([
     addVaultPromise,
     controller.addCurveIndex(dai, 0),

@@ -11,7 +11,8 @@ import { vaultInfo } from '@testhelp/vaultHelpers';
 
 const amount = 200_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
+const { name, symbol, decimals, ETFname, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } =
+  vaultInfo;
 
 describe.skip('Testing Vault, integration test', async () => {
   let vault: MainVaultMock,
@@ -87,7 +88,8 @@ describe.skip('Testing Vault, integration test', async () => {
     // using to.be.closeTo because of the slippage from swapping USDT and DAI
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance = (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
+      const expectedBalance =
+        (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
 
       console.log(`---------------------------`);
       console.log(protocol.name);
@@ -163,7 +165,8 @@ describe.skip('Testing Vault, integration test', async () => {
 
     exchangeRate = await vault.exchangeRate();
     let totalSupply = amount - amountToWithdrawUSDC;
-    let LPtokensReceived = (amountToDepositUSDC * totalSupply) / (expectedTotalUnderlying - gasUsedUSDC);
+    let LPtokensReceived =
+      (amountToDepositUSDC * totalSupply) / (expectedTotalUnderlying - gasUsedUSDC);
 
     await vault.connect(user).deposit(amountToDeposit);
 
@@ -192,7 +195,10 @@ describe.skip('Testing Vault, integration test', async () => {
     LPBalanceUser = await vault.balanceOf(userAddr);
     balanceVault = await IUSDc.balanceOf(vault.address);
 
-    expect(formatUSDC(LPBalanceUser)).to.be.closeTo(amount - amountToWithdrawUSDC + LPtokensReceived, 1); // 200k - 40k + 60k
+    expect(formatUSDC(LPBalanceUser)).to.be.closeTo(
+      amount - amountToWithdrawUSDC + LPtokensReceived,
+      1,
+    ); // 200k - 40k + 60k
     // liquidity vault should be 200k - 40k - gasused = 160k * 10%
     expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault - gasUsedUSDC, 5);
     // Check if balanceInProtocol === currentAllocation / totalAllocated * amountDeposited
@@ -222,7 +228,9 @@ describe.skip('Testing Vault, integration test', async () => {
   it('Should not deposit and withdraw when hitting the marginScale', async function () {
     const amount = 100_000;
     const amountUSDC = parseUSDC(amount.toString());
-    console.log('-------deposit 100k, but for the 3rd protocol (yearn) the margin gets hit--------');
+    console.log(
+      '-------deposit 100k, but for the 3rd protocol (yearn) the margin gets hit--------',
+    );
     await Promise.all([
       compoundVault.setExpectedBalance(30_000).setDeltaAllocation(vault, user, 40),
       aaveVault.setExpectedBalance(45_000).setDeltaAllocation(vault, user, 60),
@@ -247,7 +255,9 @@ describe.skip('Testing Vault, integration test', async () => {
 
     expect(formatUSDC(balanceVault)).to.be.closeTo(liquidityVault, 2);
 
-    console.log('--------withdraw 35k, withdrawal should always be possible also when < marginScale--------');
+    console.log(
+      '--------withdraw 35k, withdrawal should always be possible also when < marginScale--------',
+    );
     const amountToWithdrawUSDC = 35_000;
     const amountToWithdraw = parseUSDC(amountToWithdrawUSDC.toString());
 
@@ -266,8 +276,12 @@ describe.skip('Testing Vault, integration test', async () => {
     balanceVault = await IUSDc.balanceOf(vault.address);
     expect(formatUSDC(balanceVault)).to.be.closeTo(0, 2);
 
-    console.log('--------rebalance to 60 - 60 compound - aave, does not have any effect because margin-------');
-    console.log('Since liquidity of the vault is 0 here, it should pull 10k from the first protocol for liq');
+    console.log(
+      '--------rebalance to 60 - 60 compound - aave, does not have any effect because margin-------',
+    );
+    console.log(
+      'Since liquidity of the vault is 0 here, it should pull 10k from the first protocol for liq',
+    );
 
     // liquidity is 0, so a minimum of 10k should be pulled from protocols
     await Promise.all([

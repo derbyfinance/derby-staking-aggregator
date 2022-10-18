@@ -15,7 +15,15 @@ import {
 } from '@testhelp/helpers';
 import type { BetaProvider, Controller } from '@typechain';
 import { deployBetaProvider, deployController } from '@testhelp/deploy';
-import { usdc, betaUSDC as busdc, betaDAI as bdai, betaUSDT as iusdt, yearn, dai, usdt } from '@testhelp/addresses';
+import {
+  usdc,
+  betaUSDC as busdc,
+  betaDAI as bdai,
+  betaUSDT as iusdt,
+  yearn,
+  dai,
+  usdt,
+} from '@testhelp/addresses';
 
 // const amount = 100_000;
 const amount = Math.floor(Math.random() * 1000000);
@@ -48,16 +56,17 @@ describe.skip('Testing Beta provider', async () => {
     daoAddr = await dao.getAddress();
     controller = await deployController(dao, daoAddr);
 
-    [vaultAddr, betaProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] = await Promise.all([
-      vault.getAddress(),
-      deployBetaProvider(dao, controller.address),
-      getUSDCSigner(),
-      getDAISigner(),
-      getUSDTSigner(),
-      erc20(usdc),
-      erc20(dai),
-      erc20(usdt),
-    ]);
+    [vaultAddr, betaProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] =
+      await Promise.all([
+        vault.getAddress(),
+        deployBetaProvider(dao, controller.address),
+        getUSDCSigner(),
+        getDAISigner(),
+        getUSDTSigner(),
+        erc20(usdc),
+        erc20(dai),
+        erc20(usdt),
+      ]);
 
     // Transfer and approve USDC to vault AND add protocol to controller contract
     [protocolNumberUSDC, protocolNumberDAI, protocolNumberUSDT] = await Promise.all([
@@ -118,12 +127,17 @@ describe.skip('Testing Beta provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberUSDC, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
 
     console.log({ vaultBalanceEnd });
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(Number(formatUSDC(vaultBalanceStart)), 2);
+    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatUSDC(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should deposit and withdraw DAI to beta through controller', async function () {
@@ -143,11 +157,16 @@ describe.skip('Testing Beta provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberDAI, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2);
+    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatDAI(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should deposit and withdraw USDT to beta through controller', async function () {
@@ -167,27 +186,34 @@ describe.skip('Testing Beta provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
+    await controller
+      .connect(vault)
+      .withdraw(ETFnumber, protocolNumberUSDT, vaultAddr, balanceShares);
 
     const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(Number(formatDAI(vaultBalanceStart)), 2);
+    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
+      Number(formatDAI(vaultBalanceStart)),
+      2,
+    );
   });
 
   it('Should fail when !controller is calling the Provider', async function () {
-    await expect(betaProvider.connect(vault).deposit(vaultAddr, amountUSDC, busdc, usdc)).to.be.revertedWith(
-      'ETFProvider: only controller',
-    );
+    await expect(
+      betaProvider.connect(vault).deposit(vaultAddr, amountUSDC, busdc, usdc),
+    ).to.be.revertedWith('ETFProvider: only controller');
   });
 
   it('Should fail when !Vault is calling the controller', async function () {
-    await expect(controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC)).to.be.revertedWith(
-      'Controller: only Vault',
-    );
+    await expect(
+      controller.deposit(ETFnumber, protocolNumberUSDC, vaultAddr, amountUSDC),
+    ).to.be.revertedWith('Controller: only Vault');
   });
 
   it('Should get exchangeRate through controller', async function () {
-    const exchangeRate = await controller.connect(vault).exchangeRate(ETFnumber, protocolNumberUSDC);
+    const exchangeRate = await controller
+      .connect(vault)
+      .exchangeRate(ETFnumber, protocolNumberUSDC);
     console.log(`Exchange rate ${exchangeRate}`);
   });
 });
