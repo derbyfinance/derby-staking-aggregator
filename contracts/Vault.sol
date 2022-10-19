@@ -40,7 +40,7 @@ contract Vault is ReentrancyGuard {
 
   address public vaultCurrencyAddr;
   address public game;
-  address public governed;
+  address public dao;
   address public xController;
   address public xProvider;
 
@@ -79,7 +79,7 @@ contract Vault is ReentrancyGuard {
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
 
   modifier onlyDao() {
-    require(msg.sender == governed, "Vault: only DAO");
+    require(msg.sender == dao, "Vault: only DAO");
     _;
   }
 
@@ -93,7 +93,7 @@ contract Vault is ReentrancyGuard {
 
   constructor(
     uint256 _vaultNumber,
-    address _governed,
+    address _dao,
     address _game,
     address _controller,
     address _vaultCurrency,
@@ -106,7 +106,7 @@ contract Vault is ReentrancyGuard {
 
     vaultNumber = _vaultNumber;
 
-    governed = _governed;
+    dao = _dao;
     game = _game;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
@@ -277,7 +277,7 @@ contract Vault is ReentrancyGuard {
       controller.uniswapQuoter(),
       controller.uniswapPoolFee()
     );
-    Swap.unWrapWETHtoGov(payable(governed), wethReceived);
+    Swap.unWrapWETHtoGov(payable(dao), wethReceived);
 
     emit GasPaidRebalanceETF(amountEtherToVaultCurrency);
   }
@@ -488,9 +488,9 @@ contract Vault is ReentrancyGuard {
   }
 
   /// @notice Set the governance address
-  /// @param _governed New address of the governance / DAO
-  function setGovernedAddress(address _governed) external onlyDao {
-    governed = _governed;
+  /// @param _dao New address of the governance / DAO
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
   }
 
   /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee

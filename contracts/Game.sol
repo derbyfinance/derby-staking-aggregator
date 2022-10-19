@@ -49,7 +49,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   address public derbyTokenAddress;
   address public routerAddress;
-  address public governed;
+  address public dao;
   address public guardian;
   address public xProvider;
   address public homeVault;
@@ -80,7 +80,7 @@ contract Game is ERC721, ReentrancyGuard {
   mapping(uint256 => bool) public isXChainRebalancing;
 
   modifier onlyDao() {
-    require(msg.sender == governed, "Game: only DAO");
+    require(msg.sender == dao, "Game: only DAO");
     _;
   }
 
@@ -108,13 +108,13 @@ contract Game is ERC721, ReentrancyGuard {
     string memory symbol_,
     address _derbyTokenAddress,
     address _routerAddress,
-    address _governed,
+    address _dao,
     address _guardian,
     address _controller
   ) ERC721(name_, symbol_) {
     derbyTokenAddress = _derbyTokenAddress;
     routerAddress = _routerAddress;
-    governed = _governed;
+    dao = _dao;
     guardian = _guardian;
     controller = IController(_controller);
     lastTimeStamp = block.timestamp;
@@ -592,5 +592,11 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _timestampInternal UNIX timestamp
   function setRebalanceInterval(uint256 _timestampInternal) external onlyDao {
     rebalanceInterval = _timestampInternal;
+  }
+
+  /// @notice Setter for DAO address
+  /// @param _dao DAO address
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
   }
 }

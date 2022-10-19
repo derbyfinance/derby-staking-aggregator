@@ -33,7 +33,7 @@ contract MainVault is Vault, VaultToken {
     string memory _symbol,
     uint8 _decimals,
     uint256 _vaultNumber,
-    address _governed,
+    address _dao,
     address _guardian,
     address _game,
     address _controller,
@@ -42,7 +42,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _governed, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
+    Vault(_vaultNumber, _dao, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
   {
     exchangeRate = _uScale;
     guardian = _guardian;
