@@ -349,6 +349,11 @@ describe('Testing Game', async () => {
     );
   });
 
+  it('Should correctly set dao address', async function () {
+    await game.connect(dao).setDaoAddress(userAddr);
+    expect(await game.dao()).to.be.equal(userAddr);
+  });
+
   // it.skip("Should be able to redeem funds via game", async function() {
   //   let rewards = await generateUnredeemedRewards();
   //   let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
