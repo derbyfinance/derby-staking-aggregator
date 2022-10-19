@@ -107,14 +107,10 @@ describe('Testing Vault, unit test', async () => {
 
   it('Should not be able to set the liquidityPerc or performanceFee higher than 100%', async function () {
     const lp = Math.floor(Math.random() * 100) * 1000;
-    await expect(vault.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith(
-      'Percentage cannot exceed 100%',
-    );
+    await expect(vault.connect(dao).setLiquidityPerc(lp)).to.be.revertedWith('Cannot exceed 100%');
 
     const pf = Math.floor(Math.random() * 100) * 1000;
-    await expect(vault.connect(dao).setPerformanceFee(pf)).to.be.revertedWith(
-      'Percentage cannot exceed 100%',
-    );
+    await expect(vault.connect(dao).setPerformanceFee(pf)).to.be.revertedWith('Cannot exceed 100%');
   });
 
   it('Should be able to blacklist protocol and pull all funds', async function () {
