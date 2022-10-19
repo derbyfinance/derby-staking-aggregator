@@ -161,23 +161,30 @@ describe('Testing VaultWithdraw, unit test', async () => {
       'ERC20: burn amount exceeds balance',
     );
 
-    // withdrawal request for 10k LP tokens
+    // withdrawal request for 2 x 5k LP tokens
     await expect(() =>
-      vault.connect(user).withdrawalRequest(parseUSDC('10000')),
-    ).to.changeTokenBalance(vault, user, -parseUSDC('10000'));
+      vault.connect(user).withdrawalRequest(parseUSDC('5000')),
+    ).to.changeTokenBalance(vault, user, -parseUSDC('5000'));
+    await expect(() =>
+      vault.connect(user).withdrawalRequest(parseUSDC('5000')),
+    ).to.changeTokenBalance(vault, user, -parseUSDC('5000'));
 
     // check withdrawalAllowance user and totalsupply
     expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC('9000'));
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('0'));
 
     // trying to withdraw allowance before the vault reserved the funds
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith(
-      'Funds not reserved yet',
-    );
+    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('');
 
     // mocking vault settings
     await vault.upRebalancingPeriodTEST();
     await vault.setReservedFundsTEST(parseUSDC('10000'));
+
+    // trying to do another withdrawal request after rebalancing
+    await vault.connect(user).deposit(parseUSDC('5000')); // 10k
+    await expect(vault.connect(user).withdrawalRequest(parseUSDC('5000'))).to.be.revertedWith(
+      'Withdraw allowance first',
+    );
 
     // withdraw allowance should give 9k USDC
     await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(

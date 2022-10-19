@@ -233,9 +233,7 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Only be called by Guardian', async function () {
-    await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith(
-      'Vault: only Guardian',
-    );
+    await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith('only Guardian');
     await expect(game.connect(user).setRebalancingState(vaultNumber, true)).to.be.revertedWith(
       'Game: only Guardian',
     );

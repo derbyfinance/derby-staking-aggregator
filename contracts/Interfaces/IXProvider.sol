@@ -70,4 +70,6 @@ interface IXProvider {
     uint16 _chainId,
     int256[] memory _rewards
   ) external;
+
+  function homeChain() external returns (uint16);
 }

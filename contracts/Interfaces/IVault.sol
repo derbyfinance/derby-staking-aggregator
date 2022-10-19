@@ -20,8 +20,6 @@ interface IVault {
     view
     returns (int256);
 
-  function redeemRewards(address _user, uint256 _amount) external;
-
   function performanceFee() external view returns (uint256);
 
   function getTotalUnderlying() external view returns (uint256);
@@ -41,4 +39,6 @@ interface IVault {
   function toggleVaultOnOff(bool _state) external;
 
   function decimals() external view returns (uint256);
+
+  function redeemRewardsGame(uint256 _amount, address _user) external;
 }

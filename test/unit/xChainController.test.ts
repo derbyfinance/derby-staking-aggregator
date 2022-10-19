@@ -449,9 +449,7 @@ describe('Testing XChainController, unit test', async () => {
     );
 
     // // Should revert if total Underlying is already set
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith(
-      'Vault already rebalancing',
-    );
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith('Rebalancing');
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, goerli)).to.be.equal(
       100_000 * 1e6,

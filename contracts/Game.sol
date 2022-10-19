@@ -52,6 +52,7 @@ contract Game is ERC721, ReentrancyGuard {
   address public governed;
   address public guardian;
   address public xProvider;
+  address public homeVault;
 
   IController public controller;
 
@@ -66,9 +67,6 @@ contract Game is ERC721, ReentrancyGuard {
 
   // last rebalance timeStamp
   uint256 public lastTimeStamp;
-
-  // vault addresses
-  mapping(address => bool) vaultAddresses;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   mapping(uint256 => Basket) private baskets;
@@ -505,8 +503,6 @@ contract Game is ERC721, ReentrancyGuard {
       vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] =
         lastReward +
         _rewards[i];
-
-      // console.log("Game: cumulative rewards %s", uint(vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i]));
     }
   }
 
@@ -524,10 +520,13 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev makes a call to the vault to make the actual transfer because the vault holds the funds.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
-    // int256 amount = baskets[_basketId].totalUnRedeemedRewards;
-    // baskets[_basketId].totalRedeemedRewards += amount;
-    // baskets[_basketId].totalUnRedeemedRewards = 0;
-    // IVault(vaults[baskets[_basketId].vaultNumber]).redeemRewards(msg.sender, uint256(amount));
+    int256 amount = baskets[_basketId].totalUnRedeemedRewards;
+    require(amount > 0, "Nothing to claim");
+
+    baskets[_basketId].totalRedeemedRewards += amount;
+    baskets[_basketId].totalUnRedeemedRewards = 0;
+
+    IVault(homeVault).redeemRewardsGame(uint256(amount), msg.sender);
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
@@ -567,6 +566,12 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _xProvider new address of xProvider on this chain
   function setXProvider(address _xProvider) external onlyDao {
     xProvider = _xProvider;
+  }
+
+  /// @notice Setter for homeVault address
+  /// @param _homeVault new address of xProvider on this chain
+  function setHomeVault(address _homeVault) external onlyDao {
+    homeVault = _homeVault;
   }
 
   /// @notice Guardian function to set state when vault gets stuck for whatever reason
