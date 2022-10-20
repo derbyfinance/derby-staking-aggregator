@@ -58,6 +58,9 @@ contract Vault is ReentrancyGuard {
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
 
+  // total amount of funds the vault reserved for users that made a withdrawalRequest
+  uint256 internal reservedFunds;
+
   // total number of allocated Derby tokens currently
   int256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
