@@ -7,6 +7,8 @@ import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Controller is IController {
+  UniswapParams public uniswapParams;
+
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo; // first index is ETFNumber, second index is protocolNumber
   mapping(uint256 => mapping(uint256 => string)) public protocolNames;
 
@@ -25,11 +27,8 @@ contract Controller is IController {
   address public dao;
   address public game;
   address public curve3Pool;
-  address public uniswapRouter;
-  address public uniswapQuoter;
   address public chainlinkGasPriceOracle;
 
-  uint24 public uniswapPoolFee;
   uint256 public curve3PoolFee = 10; // 0.1% including slippage
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
@@ -44,9 +43,9 @@ contract Controller is IController {
   ) {
     dao = _dao;
     curve3Pool = _curve3Pool;
-    uniswapRouter = _uniswapRouter;
-    uniswapQuoter = _uniswapQuoter;
-    uniswapPoolFee = _poolFee;
+    uniswapParams.router = _uniswapRouter;
+    uniswapParams.quoter = _uniswapQuoter;
+    uniswapParams.poolFee = _poolFee;
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
     underlyingUScale[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = 1E6; // USDC
     underlyingUScale[0x6B175474E89094C44Da98b954EedeAC495271d0F] = 1E18; // DAI
@@ -243,6 +242,28 @@ contract Controller is IController {
     return protocolNumber;
   }
 
+  function getUniswapParams() external view returns (UniswapParams memory) {
+    return uniswapParams;
+  }
+
+  function getUniswapPoolFee() external view returns (uint24) {
+    return uniswapParams.poolFee;
+  }
+
+  function getUniswapQuoter() external view returns (address) {
+    return uniswapParams.quoter;
+  }
+
+  function getCurveParams(address _in, address _out) external view returns (CurveParams memory) {
+    CurveParams memory curveParams;
+    curveParams.indexTokenIn = curveIndex[_in];
+    curveParams.indexTokenOut = curveIndex[_out];
+    curveParams.pool = curve3Pool;
+    curveParams.poolFee = curve3PoolFee;
+
+    return curveParams;
+  }
+
   /// @notice Add protocol and vault to Controller
   /// @param _vault Vault address to whitelist
   function addVault(address _vault) external onlyDao {
@@ -258,19 +279,19 @@ contract Controller is IController {
   /// @notice Set the Uniswap Router address
   /// @param _uniswapRouter New Uniswap Router address
   function setUniswapRouter(address _uniswapRouter) external onlyDao {
-    uniswapRouter = _uniswapRouter;
+    uniswapParams.router = _uniswapRouter;
   }
 
   /// @notice Set the Uniswap Factory address
   /// @param _uniswapQuoter New Uniswap Quoter address
   function setUniswapQuoter(address _uniswapQuoter) external onlyDao {
-    uniswapQuoter = _uniswapQuoter;
+    uniswapParams.quoter = _uniswapQuoter;
   }
 
   /// @notice Set the Uniswap Pool fee
   /// @param _poolFee New Pool fee
   function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
-    uniswapPoolFee = _poolFee;
+    uniswapParams.poolFee = _poolFee;
   }
 
   /// @notice Set the Curve3Pool fee

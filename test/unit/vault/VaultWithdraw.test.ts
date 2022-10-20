@@ -107,7 +107,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     );
   });
 
-  it.skip('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
+  it('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
     await vault.connect(user).deposit(100_000 * 1e6);
 
     await Promise.all([
@@ -150,7 +150,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     expect(await vault.balanceOf(userAddr)).to.be.equal(50_000 * 1e6);
   });
 
-  it.skip('Should set withdrawal request and withdraw the allowance later', async function () {
+  it('Should set withdrawal request and withdraw the allowance later', async function () {
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
 

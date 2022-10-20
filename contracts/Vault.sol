@@ -34,6 +34,7 @@ contract Vault is ReentrancyGuard {
     RebalanceVault,
     SendRewardsPerToken
   }
+
   State public state;
 
   bool public deltaAllocationsReceived;
@@ -265,17 +266,15 @@ contract Vault is ReentrancyGuard {
       (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
       Swap.WETH,
       vaultCurrencyAddr,
-      controller.uniswapQuoter(),
-      controller.uniswapPoolFee()
+      controller.getUniswapQuoter(),
+      controller.getUniswapPoolFee()
     );
 
     uint256 wethReceived = Swap.swapTokensSingle(
       amountEtherToVaultCurrency,
       vaultCurrencyAddr,
       Swap.WETH,
-      controller.uniswapRouter(),
-      controller.uniswapQuoter(),
-      controller.uniswapPoolFee()
+      controller.getUniswapParams()
     );
     Swap.unWrapWETHtoGov(payable(dao), wethReceived);
 
@@ -322,10 +321,7 @@ contract Vault is ReentrancyGuard {
         protocol.underlying,
         uScale,
         controller.underlyingUScale(protocol.underlying),
-        controller.curveIndex(vaultCurrencyAddr),
-        controller.curveIndex(protocol.underlying),
-        controller.curve3Pool(),
-        controller.curve3PoolFee()
+        controller.getCurveParams(vaultCurrencyAddr, protocol.underlying)
       );
     }
 
@@ -359,10 +355,7 @@ contract Vault is ReentrancyGuard {
         vaultCurrencyAddr,
         controller.underlyingUScale(protocol.underlying),
         uScale,
-        controller.curveIndex(protocol.underlying),
-        controller.curveIndex(vaultCurrencyAddr),
-        controller.curve3Pool(),
-        controller.curve3PoolFee()
+        controller.getCurveParams(protocol.underlying, vaultCurrencyAddr)
       );
     }
   }
@@ -425,25 +418,21 @@ contract Vault is ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-  //   uint256 latestID = controller.latestProtocolId(vaultNumber);
-  //   for (uint i = 0; i < latestID; i++) {
-  //     if (currentAllocations[i] == 0) continue;
-  //     bool claim = controller.claim(vaultNumber, i);
-
-  //     if (claim) {
-  //       address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
-  //       uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
-
-  //       Swap.swapTokensMulti(
-  //         tokenBalance,
-  //         govToken,
-  //         vaultCurrencyAddr,
-  //         controller.uniswapRouter(),
-  //         controller.uniswapQuoter(),
-  //         controller.uniswapPoolFee()
-  //       );
-  //     }
-  //   }
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
+      if (currentAllocations[i] == 0) continue;
+      bool claim = controller.claim(vaultNumber, i);
+      if (claim) {
+        address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
+        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+        Swap.swapTokensMulti(
+          tokenBalance,
+          govToken,
+          vaultCurrencyAddr,
+          controller.getUniswapParams()
+        );
+      }
+    }
   }
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.

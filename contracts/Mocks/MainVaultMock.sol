@@ -64,26 +64,6 @@ contract MainVaultMock is MainVault {
     return lastPrices[_protocolId];
   }
 
-  function getMarginScale() external view returns (int256) {
-    return marginScale;
-  }
-
-  function getLiquidityPerc() external view returns (uint256) {
-    return liquidityPerc;
-  }
-
-  function getPerformanceFee() external view returns (uint256) {
-    return performanceFee;
-  }
-
-  function getGame() external view returns (address) {
-    return game;
-  }
-
-  function getvaultNumber() external view returns (uint256) {
-    return vaultNumber;
-  }
-
   function balanceSharesTEST(uint256 _protocolNum, address _address)
     external
     view
@@ -137,15 +117,7 @@ contract MainVaultMock is MainVault {
     address _tokenIn,
     address _tokenOut
   ) external returns (uint256) {
-    return
-      Swap.swapTokensMulti(
-        _amount,
-        _tokenIn,
-        _tokenOut,
-        controller.uniswapRouter(),
-        controller.uniswapQuoter(),
-        controller.uniswapPoolFee()
-      );
+    return Swap.swapTokensMulti(_amount, _tokenIn, _tokenOut, controller.getUniswapParams());
   }
 
   function swapTokensSingle(
@@ -153,15 +125,7 @@ contract MainVaultMock is MainVault {
     address _tokenIn,
     address _tokenOut
   ) external returns (uint256) {
-    return
-      Swap.swapTokensSingle(
-        _amount,
-        _tokenIn,
-        _tokenOut,
-        controller.uniswapRouter(),
-        controller.uniswapQuoter(),
-        controller.uniswapPoolFee()
-      );
+    return Swap.swapTokensSingle(_amount, _tokenIn, _tokenOut, controller.getUniswapParams());
   }
 
   function swapMinAmountOutMultiTest(
@@ -173,8 +137,8 @@ contract MainVaultMock is MainVault {
       _amount,
       _tokenIn,
       _tokenOut,
-      controller.uniswapQuoter(),
-      controller.uniswapPoolFee()
+      controller.getUniswapQuoter(),
+      controller.getUniswapPoolFee()
     );
 
     emit MinAmountOut(minAmountOut);
@@ -191,10 +155,7 @@ contract MainVaultMock is MainVault {
       _tokenOut,
       uScale,
       1000000000000000000,
-      controller.curveIndex(_tokenIn),
-      controller.curveIndex(_tokenOut),
-      controller.curve3Pool(),
-      controller.curve3PoolFee()
+      controller.getCurveParams(_tokenIn, _tokenOut)
     );
   }
 

@@ -92,17 +92,17 @@ describe('Testing Vault, unit test', async () => {
     const ms = Math.floor(Math.random() * 1e10);
     await vault.connect(dao).setMarginScale(ms);
 
-    expect(await vault.getMarginScale()).to.be.equal(ms);
+    expect(await vault.marginScale()).to.be.equal(ms);
 
     const lp = Math.floor(Math.random() * 100);
     await vault.connect(dao).setLiquidityPerc(lp);
 
-    expect(await vault.getLiquidityPerc()).to.be.equal(lp);
+    expect(await vault.liquidityPerc()).to.be.equal(lp);
 
     const pf = Math.floor(Math.random() * 100);
     await vault.connect(dao).setPerformanceFee(pf);
 
-    expect(await vault.getPerformanceFee()).to.be.equal(pf);
+    expect(await vault.performanceFee()).to.be.equal(pf);
   });
 
   it('Should not be able to set the liquidityPerc or performanceFee higher than 100%', async function () {
@@ -269,13 +269,5 @@ describe.skip('Testing Vault, unit test, mock providers', async () => {
     await vault.connect(game).deposit(amountUSDC);
     await vault.setVaultState(3);
     await rebalanceETF(vault);
-
-    let compoundHistoricalPrice = await vault.historicalPrices(1, compoundVault.number);
-    let aaveHistoricalPrice = await vault.historicalPrices(1, aaveVault.number);
-    let yearnHistoricalPrice = await vault.historicalPrices(1, yearnVault.number);
-
-    expect(compoundPrice).to.be.equal(compoundHistoricalPrice);
-    expect(aavePrice).to.be.equal(aaveHistoricalPrice);
-    expect(yearnPrice).to.be.equal(yearnHistoricalPrice);
   });
 });

@@ -179,9 +179,7 @@ contract MainVault is Vault, VaultToken {
         value,
         vaultCurrencyAddr,
         derbyToken,
-        controller.uniswapRouter(),
-        controller.uniswapQuoter(),
-        controller.uniswapPoolFee()
+        controller.getUniswapParams()
       );
       IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
     } else {
