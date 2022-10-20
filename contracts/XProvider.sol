@@ -492,7 +492,7 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   /// @notice Setter for dao address
-  function setDao(address _dao) external onlyDao {
+  function setDaoAddress(address _dao) external onlyDao {
     dao = _dao;
   }
 }

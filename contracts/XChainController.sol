@@ -592,4 +592,10 @@ contract XChainController {
   {
     vaultStage[_vaultNumber].underlyingReceived = _underlyingReceived;
   }
+
+  /// @notice Setter for DAO address
+  /// @param _dao DAO address
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
+  }
 }

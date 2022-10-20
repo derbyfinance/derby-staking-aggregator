@@ -13,7 +13,7 @@ contract MainVaultMock is MainVault {
     string memory _symbol,
     uint8 _decimals,
     uint256 _vaultNumber,
-    address _governed,
+    address _dao,
     address _guardian,
     address _Game,
     address _controller,
@@ -26,7 +26,7 @@ contract MainVaultMock is MainVault {
       _symbol,
       _decimals,
       _vaultNumber,
-      _governed,
+      _dao,
       _guardian,
       _Game,
       _controller,
@@ -125,7 +125,7 @@ contract MainVaultMock is MainVault {
   }
 
   function clearCurrencyBalance(uint256 _balance) external {
-    vaultCurrency.transfer(governed, _balance);
+    vaultCurrency.transfer(dao, _balance);
   }
 
   function toggleVaultOnOffTEST(bool _state) external {

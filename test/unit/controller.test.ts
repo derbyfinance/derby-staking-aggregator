@@ -263,4 +263,9 @@ describe.skip('Testing controller', async () => {
     );
     expect(await controller.connect(vaultSigner).calcShares(ETFnumber, 2, 0)).to.be.equal(aaveMock);
   });
+
+  it('Should correctly set dao address', async function () {
+    await controller.connect(dao).setDaoAddress(userAddr);
+    expect(await controller.dao()).to.be.equal(userAddr);
+  });
 });

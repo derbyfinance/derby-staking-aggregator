@@ -277,14 +277,14 @@ export const deployGame = (
   deployerSign: Signer,
   DerbyTokenAddress: string,
   routerAddress: string,
-  governedAddress: string,
+  daoAddress: string,
   guardianAddress: string,
   controllerAddress: string,
 ): Promise<Game> => {
   return deployContract(deployerSign, GameArtifact, [
     DerbyTokenAddress,
     routerAddress,
-    governedAddress,
+    daoAddress,
     guardianAddress,
     controllerAddress,
   ]) as Promise<Game>;
@@ -296,7 +296,7 @@ export const deployGameMock = (
   symbol: string,
   DerbyTokenAddress: string,
   routerAddress: string,
-  governedAddress: string,
+  daoAddress: string,
   guardianAddress: string,
   controllerAddress: string,
 ): Promise<GameMock> => {
@@ -305,7 +305,7 @@ export const deployGameMock = (
     symbol,
     DerbyTokenAddress,
     routerAddress,
-    governedAddress,
+    daoAddress,
     guardianAddress,
     controllerAddress,
   ]) as Promise<GameMock>;

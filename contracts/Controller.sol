@@ -337,4 +337,10 @@ contract Controller is IController {
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
+
+  /// @notice Setter for DAO address
+  /// @param _dao DAO address
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
+  }
 }

@@ -570,4 +570,9 @@ describe('Testing XChainController, unit test', async () => {
     expect(await vault3.deltaAllocationsReceived()).to.be.true;
     expect(await vault4.deltaAllocationsReceived()).to.be.true;
   });
+
+  it('Should correctly set dao address', async function () {
+    await xChainController.connect(dao).setDaoAddress(userAddr);
+    expect(await xChainController.dao()).to.be.equal(userAddr);
+  });
 });
