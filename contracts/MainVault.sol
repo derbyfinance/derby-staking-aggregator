@@ -300,10 +300,6 @@ contract MainVault is Vault, VaultToken {
     return withdrawalAllowance[msg.sender];
   }
 
-  function getVaultBalance() public view override returns (uint256) {
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
-  }
-
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
   function setHomeXProviderAddress(address _xProvider) external onlyDao {

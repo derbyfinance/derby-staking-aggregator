@@ -508,8 +508,8 @@ contract Vault is ReentrancyGuard {
     rebalanceInterval = _timestampInternal;
   }
 
-  function getVaultBalance() public view virtual returns (uint256) {
-    return vaultCurrency.balanceOf(address(this));
+  function getVaultBalance() public view returns (uint256) {
+    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
