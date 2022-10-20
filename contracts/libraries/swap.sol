@@ -4,6 +4,8 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "../Interfaces/IController.sol";
+
 import "../Interfaces/ExternalInterfaces/ISwapRouter.sol";
 import "../Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
 import "../Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
@@ -25,28 +27,27 @@ library Swap {
   /// @param _tokenOut Token to receive
   /// @param _tokenInUScale Scale of tokenIn e.g 1E6
   /// @param _tokenOutUScale Scale of tokenOut e.g 1E6
-  /// @param _indexTokenIn Curve pool index number of TokenIn address
-  /// @param _indexTokenOut Curve pool index number of TokenOut address
-  /// @param _curve3Pool Curve pool address
-  /// @param _curvePoolFee Curve pool fee, in basis points, set in Router. 0.05% = 5
+  /// @param _curve Curve pool index number of TokenIn address, tokenOut address, pool address and pool fee
   function swapStableCoins(
     uint256 _amount,
     address _tokenIn,
     address _tokenOut,
     uint256 _tokenInUScale,
     uint256 _tokenOutUScale,
-    int128 _indexTokenIn,
-    int128 _indexTokenOut,
-    address _curve3Pool,
-    uint256 _curvePoolFee
+    IController.CurveParams memory _curve
   ) internal returns (uint256) {
-    uint256 amountOutMin = (((_amount * (10000 - _curvePoolFee)) / 10000) * _tokenOutUScale) /
+    uint256 amountOutMin = (((_amount * (10000 - _curve.poolFee)) / 10000) * _tokenOutUScale) /
       _tokenInUScale;
-    IERC20(_tokenIn).safeIncreaseAllowance(_curve3Pool, _amount);
+    IERC20(_tokenIn).safeIncreaseAllowance(_curve.pool, _amount);
 
     uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
 
-    IStableSwap3Pool(_curve3Pool).exchange(_indexTokenIn, _indexTokenOut, _amount, amountOutMin);
+    IStableSwap3Pool(_curve.pool).exchange(
+      _curve.indexTokenIn,
+      _curve.indexTokenOut,
+      _amount,
+      amountOutMin
+    );
 
     uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
 
@@ -57,66 +58,62 @@ library Swap {
   /// @param _amount Number of tokens to sell
   /// @param _tokenIn Token to sell
   /// @param _tokenOut Token to receive
-  /// @param _uniswapRouter Address of uniswapRouter
-  /// @param _uniswapQuoter Address of uniswapQuoter
-  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
+  /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee
   /// @return Amountout Number of tokens received
   function swapTokensMulti(
     uint256 _amount,
     address _tokenIn,
     address _tokenOut,
-    address _uniswapRouter,
-    address _uniswapQuoter,
-    uint24 _poolFee
+    IController.UniswapParams memory _uniswap
   ) internal returns (uint256) {
-    IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
+    IERC20(_tokenIn).safeIncreaseAllowance(_uniswap.router, _amount);
 
-    uint256 amountOutMinimum = IQuoter(_uniswapQuoter).quoteExactInput(
-      abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
+    uint256 amountOutMinimum = IQuoter(_uniswap.quoter).quoteExactInput(
+      abi.encodePacked(_tokenIn, _uniswap.poolFee, WETH, _uniswap.poolFee, _tokenOut),
       _amount
     );
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-      path: abi.encodePacked(_tokenIn, _poolFee, WETH, _poolFee, _tokenOut),
+      path: abi.encodePacked(_tokenIn, _uniswap.poolFee, WETH, _uniswap.poolFee, _tokenOut),
       recipient: address(this),
       deadline: block.timestamp,
       amountIn: _amount,
       amountOutMinimum: amountOutMinimum
     });
 
-    return ISwapRouter(_uniswapRouter).exactInput(params);
+    uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
+    ISwapRouter(_uniswap.router).exactInput(params);
+    uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+
+    return balanceAfter - balanceBefore;
   }
 
   /// @notice Swap tokens on Uniswap
   /// @param _amount Number of tokens to sell
   /// @param _tokenIn Token to sell
   /// @param _tokenOut Token to receive
-  /// @param _uniswapRouter Address of uniswapRouter
-  /// @param _uniswapQuoter Address of uniswapQuoter
-  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
+  /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee
   /// @return Amountout Number of tokens received
   function swapTokensSingle(
     uint256 _amount,
     address _tokenIn,
     address _tokenOut,
-    address _uniswapRouter,
-    address _uniswapQuoter,
-    uint24 _poolFee
+    IController.UniswapParams memory _uniswap
   ) internal returns (uint256) {
-    IERC20(_tokenIn).safeIncreaseAllowance(_uniswapRouter, _amount);
+    IERC20(_tokenIn).safeIncreaseAllowance(_uniswap.router, _amount);
 
     uint256 amountOutMinimum = amountOutSingleSwap(
       _amount,
       _tokenIn,
       _tokenOut,
-      _uniswapQuoter,
-      _poolFee
+      _uniswap.quoter,
+      _uniswap.poolFee
     );
 
     ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
       tokenIn: _tokenIn,
       tokenOut: _tokenOut,
-      fee: _poolFee,
+      fee: _uniswap.poolFee,
       recipient: address(this),
       deadline: block.timestamp,
       amountIn: _amount,
@@ -125,7 +122,7 @@ library Swap {
     });
 
     // The call to `exactInputSingle` executes the swap.
-    return ISwapRouter(_uniswapRouter).exactInputSingle(params);
+    return ISwapRouter(_uniswap.router).exactInputSingle(params);
   }
 
   /// @notice Swap tokens on Uniswap

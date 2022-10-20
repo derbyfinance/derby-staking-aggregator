@@ -10,6 +10,19 @@ interface IController {
     uint256 uScale; // uScale of protocol LP Token
   }
 
+  struct UniswapParams {
+    address router;
+    address quoter;
+    uint24 poolFee;
+  }
+
+  struct CurveParams {
+    int128 indexTokenIn;
+    int128 indexTokenOut;
+    address pool;
+    uint256 poolFee;
+  }
+
   function deposit(
     uint256 _ETFnumber,
     uint256 protocolNumber,
@@ -58,12 +71,6 @@ interface IController {
 
   function curve3Pool() external view returns (address);
 
-  function uniswapRouter() external view returns (address);
-
-  function uniswapQuoter() external view returns (address);
-
-  function uniswapPoolFee() external view returns (uint24);
-
   function curve3PoolFee() external view returns (uint256);
 
   function curveIndex(address _token) external view returns (int128);
@@ -72,6 +79,10 @@ interface IController {
     external
     view
     returns (ProtocolInfoS memory);
+
+  function getUniswapParams() external view returns (UniswapParams memory);
+
+  function getCurveParams(address _in, address _out) external view returns (CurveParams memory);
 
   function latestProtocolId(uint256 _ETFnumber) external view returns (uint256);
 
@@ -86,6 +97,10 @@ interface IController {
   function setUniswapQuoter(address _uniswapQuoter) external;
 
   function setUniswapPoolFee(uint24 _poolFee) external;
+
+  function getUniswapPoolFee() external view returns (uint24);
+
+  function getUniswapQuoter() external view returns (address);
 
   function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
     external

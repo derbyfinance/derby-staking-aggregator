@@ -9,6 +9,7 @@ contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
   address public guardian;
+  address public derbyToken;
   bool public vaultOff;
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
@@ -158,7 +159,8 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant returns (uint256 value) {
+  /// @param _swap if true will swap the vaultCurrency to Derby tokens
+  function withdrawAllowance(bool _swap) external nonReentrant returns (uint256 value) {
     require(state == State.Idle, "Rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender]);
@@ -171,7 +173,17 @@ contract MainVault is Vault, VaultToken {
     delete withdrawalAllowance[msg.sender];
     delete withdrawalRequestPeriod[msg.sender];
 
-    vaultCurrency.safeTransfer(msg.sender, value);
+    if (_swap) {
+      uint256 tokensReceived = Swap.swapTokensMulti(
+        value,
+        vaultCurrencyAddr,
+        derbyToken,
+        controller.getUniswapParams()
+      );
+      IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
+    } else {
+      vaultCurrency.safeTransfer(msg.sender, value);
+    }
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
@@ -321,6 +333,12 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter for new homeChain Id
   function setChainIds(uint16 _homeChain) external onlyDao {
     homeChain = _homeChain;
+  }
+
+  /// @notice Setter for derby token address
+  /// @param _token New address of the derby token
+  function setDaoToken(address _token) external onlyDao {
+    derbyToken = _token;
   }
 
   /// @notice Step 3: Guardian function
