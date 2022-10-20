@@ -161,6 +161,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
+  /// @param _swap if true will swap the vaultCurrency to Derby tokens
   function withdrawAllowance(bool _swap) external nonReentrant returns (uint256 value) {
     require(state == State.Idle, "Rebalancing");
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
