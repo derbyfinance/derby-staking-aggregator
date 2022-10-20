@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Signer, Contract } from 'ethers';
 
 import type { Controller, MainVaultMock } from '@typechain';
-import { erc20, getUSDCSigner, parseUSDC } from '@testhelp/helpers';
+import { erc20, formatEther, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
@@ -13,6 +13,7 @@ import { vaultInfo } from '@testhelp/vaultHelpers';
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
 describe('Testing VaultWithdraw, unit test', async () => {
   let vault: MainVaultMock,
@@ -106,7 +107,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     );
   });
 
-  it('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
+  it.skip('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
     await vault.connect(user).deposit(100_000 * 1e6);
 
     await Promise.all([
@@ -149,7 +150,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     expect(await vault.balanceOf(userAddr)).to.be.equal(50_000 * 1e6);
   });
 
-  it('Should set withdrawal request and withdraw the allowance later', async function () {
+  it.skip('Should set withdrawal request and withdraw the allowance later', async function () {
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
 
@@ -174,7 +175,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('0'));
 
     // trying to withdraw allowance before the vault reserved the funds
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('');
+    await expect(vault.connect(user).withdrawAllowance(false)).to.be.revertedWith('');
 
     // mocking vault settings
     await vault.upRebalancingPeriodTEST();
@@ -187,13 +188,36 @@ describe('Testing VaultWithdraw, unit test', async () => {
     );
 
     // withdraw allowance should give 9k USDC
-    await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdrawAllowance(false)).to.changeTokenBalance(
       IUSDc,
       user,
       parseUSDC('9000'),
     );
 
     // trying to withdraw allowance again
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('No allowance');
+    await expect(vault.connect(user).withdrawAllowance(false)).to.be.revertedWith('No allowance');
+  });
+
+  it('Should swap rewards to UNI tokens', async function () {
+    const IUniswap = erc20(uniswapToken);
+
+    await Promise.all([vault.setDaoToken(uniswapToken), vault.setExchangeRateTEST(parseUSDC('1'))]);
+
+    await vault.connect(user).deposit(parseUSDC('10000')); // 10k
+
+    await expect(() =>
+      vault.connect(user).withdrawalRequest(parseUSDC('10000')),
+    ).to.changeTokenBalance(vault, user, -parseUSDC('10000'));
+
+    await Promise.all([
+      vault.upRebalancingPeriodTEST(),
+      vault.setReservedFundsTEST(parseUSDC('10000')),
+    ]);
+
+    // Uniswap token is about $8, so should receive atleast 10_000 / 8 = 1250
+    await vault.connect(user).withdrawAllowance(true);
+    const balance = formatEther(await IUniswap.balanceOf(userAddr));
+
+    expect(Number(balance)).to.be.greaterThan(1250);
   });
 });

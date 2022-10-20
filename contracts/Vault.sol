@@ -425,25 +425,25 @@ contract Vault is ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    uint256 latestID = controller.latestProtocolId(vaultNumber);
-    for (uint i = 0; i < latestID; i++) {
-      if (currentAllocations[i] == 0) continue;
-      bool claim = controller.claim(vaultNumber, i);
+  //   uint256 latestID = controller.latestProtocolId(vaultNumber);
+  //   for (uint i = 0; i < latestID; i++) {
+  //     if (currentAllocations[i] == 0) continue;
+  //     bool claim = controller.claim(vaultNumber, i);
 
-      if (claim) {
-        address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
-        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+  //     if (claim) {
+  //       address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
+  //       uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
 
-        Swap.swapTokensMulti(
-          tokenBalance,
-          govToken,
-          vaultCurrencyAddr,
-          controller.uniswapRouter(),
-          controller.uniswapQuoter(),
-          controller.uniswapPoolFee()
-        );
-      }
-    }
+  //       Swap.swapTokensMulti(
+  //         tokenBalance,
+  //         govToken,
+  //         vaultCurrencyAddr,
+  //         controller.uniswapRouter(),
+  //         controller.uniswapQuoter(),
+  //         controller.uniswapPoolFee()
+  //       );
+  //     }
+  //   }
   }
 
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.

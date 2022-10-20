@@ -84,7 +84,11 @@ library Swap {
       amountOutMinimum: amountOutMinimum
     });
 
-    return ISwapRouter(_uniswapRouter).exactInput(params);
+    uint256 balanceBefore = IERC20(_tokenOut).balanceOf(address(this));
+    ISwapRouter(_uniswapRouter).exactInput(params);
+    uint256 balanceAfter = IERC20(_tokenOut).balanceOf(address(this));
+
+    return balanceAfter - balanceBefore;
   }
 
   /// @notice Swap tokens on Uniswap
