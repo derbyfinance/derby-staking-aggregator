@@ -25,8 +25,6 @@ contract MainVault is Vault, VaultToken {
   mapping(address => uint256) internal withdrawalAllowance;
   // rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
-  // exchangerate of the vault for a given rebalancingPeriod
-  mapping(uint256 => uint256) public exchangeRatePerPeriod;
 
   constructor(
     string memory _name,
