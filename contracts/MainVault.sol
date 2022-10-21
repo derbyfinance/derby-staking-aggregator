@@ -15,8 +15,6 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-  // total amount of funds the vault reserved for users that made a withdrawalRequest
-  uint256 internal reservedFunds;
 
   uint256 public exchangeRate;
   uint16 public homeChain;
@@ -312,10 +310,6 @@ contract MainVault is Vault, VaultToken {
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
   function getWithdrawalAllowance() external view returns (uint256) {
     return withdrawalAllowance[msg.sender];
-  }
-
-  function getVaultBalance() public view override returns (uint256) {
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
   }
 
   /// @notice Setter for xProvider address
