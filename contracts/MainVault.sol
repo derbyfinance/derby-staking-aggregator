@@ -60,6 +60,11 @@ contract MainVault is Vault, VaultToken {
     _;
   }
 
+  modifier onlyWhenIdle() {
+    require(state == State.Idle, "Rebalancing");
+    _;
+  }
+
   modifier onlyGuardian() {
     require(msg.sender == guardian, "only Guardian");
     _;
@@ -144,8 +149,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
-  function withdrawAllowance() external nonReentrant returns (uint256 value) {
-    require(state == State.Idle, "Rebalancing");
+  function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender]);
 
@@ -170,7 +174,7 @@ contract MainVault is Vault, VaultToken {
     onlyWhenVaultIsOn
   {
     require(rewardAllowance[_user] == 0);
-    // return setWithdrawalRequest(_value, _user);
+
     rewardAllowance[_user] = _value;
     rewardRequestPeriod[_user] = rebalancingPeriod;
     totalWithdrawalRequests += _value;
@@ -178,8 +182,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
-  function withdrawRewards() external nonReentrant returns (uint256 value) {
-    require(state == State.Idle, "Rebalancing");
+  function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
     require(rewardAllowance[msg.sender] > 0, "No allowance");
     require(rebalancingPeriod > rewardRequestPeriod[msg.sender]);
 
@@ -202,9 +205,8 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
-  function pushTotalUnderlyingToController() external {
+  function pushTotalUnderlyingToController() external onlyWhenIdle {
     require(rebalanceNeeded(), "No rebalance needed");
-    require(state == State.Idle, "Rebalancing");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance();

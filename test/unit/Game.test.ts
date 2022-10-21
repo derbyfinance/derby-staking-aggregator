@@ -354,11 +354,12 @@ describe('Testing Game', async () => {
     await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(2_120_000)]);
     expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
 
-    // Uniswap token is about $8, so should receive atleast 2,120000 / 8 = 0.3
+    // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
     await vault.connect(user).withdrawRewards();
     const balance = formatEther(await IUniswap.balanceOf(userAddr));
     expect(Number(balance)).to.be.greaterThan(0.3);
 
+    // Trying to withdraw again, should revert
     await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('No allowance');
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
