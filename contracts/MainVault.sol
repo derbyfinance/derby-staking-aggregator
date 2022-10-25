@@ -151,7 +151,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     require(withdrawalAllowance[msg.sender] > 0, "No allowance");
-    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender]);
+    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not arrived");
 
     value = withdrawalAllowance[msg.sender];
 
@@ -173,7 +173,7 @@ contract MainVault is Vault, VaultToken {
     nonReentrant
     onlyWhenVaultIsOn
   {
-    require(rewardAllowance[_user] == 0);
+    require(rewardAllowance[_user] == 0, "No allowance");
 
     rewardAllowance[_user] = _value;
     rewardRequestPeriod[_user] = rebalancingPeriod;
@@ -184,7 +184,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
   function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
     require(rewardAllowance[msg.sender] > 0, "No allowance");
-    require(rebalancingPeriod > rewardRequestPeriod[msg.sender]);
+    require(rebalancingPeriod > rewardRequestPeriod[msg.sender], "Funds not arrived");
 
     value = rewardAllowance[msg.sender];
 
