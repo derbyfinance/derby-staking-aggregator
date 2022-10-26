@@ -117,7 +117,11 @@ contract MainVaultMock is MainVault {
     address _tokenIn,
     address _tokenOut
   ) external returns (uint256) {
-    return Swap.swapTokensMulti(_amount, _tokenIn, _tokenOut, controller.getUniswapParams());
+    return
+      Swap.swapTokensMulti(
+        Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
+        controller.getUniswapParams()
+      );
   }
 
   function swapTokensSingle(
@@ -125,7 +129,11 @@ contract MainVaultMock is MainVault {
     address _tokenIn,
     address _tokenOut
   ) external returns (uint256) {
-    return Swap.swapTokensSingle(_amount, _tokenIn, _tokenOut, controller.getUniswapParams());
+    return
+      Swap.swapTokensSingle(
+        Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
+        controller.getUniswapParams()
+      );
   }
 
   function swapMinAmountOutMultiTest(
@@ -134,9 +142,7 @@ contract MainVaultMock is MainVault {
     address _tokenOut
   ) external {
     uint256 minAmountOut = Swap.amountOutMultiSwap(
-      _amount,
-      _tokenIn,
-      _tokenOut,
+      Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
       controller.getUniswapQuoter(),
       controller.getUniswapPoolFee()
     );
@@ -150,9 +156,7 @@ contract MainVaultMock is MainVault {
     address _tokenOut
   ) external {
     Swap.swapStableCoins(
-      _amount,
-      _tokenIn,
-      _tokenOut,
+      Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
       uScale,
       1000000000000000000,
       controller.getCurveParams(_tokenIn, _tokenOut)
