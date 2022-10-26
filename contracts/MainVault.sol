@@ -24,6 +24,10 @@ contract MainVault is Vault, VaultToken {
   mapping(address => uint256) internal withdrawalAllowance;
   // rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
+  // amount in vaultCurrency the vault owes to the user
+  mapping(address => uint256) internal rewardAllowance;
+  // rebalancing period the withdrawal request is made
+  mapping(address => uint256) internal rewardRequestPeriod;
 
   constructor(
     string memory _name,
@@ -53,6 +57,11 @@ contract MainVault is Vault, VaultToken {
   modifier onlyWhenVaultIsOn() {
     require(state == State.Idle, "Rebalancing");
     require(!vaultOff, "Vault is off");
+    _;
+  }
+
+  modifier onlyWhenIdle() {
+    require(state == State.Idle, "Rebalancing");
     _;
   }
 
@@ -121,26 +130,38 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
-  function withdrawalRequest(uint256 _amount) external nonReentrant onlyWhenVaultIsOn {
-    uint256 value = (_amount * exchangeRate) / (10**decimals());
+  function withdrawalRequest(uint256 _amount)
+    external
+    nonReentrant
+    onlyWhenVaultIsOn
+    returns (uint256 value)
+  {
+    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
+
+    value = (_amount * exchangeRate) / (10**decimals());
+
     _burn(msg.sender, _amount);
 
-    return setWithdrawalRequest(value, msg.sender);
+    withdrawalAllowance[msg.sender] = value;
+    withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
+    totalWithdrawalRequests += value;
   }
 
-  /// @notice Withdrawal request for when the vault doesnt have enough funds available
-  /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _value Amount to set a request in vaultCurrency
-  /// @param _user Address of the user
-  function setWithdrawalRequest(uint256 _value, address _user) internal {
-    require(
-      withdrawalRequestPeriod[_user] == 0 || withdrawalRequestPeriod[_user] == rebalancingPeriod,
-      "Withdraw allowance first"
-    );
+  /// @notice Withdraw the allowance the user requested on the last rebalancing period
+  /// @dev Will send the user funds and reset the allowance
+  function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
+    require(withdrawalAllowance[msg.sender] > 0, "No allowance");
+    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not arrived");
 
-    withdrawalAllowance[_user] += _value;
-    withdrawalRequestPeriod[_user] = rebalancingPeriod;
-    totalWithdrawalRequests += _value;
+    value = withdrawalAllowance[msg.sender];
+
+    require(vaultCurrency.balanceOf(address(this)) >= value, "No funds");
+
+    reservedFunds -= value;
+    delete withdrawalAllowance[msg.sender];
+    delete withdrawalRequestPeriod[msg.sender];
+
+    vaultCurrency.safeTransfer(msg.sender, value);
   }
 
   /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
@@ -152,41 +173,38 @@ contract MainVault is Vault, VaultToken {
     nonReentrant
     onlyWhenVaultIsOn
   {
-    return setWithdrawalRequest(_value, _user);
+    require(rewardAllowance[_user] == 0, "No allowance");
+
+    rewardAllowance[_user] = _value;
+    rewardRequestPeriod[_user] = rebalancingPeriod;
+    totalWithdrawalRequests += _value;
   }
 
-  /// @notice Withdraw the allowance the user requested on the last rebalancing period
-  /// @dev Will send the user funds and reset the allowance
-  /// @param _swap if true will swap the vaultCurrency to Derby tokens
-  function withdrawAllowance(bool _swap) external nonReentrant returns (uint256 value) {
-    require(state == State.Idle, "Rebalancing");
-    require(withdrawalAllowance[msg.sender] > 0, "No allowance");
-    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender]);
+  /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
+  /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
+  function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
+    require(rewardAllowance[msg.sender] > 0, "No allowance");
+    require(rebalancingPeriod > rewardRequestPeriod[msg.sender], "Funds not arrived");
 
-    value = withdrawalAllowance[msg.sender];
+    value = rewardAllowance[msg.sender];
 
     require(vaultCurrency.balanceOf(address(this)) >= value, "No funds");
 
     reservedFunds -= value;
-    delete withdrawalAllowance[msg.sender];
-    delete withdrawalRequestPeriod[msg.sender];
+    delete rewardAllowance[msg.sender];
+    delete rewardRequestPeriod[msg.sender];
 
-    if (_swap) {
-      uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, vaultCurrencyAddr, derbyToken),
-        controller.getUniswapParams()
-      );
-      IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
-    } else {
-      vaultCurrency.safeTransfer(msg.sender, value);
-    }
+    uint256 tokensReceived = Swap.swapTokensMulti(
+      Swap.SwapInOut(value, vaultCurrencyAddr, derbyToken),
+      controller.getUniswapParams()
+    );
+    IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
-  function pushTotalUnderlyingToController() external {
+  function pushTotalUnderlyingToController() external onlyWhenIdle {
     require(rebalanceNeeded(), "No rebalance needed");
-    require(state == State.Idle, "Rebalancing");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance();

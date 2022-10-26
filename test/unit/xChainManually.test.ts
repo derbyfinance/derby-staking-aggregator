@@ -427,9 +427,7 @@ describe('Testing XChainController, unit test', async () => {
     await vault1.connect(dao).setRebalanceInterval(100_000);
     await game.connect(dao).setRebalanceInterval(100_000);
 
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith(
-      'No rebalance needed',
-    );
+    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith('Rebalancing');
     await expect(game.pushAllocationsToController(vaultNumber)).to.be.revertedWith(
       'No rebalance needed',
     );

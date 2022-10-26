@@ -1,5 +1,5 @@
 import { ethers, waffle } from 'hardhat';
-const { deployContract, link } = waffle;
+const { deployContract } = waffle;
 import { Signer, BigNumber } from 'ethers';
 import type {
   YearnProvider,

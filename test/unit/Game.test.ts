@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract } from 'ethers';
-import { erc20, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
+import { erc20, formatEther, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
 import type {
   Controller,
   GameMock,
@@ -32,6 +32,7 @@ const amount = 100000;
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther((1e8).toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
+const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
 describe('Testing Game', async () => {
   let vault: MainVaultMock,
@@ -334,42 +335,39 @@ describe('Testing Game', async () => {
     expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
   });
 
-  it('Should be able to redeem funds via vault function', async function () {
+  it('Should be able to redeem rewards / set rewardAllowance', async function () {
     await game.redeemRewards(basketNum);
     await expect(game.redeemRewards(basketNum)).to.be.revertedWith('Nothing to claim');
 
-    expect(await vault.getWithdrawalAllowanceTEST(userAddr)).to.be.equal(2_120_000);
+    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
+    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
+  });
 
-    // Mock upping the rebalancingPeriod
-    await vault.upRebalancingPeriodTEST();
+  it('Should redeem and swap rewards to UNI tokens', async function () {
+    const IUniswap = erc20(uniswapToken);
 
-    await vault.connect(user).deposit(10_000);
-    await expect(vault.connect(user).withdrawalRequest(5_000)).to.be.revertedWith(
-      'Withdraw allowance first',
-    );
+    await Promise.all([vault.setDaoToken(uniswapToken), vault.setExchangeRateTEST(parseUSDC('1'))]);
+
+    // Deposit so the vault has funds
+    await vault.connect(user).deposit(parseUSDC('10000')); // 10k
+
+    await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(2_120_000)]);
+    expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
+
+    // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
+    await vault.connect(user).withdrawRewards();
+    const balance = formatEther(await IUniswap.balanceOf(userAddr));
+    expect(Number(balance)).to.be.greaterThan(0.3);
+
+    // Trying to withdraw again, should revert
+    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('No allowance');
+
+    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
+    expect(await vault.getReservedFundsTEST()).to.be.equal(0);
   });
 
   it('Should correctly set dao address', async function () {
     await game.connect(dao).setDaoAddress(userAddr);
     expect(await game.dao()).to.be.equal(userAddr);
   });
-
-  // it.skip("Should be able to redeem funds via game", async function() {
-  //   let rewards = await generateUnredeemedRewards();
-  //   let unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
-  //   let userBalanceBefore = await IUSDc.balanceOf(userAddr);
-
-  //   await gameMock.redeemRewards(0);
-
-  //   let userBalanceAfter = await IUSDc.balanceOf(userAddr);
-
-  //   expect(unredeemedRewards).to.be.equal(rewards);
-  //   expect(rewards).to.be.equal(userBalanceAfter.sub(userBalanceBefore));
-
-  //   let redeemedRewards = await gameMock.basketRedeemedRewards(0);
-  //   unredeemedRewards = await gameMock.basketUnredeemedRewards(0);
-
-  //   expect(unredeemedRewards).to.be.equal(0);
-  //   expect(redeemedRewards).to.be.equal(rewards);
-  // });
 });
