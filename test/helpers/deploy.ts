@@ -40,7 +40,7 @@ import CompoundProviderMockArtifact from '@artifacts/Mocks/CompoundProviderMock.
 import AaveProviderArtifact from '@artifacts/Providers/AaveProvider.sol/AaveProvider.json';
 import VaultArtifact from '@artifacts/Vault.sol/Vault.json';
 import TokenTimelockArtifact from '@artifacts/TokenTimelock.sol/TokenTimelock.json';
-import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
+// import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
 import IGovernedArtifact from '@artifacts/Interfaces/IGoverned.sol/IGoverned.json';
 import DerbyTokenArtifact from '@artifacts/DerbyToken.sol/DerbyToken.json';
 import GameArtifact from '@artifacts/Game.sol/Game.json';
