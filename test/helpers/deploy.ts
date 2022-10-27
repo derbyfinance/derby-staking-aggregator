@@ -1,4 +1,4 @@
-import { waffle } from 'hardhat';
+import { ethers, waffle } from 'hardhat';
 const { deployContract } = waffle;
 import { Signer, BigNumber } from 'ethers';
 import type {
@@ -40,12 +40,13 @@ import CompoundProviderMockArtifact from '@artifacts/Mocks/CompoundProviderMock.
 import AaveProviderArtifact from '@artifacts/Providers/AaveProvider.sol/AaveProvider.json';
 import VaultArtifact from '@artifacts/Vault.sol/Vault.json';
 import TokenTimelockArtifact from '@artifacts/TokenTimelock.sol/TokenTimelock.json';
-import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
+// import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
 import IGovernedArtifact from '@artifacts/Interfaces/IGoverned.sol/IGoverned.json';
 import DerbyTokenArtifact from '@artifacts/DerbyToken.sol/DerbyToken.json';
 import GameArtifact from '@artifacts/Game.sol/Game.json';
 import GameMockArtifact from '@artifacts/Mocks/GameMock.sol/GameMock.json';
 import ControllerArtifact from '@artifacts/Controller.sol/Controller.json';
+import SwapArtifact from '@artifacts/libraries/Swap.sol/Swap.json';
 import XChainControllerArtifact from '@artifacts/XChainController.sol/XChainController.json';
 import XChainControllerMockArtifact from '@artifacts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import XProviderArtifact from '@artifacts/XProvider.sol/XProvider.json';
@@ -161,7 +162,7 @@ export const deployVault = (
     gasFeeLiq,
   ]) as Promise<Vault>;
 
-export const deployMainVaultMock = (
+export const deployMainVaultMock = async (
   deployerSign: Signer,
   name: string,
   symbol: string,
@@ -174,8 +175,14 @@ export const deployMainVaultMock = (
   vaultCurrency: string,
   uScale: number,
   gasFeeLiq: number,
-) =>
-  deployContract(deployerSign, MainVaultArtifactMock, [
+) => {
+  const swapLibrary = await deploySwapLibrary(deployerSign);
+  const Vault = await ethers.getContractFactory('MainVaultMock', {
+    libraries: {
+      Swap: swapLibrary.address,
+    },
+  });
+  return Vault.deploy(
     name,
     symbol,
     decimals,
@@ -187,7 +194,8 @@ export const deployMainVaultMock = (
     vaultCurrency,
     uScale,
     gasFeeLiq,
-  ]) as Promise<MainVaultMock>;
+  ) as Promise<MainVaultMock>;
+};
 
 export const deployController = (deployerSign: Signer, daoAddress: string): Promise<Controller> => {
   return deployContract(deployerSign, ControllerArtifact, [
@@ -198,6 +206,10 @@ export const deployController = (deployerSign: Signer, daoAddress: string): Prom
     3000,
     ChainlinkGasPrice,
   ]) as Promise<Controller>;
+};
+
+export const deploySwapLibrary = (deployerSign: Signer): Promise<any> => {
+  return deployContract(deployerSign, SwapArtifact, []) as Promise<any>;
 };
 
 export const deployXChainController = (

@@ -11,7 +11,7 @@ import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 
 import "./VaultToken.sol";
-import "./libraries/swap.sol";
+import "./libraries/Swap.sol";
 
 import "hardhat/console.sol";
 
@@ -267,17 +267,17 @@ contract Vault is ReentrancyGuard {
   /// @param _gasUsed total gas used by RebalanceETF
   function swapAndPayGasFee(uint256 _gasUsed) internal {
     uint256 amountEtherToVaultCurrency = Swap.amountOutSingleSwap(
-      (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
-      Swap.WETH,
-      vaultCurrencyAddr,
+      Swap.SwapInOut(
+        (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
+        Swap.WETH,
+        vaultCurrencyAddr
+      ),
       controller.getUniswapQuoter(),
       controller.getUniswapPoolFee()
     );
 
     uint256 wethReceived = Swap.swapTokensSingle(
-      amountEtherToVaultCurrency,
-      vaultCurrencyAddr,
-      Swap.WETH,
+      Swap.SwapInOut(amountEtherToVaultCurrency, vaultCurrencyAddr, Swap.WETH),
       controller.getUniswapParams()
     );
     Swap.unWrapWETHtoGov(payable(dao), wethReceived);
@@ -320,9 +320,7 @@ contract Vault is ReentrancyGuard {
 
     if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        _amount,
-        vaultCurrencyAddr,
-        protocol.underlying,
+        Swap.SwapInOut(_amount, vaultCurrencyAddr, protocol.underlying),
         uScale,
         controller.underlyingUScale(protocol.underlying),
         controller.getCurveParams(vaultCurrencyAddr, protocol.underlying)
@@ -354,9 +352,7 @@ contract Vault is ReentrancyGuard {
 
     if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        amountReceived,
-        protocol.underlying,
-        vaultCurrencyAddr,
+        Swap.SwapInOut(amountReceived, protocol.underlying, vaultCurrencyAddr),
         controller.underlyingUScale(protocol.underlying),
         uScale,
         controller.getCurveParams(protocol.underlying, vaultCurrencyAddr)
@@ -430,9 +426,7 @@ contract Vault is ReentrancyGuard {
         address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         Swap.swapTokensMulti(
-          tokenBalance,
-          govToken,
-          vaultCurrencyAddr,
+          Swap.SwapInOut(tokenBalance, govToken, vaultCurrencyAddr),
           controller.getUniswapParams()
         );
       }

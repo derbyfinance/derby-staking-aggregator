@@ -1,4 +1,4 @@
-import { ethers, network } from 'hardhat';
+import { ethers, network, waffle } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract } from 'ethers';
 import { Result } from 'ethers/lib/utils';
@@ -12,7 +12,7 @@ import {
   parseUnits,
   parseUSDC,
 } from '@testhelp/helpers';
-import type { Controller, MainVaultMock } from '@typechain';
+import { Controller, MainVaultMock } from '@typechain';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
 import {
   usdc,
@@ -34,7 +34,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe.skip('Testing VaultSwap, unit test', async () => {
+describe('Testing VaultSwap, unit test', async () => {
   let vault: MainVaultMock,
     controller: Controller,
     dao: Signer,
@@ -328,7 +328,8 @@ describe.skip('Testing VaultSwap, unit test', async () => {
       yearnVault.setDeltaAllocation(vault, user, 120),
     ]);
 
-    await vault.connect(user).withdraw(amountToWithdraw);
+    await vault.connect(dao).setVaultState(0);
+    await vault.connect(user).withdraw(amountToWithdraw, true);
     await vault.setVaultState(3);
     gasUsed = formatUSDC(await rebalanceETF(vault));
 
@@ -341,7 +342,8 @@ describe.skip('Testing VaultSwap, unit test', async () => {
 
     console.log('-----------------withdraw another 42k = 92k total-----------------');
     amountToWithdraw = parseUSDC('42000');
-    await vault.connect(user).withdraw(amountToWithdraw);
+    await vault.connect(dao).setVaultState(0);
+    await vault.connect(user).withdraw(amountToWithdraw, true);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.setVaultState(3);
     await rebalanceETF(vault);
@@ -351,6 +353,7 @@ describe.skip('Testing VaultSwap, unit test', async () => {
     console.log({ gasUsed });
     console.log(USDCBalanceUser);
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed));
+    // 3 times gas for rebalances
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
   });
 });

@@ -31,6 +31,7 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  typechain: {},
   networks: {
     ropsten: {
       url: process.env.ROPSTEN_URL || '',

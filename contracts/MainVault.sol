@@ -196,9 +196,7 @@ contract MainVault is Vault, VaultToken {
     delete rewardRequestPeriod[msg.sender];
 
     uint256 tokensReceived = Swap.swapTokensMulti(
-      value,
-      vaultCurrencyAddr,
-      derbyToken,
+      Swap.SwapInOut(value, vaultCurrencyAddr, derbyToken),
       controller.getUniswapParams()
     );
     IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
