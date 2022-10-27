@@ -144,7 +144,7 @@ contract Vault is ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external returnGasFee nonReentrant onlyDao {
+  function rebalanceETF() external returnGasFee nonReentrant {
     require(state == State.RebalanceVault, "Wrong state");
     require(deltaAllocationsReceived, "!Delta allocations");
 
