@@ -536,12 +536,6 @@ contract XChainController {
     chainIds = _chainIds;
   }
 
-  /// @notice Setter for guardian address
-  /// @param _guardian new address of the guardian
-  function setGuardian(address _guardian) external onlyDao {
-    guardian = _guardian;
-  }
-
   /// @notice Step 1: Guardian function
   function receiveAllocationsFromGameGuard(uint256 _vaultNumber, int256[] memory _deltas)
     external
@@ -597,5 +591,11 @@ contract XChainController {
   /// @param _dao DAO address
   function setDaoAddress(address _dao) external onlyDao {
     dao = _dao;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
   }
 }

@@ -379,8 +379,6 @@ contract Game is ERC721, ReentrancyGuard {
         baskets[_basketId].totalUnRedeemedRewards +=
           (currentReward - lastRebalanceReward) *
           allocation;
-
-        console.log("reward %s", uint((currentReward - lastRebalanceReward) * allocation));
       }
     }
   }
@@ -597,5 +595,11 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _dao DAO address
   function setDaoAddress(address _dao) external onlyDao {
     dao = _dao;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
   }
 }
