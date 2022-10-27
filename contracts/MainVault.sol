@@ -318,12 +318,6 @@ contract MainVault is Vault, VaultToken {
     vaultOff = _state;
   }
 
-  /// @notice Exchange rate of Vault LP Tokens in VaultCurrency per LP token (e.g. 1 LP token = $2).
-  /// @return Price per share of LP Token
-  // function exchangeRate() public view returns(uint256) {
-  //   return exchangeRate;
-  // }
-
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
   function getWithdrawalAllowance() external view returns (uint256) {
     return withdrawalAllowance[msg.sender];
@@ -344,12 +338,6 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter for new homeChain Id
   function setChainIds(uint16 _homeChain) external onlyDao {
     homeChain = _homeChain;
-  }
-
-  /// @notice Setter for derby token address
-  /// @param _token New address of the derby token
-  function setDaoToken(address _token) external onlyDao {
-    derbyToken = _token;
   }
 
   /// @notice Step 3: Guardian function
@@ -373,5 +361,17 @@ contract MainVault is Vault, VaultToken {
   /// @notice Guardian function to set state when vault gets stuck for whatever reason
   function setVaultStateGuard(State _state) external onlyGuardian {
     state = _state;
+  }
+
+  /// @notice Setter for derby token address
+  /// @param _token New address of the derby token
+  function setDaoToken(address _token) external onlyDao {
+    derbyToken = _token;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
   }
 }

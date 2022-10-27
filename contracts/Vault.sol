@@ -474,12 +474,6 @@ contract Vault is ReentrancyGuard {
     performanceFee = _performanceFee;
   }
 
-  /// @notice Set the governance address
-  /// @param _dao New address of the governance / DAO
-  function setDaoAddress(address _dao) external onlyDao {
-    dao = _dao;
-  }
-
   /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
   /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
   function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
@@ -494,6 +488,12 @@ contract Vault is ReentrancyGuard {
 
   function getVaultBalance() public view returns (uint256) {
     return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+  }
+
+  /// @notice Set the governance address
+  /// @param _dao New address of the governance / DAO
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
