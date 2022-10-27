@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Derby Finance - 2022
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -144,7 +145,7 @@ contract Vault is ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external returnGasFee nonReentrant onlyDao {
+  function rebalanceETF() external returnGasFee nonReentrant {
     require(state == State.RebalanceVault, "Wrong state");
     require(deltaAllocationsReceived, "!Delta allocations");
 
