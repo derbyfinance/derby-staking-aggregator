@@ -69,15 +69,21 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public lastTimeStamp;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
+  // (basketTokenId => basket struct):
   mapping(uint256 => Basket) private baskets;
 
-  // chainId => latestProtocolId set by dao
+  // (chainId => latestProtocolId): latestProtocolId set by dao
   mapping(uint256 => uint256) public latestProtocolId;
 
-  // vaultNumber => vaultInfo struct
+  // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
 
+  // (vaultNumber => bool): true when vault is cross-chain rebalancing
   mapping(uint256 => bool) public isXChainRebalancing;
+
+  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+
+  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
   modifier onlyDao() {
     require(msg.sender == dao, "Game: only DAO");
@@ -98,10 +104,6 @@ contract Game is ERC721, ReentrancyGuard {
     require(msg.sender == guardian, "Game: only Guardian");
     _;
   }
-
-  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
-
-  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
   constructor(
     string memory name_,

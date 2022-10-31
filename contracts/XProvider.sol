@@ -32,8 +32,11 @@ contract XProvider is ILayerZeroReceiver {
   uint16 public xControllerChain;
   uint16 public gameChain;
 
+  // (layerZeroChainId => connextChainId): layerZeroChainId is the main ID we use
   mapping(uint16 => uint32) public connextChainId;
+  // (layerZeroChainId => trustedChainIds): used for whitelisting chains
   mapping(uint16 => bytes) public trustedRemoteLookup;
+  // (vaultAddress => bool): used for whitelisting vaults
   mapping(address => bool) public vaultWhitelist;
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
