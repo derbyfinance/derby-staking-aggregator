@@ -173,7 +173,7 @@ describe('Testing XChainController, unit test', async () => {
 
     await Promise.all([
       game.connect(dao).setXProvider(xProviderGoerli.address),
-      game.connect(dao).setChainIdArray(chainIds),
+      game.connect(dao).setChainIds(chainIds),
       game.connect(dao).setLatestProtocolId(goerli, 5),
       game.connect(dao).setLatestProtocolId(arbitrumGoerli, 5),
       game.connect(dao).setVaultAddress(vaultNumber, goerli, vault1.address),
@@ -209,11 +209,11 @@ describe('Testing XChainController, unit test', async () => {
       xChainController.setVaultChainAddress(vaultNumber, goerli, vault1.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, arbitrumGoerli, vault2.address, usdc),
       xChainController.setHomeXProviderAddress(xProviderArbitrum.address), // xChainController on chain 100
-      xChainController.connect(dao).setChainIdArray(chainIds),
+      xChainController.connect(dao).setChainIds(chainIds),
       xChainControllerDUMMY.setVaultChainAddress(vaultNumber, goerli, vault1.address, usdc),
       xChainControllerDUMMY.setVaultChainAddress(vaultNumber, arbitrumGoerli, vault2.address, usdc),
       xChainControllerDUMMY.setHomeXProviderAddress(xProviderArbitrum.address),
-      xChainControllerDUMMY.connect(dao).setChainIdArray(chainIds),
+      xChainControllerDUMMY.connect(dao).setChainIds(chainIds),
     ]);
   });
 

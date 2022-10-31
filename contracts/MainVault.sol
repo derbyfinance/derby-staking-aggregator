@@ -35,7 +35,6 @@ contract MainVault is Vault, VaultToken {
     uint8 _decimals,
     uint256 _vaultNumber,
     address _dao,
-    address _guardian,
     address _game,
     address _controller,
     address _vaultCurrency,
@@ -43,16 +42,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(
-      _vaultNumber,
-      _dao,
-      _game,
-      _controller,
-      _vaultCurrency,
-      _uScale,
-      _gasFeeLiquidity,
-      _guardian
-    )
+    Vault(_vaultNumber, _dao, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
   {
     exchangeRate = _uScale;
   }
@@ -345,12 +335,6 @@ contract MainVault is Vault, VaultToken {
   /// @param _token New address of the derby token
   function setDaoToken(address _token) external onlyDao {
     derbyToken = _token;
-  }
-
-  /// @notice Setter for guardian address
-  /// @param _guardian new address of the guardian
-  function setGuardian(address _guardian) external onlyDao {
-    guardian = _guardian;
   }
 
   /*

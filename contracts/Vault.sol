@@ -109,8 +109,7 @@ contract Vault is ReentrancyGuard {
     address _controller,
     address _vaultCurrency,
     uint256 _uScale,
-    uint256 _gasFeeLiquidity,
-    address _guardian
+    uint256 _gasFeeLiquidity
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -120,7 +119,6 @@ contract Vault is ReentrancyGuard {
 
     dao = _dao;
     game = _game;
-    guardian = _guardian;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
@@ -467,6 +465,12 @@ contract Vault is ReentrancyGuard {
   /// @param _dao New address of the governance / DAO
   function setDaoAddress(address _dao) external onlyDao {
     dao = _dao;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
   }
 
   /*

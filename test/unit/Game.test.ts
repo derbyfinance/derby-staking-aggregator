@@ -132,9 +132,9 @@ describe('Testing Game', async () => {
     // With MOCK Providers
     await Promise.all([
       initController(controller, [game.address, vault.address]),
-      game.connect(dao).setChainIdArray([10, 100, 1000]),
+      game.connect(dao).setChainIds([10, 100, 1000]),
       xChainController.connect(dao).setHomeXProviderAddress(xProvider100.address),
-      xChainController.connect(dao).setChainIdArray(chainIds),
+      xChainController.connect(dao).setChainIds(chainIds),
       controller.connect(dao).addGame(game.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),

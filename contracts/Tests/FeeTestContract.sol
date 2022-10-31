@@ -25,7 +25,6 @@ contract FeeTestContract is MainVault {
       _decimals,
       _vaultNumber,
       _governed,
-      _governed,
       _Game,
       _router,
       _vaultCurrency,
