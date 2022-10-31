@@ -30,20 +30,20 @@ contract Game is ERC721, ReentrancyGuard {
     int256 totalUnRedeemedRewards;
     // total redeemed rewards
     int256 totalRedeemedRewards;
-    // basket => vaultNumber => chainId => allocation
+    // (basket => vaultNumber => chainId => allocation)
     mapping(uint256 => mapping(uint256 => int256)) allocations;
   }
 
   struct vaultInfo {
     // rebalance period of ETF, upped at vault rebalance
     uint256 rebalancingPeriod;
-    // chainId => vaultAddress
+    // (chainId => vaultAddress)
     mapping(uint16 => address) vaultAddress;
-    // chainId => deltaAllocation
+    // (chainId => deltaAllocation)
     mapping(uint256 => int256) deltaAllocationChain;
-    // chainId => protocolNumber => deltaAllocation
+    // (chainId => protocolNumber => deltaAllocation)
     mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
-    // chainId => rebalancing period => protocol id => rewardPerLockedToken.
+    // (chainId => rebalancing period => protocol id => rewardPerLockedToken).
     mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
