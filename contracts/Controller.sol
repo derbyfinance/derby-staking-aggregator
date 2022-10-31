@@ -209,6 +209,74 @@ contract Controller is IController {
     claimable[_provider] = _bool;
   }
 
+  function getUniswapParams() external view returns (UniswapParams memory) {
+    return uniswapParams;
+  }
+
+  function getUniswapPoolFee() external view returns (uint24) {
+    return uniswapParams.poolFee;
+  }
+
+  function getUniswapQuoter() external view returns (address) {
+    return uniswapParams.quoter;
+  }
+
+  function getCurveParams(address _in, address _out) external view returns (CurveParams memory) {
+    CurveParams memory curveParams;
+    curveParams.indexTokenIn = curveIndex[_in];
+    curveParams.indexTokenOut = curveIndex[_out];
+    curveParams.pool = curve3Pool;
+    curveParams.poolFee = curve3PoolFee;
+
+    return curveParams;
+  }
+
+  /// @notice Getter for protocol blacklist, given an ETFnumber and protocol number returns true if blacklisted. Can only be called by vault.
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
+  function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    view
+    override
+    onlyVault
+    returns (bool)
+  {
+    return protocolBlacklist[_ETFnumber][_protocolNum];
+  }
+
+  /// @notice Getter for the ProtocolInfo struct
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
+  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    view
+    override
+    returns (ProtocolInfoS memory)
+  {
+    return protocolInfo[_ETFnumber][_protocolNum];
+  }
+
+  /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
+  /// @param _ETFnumber Number of the ETF
+  /// @param _protocolNum Protocol number linked to protocol vault
+  function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
+    external
+    override
+    onlyVault
+  {
+    protocolBlacklist[_ETFnumber][_protocolNum] = true;
+  }
+
+  /// @notice Gets the gas price from Chainlink oracle
+  /// @return gasPrice latest gas price from oracle
+  function getGasPrice() external override returns (uint256) {
+    return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
+  }
+
+  /*
+  Only Dao functions
+  */
+
   /// @notice Add protocol and vault to Controller
   /// @param _name Name of the protocol vault combination
   /// @param _ETFnumber Number of the ETF
@@ -241,28 +309,6 @@ contract Controller is IController {
     latestProtocolId[_ETFnumber]++;
 
     return protocolNumber;
-  }
-
-  function getUniswapParams() external view returns (UniswapParams memory) {
-    return uniswapParams;
-  }
-
-  function getUniswapPoolFee() external view returns (uint24) {
-    return uniswapParams.poolFee;
-  }
-
-  function getUniswapQuoter() external view returns (address) {
-    return uniswapParams.quoter;
-  }
-
-  function getCurveParams(address _in, address _out) external view returns (CurveParams memory) {
-    CurveParams memory curveParams;
-    curveParams.indexTokenIn = curveIndex[_in];
-    curveParams.indexTokenOut = curveIndex[_out];
-    curveParams.pool = curve3Pool;
-    curveParams.poolFee = curve3PoolFee;
-
-    return curveParams;
   }
 
   /// @notice Add protocol and vault to Controller
@@ -310,48 +356,6 @@ contract Controller is IController {
 
   function addUnderlyingUScale(address _stable, uint256 _uScale) external onlyDao {
     underlyingUScale[_stable] = _uScale;
-  }
-
-  /// @notice Getter for protocol blacklist, given an ETFnumber and protocol number returns true if blacklisted. Can only be called by vault.
-  /// @param _ETFnumber Number of the ETF
-  /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
-    external
-    view
-    override
-    onlyVault
-    returns (bool)
-  {
-    return protocolBlacklist[_ETFnumber][_protocolNum];
-  }
-
-  /// @notice Getter for the ProtocolInfo struct
-  /// @param _ETFnumber Number of the ETF
-  /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolInfo(uint256 _ETFnumber, uint256 _protocolNum)
-    external
-    view
-    override
-    returns (ProtocolInfoS memory)
-  {
-    return protocolInfo[_ETFnumber][_protocolNum];
-  }
-
-  /// @notice Setter for protocol blacklist, given an ETFnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
-  /// @param _ETFnumber Number of the ETF
-  /// @param _protocolNum Protocol number linked to protocol vault
-  function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
-    external
-    override
-    onlyVault
-  {
-    protocolBlacklist[_ETFnumber][_protocolNum] = true;
-  }
-
-  /// @notice Gets the gas price from Chainlink oracle
-  /// @return gasPrice latest gas price from oracle
-  function getGasPrice() external override returns (uint256) {
-    return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
   }
 
   /// @notice Setter for the Chainlink Gas price oracle contract address in case it changes

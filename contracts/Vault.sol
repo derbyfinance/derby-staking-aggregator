@@ -43,6 +43,7 @@ contract Vault is ReentrancyGuard {
   address public vaultCurrencyAddr;
   address public game;
   address public dao;
+  address public guardian;
   address public xController;
   address public xProvider;
 
@@ -88,6 +89,11 @@ contract Vault is ReentrancyGuard {
     _;
   }
 
+  modifier onlyGuardian() {
+    require(msg.sender == guardian, "only Guardian");
+    _;
+  }
+
   modifier returnGasFee() {
     uint256 gasStart = gasleft();
     _;
@@ -103,7 +109,8 @@ contract Vault is ReentrancyGuard {
     address _controller,
     address _vaultCurrency,
     uint256 _uScale,
-    uint256 _gasFeeLiquidity
+    uint256 _gasFeeLiquidity,
+    address _guardian
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -113,6 +120,7 @@ contract Vault is ReentrancyGuard {
 
     dao = _dao;
     game = _game;
+    guardian = _guardian;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
@@ -433,14 +441,8 @@ contract Vault is ReentrancyGuard {
     }
   }
 
-  /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
-  /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
-  function blacklistProtocol(uint256 _protocolNum) external onlyDao {
-    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
-    currentAllocations[_protocolNum] = 0;
-    controller.setProtocolBlacklist(vaultNumber, _protocolNum);
-    savedTotalUnderlying -= balanceProtocol;
-    withdrawFromProtocol(_protocolNum, balanceProtocol);
+  function getVaultBalance() public view returns (uint256) {
+    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
@@ -449,22 +451,9 @@ contract Vault is ReentrancyGuard {
     return (block.timestamp - lastTimeStamp) > rebalanceInterval;
   }
 
-  /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
-  /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
-  /// @dev Take into account the uScale (scale of the underlying).
-  /// @param _marginScale Value at which to set the marginScale.
-  function setMarginScale(int256 _marginScale) external onlyDao {
-    marginScale = _marginScale;
-  }
-
-  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
-  /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here.
-  /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale.
-  /// @param _liquidityPerc Value at which to set the liquidityPerc.
-  function setLiquidityPerc(uint256 _liquidityPerc) external onlyDao {
-    require(_liquidityPerc <= 100, "Cannot exceed 100%");
-    liquidityPerc = _liquidityPerc;
-  }
+  /*
+  Only Dao functions
+  */
 
   /// @notice Set the performanceFee, the percentage of the yield that goes to the game players.
   /// @dev The actual performanceFee could be a bit more or a bit less than the performanceFee set here due to approximations in the game.
@@ -474,26 +463,53 @@ contract Vault is ReentrancyGuard {
     performanceFee = _performanceFee;
   }
 
+  /// @notice Set the governance address
+  /// @param _dao New address of the governance / DAO
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
+  }
+
+  /*
+  Only Guardian functions
+  */
+
   /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
   /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
-  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyDao {
+  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyGuardian {
     gasFeeLiquidity = _gasFeeLiquidity;
   }
 
   /// @notice Set minimum interval for the rebalance function
   /// @param _timestampInternal UNIX timestamp
-  function setRebalanceInterval(uint256 _timestampInternal) external onlyDao {
+  function setRebalanceInterval(uint256 _timestampInternal) external onlyGuardian {
     rebalanceInterval = _timestampInternal;
   }
 
-  function getVaultBalance() public view returns (uint256) {
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+  /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
+  /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
+  function blacklistProtocol(uint256 _protocolNum) external onlyGuardian {
+    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
+    currentAllocations[_protocolNum] = 0;
+    controller.setProtocolBlacklist(vaultNumber, _protocolNum);
+    savedTotalUnderlying -= balanceProtocol;
+    withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
 
-  /// @notice Set the governance address
-  /// @param _dao New address of the governance / DAO
-  function setDaoAddress(address _dao) external onlyDao {
-    dao = _dao;
+  /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
+  /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
+  /// @dev Take into account the uScale (scale of the underlying).
+  /// @param _marginScale Value at which to set the marginScale.
+  function setMarginScale(int256 _marginScale) external onlyGuardian {
+    marginScale = _marginScale;
+  }
+
+  /// @notice Set the liquidityPerc, the amount of liquidity which should be held in the vault after rebalancing.
+  /// @dev The actual liquidityPerc could be a bit more or a bit less than the liquidityPerc set here.
+  /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale.
+  /// @param _liquidityPerc Value at which to set the liquidityPerc.
+  function setLiquidityPerc(uint256 _liquidityPerc) external onlyGuardian {
+    require(_liquidityPerc <= 100, "Cannot exceed 100%");
+    liquidityPerc = _liquidityPerc;
   }
 
   /// @notice callback to receive Ether from unwrapping WETH
