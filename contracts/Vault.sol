@@ -68,17 +68,17 @@ contract Vault is ReentrancyGuard {
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
-  // current allocations over the protocols
+  // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => int256) internal currentAllocations;
 
-  // delta of the portfolio on next rebalancing
+  // (protocolNumber => deltaAllocation): delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
 
   // historical reward per protocol per token, formula: TVL * yield * perfFee / totalLockedTokens
-  // first index is rebalancing period, second index is protocol id.
+  // (rebalancingPeriod => protocolId => rewardPerLockedToken)
   mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken;
 
-  // historical prices, index is protocol id.
+  // (protocolNumber => lastPrice): last price of underlying protocol vault
   mapping(uint256 => uint256) public lastPrices;
 
   event GasPaidRebalanceETF(uint256 gasInVaultCurrency);

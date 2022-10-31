@@ -21,13 +21,13 @@ contract MainVault is Vault, VaultToken {
   uint16 public homeChain;
   uint256 public amountToSendXChain;
 
-  // amount in vaultCurrency the vault owes to the user
+  // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
   mapping(address => uint256) internal withdrawalAllowance;
-  // rebalancing period the withdrawal request is made
+  // (userAddress => requestPeriod): rebalancing period the withdrawal request is made
   mapping(address => uint256) internal withdrawalRequestPeriod;
-  // amount in vaultCurrency the vault owes to the user
+  // (userAddress => rewardAllowance): amount in vaultCurrency the vault owes to the user
   mapping(address => uint256) internal rewardAllowance;
-  // rebalancing period the withdrawal request is made
+  // (userAddress => requestPeriod): rebalancing period the reward request is made
   mapping(address => uint256) internal rewardRequestPeriod;
 
   constructor(
