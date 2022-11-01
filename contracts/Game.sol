@@ -535,32 +535,14 @@ contract Game is ERC721, ReentrancyGuard {
     return (block.timestamp - lastTimeStamp) > rebalanceInterval;
   }
 
-  /// @notice setter to link a chainId to a vault address for cross chain functions
-  function setVaultAddress(
-    uint256 _vaultNumber,
-    uint16 _chainId,
-    address _address
-  ) external onlyDao {
-    vaults[_vaultNumber].vaultAddress[_chainId] = _address;
-  }
-
   /// @notice getter for vault address linked to a chainId
   function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns (address) {
     return vaults[_vaultNumber].vaultAddress[_chainId];
   }
 
-  /// @notice Setter for latest protocol Id for given chainId.
-  /// @param _chainId number of chain id set in chainIds array
-  /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
-  function setLatestProtocolId(uint16 _chainId, uint256 _latestProtocolId) external onlyDao {
-    latestProtocolId[_chainId] = _latestProtocolId;
-  }
-
-  /// @notice Setter for chainId array
-  /// @param _chainIds array of all the used chainIds
-  function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
-    chainIds = _chainIds;
-  }
+  /*
+  Only Dao functions
+  */
 
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
@@ -569,23 +551,9 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Setter for homeVault address
-  /// @param _homeVault new address of xProvider on this chain
+  /// @param _homeVault new address of homeVault on this chain
   function setHomeVault(address _homeVault) external onlyDao {
     homeVault = _homeVault;
-  }
-
-  /// @notice Guardian function to set state when vault gets stuck for whatever reason
-  function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
-    isXChainRebalancing[_vaultNumber] = _state;
-  }
-
-  /// @notice Step 8: Guardian function
-  function settleRewardsGuard(
-    uint256 _vaultNumber,
-    uint16 _chainId,
-    int256[] memory _rewards
-  ) external onlyGuardian {
-    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice Set minimum interval for the rebalance function
@@ -604,5 +572,45 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /*
+  Only Guardian functions
+  */
+
+  /// @notice setter to link a chainId to a vault address for cross chain functions
+  function setVaultAddress(
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    address _address
+  ) external onlyGuardian {
+    vaults[_vaultNumber].vaultAddress[_chainId] = _address;
+  }
+
+  /// @notice Setter for latest protocol Id for given chainId.
+  /// @param _chainId number of chain id set in chainIds array
+  /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
+  function setLatestProtocolId(uint16 _chainId, uint256 _latestProtocolId) external onlyGuardian {
+    latestProtocolId[_chainId] = _latestProtocolId;
+  }
+
+  /// @notice Setter for chainId array
+  /// @param _chainIds array of all the used chainIds
+  function setChainIds(uint16[] memory _chainIds) external onlyGuardian {
+    chainIds = _chainIds;
+  }
+
+  /// @notice Guardian function to set state when vault gets stuck for whatever reason
+  function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
+    isXChainRebalancing[_vaultNumber] = _state;
+  }
+
+  /// @notice Step 8: Guardian function
+  function settleRewardsGuard(
+    uint256 _vaultNumber,
+    uint16 _chainId,
+    int256[] memory _rewards
+  ) external onlyGuardian {
+    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 }

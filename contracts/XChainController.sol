@@ -173,12 +173,6 @@ contract XChainController {
   }
 
   /// @notice Resets all stages in vaultStage struct for a vaultNumber
-  /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
-  function resetVaultStagesDao(uint256 _vaultNumber) external onlyDao {
-    return resetVaultStages(_vaultNumber);
-  }
-
-  /// @notice Resets all stages in vaultStage struct for a vaultNumber
   function resetVaultStages(uint256 _vaultNumber) internal {
     vaultStage[_vaultNumber].ready = true;
     vaultStage[_vaultNumber].allocationsReceived = false;
@@ -512,6 +506,10 @@ contract XChainController {
     return vaults[_vaultNumber].totalWithdrawalRequests;
   }
 
+  /*
+  Only Dao functions
+  */
+
   /// @notice Set Vault address and underlying for a particulair chainId
   /// @param _vaultNumber number of Vault
   /// @param _chainId Number of chain used
@@ -540,10 +538,32 @@ contract XChainController {
     homeChain = _homeChainId;
   }
 
+  /// @notice Setter for DAO address
+  /// @param _dao DAO address
+  function setDaoAddress(address _dao) external onlyDao {
+    dao = _dao;
+  }
+
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
+  }
+
+  /*
+  Only Guardian functions
+  */
+
   /// @notice Setter for chainId array
   /// @param _chainIds array of all the used chainIds
-  function setChainIdArray(uint16[] memory _chainIds) external onlyDao {
+  function setChainIds(uint16[] memory _chainIds) external onlyGuardian {
     chainIds = _chainIds;
+  }
+
+  /// @notice Resets all stages in vaultStage struct for a vaultNumber
+  /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
+  function resetVaultStagesDao(uint256 _vaultNumber) external onlyGuardian {
+    return resetVaultStages(_vaultNumber);
   }
 
   /// @notice Step 1: Guardian function
@@ -595,17 +615,5 @@ contract XChainController {
     onlyGuardian
   {
     vaultStage[_vaultNumber].underlyingReceived = _underlyingReceived;
-  }
-
-  /// @notice Setter for DAO address
-  /// @param _dao DAO address
-  function setDaoAddress(address _dao) external onlyDao {
-    dao = _dao;
-  }
-
-  /// @notice Setter for guardian address
-  /// @param _guardian new address of the guardian
-  function setGuardian(address _guardian) external onlyDao {
-    guardian = _guardian;
   }
 }

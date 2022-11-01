@@ -182,19 +182,21 @@ export const deployMainVaultMock = async (
       Swap: swapLibrary.address,
     },
   });
-  return Vault.deploy(
+  const vault = await Vault.deploy(
     name,
     symbol,
     decimals,
     vaultNumber,
     daoAddress,
-    guardianAddress,
     Game,
     controller,
     vaultCurrency,
     uScale,
     gasFeeLiq,
-  ) as Promise<MainVaultMock>;
+  );
+  await vault.setGuardian(guardianAddress);
+
+  return vault;
 };
 
 export const deployController = (deployerSign: Signer, daoAddress: string): Promise<Controller> => {
