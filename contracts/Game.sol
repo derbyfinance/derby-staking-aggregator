@@ -30,20 +30,20 @@ contract Game is ERC721, ReentrancyGuard {
     int256 totalUnRedeemedRewards;
     // total redeemed rewards
     int256 totalRedeemedRewards;
-    // basket => vaultNumber => chainId => allocation
+    // (basket => vaultNumber => chainId => allocation)
     mapping(uint256 => mapping(uint256 => int256)) allocations;
   }
 
   struct vaultInfo {
     // rebalance period of ETF, upped at vault rebalance
     uint256 rebalancingPeriod;
-    // chainId => vaultAddress
+    // (chainId => vaultAddress)
     mapping(uint16 => address) vaultAddress;
-    // chainId => deltaAllocation
+    // (chainId => deltaAllocation)
     mapping(uint256 => int256) deltaAllocationChain;
-    // chainId => protocolNumber => deltaAllocation
+    // (chainId => protocolNumber => deltaAllocation)
     mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
-    // chainId => rebalancing period => protocol id => rewardPerLockedToken.
+    // (chainId => rebalancing period => protocol id => rewardPerLockedToken).
     mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
@@ -69,15 +69,21 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public lastTimeStamp;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
+  // (basketTokenId => basket struct):
   mapping(uint256 => Basket) private baskets;
 
-  // chainId => latestProtocolId set by dao
+  // (chainId => latestProtocolId): latestProtocolId set by dao
   mapping(uint256 => uint256) public latestProtocolId;
 
-  // vaultNumber => vaultInfo struct
+  // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
 
+  // (vaultNumber => bool): true when vault is cross-chain rebalancing
   mapping(uint256 => bool) public isXChainRebalancing;
+
+  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+
+  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
   modifier onlyDao() {
     require(msg.sender == dao, "Game: only DAO");
@@ -98,10 +104,6 @@ contract Game is ERC721, ReentrancyGuard {
     require(msg.sender == guardian, "Game: only Guardian");
     _;
   }
-
-  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
-
-  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
 
   constructor(
     string memory name_,

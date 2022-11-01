@@ -13,7 +13,6 @@ contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
 
   address public controller;
-  mapping(uint256 => uint256) public historicalPrices;
 
   modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");

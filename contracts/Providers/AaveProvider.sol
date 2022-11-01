@@ -16,8 +16,6 @@ contract AaveProvider is IProvider {
   uint16 private aaveReferral;
   address public controller;
 
-  mapping(uint256 => uint256) public historicalPrices;
-
   modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");
     _;

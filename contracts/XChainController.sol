@@ -12,27 +12,25 @@ import "hardhat/console.sol";
 contract XChainController {
   using SafeERC20 for IERC20;
 
-  address public game;
-  address public dao;
-  address public guardian;
-  address public xProviderAddr;
-  IXProvider public xProvider;
-
-  uint16[] public chainIds;
-  uint16 public homeChain;
-
   struct vaultInfo {
     int256 totalCurrentAllocation;
     uint256 totalUnderlying;
     uint256 totalSupply;
     uint256 totalWithdrawalRequests;
-    mapping(uint16 => bool) chainIdOff; // true == off // false == on
-    mapping(uint16 => int256) currentAllocationPerChain; // chainId => allocation
-    mapping(uint16 => uint256) totalUnderlyingPerChain; // chainId => totalUnderlying
-    mapping(uint16 => address) vaultChainAddress; // chainId => vault address
-    mapping(uint16 => address) vaultUnderlyingAddress; // chainId => underlying address e.g USDC
-    mapping(uint16 => uint256) withdrawalRequests; // chainId => total withdrawal requests in LP Token
-    mapping(uint16 => uint256) amountToDepositPerChain; // chainId => amountToDeposit
+    // (chainId => bool): true == off // false == on
+    mapping(uint16 => bool) chainIdOff;
+    // (chainId => currentAllocation)
+    mapping(uint16 => int256) currentAllocationPerChain;
+    // (chainId => totalUnderlying)
+    mapping(uint16 => uint256) totalUnderlyingPerChain;
+    // (chainId => vaultAddress)
+    mapping(uint16 => address) vaultChainAddress;
+    // (chainId => underlyingAddress): e.g USDC
+    mapping(uint16 => address) vaultUnderlyingAddress;
+    // (chainId => totalWithdrawalRequests): total withdrawal requests in LP Token
+    mapping(uint16 => uint256) withdrawalRequests;
+    // (chainId => amountToDeposit)
+    mapping(uint16 => uint256) amountToDepositPerChain;
   }
 
   // activeVaults; number of active vaults for vaultNumber, set in XChainRebalance
@@ -48,8 +46,28 @@ contract XChainController {
     uint256 fundsReceived; // stage 3
   }
 
+  address public game;
+  address public dao;
+  address public guardian;
+  address public xProviderAddr;
+  IXProvider public xProvider;
+
+  uint16[] public chainIds;
+  uint16 public homeChain;
+
+  // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
+  // (vaultNumber => vaultStages struct)
   mapping(uint256 => vaultStages) public vaultStage;
+
+  event SendXChainAmount(
+    address _vault,
+    uint16 _chainId,
+    uint256 _amountToSendXChain,
+    uint256 _exchangeRate
+  );
+
+  event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
 
   modifier onlyGame() {
     require(msg.sender == game, "xController: only Game");
@@ -100,15 +118,6 @@ contract XChainController {
     );
     _;
   }
-
-  event SendXChainAmount(
-    address _vault,
-    uint16 _chainId,
-    uint256 _amountToSendXChain,
-    uint256 _exchangeRate
-  );
-
-  event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
 
   constructor(
     address _game,

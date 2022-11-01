@@ -15,8 +15,6 @@ contract IdleProvider is IProvider {
 
   address public controller;
 
-  mapping(uint256 => uint256) public historicalPrices;
-
   modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");
     _;
