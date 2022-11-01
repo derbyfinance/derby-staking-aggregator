@@ -17,8 +17,6 @@ contract CompoundProvider is IProvider {
   IComptroller public comptroller;
   address public controller;
 
-  mapping(uint256 => uint256) public historicalPrices;
-
   modifier onlyController() {
     require(msg.sender == controller, "ETFProvider: only controller");
     _;
