@@ -9,7 +9,6 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
-  address public guardian;
   address public derbyToken;
   bool public vaultOff;
 
@@ -36,7 +35,6 @@ contract MainVault is Vault, VaultToken {
     uint8 _decimals,
     uint256 _vaultNumber,
     address _dao,
-    address _guardian,
     address _game,
     address _controller,
     address _vaultCurrency,
@@ -47,7 +45,6 @@ contract MainVault is Vault, VaultToken {
     Vault(_vaultNumber, _dao, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
   {
     exchangeRate = _uScale;
-    guardian = _guardian;
   }
 
   modifier onlyXProvider() {
@@ -63,11 +60,6 @@ contract MainVault is Vault, VaultToken {
 
   modifier onlyWhenIdle() {
     require(state == State.Idle, "Rebalancing");
-    _;
-  }
-
-  modifier onlyGuardian() {
-    require(msg.sender == guardian, "only Guardian");
     _;
   }
 
@@ -323,6 +315,10 @@ contract MainVault is Vault, VaultToken {
     return withdrawalAllowance[msg.sender];
   }
 
+  /*
+  Only Dao functions
+  */
+
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
   function setHomeXProviderAddress(address _xProvider) external onlyDao {
@@ -335,10 +331,15 @@ contract MainVault is Vault, VaultToken {
     xController = _xController;
   }
 
-  /// @notice Setter for new homeChain Id
-  function setChainIds(uint16 _homeChain) external onlyDao {
-    homeChain = _homeChain;
+  /// @notice Setter for derby token address
+  /// @param _token New address of the derby token
+  function setDaoToken(address _token) external onlyDao {
+    derbyToken = _token;
   }
+
+  /*
+  Only Guardian functions
+  */
 
   /// @notice Step 3: Guardian function
   function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate)
@@ -363,15 +364,8 @@ contract MainVault is Vault, VaultToken {
     state = _state;
   }
 
-  /// @notice Setter for derby token address
-  /// @param _token New address of the derby token
-  function setDaoToken(address _token) external onlyDao {
-    derbyToken = _token;
-  }
-
-  /// @notice Setter for guardian address
-  /// @param _guardian new address of the guardian
-  function setGuardian(address _guardian) external onlyDao {
-    guardian = _guardian;
+  /// @notice Setter for new homeChain Id
+  function setChainIds(uint16 _homeChain) external onlyGuardian {
+    homeChain = _homeChain;
   }
 }

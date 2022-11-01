@@ -141,7 +141,7 @@ describe('Testing XChainController, unit test', async () => {
 
     await Promise.all([
       game.connect(dao).setXProvider(xProvider10.address),
-      game.connect(dao).setChainIdArray(chainIds),
+      game.connect(dao).setChainIds(chainIds),
       game.connect(dao).setLatestProtocolId(10, 5),
       game.connect(dao).setVaultAddress(vaultNumber, 10, vault1.address),
     ]);
@@ -167,7 +167,7 @@ describe('Testing XChainController, unit test', async () => {
     await Promise.all([
       xChainController.setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
       xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
-      xChainController.connect(dao).setChainIdArray(chainIds),
+      xChainController.connect(dao).setChainIds(chainIds),
     ]);
 
     for (const protocol of protocols.values()) {

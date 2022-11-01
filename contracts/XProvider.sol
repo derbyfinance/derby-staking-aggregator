@@ -450,6 +450,10 @@ contract XProvider is ILayerZeroReceiver {
     return IVault(_vault).decimals();
   }
 
+  /*
+  Only Dao functions
+  */
+
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
   /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
   /// @param _srcAddress Address of remote xprovider
