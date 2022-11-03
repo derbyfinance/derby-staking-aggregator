@@ -70,23 +70,6 @@ contract Controller is IController {
     _;
   }
 
-  /// @notice Balance of  underlying Token from address
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _address Address to request balance from
-  /// @return Balance function for requested protocol
-  function balance(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    address _address
-  ) external view override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).balance(
-        _address,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken
-      );
-  }
-
   /// @notice Harvest tokens from underlying protocols
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNumber Protocol number linked to protocol vault

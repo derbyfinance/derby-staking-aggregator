@@ -23,12 +23,6 @@ interface IController {
     uint256 poolFee;
   }
 
-  function balance(
-    uint256 _ETFnumber,
-    uint256 protocolNumber,
-    address _address
-  ) external view returns (uint256);
-
   function claim(uint256 _ETFnumber, uint256 protocolNumber) external returns (bool);
 
   function addProtocol(
