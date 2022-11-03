@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
+import "./Interfaces/IProvider.sol";
 
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
@@ -317,24 +318,21 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
-      vaultNumber,
-      _protocolNum
-    );
+    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    if (protocol.underlying != vaultCurrencyAddr) {
+    if (p.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(_amount, vaultCurrencyAddr, protocol.underlying),
+        Swap.SwapInOut(_amount, vaultCurrencyAddr, p.underlying),
         uScale,
-        controller.underlyingUScale(protocol.underlying),
-        controller.getCurveParams(vaultCurrencyAddr, protocol.underlying)
+        controller.underlyingUScale(p.underlying),
+        controller.getCurveParams(vaultCurrencyAddr, p.underlying)
       );
     }
 
-    IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
+    IERC20(p.underlying).safeIncreaseAllowance(p.provider, _amount);
+    IProvider(p.provider).deposit(_amount, p.LPToken, p.underlying);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -343,25 +341,21 @@ contract Vault is ReentrancyGuard {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount <= 0) return;
+    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
 
-    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
-      vaultNumber,
-      _protocolNum
-    );
-
-    _amount = (_amount * protocol.uScale) / uScale;
+    _amount = (_amount * p.uScale) / uScale;
 
     uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
-    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
 
-    uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
+    IERC20(p.LPToken).safeIncreaseAllowance(p.provider, shares);
+    uint256 amountReceived = IProvider(p.provider).withdraw(shares, p.LPToken, p.underlying);
 
-    if (protocol.underlying != vaultCurrencyAddr) {
+    if (p.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(amountReceived, protocol.underlying, vaultCurrencyAddr),
-        controller.underlyingUScale(protocol.underlying),
+        Swap.SwapInOut(amountReceived, p.underlying, vaultCurrencyAddr),
+        controller.underlyingUScale(p.underlying),
         uScale,
-        controller.getCurveParams(protocol.underlying, vaultCurrencyAddr)
+        controller.getCurveParams(p.underlying, vaultCurrencyAddr)
       );
     }
   }

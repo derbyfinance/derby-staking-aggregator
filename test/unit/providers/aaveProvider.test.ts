@@ -9,7 +9,7 @@ import { usdc, aaveUSDC as ausdc, aave } from '@testhelp/addresses';
 const amount = Math.floor(Math.random() * 100000);
 const amountUSDC = parseUSDC(amount.toString());
 
-describe('Testing Aave provider', async () => {
+describe.skip('Testing Aave provider', async () => {
   let aaveProvider: AaveProvider,
     dao: Signer,
     vault: Signer,
