@@ -11,7 +11,6 @@ contract Controller is IController {
   UniswapParams public uniswapParams;
 
   address public dao;
-  address public game;
   address public curve3Pool;
   address public chainlinkGasPriceOracle;
 
@@ -68,14 +67,6 @@ contract Controller is IController {
 
   modifier onlyVault() {
     require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
-    _;
-  }
-
-  modifier onlyVaultOrGame() {
-    require(
-      vaultWhitelist[msg.sender] == true || msg.sender == game,
-      "Controller: only Vault or Game"
-    );
     _;
   }
 
@@ -235,12 +226,6 @@ contract Controller is IController {
   /// @param _vault Vault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;
-  }
-
-  /// @notice Add game address to Controller
-  /// @param _game game address
-  function addGame(address _game) external onlyDao {
-    game = _game;
   }
 
   /// @notice Set the Uniswap Router address
