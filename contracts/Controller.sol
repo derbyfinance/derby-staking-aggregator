@@ -89,13 +89,13 @@ contract Controller is IController {
     address _vault,
     uint256 _amount
   ) external override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).deposit(
-        _vault,
-        _amount,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken,
-        protocolInfo[_vaultNumber][_protocolNumber].underlying
-      );
+    // return
+    //   IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).deposit(
+    //     _vault,
+    //     _amount,
+    //     protocolInfo[_vaultNumber][_protocolNumber].LPToken,
+    //     protocolInfo[_vaultNumber][_protocolNumber].underlying
+    //   );
   }
 
   /// @notice Withdraw the underlying asset in given protocol number
@@ -110,13 +110,13 @@ contract Controller is IController {
     address _vault,
     uint256 _amount
   ) external override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).withdraw(
-        _vault,
-        _amount,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken,
-        protocolInfo[_vaultNumber][_protocolNumber].underlying
-      );
+    // return
+    //   IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).withdraw(
+    //     _vault,
+    //     _amount,
+    //     protocolInfo[_vaultNumber][_protocolNumber].LPToken,
+    //     protocolInfo[_vaultNumber][_protocolNumber].underlying
+    //   );
   }
 
   /// @notice Exchange rate of underyling protocol token

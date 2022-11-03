@@ -66,74 +66,46 @@ export const deployTokenTimeLock = (
   return deployContract(deployerSign, TokenTimelockArtifact, [tokenAddr]) as Promise<TokenTimelock>;
 };
 
-export const deployBetaProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<BetaProvider> => {
-  return deployContract(deployerSign, BetaProviderArtifact, [controller]) as Promise<BetaProvider>;
+export const deployBetaProvider = (deployerSign: Signer): Promise<BetaProvider> => {
+  return deployContract(deployerSign, BetaProviderArtifact, []) as Promise<BetaProvider>;
 };
 
-export const deployIdleProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<IdleProvider> => {
-  return deployContract(deployerSign, IdleProviderArtifact, [controller]) as Promise<IdleProvider>;
+export const deployIdleProvider = (deployerSign: Signer): Promise<IdleProvider> => {
+  return deployContract(deployerSign, IdleProviderArtifact, []) as Promise<IdleProvider>;
 };
 
-export const deployHomoraProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<HomoraProvider> => {
-  return deployContract(deployerSign, HomoraProviderArtifact, [
-    controller,
-  ]) as Promise<HomoraProvider>;
+export const deployHomoraProvider = (deployerSign: Signer): Promise<HomoraProvider> => {
+  return deployContract(deployerSign, HomoraProviderArtifact, []) as Promise<HomoraProvider>;
 };
 
-export const deployYearnProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<YearnProvider> => {
-  return deployContract(deployerSign, YearnProviderArtifact, [
-    controller,
-  ]) as Promise<YearnProvider>;
+export const deployYearnProvider = (deployerSign: Signer): Promise<YearnProvider> => {
+  return deployContract(deployerSign, YearnProviderArtifact, []) as Promise<YearnProvider>;
 };
 
-export const deployTruefiProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<TruefiProvider> => {
-  return deployContract(deployerSign, TruefiProviderArtifact, [
-    controller,
-  ]) as Promise<TruefiProvider>;
+export const deployTruefiProvider = (deployerSign: Signer): Promise<TruefiProvider> => {
+  return deployContract(deployerSign, TruefiProviderArtifact, []) as Promise<TruefiProvider>;
 };
 
 export const deployCompoundProvider = (
   deployerSign: Signer,
-  controller: string,
   comptroller: string,
 ): Promise<CompoundProvider> => {
   return deployContract(deployerSign, CompoundProviderArtifact, [
-    controller,
     comptroller,
   ]) as Promise<CompoundProvider>;
 };
 
 export const deployCompoundProviderMock = (
   deployerSign: Signer,
-  controller: string,
   comptroller: string,
 ): Promise<CompoundProviderMock> => {
   return deployContract(deployerSign, CompoundProviderMockArtifact, [
-    controller,
     comptroller,
   ]) as Promise<CompoundProviderMock>;
 };
 
-export const deployAaveProvider = (
-  deployerSign: Signer,
-  controller: string,
-): Promise<AaveProvider> => {
-  return deployContract(deployerSign, AaveProviderArtifact, [controller]) as Promise<AaveProvider>;
+export const deployAaveProvider = (deployerSign: Signer): Promise<AaveProvider> => {
+  return deployContract(deployerSign, AaveProviderArtifact, []) as Promise<AaveProvider>;
 };
 
 export const deployVault = (
