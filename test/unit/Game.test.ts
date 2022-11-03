@@ -135,7 +135,6 @@ describe('Testing Game', async () => {
       game.connect(dao).setChainIds([10, 100, 1000]),
       xChainController.connect(dao).setHomeXProviderAddress(xProvider100.address),
       xChainController.connect(dao).setChainIds(chainIds),
-      controller.connect(dao).addGame(game.address),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
       IUSDc.connect(user).approve(vault.address, amountUSDC),
