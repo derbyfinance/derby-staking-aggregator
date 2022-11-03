@@ -7,7 +7,6 @@ interface IController {
     address LPToken;
     address provider;
     address underlying; // address of underlying token of the protocol eg USDC
-    address govToken; // address of protocol governance token
     uint256 uScale; // uScale of protocol LP Token
   }
 
@@ -24,24 +23,10 @@ interface IController {
     uint256 poolFee;
   }
 
-  function exchangeRate(uint256 _ETFnumber, uint256 protocolNumber) external view returns (uint256);
-
   function balance(
     uint256 _ETFnumber,
     uint256 protocolNumber,
     address _address
-  ) external view returns (uint256);
-
-  function balanceUnderlying(
-    uint256 _ETFnumber,
-    uint256 protocolNumber,
-    address _address
-  ) external view returns (uint256);
-
-  function calcShares(
-    uint256 _ETFnumber,
-    uint256 protocolNumber,
-    uint256 _amount
   ) external view returns (uint256);
 
   function claim(uint256 _ETFnumber, uint256 protocolNumber) external returns (bool);
@@ -99,4 +84,6 @@ interface IController {
   function getGasPrice() external returns (uint256);
 
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
+
+  function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address);
 }
