@@ -365,6 +365,7 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 latestProtocol = latestProtocolId[chain];
       for (uint i = 0; i < latestProtocol; i++) {
         int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
+        console.log("allocation %s", uint(allocation));
         if (allocation == 0) continue;
 
         int256 lastRebalanceReward = getRewardsPerLockedToken(
@@ -521,12 +522,17 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
     int256 amount = baskets[_basketId].totalUnRedeemedRewards;
+    if (amount < 0) return redeemNegativeRewards(_basketId, amount);
     require(amount > 0, "Nothing to claim");
 
     baskets[_basketId].totalRedeemedRewards += amount;
     baskets[_basketId].totalUnRedeemedRewards = 0;
 
     IVault(homeVault).redeemRewardsGame(uint256(amount), msg.sender);
+  }
+
+  function redeemNegativeRewards(uint256 _basketId, int256 _amount) internal {
+    console.log("redeeming negative rewards %s", uint(_amount));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
