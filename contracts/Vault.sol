@@ -318,21 +318,24 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to deposit
   function depositInProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    if (p.underlying != vaultCurrencyAddr) {
+    if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(_amount, vaultCurrencyAddr, p.underlying),
+        Swap.SwapInOut(_amount, vaultCurrencyAddr, protocol.underlying),
         uScale,
-        controller.underlyingUScale(p.underlying),
-        controller.getCurveParams(vaultCurrencyAddr, p.underlying)
+        controller.underlyingUScale(protocol.underlying),
+        controller.getCurveParams(vaultCurrencyAddr, protocol.underlying)
       );
     }
 
-    IERC20(p.underlying).safeIncreaseAllowance(p.provider, _amount);
-    IProvider(p.provider).deposit(_amount, p.LPToken, p.underlying);
+    IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
+    IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -341,20 +344,27 @@ contract Vault is ReentrancyGuard {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount <= 0) return;
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
 
-    _amount = (_amount * p.uScale) / uScale;
-    uint256 shares = IProvider(p.provider).calcShares(_amount, p.LPToken);
+    _amount = (_amount * protocol.uScale) / uScale;
+    uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
 
-    IERC20(p.LPToken).safeIncreaseAllowance(p.provider, shares);
-    uint256 amountReceived = IProvider(p.provider).withdraw(shares, p.LPToken, p.underlying);
+    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
+    uint256 amountReceived = IProvider(protocol.provider).withdraw(
+      shares,
+      protocol.LPToken,
+      protocol.underlying
+    );
 
-    if (p.underlying != vaultCurrencyAddr) {
+    if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(amountReceived, p.underlying, vaultCurrencyAddr),
-        controller.underlyingUScale(p.underlying),
+        Swap.SwapInOut(amountReceived, protocol.underlying, vaultCurrencyAddr),
+        controller.underlyingUScale(protocol.underlying),
         uScale,
-        controller.getCurveParams(p.underlying, vaultCurrencyAddr)
+        controller.getCurveParams(protocol.underlying, vaultCurrencyAddr)
       );
     }
   }
@@ -374,9 +384,14 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns (uint256) {
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
-    uint256 underlyingBalance = (IProvider(p.provider).balanceUnderlying(address(this), p.LPToken) *
-      uScale) / p.uScale;
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
+    uint256 underlyingBalance = (IProvider(protocol.provider).balanceUnderlying(
+      address(this),
+      protocol.LPToken
+    ) * uScale) / protocol.uScale;
 
     return underlyingBalance;
   }
@@ -386,8 +401,14 @@ contract Vault is ReentrancyGuard {
   /// @param _amount Amount in underyling token e.g USDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns (uint256) {
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
-    uint256 shares = IProvider(p.provider).calcShares((_amount * p.uScale) / uScale, p.LPToken);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
+    uint256 shares = IProvider(protocol.provider).calcShares(
+      (_amount * protocol.uScale) / uScale,
+      protocol.LPToken
+    );
 
     return shares;
   }
@@ -396,8 +417,11 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns (uint256) {
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
-    return IProvider(p.provider).exchangeRate(p.LPToken);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
+    return IProvider(protocol.provider).exchangeRate(protocol.LPToken);
   }
 
   /// @notice Set the delta allocated tokens by game contract
