@@ -39,13 +39,13 @@ class AllProviders {
       this.idleProvider,
       this.betaProvider,
     ] = await Promise.all([
-      deployYearnProvider(dao, controller.address),
-      deployCompoundProvider(dao, controller.address, comptroller),
-      deployAaveProvider(dao, controller.address),
-      deployTruefiProvider(dao, controller.address),
-      deployHomoraProvider(dao, controller.address),
-      deployIdleProvider(dao, controller.address),
-      deployBetaProvider(dao, controller.address),
+      deployYearnProvider(dao),
+      deployCompoundProvider(dao, comptroller),
+      deployAaveProvider(dao),
+      deployTruefiProvider(dao),
+      deployHomoraProvider(dao),
+      deployIdleProvider(dao),
+      deployBetaProvider(dao),
     ]);
   }
 

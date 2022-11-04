@@ -77,48 +77,6 @@ contract Controller is IController {
     _;
   }
 
-  /// @notice Deposit the underlying asset in given protocol number
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault (number)
-  /// @param _vault Address from Vault contract i.e buyer
-  /// @param _amount Amount to deposit
-  /// @return Deposit function for requested protocol
-  function deposit(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    address _vault,
-    uint256 _amount
-  ) external override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).deposit(
-        _vault,
-        _amount,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken,
-        protocolInfo[_vaultNumber][_protocolNumber].underlying
-      );
-  }
-
-  /// @notice Withdraw the underlying asset in given protocol number
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _vault Address from Vault contract i.e buyer
-  /// @param _amount Amount to withdraw
-  /// @return Withdraw function for requested protocol
-  function withdraw(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    address _vault,
-    uint256 _amount
-  ) external override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).withdraw(
-        _vault,
-        _amount,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken,
-        protocolInfo[_vaultNumber][_protocolNumber].underlying
-      );
-  }
-
   /// @notice Exchange rate of underyling protocol token
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNumber Protocol number linked to protocol vault
@@ -288,7 +246,7 @@ contract Controller is IController {
   /// @param _provider Address of the protocol provider
   /// @param _protocolLPToken Address of protocolToken eg cUSDC
   /// @param _underlying Address of underlying protocol vault eg USDC
-  /// @param _govToken Address of underlying protocol vault eg USDC
+  /// @param _govToken Address governance token of the protocol
   function addProtocol(
     string calldata _name,
     uint256 _vaultNumber,

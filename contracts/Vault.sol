@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
+import "./Interfaces/IProvider.sol";
 
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
@@ -334,7 +335,7 @@ contract Vault is ReentrancyGuard {
     }
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
+    IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -343,7 +344,6 @@ contract Vault is ReentrancyGuard {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount <= 0) return;
-
     IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
       _protocolNum
@@ -352,9 +352,13 @@ contract Vault is ReentrancyGuard {
     _amount = (_amount * protocol.uScale) / uScale;
 
     uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
-    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
 
-    uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
+    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
+    uint256 amountReceived = IProvider(protocol.provider).withdraw(
+      shares,
+      protocol.LPToken,
+      protocol.underlying
+    );
 
     if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
