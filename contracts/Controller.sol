@@ -11,7 +11,6 @@ contract Controller is IController {
   UniswapParams public uniswapParams;
 
   address public dao;
-  address public game;
   address public curve3Pool;
   address public chainlinkGasPriceOracle;
 
@@ -29,6 +28,8 @@ contract Controller is IController {
 
   // (vaultNumber => protocolNumber => bool): true when protocol is blacklisted
   mapping(uint256 => mapping(uint256 => bool)) public protocolBlacklist;
+  // (vaultNumber => protocolNumber => address): address of the governance token
+  mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
   // (vaultNumber => latestProtocolId)
   mapping(uint256 => uint256) public latestProtocolId;
 
@@ -67,82 +68,6 @@ contract Controller is IController {
   modifier onlyVault() {
     require(vaultWhitelist[msg.sender] == true, "Controller: only Vault");
     _;
-  }
-
-  modifier onlyVaultOrGame() {
-    require(
-      vaultWhitelist[msg.sender] == true || msg.sender == game,
-      "Controller: only Vault or Game"
-    );
-    _;
-  }
-
-  /// @notice Exchange rate of underyling protocol token
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @return ExchangeRate function for requested protocol
-  function exchangeRate(uint256 _vaultNumber, uint256 _protocolNumber)
-    external
-    view
-    override
-    onlyVaultOrGame
-    returns (uint256)
-  {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).exchangeRate(
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken
-      );
-  }
-
-  /// @notice Balance of  underlying Token from address
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _address Address to request balance from
-  /// @return Balance function for requested protocol
-  function balance(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    address _address
-  ) external view override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).balance(
-        _address,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken
-      );
-  }
-
-  /// @notice Get balance from address in shares i.e LP tokens
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _address Address to request balance from
-  /// @return balanceUnderlying function for requested protocol
-  function balanceUnderlying(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    address _address
-  ) external view override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).balanceUnderlying(
-        _address,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken
-      );
-  }
-
-  /// @notice Calculates how many shares are equal to the amount
-  /// @param _vaultNumber Number of the vault
-  /// @param _protocolNumber Protocol number linked to protocol vault
-  /// @param _amount Amount in underyling token e.g USDC
-  /// @return calcShares function for requested protocol
-  function calcShares(
-    uint256 _vaultNumber,
-    uint256 _protocolNumber,
-    uint256 _amount
-  ) external view override onlyVault returns (uint256) {
-    return
-      IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).calcShares(
-        _amount,
-        protocolInfo[_vaultNumber][_protocolNumber].LPToken
-      );
   }
 
   /// @notice Harvest tokens from underlying protocols
@@ -236,6 +161,12 @@ contract Controller is IController {
     return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
   }
 
+  /// @notice Gets the gas price from Chainlink oracle
+  /// @return gasPrice latest gas price from oracle
+  function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address) {
+    return protocolGovToken[_vaultNumber][_protocolNum];
+  }
+
   /*
   Only Dao functions
   */
@@ -259,11 +190,11 @@ contract Controller is IController {
     uint256 protocolNumber = latestProtocolId[_vaultNumber];
 
     protocolNames[_vaultNumber][protocolNumber] = _name;
+    protocolGovToken[_vaultNumber][protocolNumber] = _govToken;
     protocolInfo[_vaultNumber][protocolNumber] = ProtocolInfoS(
       _protocolLPToken,
       _provider,
       _underlying,
-      _govToken,
       _uScale
     );
 
@@ -278,12 +209,6 @@ contract Controller is IController {
   /// @param _vault Vault address to whitelist
   function addVault(address _vault) external onlyDao {
     vaultWhitelist[_vault] = true;
-  }
-
-  /// @notice Add game address to Controller
-  /// @param _game game address
-  function addGame(address _game) external onlyDao {
-    game = _game;
   }
 
   /// @notice Set the Uniswap Router address

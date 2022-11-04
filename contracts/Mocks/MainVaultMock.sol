@@ -68,7 +68,10 @@ contract MainVaultMock is MainVault {
     view
     returns (uint256)
   {
-    return controller.balance(vaultNumber, _protocolNum, _address);
+    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    uint256 balance = IProvider(p.provider).balance(_address, p.LPToken);
+
+    return balance;
   }
 
   function getWithdrawalAllowanceTEST(address _address) external view returns (uint256) {
