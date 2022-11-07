@@ -68,6 +68,11 @@ contract Game is ERC721, ReentrancyGuard {
   // last rebalance timeStamp
   uint256 public lastTimeStamp;
 
+  // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
+  int256 private negativeRewardThreshold;
+  // percentage of tokens that will be sold at negative rewards
+  uint256 private negativeRewardFactor;
+
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
   mapping(uint256 => Basket) private baskets;
@@ -120,6 +125,8 @@ contract Game is ERC721, ReentrancyGuard {
     guardian = _guardian;
     controller = IController(_controller);
     lastTimeStamp = block.timestamp;
+
+    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -283,8 +290,11 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
-  function unlockTokensFromBasket(uint256 _unlockedTokenAmount) internal {
+  function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
+    uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
+
     uint256 balanceBefore = IERC20(derbyTokenAddress).balanceOf(address(this));
     IERC20(derbyTokenAddress).safeTransfer(msg.sender, _unlockedTokenAmount);
     uint256 balanceAfter = IERC20(derbyTokenAddress).balanceOf(address(this));
@@ -293,6 +303,27 @@ contract Game is ERC721, ReentrancyGuard {
       (balanceBefore - balanceAfter - _unlockedTokenAmount) == 0,
       "Error unlock: under/overflow"
     );
+  }
+
+  function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokenAmount)
+    public
+    returns (uint256)
+  {
+    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
+    if (unredeemedRewards > negativeRewardThreshold) return _unlockedTokenAmount;
+
+    uint256 tokensToBurn = uint(-unredeemedRewards) < _unlockedTokenAmount
+      ? uint(-unredeemedRewards)
+      : _unlockedTokenAmount;
+
+    console.log("_unlockedTokenAmount %s", uint(_unlockedTokenAmount));
+    console.log("unredeemedRewards %s", uint(unredeemedRewards));
+
+    // int256 tokensToBurn = -unredeemedRewards * negativeRewardFactor;
+    console.log("tokensToBurn %s", tokensToBurn);
+
+    // baskets[_basketId].totalUnRedeemedRewards = 0;
+    return tokensToBurn;
   }
 
   /// @notice rebalances an existing Basket
@@ -400,7 +431,7 @@ contract Game is ERC721, ReentrancyGuard {
       int256 tokensToUnlock = oldTotal - newTotal;
       require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
 
-      unlockTokensFromBasket(uint256(tokensToUnlock));
+      unlockTokensFromBasket(_basketId, uint256(tokensToUnlock));
     }
   }
 
@@ -522,17 +553,12 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
     int256 amount = baskets[_basketId].totalUnRedeemedRewards;
-    if (amount < 0) return redeemNegativeRewards(_basketId, amount);
     require(amount > 0, "Nothing to claim");
 
     baskets[_basketId].totalRedeemedRewards += amount;
     baskets[_basketId].totalUnRedeemedRewards = 0;
 
     IVault(homeVault).redeemRewardsGame(uint256(amount), msg.sender);
-  }
-
-  function redeemNegativeRewards(uint256 _basketId, int256 _amount) internal {
-    console.log("redeeming negative rewards %s", uint(_amount));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
@@ -578,6 +604,18 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /// @notice Setter for threshold at which user tokens will be sold / burned
+  /// @param _threshold treshold in vaultCurrency e.g USDC, must be negative
+  function setNegativeRewardThreshold(int256 _threshold) external onlyDao {
+    negativeRewardThreshold = _threshold;
+  }
+
+  /// @notice Setter for negativeRewardFactor
+  /// @param _factor percentage of tokens that will be sold / burned
+  function setNegativeRewardFactor(uint256 _factor) external onlyDao {
+    negativeRewardFactor = _factor;
   }
 
   /*

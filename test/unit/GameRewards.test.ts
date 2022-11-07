@@ -217,11 +217,11 @@ describe('Testing Game', async () => {
   });
 
   it('Should be able to redeem rewards / set rewardAllowance', async function () {
-    await game.redeemRewards(basketNum);
-    await expect(game.redeemRewards(basketNum)).to.be.revertedWith('Nothing to claim');
+    // await game.redeemRewards(basketNum);
+    await game.redeemNegativeRewards(basketNum, 2_120_000);
 
-    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
-    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
+    // expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
+    // expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
   });
 
   // it('Should redeem and swap rewards to UNI tokens', async function () {
