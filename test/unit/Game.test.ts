@@ -165,7 +165,7 @@ describe('Testing Game', async () => {
   });
 
   it('game should have DerbyToken contract addresses set', async function () {
-    expect(await game.derbyTokenAddress()).to.be.equal(DerbyToken.address);
+    expect(await game.derbyToken()).to.be.equal(DerbyToken.address);
   });
 
   it('Should Lock tokens, mint basket and set correct deltas', async function () {

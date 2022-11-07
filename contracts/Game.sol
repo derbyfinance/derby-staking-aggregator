@@ -291,9 +291,8 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-  /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
+  /// @param _unlockedTokenAmount Amount of derby tokens to unlock and send to the user.
   function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
-    console.log("unlock amount %s", _unlockedTokenAmount);
     uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
     uint256 tokensToUnlock = _unlockedTokenAmount -= tokensBurned;
 
@@ -304,6 +303,10 @@ contract Game is ERC721, ReentrancyGuard {
     require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
   }
 
+  /// @notice Calculates if there are any negative rewards and how many tokens to burn
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
+  /// @param _unlockedTokens Amount of derby tokens to unlock and send to user
+  /// @return tokensToBurn Amount of derby tokens that are burned
   function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokens)
     internal
     returns (uint256)
@@ -315,9 +318,9 @@ contract Game is ERC721, ReentrancyGuard {
       ? uint(-unredeemedRewards)
       : _unlockedTokens;
 
-    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
     baskets[_basketId].totalUnRedeemedRewards += int(negativeRewards);
 
+    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
     IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
 
     return tokensToBurn;
@@ -392,7 +395,6 @@ contract Game is ERC721, ReentrancyGuard {
       uint256 latestProtocol = latestProtocolId[chain];
       for (uint i = 0; i < latestProtocol; i++) {
         int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
-        console.log("allocation %s", uint(allocation));
         if (allocation == 0) continue;
 
         int256 lastRebalanceReward = getRewardsPerLockedToken(
