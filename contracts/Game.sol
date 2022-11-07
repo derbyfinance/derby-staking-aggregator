@@ -47,7 +47,7 @@ contract Game is ERC721, ReentrancyGuard {
     mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
-  address public derbyTokenAddress;
+  address public derbyToken;
   address public routerAddress;
   address public dao;
   address public guardian;
@@ -113,13 +113,13 @@ contract Game is ERC721, ReentrancyGuard {
   constructor(
     string memory name_,
     string memory symbol_,
-    address _derbyTokenAddress,
+    address _derbyToken,
     address _routerAddress,
     address _dao,
     address _guardian,
     address _controller
   ) ERC721(name_, symbol_) {
-    derbyTokenAddress = _derbyTokenAddress;
+    derbyToken = _derbyToken;
     routerAddress = _routerAddress;
     dao = _dao;
     guardian = _guardian;
@@ -282,9 +282,9 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated.
   /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
   function lockTokensToBasket(uint256 _lockedTokenAmount) internal {
-    uint256 balanceBefore = IERC20(derbyTokenAddress).balanceOf(address(this));
-    IERC20(derbyTokenAddress).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
-    uint256 balanceAfter = IERC20(derbyTokenAddress).balanceOf(address(this));
+    uint256 balanceBefore = IERC20(derbyToken).balanceOf(address(this));
+    IERC20(derbyToken).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
+    uint256 balanceAfter = IERC20(derbyToken).balanceOf(address(this));
 
     require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
   }
@@ -293,36 +293,33 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
   function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
+    console.log("unlock amount %s", _unlockedTokenAmount);
     uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
+    uint256 tokensToUnlock = _unlockedTokenAmount -= tokensBurned;
 
-    uint256 balanceBefore = IERC20(derbyTokenAddress).balanceOf(address(this));
-    IERC20(derbyTokenAddress).safeTransfer(msg.sender, _unlockedTokenAmount);
-    uint256 balanceAfter = IERC20(derbyTokenAddress).balanceOf(address(this));
+    uint256 balanceBefore = IERC20(derbyToken).balanceOf(address(this));
+    IERC20(derbyToken).safeTransfer(msg.sender, tokensToUnlock);
+    uint256 balanceAfter = IERC20(derbyToken).balanceOf(address(this));
 
-    require(
-      (balanceBefore - balanceAfter - _unlockedTokenAmount) == 0,
-      "Error unlock: under/overflow"
-    );
+    require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
   }
 
-  function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokenAmount)
-    public
+  function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokens)
+    internal
     returns (uint256)
   {
     int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
-    if (unredeemedRewards > negativeRewardThreshold) return _unlockedTokenAmount;
+    if (unredeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 tokensToBurn = uint(-unredeemedRewards) < _unlockedTokenAmount
+    uint256 negativeRewards = uint(-unredeemedRewards) < _unlockedTokens
       ? uint(-unredeemedRewards)
-      : _unlockedTokenAmount;
+      : _unlockedTokens;
 
-    console.log("_unlockedTokenAmount %s", uint(_unlockedTokenAmount));
-    console.log("unredeemedRewards %s", uint(unredeemedRewards));
+    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
+    baskets[_basketId].totalUnRedeemedRewards += int(negativeRewards);
 
-    // int256 tokensToBurn = -unredeemedRewards * negativeRewardFactor;
-    console.log("tokensToBurn %s", tokensToBurn);
+    IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
 
-    // baskets[_basketId].totalUnRedeemedRewards = 0;
     return tokensToBurn;
   }
 
@@ -340,8 +337,8 @@ contract Game is ERC721, ReentrancyGuard {
     require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
     addToTotalRewards(_basketId);
-
     int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
+
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
     setBasketRebalancingPeriod(_basketId, vaultNumber);
@@ -369,7 +366,6 @@ contract Game is ERC721, ReentrancyGuard {
       for (uint256 j = 0; j < latestProtocol; j++) {
         int256 allocation = _deltaAllocations[i][j];
         if (allocation == 0) continue;
-
         chainTotal += allocation;
         setDeltaAllocationProtocol(_vaultNumber, chain, j, allocation);
         setBasketAllocationInProtocol(_basketId, chain, j, allocation);

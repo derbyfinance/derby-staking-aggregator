@@ -196,29 +196,36 @@ describe('Testing Game', async () => {
     ]);
 
     const newAllocations = [
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0], // 400
+      [0, 0, 0, 0, 0], // 600
     ];
     await game.rebalanceBasket(basketNum, newAllocations);
 
-    /*
-    Rewards * allocation = totalReward
-    4000 * 200 = 800_000
-    200 * 200 = 40_000
-    8_000 * 100 = 800_000
-    2_000 * 200 = 400_000
-    400 * 100 = 40_000
-    200 * 200 = 40_000
-    total = 2_120_000
-    */
     const rewards = await game.basketUnredeemedRewards(basketNum);
     console.log({ rewards });
-    // expect(rewards).to.be.equal(2_120_000);
+    expect(rewards).to.be.equal(-1_080_000);
   });
 
-  it('Should be able to redeem rewards / set rewardAllowance', async function () {
-    // await game.redeemRewards(basketNum);
-    await game.redeemNegativeRewards(basketNum, 2_120_000);
+  it('Should settle negative rewards when withdrawing all allocations', async function () {
+    const newAllocations = [
+      [parseEther('-200'), 0, 0, parseEther('-200'), 0], // 400
+      [parseEther('-100'), 0, parseEther('-200'), parseEther('-100'), parseEther('-200')], // 600
+    ];
+
+    // user should get allocation of 1k tokens back minus the negativeReward * 50%
+    await expect(() => game.rebalanceBasket(basketNum, newAllocations)).to.changeTokenBalance(
+      DerbyToken,
+      user,
+      parseEther('1000').sub(1_080_000 * 0.5),
+    );
+
+    // unredeemedRewards should be 0
+    const rewards = await game.basketUnredeemedRewards(basketNum);
+    expect(rewards).to.be.equal(0);
+
+    // negativeRewards * factor of 50%
+    const balance = await DerbyToken.balanceOf(vault.address);
+    expect(balance).to.be.equal(1_080_000 * 0.5);
 
     // expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
     // expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
