@@ -20,7 +20,7 @@ contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   struct Basket {
-    // the ETF number for which this Basket was created
+    // the vault number for which this Basket was created
     uint256 vaultNumber;
     // last period when this Basket got rebalanced
     uint256 lastRebalancingPeriod;
@@ -47,14 +47,13 @@ contract Game is ERC721, ReentrancyGuard {
     mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
-  address public derbyTokenAddress;
-  address public routerAddress;
   address public dao;
   address public guardian;
   address public xProvider;
   address public homeVault;
 
   IController public controller;
+  IERC20 public derbyToken;
 
   // latest basket id
   uint256 private latestBasketId;
@@ -67,6 +66,11 @@ contract Game is ERC721, ReentrancyGuard {
 
   // last rebalance timeStamp
   uint256 public lastTimeStamp;
+
+  // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
+  int256 private negativeRewardThreshold;
+  // percentage of tokens that will be sold at negative rewards
+  uint256 private negativeRewardFactor;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
@@ -108,18 +112,18 @@ contract Game is ERC721, ReentrancyGuard {
   constructor(
     string memory name_,
     string memory symbol_,
-    address _derbyTokenAddress,
-    address _routerAddress,
+    address _derbyToken,
     address _dao,
     address _guardian,
     address _controller
   ) ERC721(name_, symbol_) {
-    derbyTokenAddress = _derbyTokenAddress;
-    routerAddress = _routerAddress;
+    derbyToken = IERC20(_derbyToken);
+    controller = IController(_controller);
     dao = _dao;
     guardian = _guardian;
-    controller = IController(_controller);
     lastTimeStamp = block.timestamp;
+
+    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -275,24 +279,48 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated.
   /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
   function lockTokensToBasket(uint256 _lockedTokenAmount) internal {
-    uint256 balanceBefore = IERC20(derbyTokenAddress).balanceOf(address(this));
-    IERC20(derbyTokenAddress).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
-    uint256 balanceAfter = IERC20(derbyTokenAddress).balanceOf(address(this));
+    uint256 balanceBefore = derbyToken.balanceOf(address(this));
+    derbyToken.safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
+    uint256 balanceAfter = derbyToken.balanceOf(address(this));
 
     require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
   }
 
   /// @notice Function to unlock xaver tokens. If tokens are still allocated to protocols they first hevae to be unallocated.
-  /// @param _unlockedTokenAmount Amount of xaver tokens to unlock inside this contract.
-  function unlockTokensFromBasket(uint256 _unlockedTokenAmount) internal {
-    uint256 balanceBefore = IERC20(derbyTokenAddress).balanceOf(address(this));
-    IERC20(derbyTokenAddress).safeTransfer(msg.sender, _unlockedTokenAmount);
-    uint256 balanceAfter = IERC20(derbyTokenAddress).balanceOf(address(this));
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+  /// @param _unlockedTokenAmount Amount of derby tokens to unlock and send to the user.
+  function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
+    uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
+    uint256 tokensToUnlock = _unlockedTokenAmount -= tokensBurned;
 
-    require(
-      (balanceBefore - balanceAfter - _unlockedTokenAmount) == 0,
-      "Error unlock: under/overflow"
-    );
+    uint256 balanceBefore = derbyToken.balanceOf(address(this));
+    derbyToken.safeTransfer(msg.sender, tokensToUnlock);
+    uint256 balanceAfter = derbyToken.balanceOf(address(this));
+
+    require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
+  }
+
+  /// @notice Calculates if there are any negative rewards and how many tokens to burn
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
+  /// @param _unlockedTokens Amount of derby tokens to unlock and send to user
+  /// @return tokensToBurn Amount of derby tokens that are burned
+  function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokens)
+    internal
+    returns (uint256)
+  {
+    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
+    if (unredeemedRewards > negativeRewardThreshold) return 0;
+
+    uint256 negativeRewards = uint(-unredeemedRewards) < _unlockedTokens
+      ? uint(-unredeemedRewards)
+      : _unlockedTokens;
+
+    baskets[_basketId].totalUnRedeemedRewards += int(negativeRewards);
+
+    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
+    derbyToken.safeTransfer(homeVault, tokensToBurn);
+
+    return tokensToBurn;
   }
 
   /// @notice rebalances an existing Basket
@@ -309,8 +337,8 @@ contract Game is ERC721, ReentrancyGuard {
     require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
     addToTotalRewards(_basketId);
-
     int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
+
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
     setBasketRebalancingPeriod(_basketId, vaultNumber);
@@ -338,7 +366,6 @@ contract Game is ERC721, ReentrancyGuard {
       for (uint256 j = 0; j < latestProtocol; j++) {
         int256 allocation = _deltaAllocations[i][j];
         if (allocation == 0) continue;
-
         chainTotal += allocation;
         setDeltaAllocationProtocol(_vaultNumber, chain, j, allocation);
         setBasketAllocationInProtocol(_basketId, chain, j, allocation);
@@ -399,7 +426,7 @@ contract Game is ERC721, ReentrancyGuard {
       int256 tokensToUnlock = oldTotal - newTotal;
       require(oldTotal >= tokensToUnlock, "Not enough tokens locked");
 
-      unlockTokensFromBasket(uint256(tokensToUnlock));
+      unlockTokensFromBasket(_basketId, uint256(tokensToUnlock));
     }
   }
 
@@ -564,7 +591,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Setter for DAO address
   /// @param _dao DAO address
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
 
@@ -572,6 +599,24 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /// @notice Setter Derby token address
+  /// @param _derbyToken new address of Derby token
+  function setDerbyToken(address _derbyToken) external onlyDao {
+    derbyToken = IERC20(_derbyToken);
+  }
+
+  /// @notice Setter for threshold at which user tokens will be sold / burned
+  /// @param _threshold treshold in vaultCurrency e.g USDC, must be negative
+  function setNegativeRewardThreshold(int256 _threshold) external onlyDao {
+    negativeRewardThreshold = _threshold;
+  }
+
+  /// @notice Setter for negativeRewardFactor
+  /// @param _factor percentage of tokens that will be sold / burned
+  function setNegativeRewardFactor(uint256 _factor) external onlyDao {
+    negativeRewardFactor = _factor;
   }
 
   /*

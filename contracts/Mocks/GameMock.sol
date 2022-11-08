@@ -10,11 +10,10 @@ contract GameMock is Game {
     string memory name_,
     string memory symbol_,
     address _derbyTokenAddress,
-    address _routerAddress,
     address _dao,
     address _guardian,
     address _controller
-  ) Game(name_, symbol_, _derbyTokenAddress, _routerAddress, _dao, _guardian, _controller) {}
+  ) Game(name_, symbol_, _derbyTokenAddress, _dao, _guardian, _controller) {}
 
   function lockTokensToBasketTEST(uint256 _lockedTokenAmount) public {
     lockTokensToBasket(_lockedTokenAmount);
