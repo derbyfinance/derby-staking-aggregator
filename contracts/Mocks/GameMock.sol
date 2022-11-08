@@ -19,10 +19,6 @@ contract GameMock is Game {
     lockTokensToBasket(_lockedTokenAmount);
   }
 
-  function unlockTokensFromBasketTEST(uint256 _lockedTokenAmount) public {
-    unlockTokensFromBasket(_lockedTokenAmount);
-  }
-
   function addToTotalRewardsTEST(uint256 _basketId) public {
     addToTotalRewards(_basketId);
   }

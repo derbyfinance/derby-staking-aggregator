@@ -265,7 +265,7 @@ describe.skip('Testing controller', async () => {
   });
 
   it('Should correctly set dao address', async function () {
-    await controller.connect(dao).setDaoAddress(userAddr);
+    await controller.connect(dao).setDao(userAddr);
     expect(await controller.dao()).to.be.equal(userAddr);
   });
 });

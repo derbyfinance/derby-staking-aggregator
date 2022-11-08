@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
 
 import "./Interfaces/IVault.sol";
-import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 import "./Interfaces/IGame.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
@@ -465,6 +464,12 @@ contract XProvider is ILayerZeroReceiver {
     emit SetTrustedRemote(_srcChainId, _srcAddress);
   }
 
+  /// @notice Setter for xControlleraddress
+  /// @param _xController New address of _xController
+  function setXController(address _xController) external onlyDao {
+    xController = _xController;
+  }
+
   /// @notice Setter for xControllerProvider address
   /// @param _xControllerProvider New address of xProvider for xController chain
   function setXControllerProvider(address _xControllerProvider) external onlyDao {
@@ -500,7 +505,13 @@ contract XProvider is ILayerZeroReceiver {
   }
 
   /// @notice Setter for dao address
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
+  }
+
+  /// @notice Setter for new game address
+  /// @param _game New address of the game
+  function setGame(address _game) external onlyDao {
+    game = _game;
   }
 }

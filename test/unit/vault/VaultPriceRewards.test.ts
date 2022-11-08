@@ -116,7 +116,7 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
     ]);
 
     await Promise.all([
-      vault.setHomeXProviderAddress(xProvider.address),
+      vault.setHomeXProvider(xProvider.address),
       vault.setChainIds(homeChain),
       xProvider.setGameChainId(homeChain),
       xProvider.toggleVaultWhitelist(vault.address),

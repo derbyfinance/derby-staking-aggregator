@@ -254,7 +254,7 @@ contract Controller is IController {
 
   /// @notice Setter for DAO address
   /// @param _dao DAO address
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
 }
