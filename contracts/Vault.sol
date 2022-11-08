@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Interfaces/IController.sol";
-import "./Interfaces/IXProvider.sol";
-import "./Interfaces/IXChainController.sol";
 import "./Interfaces/IProvider.sol";
 
 import "./VaultToken.sol";
@@ -18,11 +16,6 @@ import "hardhat/console.sol";
 
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
-  // name of the ETF e.g. yield_defi_usd_low (a yield token ETF in DeFi in UDS with low risk) or yield_defi_btc_high or exchange_stocks_usd_mid
-  uint256 public vaultNumber;
-
-  IERC20 public vaultCurrency;
-  IController public controller;
 
   // state 0 Rebalance done and ready for xController to rebalance again
   // state 1 Allocation amount received and ready to send funds over to xController
@@ -37,17 +30,16 @@ contract Vault is ReentrancyGuard {
     SendRewardsPerToken
   }
 
+  IERC20 public vaultCurrency;
+  IController public controller;
   State public state;
 
   bool public deltaAllocationsReceived;
 
-  address public vaultCurrencyAddr;
-  address public game;
   address public dao;
   address public guardian;
-  address public xController;
-  address public xProvider;
 
+  uint256 public vaultNumber;
   uint256 public liquidityPerc = 10;
   uint256 public performanceFee = 10;
   uint256 public rebalancingPeriod = 1;
@@ -106,7 +98,6 @@ contract Vault is ReentrancyGuard {
   constructor(
     uint256 _vaultNumber,
     address _dao,
-    address _game,
     address _controller,
     address _vaultCurrency,
     uint256 _uScale,
@@ -114,12 +105,10 @@ contract Vault is ReentrancyGuard {
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
-    vaultCurrencyAddr = _vaultCurrency;
 
     vaultNumber = _vaultNumber;
-
     dao = _dao;
-    game = _game;
+
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
@@ -277,14 +266,14 @@ contract Vault is ReentrancyGuard {
       Swap.SwapInOut(
         (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
         Swap.WETH,
-        vaultCurrencyAddr
+        address(vaultCurrency)
       ),
       controller.getUniswapQuoter(),
       controller.getUniswapPoolFee()
     );
 
     uint256 wethReceived = Swap.swapTokensSingle(
-      Swap.SwapInOut(amountEtherToVaultCurrency, vaultCurrencyAddr, Swap.WETH),
+      Swap.SwapInOut(amountEtherToVaultCurrency, address(vaultCurrency), Swap.WETH),
       controller.getUniswapParams()
     );
     Swap.unWrapWETHtoGov(payable(dao), wethReceived);
@@ -325,12 +314,12 @@ contract Vault is ReentrancyGuard {
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    if (protocol.underlying != vaultCurrencyAddr) {
+    if (protocol.underlying != address(vaultCurrency)) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(_amount, vaultCurrencyAddr, protocol.underlying),
+        Swap.SwapInOut(_amount, address(vaultCurrency), protocol.underlying),
         uScale,
         controller.underlyingUScale(protocol.underlying),
-        controller.getCurveParams(vaultCurrencyAddr, protocol.underlying)
+        controller.getCurveParams(address(vaultCurrency), protocol.underlying)
       );
     }
 
@@ -359,12 +348,12 @@ contract Vault is ReentrancyGuard {
       protocol.underlying
     );
 
-    if (protocol.underlying != vaultCurrencyAddr) {
+    if (protocol.underlying != address(vaultCurrency)) {
       _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(amountReceived, protocol.underlying, vaultCurrencyAddr),
+        Swap.SwapInOut(amountReceived, protocol.underlying, address(vaultCurrency)),
         controller.underlyingUScale(protocol.underlying),
         uScale,
-        controller.getCurveParams(protocol.underlying, vaultCurrencyAddr)
+        controller.getCurveParams(protocol.underlying, address(vaultCurrency))
       );
     }
   }
@@ -445,7 +434,7 @@ contract Vault is ReentrancyGuard {
         address govToken = controller.getGovToken(vaultNumber, i);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, vaultCurrencyAddr),
+          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
           controller.getUniswapParams()
         );
       }
@@ -476,7 +465,7 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Set the governance address
   /// @param _dao New address of the governance / DAO
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
 

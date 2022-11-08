@@ -4,12 +4,17 @@ pragma solidity ^0.8.11;
 
 import "./Vault.sol";
 
+import "./Interfaces/IXProvider.sol";
+
 import "hardhat/console.sol";
 
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
   address public derbyToken;
+  address public game;
+  address public xProvider;
+
   bool public vaultOff;
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
@@ -42,9 +47,10 @@ contract MainVault is Vault, VaultToken {
     uint256 _gasFeeLiquidity
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _game, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
   {
     exchangeRate = _uScale;
+    game = _game;
   }
 
   modifier onlyXProvider() {
@@ -186,7 +192,7 @@ contract MainVault is Vault, VaultToken {
     delete rewardRequestPeriod[msg.sender];
 
     uint256 tokensReceived = Swap.swapTokensMulti(
-      Swap.SwapInOut(value, vaultCurrencyAddr, derbyToken),
+      Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
       controller.getUniswapParams()
     );
     IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
@@ -250,12 +256,16 @@ contract MainVault is Vault, VaultToken {
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
 
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    IXProvider(xProvider).xTransferToController(
+      vaultNumber,
+      amountToSendXChain,
+      address(vaultCurrency)
+    );
 
     amountToSendXChain = 0;
     settleReservedFunds();
 
-    emit RebalanceXChain(vaultNumber, amountToSendXChain, vaultCurrencyAddr);
+    emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));
   }
 
   /// @notice Step 5 end; Push funds from xChainController to vaults
@@ -319,20 +329,20 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
-  function setHomeXProviderAddress(address _xProvider) external onlyDao {
+  function setHomeXProvider(address _xProvider) external onlyDao {
     xProvider = _xProvider;
-  }
-
-  /// @notice Setter for xController address
-  /// @param _xController New address of controller
-  function setXControllerAddress(address _xController) external onlyDao {
-    xController = _xController;
   }
 
   /// @notice Setter for derby token address
   /// @param _token New address of the derby token
   function setDaoToken(address _token) external onlyDao {
     derbyToken = _token;
+  }
+
+  /// @notice Setter for new game address
+  /// @param _game New address of the game
+  function setGame(address _game) external onlyDao {
+    game = _game;
   }
 
   /*
