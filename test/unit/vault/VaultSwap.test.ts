@@ -34,7 +34,7 @@ const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
-describe.only('Testing VaultSwap, unit test', async () => {
+describe('Testing VaultSwap, unit test', async () => {
   let vault: MainVaultMock,
     controller: Controller,
     dao: Signer,
