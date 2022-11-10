@@ -30,7 +30,7 @@ export const usdt = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 // Yearn
 export const yearnUSDC = '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'; // 6
 export const yearnDAI = '0xdA816459F1AB5631232FE5e97a05BBBb94970c95'; // 18
-export const yearnUSDT = '0x7Da96a3891Add058AdA2E826306D812C638D87a7'; // 6
+export const yearnUSDT = '0x3B27F92C0e212C671EA351827EDF93DB27cc0c65'; // 6
 // compound
 export const compoundUSDC = '0x39AA39c021dfbaE8faC545936693aC917d5E7563'; // 8
 export const compoundDAI = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'; // 8
@@ -62,6 +62,7 @@ export const truefi = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784';
 export const alpha = '0xa1faa113cbE53436Df28FF0aEe54275c13B40975';
 export const idle = '0x875773784Af8135eA0ef43b5a374AaD105c5D39e';
 export const beta = '0xBe1a001FE942f96Eea22bA08783140B9Dcc09D28';
+export const compToken = '0xc00e94Cb662C3520282E6f5717214004A7f26888';
 
 // Uniswap
 export const uniswapFactory = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
@@ -73,11 +74,14 @@ export const curve3Pool = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'; // DAI /
 
 // others
 export const comptroller = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
-export const compToken = '0xc00e94Cb662C3520282E6f5717214004A7f26888';
 export const WEth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 export const ChainlinkGasPrice = '0x169e633a2d1e6c10dd91238ba11c4a708dfef37c';
 
-export const CompWhale = '0x7587cAefc8096f5F40ACB83A09Df031a018C66ec';
+// whales for testing
+export const CompWhale = '0xf977814e90da44bfa03b6295a0616a897441acec';
+export const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
+export const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
+export const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
 
 export const yearn_usdc_01 = new ProtocolVault({
   name: 'yearn_usdc_01',
