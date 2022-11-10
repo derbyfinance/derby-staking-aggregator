@@ -163,7 +163,7 @@ describe('Testing Game', async () => {
     expect(balance).to.be.equal(1_080_000 * 0.5);
   });
 
-  it.only('Should settle negative rewards when negative reward are higher then unlocked tokens', async function () {
+  it('Should settle negative rewards when negative reward are higher then unlocked tokens', async function () {
     await game.mintNewBasket(vaultNumber);
 
     let allocations = [
