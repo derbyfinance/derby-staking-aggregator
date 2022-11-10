@@ -80,4 +80,6 @@ interface IController {
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
 
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address);
+
+  function getDao() external view returns (address);
 }

@@ -10,7 +10,7 @@ import "hardhat/console.sol";
 contract Controller is IController {
   UniswapParams public uniswapParams;
 
-  address public dao;
+  address private dao;
   address public curve3Pool;
   address public chainlinkGasPriceOracle;
 
@@ -165,6 +165,11 @@ contract Controller is IController {
   /// @return gasPrice latest gas price from oracle
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address) {
     return protocolGovToken[_vaultNumber][_protocolNum];
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
   }
 
   /*
