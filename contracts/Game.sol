@@ -314,13 +314,11 @@ contract Game is ERC721, ReentrancyGuard {
     int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
     if (unredeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 negativeRewards = uint(-unredeemedRewards) < _unlockedTokens
-      ? uint(-unredeemedRewards)
-      : _unlockedTokens;
+    uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
+    tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
-    baskets[_basketId].totalUnRedeemedRewards += int(negativeRewards);
+    baskets[_basketId].totalUnRedeemedRewards += int(tokensToBurn / negativeRewardFactor) * 100;
 
-    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
     IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
 
     return tokensToBurn;
