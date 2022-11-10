@@ -573,6 +573,6 @@ describe('Testing XChainController, unit test', async () => {
 
   it('Should correctly set dao address', async function () {
     await xChainController.connect(dao).setDaoAddress(userAddr);
-    expect(await xChainController.dao()).to.be.equal(userAddr);
+    expect(await xChainController.getDao()).to.be.equal(userAddr);
   });
 });
