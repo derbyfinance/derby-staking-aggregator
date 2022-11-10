@@ -235,7 +235,8 @@ describe('Testing VaultSwap, unit test', async () => {
       console.log({ balanceUnderlying });
       console.log({ expectedBalance });
 
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 100);
+      // margin for trading slightly unstable stables
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 700);
     }
 
     console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------');
