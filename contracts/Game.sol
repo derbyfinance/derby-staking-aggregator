@@ -295,6 +295,7 @@ contract Game is ERC721, ReentrancyGuard {
   function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
     uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
     uint256 tokensToUnlock = _unlockedTokenAmount -= tokensBurned;
+    if (tokensToUnlock == 0) return;
 
     uint256 balanceBefore = IERC20(derbyToken).balanceOf(address(this));
     IERC20(derbyToken).safeTransfer(msg.sender, tokensToUnlock);
