@@ -14,7 +14,7 @@ contract Controller is IController {
   address public curve3Pool;
   address public chainlinkGasPriceOracle;
 
-  uint256 public curve3PoolFee = 12; // 0.12% including slippage
+  uint256 public curve3PoolFee = 15; // 0.12% including slippage
 
   // (vaultNumber => protocolNumber => protocolInfoStruct): struct in IController
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
