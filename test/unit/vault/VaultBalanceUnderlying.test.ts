@@ -111,7 +111,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - liquidityVault, 1500);
     expect(Number(formatUSDC(balanceVault))).to.be.closeTo(expectedBalanceVault, 20);
   });
-  //1127939.107339 to be close to 1126488.6 +/- 500
+
   it('Should calc Shares for all known protocols correctly', async function () {
     // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
