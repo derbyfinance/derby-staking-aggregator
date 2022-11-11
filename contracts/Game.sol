@@ -125,8 +125,6 @@ contract Game is ERC721, ReentrancyGuard {
     guardian = _guardian;
     controller = IController(_controller);
     lastTimeStamp = block.timestamp;
-
-    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -304,6 +302,8 @@ contract Game is ERC721, ReentrancyGuard {
     require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
   }
 
+  /// @notice IMPORTANT: The negativeRewardFactor takes in account an approximation of the price of derby tokens by the dao
+  /// @notice IMPORTANT: This will change to an exact price when there is a derby token liquidity pool
   /// @notice Calculates if there are any negative rewards and how many tokens to burn
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
   /// @param _unlockedTokens Amount of derby tokens to unlock and send to user
