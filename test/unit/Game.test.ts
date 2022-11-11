@@ -144,6 +144,8 @@ describe('Testing Game', async () => {
       game.connect(dao).setLatestProtocolId(100, 5),
       game.connect(dao).setLatestProtocolId(1000, 5),
       game.connect(dao).setHomeVault(vault.address),
+      game.connect(dao).setNegativeRewardThreshold(-50000),
+      game.connect(dao).setNegativeRewardFactor(50),
     ]);
 
     await Promise.all([

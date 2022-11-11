@@ -299,6 +299,8 @@ contract Game is ERC721, ReentrancyGuard {
     require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
   }
 
+  /// @notice IMPORTANT: The negativeRewardFactor takes in account an approximation of the price of derby tokens by the dao
+  /// @notice IMPORTANT: This will change to an exact price when there is a derby token liquidity pool
   /// @notice Calculates if there are any negative rewards and how many tokens to burn
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
   /// @param _unlockedTokens Amount of derby tokens to unlock and send to user
@@ -310,14 +312,12 @@ contract Game is ERC721, ReentrancyGuard {
     int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
     if (unredeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 negativeRewards = uint(-unredeemedRewards) < _unlockedTokens
-      ? uint(-unredeemedRewards)
-      : _unlockedTokens;
+    uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
+    tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
-    baskets[_basketId].totalUnRedeemedRewards += int(negativeRewards);
+    baskets[_basketId].totalUnRedeemedRewards += int((tokensToBurn * 100) / negativeRewardFactor);
 
-    uint256 tokensToBurn = (negativeRewards * negativeRewardFactor) / 100;
-    derbyToken.safeTransfer(homeVault, tokensToBurn);
+    IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
 
     return tokensToBurn;
   }

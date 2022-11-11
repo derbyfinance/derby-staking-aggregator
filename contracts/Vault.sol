@@ -110,7 +110,6 @@ contract Vault is ReentrancyGuard {
 
     vaultNumber = _vaultNumber;
     dao = _dao;
-
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
