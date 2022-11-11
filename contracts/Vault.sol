@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Interfaces/IController.sol";
-import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
 import "./Interfaces/IProvider.sol";
 
@@ -44,9 +43,7 @@ contract Vault is ReentrancyGuard {
   address private dao;
   address private guardian;
   address public vaultCurrencyAddr;
-  address public game;
   address public xController;
-  address public xProvider;
 
   uint256 public liquidityPerc = 10;
   uint256 public performanceFee = 10;
@@ -106,7 +103,6 @@ contract Vault is ReentrancyGuard {
   constructor(
     uint256 _vaultNumber,
     address _dao,
-    address _game,
     address _controller,
     address _vaultCurrency,
     uint256 _uScale,
@@ -119,7 +115,6 @@ contract Vault is ReentrancyGuard {
     vaultNumber = _vaultNumber;
 
     dao = _dao;
-    game = _game;
     uScale = _uScale;
     gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
