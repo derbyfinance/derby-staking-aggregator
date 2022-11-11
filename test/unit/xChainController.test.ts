@@ -310,10 +310,6 @@ describe('Testing XChainController, unit test', async () => {
     ]);
 
     await Promise.all([
-      vault1.setXControllerAddress(xChainController.address),
-      vault2.setXControllerAddress(xChainController.address),
-      vault3.setXControllerAddress(xChainController.address),
-      vault4.setXControllerAddress(xChainController.address),
       vault1.setHomeXProvider(xProviderGoerli.address),
       vault2.setHomeXProvider(xProviderArbitrum.address),
       vault3.setHomeXProvider(xProviderOptimism.address),
