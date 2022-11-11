@@ -12,68 +12,53 @@ import "hardhat/console.sol";
 contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
 
-  address public controller;
-
-  modifier onlyController() {
-    require(msg.sender == controller, "ETFProvider: only controller");
-    _;
-  }
-
-  constructor(address _controller) {
-    controller = _controller;
-  }
-
   /// @notice Deposit the underlying asset in Yearn
   /// @dev Pulls underlying asset from Vault, deposit them in Yearn, send yTokens back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault,
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
+  ) external override returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
     IERC20(_uToken).safeIncreaseAllowance(_yToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
     require((balanceAfter - balanceBefore - _amount) == 0, "Error Deposit: under/overflow");
 
     uint256 yTokenReceived = IYearn(_yToken).deposit(_amount);
-    IYearn(_yToken).transfer(_vault, yTokenReceived);
+    IYearn(_yToken).transfer(msg.sender, yTokenReceived);
 
     return yTokenReceived;
   }
 
   /// @notice Withdraw the underlying asset from Yearn
   /// @dev Pulls cTokens from Vault, redeem them from Yearn, send underlying back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _yToken Address of protocol LP Token eg yUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault,
     uint256 _amount,
     address _yToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
+  ) external override returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
 
     require(
-      IYearn(_yToken).transferFrom(_vault, address(this), _amount) == true,
+      IYearn(_yToken).transferFrom(msg.sender, address(this), _amount) == true,
       "Error transferFrom"
     );
 
     uint256 uAmountReceived = IYearn(_yToken).withdraw(_amount);
-    IERC20(_uToken).safeTransfer(_vault, uAmountReceived);
+    IERC20(_uToken).safeTransfer(msg.sender, uAmountReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(msg.sender);
     require(
       (balanceAfter - balanceBefore - uAmountReceived) == 0,
       "Error Withdraw: under/overflow"

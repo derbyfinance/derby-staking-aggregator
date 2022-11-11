@@ -15,34 +15,25 @@ contract CompoundProvider is IProvider {
   using SafeERC20 for IERC20;
 
   IComptroller public comptroller;
-  address public controller;
 
-  modifier onlyController() {
-    require(msg.sender == controller, "ETFProvider: only controller");
-    _;
-  }
-
-  constructor(address _controller, address _comptroller) {
+  constructor(address _comptroller) {
     comptroller = IComptroller(_comptroller);
-    controller = _controller;
   }
 
   /// @notice Deposit the underlying asset in Compound
   /// @dev Pulls underlying asset from Vault, deposit them in Compound, send cTokens back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault,
     uint256 _amount,
     address _cToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
+  ) external override returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
     IERC20(_uToken).safeIncreaseAllowance(_cToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
@@ -53,30 +44,28 @@ contract CompoundProvider is IProvider {
     uint256 cTokenAfter = ICToken(_cToken).balanceOf(address(this));
 
     uint cTokensReceived = cTokenAfter - cTokenBefore;
-    ICToken(_cToken).transfer(_vault, cTokensReceived);
+    ICToken(_cToken).transfer(msg.sender, cTokensReceived);
 
     return cTokensReceived;
   }
 
   /// @notice Withdraw the underlying asset from Compound
   /// @dev Pulls cTokens from Vault, redeem them from Compound, send underlying back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault,
     uint256 _amount,
     address _cToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
+  ) external override returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this));
 
     require(
-      ICToken(_cToken).transferFrom(_vault, address(this), _amount) == true,
+      ICToken(_cToken).transferFrom(msg.sender, address(this), _amount) == true,
       "Error: transferFrom"
     );
     // Compound redeem: 0 on success, otherwise an Error code
@@ -85,9 +74,9 @@ contract CompoundProvider is IProvider {
     uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this));
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
+    IERC20(_uToken).safeTransfer(msg.sender, uTokensReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(msg.sender);
     require(
       (balanceAfter - balanceBefore - uTokensReceived) == 0,
       "Error Withdraw: under/overflow"

@@ -7,7 +7,7 @@ import { Result } from 'ethers/lib/utils';
 
 const provider = ethers.provider;
 
-const DAIWhale = '0xE78388b4CE79068e89Bf8aA7f218eF6b9AB0e9d0';
+const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
 

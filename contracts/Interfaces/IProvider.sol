@@ -4,14 +4,12 @@ pragma solidity ^0.8.11;
 
 interface IProvider {
   function deposit(
-    address _buyer,
     uint256 _amount,
     address _uToken,
     address _protocolLPToken
   ) external returns (uint256);
 
   function withdraw(
-    address _seller,
     uint256 _amount,
     address _uToken,
     address _protocolLPToken

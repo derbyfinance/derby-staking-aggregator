@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 import "./Interfaces/IXChainController.sol";
+import "./Interfaces/IProvider.sol";
 
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
@@ -40,10 +41,10 @@ contract Vault is ReentrancyGuard {
 
   bool public deltaAllocationsReceived;
 
+  address private dao;
+  address private guardian;
   address public vaultCurrencyAddr;
   address public game;
-  address public dao;
-  address public guardian;
   address public xController;
   address public xProvider;
 
@@ -334,7 +335,7 @@ contract Vault is ReentrancyGuard {
     }
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    controller.deposit(vaultNumber, _protocolNum, address(this), _amount);
+    IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -343,18 +344,20 @@ contract Vault is ReentrancyGuard {
   /// @param _amount in VaultCurrency to withdraw
   function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
     if (_amount <= 0) return;
-
     IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
       _protocolNum
     );
 
     _amount = (_amount * protocol.uScale) / uScale;
+    uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
 
-    uint256 shares = controller.calcShares(vaultNumber, _protocolNum, _amount);
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
-
-    uint256 amountReceived = controller.withdraw(vaultNumber, _protocolNum, address(this), shares);
+    uint256 amountReceived = IProvider(protocol.provider).withdraw(
+      shares,
+      protocol.LPToken,
+      protocol.underlying
+    );
 
     if (protocol.underlying != vaultCurrencyAddr) {
       _amount = Swap.swapStableCoins(
@@ -381,12 +384,15 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return Balance in VaultCurrency e.g USDC
   function balanceUnderlying(uint256 _protocolNum) public view returns (uint256) {
-    uint256 protocolUScale = controller.getProtocolInfo(vaultNumber, _protocolNum).uScale;
-    uint256 underlyingBalance = (controller.balanceUnderlying(
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
-      _protocolNum,
-      address(this)
-    ) * uScale) / protocolUScale;
+      _protocolNum
+    );
+    uint256 underlyingBalance = (IProvider(protocol.provider).balanceUnderlying(
+      address(this),
+      protocol.LPToken
+    ) * uScale) / protocol.uScale;
+
     return underlyingBalance;
   }
 
@@ -395,12 +401,15 @@ contract Vault is ReentrancyGuard {
   /// @param _amount Amount in underyling token e.g USDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _protocolNum, uint256 _amount) public view returns (uint256) {
-    uint256 protocolUScale = controller.getProtocolInfo(vaultNumber, _protocolNum).uScale;
-    uint256 shares = controller.calcShares(
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
-      _protocolNum,
-      (_amount * protocolUScale) / uScale
+      _protocolNum
     );
+    uint256 shares = IProvider(protocol.provider).calcShares(
+      (_amount * protocol.uScale) / uScale,
+      protocol.LPToken
+    );
+
     return shares;
   }
 
@@ -408,7 +417,11 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @return protocolPrice Price per lp token
   function price(uint256 _protocolNum) public view returns (uint256) {
-    return controller.exchangeRate(vaultNumber, _protocolNum);
+    IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
+      vaultNumber,
+      _protocolNum
+    );
+    return IProvider(protocol.provider).exchangeRate(protocol.LPToken);
   }
 
   /// @notice Set the delta allocated tokens by game contract
@@ -429,7 +442,7 @@ contract Vault is ReentrancyGuard {
       if (currentAllocations[i] == 0) continue;
       bool claim = controller.claim(vaultNumber, i);
       if (claim) {
-        address govToken = controller.getProtocolInfo(vaultNumber, i).govToken;
+        address govToken = controller.getGovToken(vaultNumber, i);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         Swap.swapTokensMulti(
           Swap.SwapInOut(tokenBalance, govToken, vaultCurrencyAddr),
@@ -447,6 +460,16 @@ contract Vault is ReentrancyGuard {
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns (bool) {
     return (block.timestamp - lastTimeStamp) > rebalanceInterval;
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
+  }
+
+  /// @notice Getter for guardian address
+  function getGuardian() public view returns (address) {
+    return guardian;
   }
 
   /*
