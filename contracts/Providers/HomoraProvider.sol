@@ -12,33 +12,20 @@ import "hardhat/console.sol";
 contract HomoraProvider is IProvider {
   using SafeERC20 for IERC20;
 
-  address public controller;
-
-  modifier onlyController() {
-    require(msg.sender == controller, "ETFProvider: only controller");
-    _;
-  }
-
-  constructor(address _controller) {
-    controller = _controller;
-  }
-
   /// @notice Deposit the underlying asset in Homora
   /// @dev Pulls underlying asset from Vault, deposit them in Homora, send tTokens back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault,
     uint256 _amount,
     address _hToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
+  ) external override returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
     IERC20(_uToken).safeIncreaseAllowance(_hToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
@@ -49,30 +36,28 @@ contract HomoraProvider is IProvider {
     uint256 hTokenAfter = IHomora(_hToken).balanceOf(address(this));
 
     uint hTokensReceived = hTokenAfter - hTokenBefore;
-    IHomora(_hToken).transfer(_vault, hTokensReceived);
+    IHomora(_hToken).transfer(msg.sender, hTokensReceived);
 
     return hTokensReceived;
   }
 
   /// @notice Withdraw the underlying asset from Homora
   /// @dev Pulls tTokens from Vault, redeem them from Homora, send underlying back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault,
     uint256 _amount,
     address _hToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
+  ) external override returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this));
 
     require(
-      IHomora(_hToken).transferFrom(_vault, address(this), _amount) == true,
+      IHomora(_hToken).transferFrom(msg.sender, address(this), _amount) == true,
       "Error: transferFrom"
     );
     IHomora(_hToken).withdraw(_amount);
@@ -80,9 +65,9 @@ contract HomoraProvider is IProvider {
     uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this));
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
+    IERC20(_uToken).safeTransfer(msg.sender, uTokensReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(msg.sender);
     require(
       (balanceAfter - balanceBefore - uTokensReceived) == 0,
       "Error Withdraw: under/overflow"

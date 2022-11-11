@@ -26,8 +26,7 @@ describe.skip('Testing TrueFi provider', async () => {
     IUSDc: Contract,
     tToken: Contract,
     daoAddr: string,
-    vaultAddr: string,
-    protocolNumber: number;
+    vaultAddr: string;
 
   beforeEach(async function () {
     [dao, vault] = await ethers.getSigners();
@@ -36,24 +35,14 @@ describe.skip('Testing TrueFi provider', async () => {
 
     [vaultAddr, truefiProvider, USDCSigner, IUSDc, tToken] = await Promise.all([
       vault.getAddress(),
-      deployTruefiProvider(dao, controller.address),
+      deployTruefiProvider(dao),
       getUSDCSigner(),
       erc20(usdc),
       erc20(tusdc),
     ]);
 
     // Transfer and approve USDC to vault AND add protocol to controller contract
-    [protocolNumber] = await Promise.all([
-      controllerAddProtocol(
-        controller,
-        'truefi_usdc_01',
-        ETFnumber,
-        truefiProvider.address,
-        tusdc,
-        usdc,
-        truefi,
-        (1e6).toString(),
-      ),
+    await Promise.all([
       controller.addVault(vaultAddr),
       IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
       IUSDc.connect(vault).approve(truefiProvider.address, amountUSDC),
@@ -64,7 +53,7 @@ describe.skip('Testing TrueFi provider', async () => {
     console.log(`-------------------------Deposit-------------------------`);
     const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
 
-    await controller.connect(vault).deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC);
+    await truefiProvider.connect(vault).deposit(amountUSDC, tusdc, usdc);
     const balanceShares = await truefiProvider.balance(vaultAddr, tusdc);
     const balanceUnderlying = await truefiProvider.balanceUnderlying(vaultAddr, tusdc);
     const calcShares = await truefiProvider.calcShares(balanceUnderlying, tusdc);
@@ -77,24 +66,12 @@ describe.skip('Testing TrueFi provider', async () => {
 
     console.log(`-------------------------Withdraw-------------------------`);
     await tToken.connect(vault).approve(truefiProvider.address, balanceShares);
-    await controller.connect(vault).withdraw(ETFnumber, protocolNumber, vaultAddr, balanceShares);
+    await truefiProvider.connect(vault).withdraw(balanceShares, tusdc, usdc);
 
     const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
     expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
       Number(formatUSDC(vaultBalanceStart)),
       amount * 0.022,
     ); // 2% fee on withdraw Truefi
-  });
-
-  it('Should fail when !controller is calling the Provider', async function () {
-    await expect(
-      truefiProvider.connect(vault).deposit(vaultAddr, amountUSDC, tusdc, usdc),
-    ).to.be.revertedWith('ETFProvider: only controller');
-  });
-
-  it('Should fail when !Vault is calling the controller', async function () {
-    await expect(
-      controller.deposit(ETFnumber, protocolNumber, vaultAddr, amountUSDC),
-    ).to.be.revertedWith('Controller: only Vault');
   });
 });

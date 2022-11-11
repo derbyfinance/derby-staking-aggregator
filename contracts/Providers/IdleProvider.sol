@@ -13,33 +13,20 @@ import "hardhat/console.sol";
 contract IdleProvider is IProvider {
   using SafeERC20 for IERC20;
 
-  address public controller;
-
-  modifier onlyController() {
-    require(msg.sender == controller, "ETFProvider: only controller");
-    _;
-  }
-
-  constructor(address _controller) {
-    controller = _controller;
-  }
-
   /// @notice Deposit the underlying asset in Idle
   /// @dev Pulls underlying asset from Vault, deposit them in Idle, send tTokens back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to deposit
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Tokens received and sent to vault
   function deposit(
-    address _vault,
     uint256 _amount,
     address _iToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
+  ) external override returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
-    IERC20(_uToken).safeTransferFrom(_vault, address(this), _amount);
+    IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
     IERC20(_uToken).safeIncreaseAllowance(_iToken, _amount);
 
     uint256 balanceAfter = IERC20(_uToken).balanceOf(address(this));
@@ -51,30 +38,28 @@ contract IdleProvider is IProvider {
     uint256 tTokenAfter = IIdle(_iToken).balanceOf(address(this));
 
     uint tTokensReceived = tTokenAfter - tTokenBefore;
-    IIdle(_iToken).transfer(_vault, tTokensReceived);
+    IIdle(_iToken).transfer(msg.sender, tTokensReceived);
 
     return tTokensReceived;
   }
 
   /// @notice Withdraw the underlying asset from Idle
   /// @dev Pulls tTokens from Vault, redeem them from Idle, send underlying back.
-  /// @param _vault Address from Vault contract i.e buyer
   /// @param _amount Amount to withdraw
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @param _uToken Address of underlying Token eg USDC
   /// @return Underlying tokens received and sent to vault e.g USDC
   function withdraw(
-    address _vault,
     uint256 _amount,
     address _iToken,
     address _uToken
-  ) external override onlyController returns (uint256) {
-    uint256 balanceBefore = IERC20(_uToken).balanceOf(_vault);
+  ) external override returns (uint256) {
+    uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this));
 
     require(
-      IIdle(_iToken).transferFrom(_vault, address(this), _amount) == true,
+      IIdle(_iToken).transferFrom(msg.sender, address(this), _amount) == true,
       "Error: transferFrom"
     );
     IIdle(_iToken).redeemIdleToken(_amount);
@@ -82,9 +67,9 @@ contract IdleProvider is IProvider {
     uint256 balanceAfterRedeem = IERC20(_uToken).balanceOf(address(this));
     uint256 uTokensReceived = balanceAfterRedeem - balanceBeforeRedeem;
 
-    IERC20(_uToken).safeTransfer(_vault, uTokensReceived);
+    IERC20(_uToken).safeTransfer(msg.sender, uTokensReceived);
 
-    uint256 balanceAfter = IERC20(_uToken).balanceOf(_vault);
+    uint256 balanceAfter = IERC20(_uToken).balanceOf(msg.sender);
     require(
       (balanceAfter - balanceBefore - uTokensReceived) == 0,
       "Error Withdraw: under/overflow"

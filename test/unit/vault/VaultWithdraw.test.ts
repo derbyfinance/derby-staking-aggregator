@@ -69,7 +69,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
   it('Should not be able to withdraw when vault is off', async function () {
     await vault.toggleVaultOnOffTEST(true);
 
-    await expect(vault.connect(user).withdraw(1 * 1e6, false)).to.be.revertedWith('Vault is off');
+    await expect(vault.connect(user).withdraw(1 * 1e6)).to.be.revertedWith('Vault is off');
     await vault.toggleVaultOnOffTEST(false);
   });
 
@@ -79,7 +79,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     // deposit 10k USDC
     await vault.connect(user).deposit(50_000 * 1e6);
 
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, false)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(10_000 * 1e6)).to.changeTokenBalance(
       IUSDc,
       user,
       10_000 * 1e6,
@@ -89,7 +89,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await vault.setExchangeRateTEST(1.05 * 1e6);
 
     let expectedUSDCReceived = 10_000 * 1.05 * 1e6;
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, false)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(10_000 * 1e6)).to.changeTokenBalance(
       IUSDc,
       user,
       expectedUSDCReceived,
@@ -99,7 +99,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await vault.setExchangeRateTEST(1.2 * 1e6);
 
     expectedUSDCReceived = 30_000 * 1.2 * 1e6;
-    await expect(() => vault.connect(user).withdraw(30_000 * 1e6, false)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(30_000 * 1e6)).to.changeTokenBalance(
       IUSDc,
       user,
       expectedUSDCReceived,
@@ -124,29 +124,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await rebalanceETF(vault);
     await vault.setVaultState(0);
 
-    await expect(vault.connect(user).withdraw(20_000 * 1e6, false)).to.be.revertedWith(
-      'Not enough funds',
-    );
-
-    let expectedUSDCReceived = 20_000 * 1.05 * 1e6;
-    await expect(() => vault.connect(user).withdraw(20_000 * 1e6, true)).to.changeTokenBalance(
-      IUSDc,
-      user,
-      expectedUSDCReceived,
-    );
-
-    // mocking exchangerate to 1.8
-    await vault.setExchangeRateTEST(1.8 * 1e6);
-
-    expectedUSDCReceived = 30_000 * 1.8 * 1e6;
-    await expect(() => vault.connect(user).withdraw(30_000 * 1e6, true)).to.changeTokenBalance(
-      IUSDc,
-      user,
-      expectedUSDCReceived,
-    );
-
-    // expected LP token balance = 100k - 20k - 30k = 50k
-    expect(await vault.balanceOf(userAddr)).to.be.equal(50_000 * 1e6);
+    await expect(vault.connect(user).withdraw(20_000 * 1e6)).to.be.revertedWith('Not enough funds');
   });
 
   it('Should set withdrawal request and withdraw the allowance later', async function () {

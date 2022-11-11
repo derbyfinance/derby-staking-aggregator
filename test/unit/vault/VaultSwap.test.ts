@@ -235,7 +235,8 @@ describe('Testing VaultSwap, unit test', async () => {
       console.log({ balanceUnderlying });
       console.log({ expectedBalance });
 
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 100);
+      // margin for trading slightly unstable stables
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 700);
     }
 
     console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------');
@@ -329,7 +330,8 @@ describe('Testing VaultSwap, unit test', async () => {
     ]);
 
     await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).withdraw(amountToWithdraw, true);
+    await vault.connect(user).deposit(amountToWithdraw);
+    await vault.connect(user).withdraw(amountToWithdraw);
     await vault.setVaultState(3);
     gasUsed = formatUSDC(await rebalanceETF(vault));
 
@@ -343,7 +345,8 @@ describe('Testing VaultSwap, unit test', async () => {
     console.log('-----------------withdraw another 42k = 92k total-----------------');
     amountToWithdraw = parseUSDC('42000');
     await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).withdraw(amountToWithdraw, true);
+    await vault.connect(user).deposit(amountToWithdraw);
+    await vault.connect(user).withdraw(amountToWithdraw);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.setVaultState(3);
     await rebalanceETF(vault);
