@@ -46,8 +46,8 @@ contract Game is ERC721, ReentrancyGuard {
     mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
-  address public dao;
-  address public guardian;
+  address private dao;
+  address private guardian;
   address public xProvider;
   address public homeVault;
 
@@ -564,6 +564,16 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice getter for vault address linked to a chainId
   function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns (address) {
     return vaults[_vaultNumber].vaultAddress[_chainId];
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
+  }
+
+  /// @notice Getter for guardian address
+  function getGuardian() public view returns (address) {
+    return guardian;
   }
 
   /*

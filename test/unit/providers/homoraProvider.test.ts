@@ -103,7 +103,7 @@ describe('Testing Homora provider', async () => {
   });
 
   it('Should deposit and withdraw DAI to Homora', async function () {
-    hToken = await erc20(hdai);
+    hToken = erc20(hdai);
     console.log(`-------------------------Deposit-------------------------`);
     const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
 
@@ -127,7 +127,7 @@ describe('Testing Homora provider', async () => {
   });
 
   it('Should deposit and withdraw USDT to Homora', async function () {
-    hToken = await erc20(husdt);
+    hToken = erc20(husdt);
     console.log(`-------------------------Deposit-------------------------`);
     const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
 

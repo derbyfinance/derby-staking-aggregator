@@ -46,11 +46,11 @@ contract XChainController {
     uint256 fundsReceived; // stage 3
   }
 
-  IXProvider public xProvider;
-
+  address private dao;
+  address private guardian;
   address public game;
-  address public dao;
-  address public guardian;
+  address public xProviderAddr;
+  IXProvider public xProvider;
 
   uint16[] public chainIds;
   uint16 public homeChain;
@@ -504,6 +504,16 @@ contract XChainController {
   /// @notice Helper to get total withdrawal requests from the vault on given chainId
   function getTotalWithdrawalRequests(uint256 _vaultNumber) internal view returns (uint256) {
     return vaults[_vaultNumber].totalWithdrawalRequests;
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
+  }
+
+  /// @notice Getter for guardian address
+  function getGuardian() public view returns (address) {
+    return guardian;
   }
 
   /*

@@ -366,6 +366,6 @@ describe('Testing Game', async () => {
 
   it('Should correctly set dao address', async function () {
     await game.connect(dao).setDao(userAddr);
-    expect(await game.dao()).to.be.equal(userAddr);
+    expect(await game.getDao()).to.be.equal(userAddr);
   });
 });

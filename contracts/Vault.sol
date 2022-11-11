@@ -36,8 +36,12 @@ contract Vault is ReentrancyGuard {
 
   bool public deltaAllocationsReceived;
 
-  address public dao;
-  address public guardian;
+  address private dao;
+  address private guardian;
+  address public vaultCurrencyAddr;
+  address public game;
+  address public xController;
+  address public xProvider;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc = 10;
@@ -449,6 +453,16 @@ contract Vault is ReentrancyGuard {
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns (bool) {
     return (block.timestamp - lastTimeStamp) > rebalanceInterval;
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
+  }
+
+  /// @notice Getter for guardian address
+  function getGuardian() public view returns (address) {
+    return guardian;
   }
 
   /*

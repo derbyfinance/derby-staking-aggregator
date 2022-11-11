@@ -111,7 +111,7 @@ contract MainVaultMock is MainVault {
   }
 
   function clearCurrencyBalance(uint256 _balance) external {
-    vaultCurrency.transfer(dao, _balance);
+    vaultCurrency.transfer(getDao(), _balance);
   }
 
   function toggleVaultOnOffTEST(bool _state) external {

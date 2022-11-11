@@ -22,9 +22,9 @@ contract XProvider is ILayerZeroReceiver {
   ILayerZeroEndpoint public immutable endpoint;
   IConnextHandler public immutable connext;
 
+  address private dao;
   address public xController;
   address public xControllerProvider;
-  address public dao;
   address public game;
 
   uint16 public homeChain;
@@ -450,6 +450,11 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice returns number of decimals for the vault
   function getDecimals(address _vault) external view returns (uint256) {
     return IVault(_vault).decimals();
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
   }
 
   /*
