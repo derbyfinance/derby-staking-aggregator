@@ -89,7 +89,6 @@ describe('Testing XChainController, unit test', async () => {
       nftName,
       nftSymbol,
       DerbyToken.address,
-      controller.address,
       daoAddr,
       daoAddr,
       controller.address,
@@ -325,7 +324,7 @@ describe('Testing XChainController, unit test', async () => {
       xChainController.setVaultChainAddress(vaultNumber, arbitrumGoerli, vault2.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, optimismGoerli, vault3.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, bnbChain, vault4.address, usdc),
-      xChainController.setHomeXProviderAddress(xProviderArbitrum.address), // xChainController on chain 100
+      xChainController.setHomeXProvider(xProviderArbitrum.address), // xChainController on chain 100
       xChainController.connect(dao).setChainIds(chainIds),
     ]);
   });
@@ -568,7 +567,7 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Should correctly set dao address', async function () {
-    await xChainController.connect(dao).setDaoAddress(userAddr);
+    await xChainController.connect(dao).setDao(userAddr);
     expect(await xChainController.getDao()).to.be.equal(userAddr);
   });
 });

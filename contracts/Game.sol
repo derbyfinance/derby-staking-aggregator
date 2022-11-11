@@ -11,7 +11,6 @@ import "./DerbyToken.sol";
 
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
-import "./Interfaces/IGame.sol";
 import "./Interfaces/IXProvider.sol";
 
 import "hardhat/console.sol";
@@ -20,7 +19,7 @@ contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   struct Basket {
-    // the ETF number for which this Basket was created
+    // the vault number for which this Basket was created
     uint256 vaultNumber;
     // last period when this Basket got rebalanced
     uint256 lastRebalancingPeriod;
@@ -49,13 +48,11 @@ contract Game is ERC721, ReentrancyGuard {
 
   address private dao;
   address private guardian;
-  address public derbyToken;
-
-  address public routerAddress;
   address public xProvider;
   address public homeVault;
 
   IController public controller;
+  IERC20 public derbyToken;
 
   // latest basket id
   uint256 private latestBasketId;
@@ -115,17 +112,17 @@ contract Game is ERC721, ReentrancyGuard {
     string memory name_,
     string memory symbol_,
     address _derbyToken,
-    address _routerAddress,
     address _dao,
     address _guardian,
     address _controller
   ) ERC721(name_, symbol_) {
-    derbyToken = _derbyToken;
-    routerAddress = _routerAddress;
+    derbyToken = IERC20(_derbyToken);
+    controller = IController(_controller);
     dao = _dao;
     guardian = _guardian;
-    controller = IController(_controller);
     lastTimeStamp = block.timestamp;
+
+    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -281,9 +278,9 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Function to lock xaver tokens to a basket. They start out to be unallocated.
   /// @param _lockedTokenAmount Amount of xaver tokens to lock inside this contract.
   function lockTokensToBasket(uint256 _lockedTokenAmount) internal {
-    uint256 balanceBefore = IERC20(derbyToken).balanceOf(address(this));
-    IERC20(derbyToken).safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
-    uint256 balanceAfter = IERC20(derbyToken).balanceOf(address(this));
+    uint256 balanceBefore = derbyToken.balanceOf(address(this));
+    derbyToken.safeTransferFrom(msg.sender, address(this), _lockedTokenAmount);
+    uint256 balanceAfter = derbyToken.balanceOf(address(this));
 
     require((balanceAfter - balanceBefore - _lockedTokenAmount) == 0, "Error lock: under/overflow");
   }
@@ -294,11 +291,10 @@ contract Game is ERC721, ReentrancyGuard {
   function unlockTokensFromBasket(uint256 _basketId, uint256 _unlockedTokenAmount) internal {
     uint256 tokensBurned = redeemNegativeRewards(_basketId, _unlockedTokenAmount);
     uint256 tokensToUnlock = _unlockedTokenAmount -= tokensBurned;
-    if (tokensToUnlock == 0) return;
 
-    uint256 balanceBefore = IERC20(derbyToken).balanceOf(address(this));
-    IERC20(derbyToken).safeTransfer(msg.sender, tokensToUnlock);
-    uint256 balanceAfter = IERC20(derbyToken).balanceOf(address(this));
+    uint256 balanceBefore = derbyToken.balanceOf(address(this));
+    derbyToken.safeTransfer(msg.sender, tokensToUnlock);
+    uint256 balanceAfter = derbyToken.balanceOf(address(this));
 
     require((balanceBefore - balanceAfter - tokensToUnlock) == 0, "Error unlock: under/overflow");
   }
@@ -604,7 +600,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Setter for DAO address
   /// @param _dao DAO address
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
 
@@ -612,6 +608,12 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /// @notice Setter Derby token address
+  /// @param _derbyToken new address of Derby token
+  function setDerbyToken(address _derbyToken) external onlyDao {
+    derbyToken = IERC20(_derbyToken);
   }
 
   /// @notice Setter for threshold at which user tokens will be sold / burned
