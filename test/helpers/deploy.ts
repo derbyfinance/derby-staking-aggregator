@@ -262,14 +262,12 @@ export const deployDerbyToken = (
 export const deployGame = (
   deployerSign: Signer,
   DerbyTokenAddress: string,
-  routerAddress: string,
   daoAddress: string,
   guardianAddress: string,
   controllerAddress: string,
 ): Promise<Game> => {
   return deployContract(deployerSign, GameArtifact, [
     DerbyTokenAddress,
-    routerAddress,
     daoAddress,
     guardianAddress,
     controllerAddress,
@@ -281,7 +279,6 @@ export const deployGameMock = (
   name: string,
   symbol: string,
   DerbyTokenAddress: string,
-  routerAddress: string,
   daoAddress: string,
   guardianAddress: string,
   controllerAddress: string,
@@ -290,7 +287,6 @@ export const deployGameMock = (
     name,
     symbol,
     DerbyTokenAddress,
-    routerAddress,
     daoAddress,
     guardianAddress,
     controllerAddress,

@@ -68,7 +68,6 @@ describe('Testing Game', async () => {
       nftName,
       nftSymbol,
       DerbyToken.address,
-      controller.address,
       daoAddr,
       daoAddr,
       controller.address,
@@ -133,7 +132,7 @@ describe('Testing Game', async () => {
     await Promise.all([
       initController(controller, [game.address, vault.address]),
       game.connect(dao).setChainIds([10, 100, 1000]),
-      xChainController.connect(dao).setHomeXProviderAddress(xProvider100.address),
+      xChainController.connect(dao).setHomeXProvider(xProvider100.address),
       xChainController.connect(dao).setChainIds(chainIds),
       AllMockProviders.deployAllMockProviders(dao),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
@@ -164,7 +163,7 @@ describe('Testing Game', async () => {
   });
 
   it('game should have DerbyToken contract addresses set', async function () {
-    expect(await game.derbyTokenAddress()).to.be.equal(DerbyToken.address);
+    expect(await game.derbyToken()).to.be.equal(DerbyToken.address);
   });
 
   it('Should Lock tokens, mint basket and set correct deltas', async function () {
@@ -366,7 +365,7 @@ describe('Testing Game', async () => {
   });
 
   it('Should correctly set dao address', async function () {
-    await game.connect(dao).setDaoAddress(userAddr);
+    await game.connect(dao).setDao(userAddr);
     expect(await game.getDao()).to.be.equal(userAddr);
   });
 });

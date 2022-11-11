@@ -85,7 +85,7 @@ contract XChainController {
   }
 
   modifier onlyXProvider() {
-    require(msg.sender == xProviderAddr, "xController: only xProviderAddr");
+    require(msg.sender == address(xProvider), "xController: only xProviderAddr");
     _;
   }
 
@@ -406,7 +406,7 @@ contract XChainController {
         address underlying = getUnderlyingAddress(_vaultNumber, chain);
         address vault = getVaultAddress(_vaultNumber, chain);
 
-        IERC20(underlying).safeIncreaseAllowance(xProviderAddr, amountToDeposit);
+        IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);
         setAmountToDeposit(_vaultNumber, chain, 0);
 
@@ -537,9 +537,8 @@ contract XChainController {
 
   /// @notice Setter for xProvider address
   /// @param _xProvider new address of xProvider on this chain
-  function setHomeXProviderAddress(address _xProvider) external onlyDao {
+  function setHomeXProvider(address _xProvider) external onlyDao {
     xProvider = IXProvider(_xProvider);
-    xProviderAddr = _xProvider;
   }
 
   /// @notice Setter for homeChain Id
@@ -550,7 +549,7 @@ contract XChainController {
 
   /// @notice Setter for DAO address
   /// @param _dao DAO address
-  function setDaoAddress(address _dao) external onlyDao {
+  function setDao(address _dao) external onlyDao {
     dao = _dao;
   }
 
@@ -558,6 +557,12 @@ contract XChainController {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /// @notice Setter for new game address
+  /// @param _game New address of the game
+  function setGame(address _game) external onlyDao {
+    game = _game;
   }
 
   /*

@@ -89,7 +89,6 @@ describe('Testing XChainController, unit test', async () => {
       nftName,
       nftSymbol,
       DerbyToken.address,
-      controller.address,
       daoAddr,
       daoAddr,
       controller.address,
@@ -310,14 +309,10 @@ describe('Testing XChainController, unit test', async () => {
     ]);
 
     await Promise.all([
-      vault1.setXControllerAddress(xChainController.address),
-      vault2.setXControllerAddress(xChainController.address),
-      vault3.setXControllerAddress(xChainController.address),
-      vault4.setXControllerAddress(xChainController.address),
-      vault1.setHomeXProviderAddress(xProviderGoerli.address),
-      vault2.setHomeXProviderAddress(xProviderArbitrum.address),
-      vault3.setHomeXProviderAddress(xProviderOptimism.address),
-      vault4.setHomeXProviderAddress(xProviderBnbChain.address),
+      vault1.setHomeXProvider(xProviderGoerli.address),
+      vault2.setHomeXProvider(xProviderArbitrum.address),
+      vault3.setHomeXProvider(xProviderOptimism.address),
+      vault4.setHomeXProvider(xProviderBnbChain.address),
       vault1.setChainIds(goerli),
       vault2.setChainIds(arbitrumGoerli),
       vault3.setChainIds(optimismGoerli),
@@ -329,7 +324,7 @@ describe('Testing XChainController, unit test', async () => {
       xChainController.setVaultChainAddress(vaultNumber, arbitrumGoerli, vault2.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, optimismGoerli, vault3.address, usdc),
       xChainController.setVaultChainAddress(vaultNumber, bnbChain, vault4.address, usdc),
-      xChainController.setHomeXProviderAddress(xProviderArbitrum.address), // xChainController on chain 100
+      xChainController.setHomeXProvider(xProviderArbitrum.address), // xChainController on chain 100
       xChainController.connect(dao).setChainIds(chainIds),
     ]);
   });
@@ -572,7 +567,7 @@ describe('Testing XChainController, unit test', async () => {
   });
 
   it('Should correctly set dao address', async function () {
-    await xChainController.connect(dao).setDaoAddress(userAddr);
+    await xChainController.connect(dao).setDao(userAddr);
     expect(await xChainController.getDao()).to.be.equal(userAddr);
   });
 });

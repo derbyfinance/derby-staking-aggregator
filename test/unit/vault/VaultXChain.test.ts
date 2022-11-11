@@ -78,7 +78,6 @@ describe('Testing XChainController, unit test', async () => {
       nftName,
       nftSymbol,
       DerbyToken.address,
-      controller.address,
       daoAddr,
       daoAddr,
       controller.address,
@@ -158,15 +157,11 @@ describe('Testing XChainController, unit test', async () => {
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
     ]);
 
-    await Promise.all([
-      vault1.setXControllerAddress(xChainController.address),
-      vault1.setHomeXProviderAddress(xProvider10.address),
-      vault1.setChainIds(10),
-    ]);
+    await Promise.all([vault1.setHomeXProvider(xProvider10.address), vault1.setChainIds(10)]);
 
     await Promise.all([
       xChainController.setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
-      xChainController.setHomeXProviderAddress(xProvider100.address), // xChainController on chain 100
+      xChainController.setHomeXProvider(xProvider100.address), // xChainController on chain 100
       xChainController.connect(dao).setChainIds(chainIds),
     ]);
 
