@@ -39,9 +39,7 @@ contract Vault is ReentrancyGuard {
   address private dao;
   address private guardian;
   address public vaultCurrencyAddr;
-  address public game;
   address public xController;
-  address public xProvider;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc = 10;
