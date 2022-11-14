@@ -232,32 +232,6 @@ contract MainVault is Vault, VaultToken {
     );
   }
 
-  function pushTotalUnderlyingToController2() external onlyWhenIdle {
-    require(rebalanceNeeded(), "No rebalance needed");
-
-    setTotalUnderlying();
-    uint256 underlying = savedTotalUnderlying + getVaultBalance();
-
-    IXProvider(xProvider).pushTotalUnderlying(
-      vaultNumber,
-      homeChain,
-      underlying,
-      totalSupply(),
-      totalWithdrawalRequests
-    );
-
-    state = State.PushedUnderlying;
-    lastTimeStamp = block.timestamp;
-
-    emit PushTotalUnderlying(
-      vaultNumber,
-      homeChain,
-      underlying,
-      totalSupply(),
-      totalWithdrawalRequests
-    );
-  }
-
   /// @notice See setXChainAllocationInt below
   function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate)
     external
