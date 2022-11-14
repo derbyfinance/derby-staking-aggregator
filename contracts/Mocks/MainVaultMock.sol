@@ -63,6 +63,17 @@ contract MainVaultMock is MainVault {
     return lastPrices[_protocolId];
   }
 
+  function balanceSharesTEST(uint256 _protocolNum, address _address)
+    external
+    view
+    returns (uint256)
+  {
+    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    uint256 balance = IProvider(p.provider).balance(_address, p.LPToken);
+
+    return balance;
+  }
+
   function getWithdrawalAllowanceTEST(address _address) external view returns (uint256) {
     return withdrawalAllowance[_address];
   }
