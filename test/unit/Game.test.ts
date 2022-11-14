@@ -344,7 +344,6 @@ describe('Testing Game', async () => {
       [0, 0, 0, 0, 0],
     ];
     await game.rebalanceBasket(basketNum, newAllocations);
-
     await game.redeemRewards(basketNum);
 
     // double the allocations
@@ -373,7 +372,6 @@ describe('Testing Game', async () => {
     expect(await game.getDao()).to.be.equal(userAddr);
   });
 });
-// 24606 bytes and exceeds 24576
 
 async function mockRewards(game: GameMock, DerbyToken: DerbyToken) {
   let allocations = [
