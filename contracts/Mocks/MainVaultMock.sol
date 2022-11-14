@@ -130,18 +130,6 @@ contract MainVaultMock is MainVault {
       );
   }
 
-  function swapTokensSingle(
-    uint256 _amount,
-    address _tokenIn,
-    address _tokenOut
-  ) external returns (uint256) {
-    return
-      Swap.swapTokensSingle(
-        Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
-        controller.getUniswapParams()
-      );
-  }
-
   function swapMinAmountOutMultiTest(
     uint256 _amount,
     address _tokenIn,

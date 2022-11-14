@@ -16,6 +16,8 @@ contract MainVault is Vault, VaultToken {
   address public xProvider;
 
   bool public vaultOff;
+  // True when rewards should be swapped to derby tokens
+  bool private swapRewards;
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -191,11 +193,15 @@ contract MainVault is Vault, VaultToken {
     delete rewardAllowance[msg.sender];
     delete rewardRequestPeriod[msg.sender];
 
-    uint256 tokensReceived = Swap.swapTokensMulti(
-      Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
-      controller.getUniswapParams()
-    );
-    IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
+    if (swapRewards) {
+      uint256 tokensReceived = Swap.swapTokensMulti(
+        Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
+        controller.getUniswapParams()
+      );
+      IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
+    } else {
+      vaultCurrency.safeTransfer(msg.sender, value);
+    }
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
@@ -343,6 +349,12 @@ contract MainVault is Vault, VaultToken {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  /// @notice Setter for swapping rewards to derby tokens
+  /// @param _state True when rewards should be swapped to derby tokens
+  function setSwapRewards(bool _state) external onlyDao {
+    swapRewards = _state;
   }
 
   /*
