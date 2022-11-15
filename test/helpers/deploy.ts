@@ -60,6 +60,7 @@ import LZXProviderMockArtifact from '@artifacts/Mocks/LayerZero/LZXProviderMock.
 import XReceiveMockArtifact from '@artifacts/Mocks/XReceiveMock.sol/XReceiveMock.json';
 import XSendMockArtifact from '@artifacts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from './addresses';
+import { IDeployVault } from './deployInterfaces';
 
 export const deployTokenTimeLock = (
   deployerSign: Signer,
@@ -112,37 +113,29 @@ export const deployAaveProvider = (deployerSign: Signer): Promise<AaveProvider> 
 
 export const deployMainVault = async (
   deployerSign: Signer,
-  name: string,
-  symbol: string,
-  decimals: number,
-  vaultNumber: number,
+  swapLibrary: string,
   daoAddress: string,
-  game: string,
+  gameAddress: string,
   controller: string,
-  vaultCurrency: string,
-  uScale: number,
-  gasFeeLiq: number,
+  { name, symbol, decimals, vaultNumber, vaultCurrency, uScale, gasFeeLiq }: IDeployVault,
 ) => {
-  const swapLibrary = await deploySwapLibrary(deployerSign);
   const Vault = await ethers.getContractFactory('MainVaultMock', {
     libraries: {
-      Swap: swapLibrary.address,
+      Swap: swapLibrary,
     },
   });
-  const vault = await Vault.deploy(
+  return await Vault.deploy(
     name,
     symbol,
     decimals,
     vaultNumber,
     daoAddress,
-    game,
+    gameAddress,
     controller,
     vaultCurrency,
     uScale,
     gasFeeLiq,
   );
-
-  return vault;
 };
 
 export const deployMainVaultMock = async (

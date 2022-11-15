@@ -1,28 +1,22 @@
 import { ethers, hardhatArguments } from 'hardhat';
-import { deployController, deployMainVault } from '@testhelp/deploy';
-import { addAddress } from './helpers';
-import dep from './deployedAddresses.json';
+import { deployMainVault } from '@testhelp/deploy';
+import { addAddress, INetwork } from './helpers';
+import { vaultDeploySettings } from './settings';
+import deployed from './deployedAddresses.json';
 
 async function main() {
-  const { network } = hardhatArguments;
+  const { network } = hardhatArguments as INetwork;
   const [wallet] = await ethers.getSigners();
 
-  console.log(dep);
-  // const vault = await deployMainVault(
-  //   dao,
-  //   name,
-  //   symbol,
-  //   decimals,
-  //   vaultNumber,
-  //   daoAddr,
-  //   daoAddr,
-  //   gameAddr,
-  //   controller.address,
-  //   usdc,
-  //   uScale,
-  //   gasFeeLiquidity,
-  // );
-  // addAddress(network!, 'vault', vault.address);
+  const vault = await deployMainVault(
+    wallet,
+    deployed[network].swapLibrary,
+    deployed[network].dao,
+    deployed.game,
+    deployed[network].controller,
+    vaultDeploySettings,
+  );
+  addAddress(network, 'vault', vault.address);
 }
 
 main()
