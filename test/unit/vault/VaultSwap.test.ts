@@ -360,7 +360,7 @@ describe('Testing VaultSwap, unit test', async () => {
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
   });
 
-  it.only('Should take into account token balance first', async function () {
+  it('Should take into account token balance first', async function () {
     const compAmount = parseUnits('1000', 18); // 1000 comp tokens
     const swapAmount = parseUSDC('10000'); // 100 comp tokens
 
