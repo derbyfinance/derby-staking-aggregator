@@ -145,7 +145,7 @@ describe('Testing VaultSwap, unit test', async () => {
     const receipt = await tx.wait();
     const { minAmountOut } = receipt.events!.at(-1)!.args as Result;
 
-    await vault.swapTokensMultiTest(swapAmount, compToken, usdc);
+    await vault.swapTokensMultiTest(swapAmount, compToken, usdc, false);
     compBalance = await IComp.balanceOf(vault.address);
     usdcBalance = await IUSDc.balanceOf(vault.address);
 
@@ -159,14 +159,14 @@ describe('Testing VaultSwap, unit test', async () => {
     const usdcBalance = await IUSDc.balanceOf(vault.address);
     console.log(`USDC Balance vault: ${usdcBalance}`);
 
-    await vault.swapTokensMultiTest(swapAmount, usdc, compToken);
+    await vault.swapTokensMultiTest(swapAmount, usdc, compToken, false);
 
     const compBalance = await IComp.balanceOf(vault.address);
     console.log(`Comp Balance vault: ${compBalance}`);
 
     // Atleast receive some COMP
     expect(formatUnits(compBalance, 18)).to.be.greaterThan(0);
-    await vault.swapTokensMultiTest(compBalance, compToken, usdc);
+    await vault.swapTokensMultiTest(compBalance, compToken, usdc, false);
 
     console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vault.address)}`);
     const compBalanceEnd = await IComp.balanceOf(vault.address);
@@ -360,7 +360,7 @@ describe('Testing VaultSwap, unit test', async () => {
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
   });
 
-  it.only('Should take into account token balance first', async function () {
+  it('Should take into account token balance first', async function () {
     const compAmount = parseUnits('1000', 18); // 1000 comp tokens
     const swapAmount = parseUSDC('10000'); // 100 comp tokens
 
@@ -370,17 +370,11 @@ describe('Testing VaultSwap, unit test', async () => {
       IUSDc.connect(USDCSigner).transfer(vault.address, swapAmount),
     ]);
 
-    const tx = await vault.swapMinAmountOutMultiTest(swapAmount, usdc, compToken);
-    const receipt = await tx.wait();
-    const { minAmountOut } = receipt.events!.at(-1)!.args as Result;
-    console.log({ minAmountOut });
-
-    // should send token balance in the vault instead of swapping, so balance should change
+    // should use token balance in the vault instead of swapping, so balance should not change
     const compBalanceBefore = await IComp.balanceOf(vault.address);
-    await vault.swapTokensMultiTest(swapAmount, usdc, compToken);
+    await vault.swapTokensMultiTest(swapAmount, usdc, compToken, true);
     const compBalanceAfter = await IComp.balanceOf(vault.address);
 
-    console.log(compBalanceAfter - compBalanceBefore);
     expect(compBalanceAfter - compBalanceBefore).to.be.equal(0);
   });
 });
