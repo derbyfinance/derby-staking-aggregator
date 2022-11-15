@@ -360,7 +360,7 @@ describe('Testing VaultSwap, unit test', async () => {
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
   });
 
-  it('Should take into account token balance first', async function () {
+  it.only('Should take into account token balance first', async function () {
     const compAmount = parseUnits('1000', 18); // 1000 comp tokens
     const swapAmount = parseUSDC('10000'); // 100 comp tokens
 
@@ -372,9 +372,12 @@ describe('Testing VaultSwap, unit test', async () => {
 
     // should use token balance in the vault instead of swapping, so balance should not change
     const compBalanceBefore = await IComp.balanceOf(vault.address);
+    const usdcBalanceBefore = await IUSDc.balanceOf(vault.address);
     await vault.swapTokensMultiTest(swapAmount, usdc, compToken, true);
     const compBalanceAfter = await IComp.balanceOf(vault.address);
+    const usdcBalanceAfter = await IUSDc.balanceOf(vault.address);
 
     expect(compBalanceAfter - compBalanceBefore).to.be.equal(0);
+    expect(usdcBalanceAfter - usdcBalanceBefore).to.be.equal(0);
   });
 });
