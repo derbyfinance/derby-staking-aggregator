@@ -14,6 +14,8 @@ import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
+import "hardhat/console.sol";
+
 library Swap {
   using SafeERC20 for IERC20;
 
@@ -69,6 +71,11 @@ library Swap {
       abi.encodePacked(_swap.tokenIn, _uniswap.poolFee, WETH, _uniswap.poolFee, _swap.tokenOut),
       _swap.amount
     );
+    console.log(" amountOutMinimum %s", amountOutMinimum);
+
+    uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
+    if (balanceBefore > amountOutMinimum) return amountOutMinimum;
+    console.log(" swapping");
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: abi.encodePacked(
@@ -84,7 +91,6 @@ library Swap {
       amountOutMinimum: amountOutMinimum
     });
 
-    uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
     ISwapRouter(_uniswap.router).exactInput(params);
     uint256 balanceAfter = IERC20(_swap.tokenOut).balanceOf(address(this));
 

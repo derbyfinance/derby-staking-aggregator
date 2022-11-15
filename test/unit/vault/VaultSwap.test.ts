@@ -359,4 +359,28 @@ describe('Testing VaultSwap, unit test', async () => {
     // 3 times gas for rebalances
     expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
   });
+
+  it.only('Should take into account token balance first', async function () {
+    const compAmount = parseUnits('1000', 18); // 1000 comp tokens
+    const swapAmount = parseUSDC('10000'); // 100 comp tokens
+
+    // transfer comp and usdc to vault
+    await Promise.all([
+      IComp.connect(compSigner).transfer(vault.address, compAmount),
+      IUSDc.connect(USDCSigner).transfer(vault.address, swapAmount),
+    ]);
+
+    const tx = await vault.swapMinAmountOutMultiTest(swapAmount, usdc, compToken);
+    const receipt = await tx.wait();
+    const { minAmountOut } = receipt.events!.at(-1)!.args as Result;
+    console.log({ minAmountOut });
+
+    // should send token balance in the vault instead of swapping, so balance should change
+    const compBalanceBefore = await IComp.balanceOf(vault.address);
+    await vault.swapTokensMultiTest(swapAmount, usdc, compToken);
+    const compBalanceAfter = await IComp.balanceOf(vault.address);
+
+    console.log(compBalanceAfter - compBalanceBefore);
+    expect(compBalanceAfter - compBalanceBefore).to.be.equal(0);
+  });
 });
