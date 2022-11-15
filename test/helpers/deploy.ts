@@ -14,6 +14,7 @@ import type {
   Game,
   DerbyToken,
   IGoverned,
+  MainVault,
   MainVaultMock,
   CompoundProviderMock,
   GameMock,
@@ -39,6 +40,7 @@ import CompoundProviderArtifact from '@artifacts/Providers/CompoundProvider.sol/
 import CompoundProviderMockArtifact from '@artifacts/Mocks/CompoundProviderMock.sol/CompoundProviderMock.json';
 import AaveProviderArtifact from '@artifacts/Providers/AaveProvider.sol/AaveProvider.json';
 import VaultArtifact from '@artifacts/Vault.sol/Vault.json';
+import MainVaultArtifact from '@artifacts/MainVault.sol/MainVault.json';
 import TokenTimelockArtifact from '@artifacts/TokenTimelock.sol/TokenTimelock.json';
 // import MainVaultArtifactMock from '@artifacts/Mocks/MainVaultMock.sol/MainVaultMock.json';
 import IGovernedArtifact from '@artifacts/Interfaces/IGoverned.sol/IGoverned.json';
@@ -108,31 +110,40 @@ export const deployAaveProvider = (deployerSign: Signer): Promise<AaveProvider> 
   return deployContract(deployerSign, AaveProviderArtifact, []) as Promise<AaveProvider>;
 };
 
-export const deployVault = (
+export const deployMainVault = async (
   deployerSign: Signer,
   name: string,
   symbol: string,
   decimals: number,
   vaultNumber: number,
   daoAddress: string,
-  Game: string,
+  game: string,
   controller: string,
   vaultCurrency: string,
   uScale: number,
   gasFeeLiq: number,
-) =>
-  deployContract(deployerSign, VaultArtifact, [
+) => {
+  const swapLibrary = await deploySwapLibrary(deployerSign);
+  const Vault = await ethers.getContractFactory('MainVaultMock', {
+    libraries: {
+      Swap: swapLibrary.address,
+    },
+  });
+  const vault = await Vault.deploy(
     name,
     symbol,
     decimals,
     vaultNumber,
     daoAddress,
-    Game,
+    game,
     controller,
     vaultCurrency,
     uScale,
     gasFeeLiq,
-  ]) as Promise<Vault>;
+  );
+
+  return vault;
+};
 
 export const deployMainVaultMock = async (
   deployerSign: Signer,
