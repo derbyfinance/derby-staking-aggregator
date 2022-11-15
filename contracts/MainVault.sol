@@ -196,7 +196,8 @@ contract MainVault is Vault, VaultToken {
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
         Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
-        controller.getUniswapParams()
+        controller.getUniswapParams(),
+        true
       );
       IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
     } else {

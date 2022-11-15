@@ -14,6 +14,8 @@ import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
+import "hardhat/console.sol";
+
 library Swap {
   using SafeERC20 for IERC20;
 
@@ -59,16 +61,20 @@ library Swap {
   /// @param _swap Number of tokens to sell, token to sell, token to receive
   /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee
   /// @return Amountout Number of tokens received
-  function swapTokensMulti(SwapInOut memory _swap, IController.UniswapParams memory _uniswap)
-    public
-    returns (uint256)
-  {
+  function swapTokensMulti(
+    SwapInOut memory _swap,
+    IController.UniswapParams memory _uniswap,
+    bool _rewardSwap
+  ) public returns (uint256) {
     IERC20(_swap.tokenIn).safeIncreaseAllowance(_uniswap.router, _swap.amount);
 
     uint256 amountOutMinimum = IQuoter(_uniswap.quoter).quoteExactInput(
       abi.encodePacked(_swap.tokenIn, _uniswap.poolFee, WETH, _uniswap.poolFee, _swap.tokenOut),
       _swap.amount
     );
+
+    uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
+    if (_rewardSwap && balanceBefore > amountOutMinimum) return amountOutMinimum;
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: abi.encodePacked(
@@ -84,7 +90,6 @@ library Swap {
       amountOutMinimum: amountOutMinimum
     });
 
-    uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
     ISwapRouter(_uniswap.router).exactInput(params);
     uint256 balanceAfter = IERC20(_swap.tokenOut).balanceOf(address(this));
 
