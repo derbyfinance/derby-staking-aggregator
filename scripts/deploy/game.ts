@@ -1,25 +1,27 @@
 import { ethers, hardhatArguments } from 'hardhat';
-import { deployMainVault } from '@testhelp/deploy';
+import { deployGame } from '@testhelp/deploy';
 import { addAddress, INetwork, readAddressFile } from './helpers/helpers';
-import { vaultDeploySettings } from './helpers/settings';
 
-export default async function deployVaultLive() {
+import { gameDeploySettings } from './helpers/settings';
+
+export default async function deployGameLive() {
   const { network } = hardhatArguments as INetwork;
   const [wallet] = await ethers.getSigners();
   const addresses = readAddressFile();
 
-  const vault = await deployMainVault(
+  const game = await deployGame(
     wallet,
-    addresses[network].swapLibrary,
+    gameDeploySettings.nftName,
+    gameDeploySettings.nftSymbol,
+    addresses[network].derbyToken,
     addresses[network].dao,
-    addresses[network].game,
+    addresses[network].guardian,
     addresses[network].controller,
-    vaultDeploySettings,
   );
-  addAddress(network, 'vault', vault.address);
+  addAddress(network, 'game', game.address);
 }
 
-deployVaultLive()
+deployGameLive()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);

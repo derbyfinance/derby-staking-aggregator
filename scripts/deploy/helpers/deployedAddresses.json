@@ -1,16 +1,26 @@
 {
-  "game": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
   "localhost": {
+    "derbyToken": "0xaB837301d12cDc4b97f1E910FC56C9179894d9cf",
     "dao": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
     "guardian": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
-    "controller": "0xaB837301d12cDc4b97f1E910FC56C9179894d9cf",
-    "vault": "0xe044814c9eD1e6442Af956a817c161192cBaE98F",
-    "swapLibrary": "0xc3023a2c9f7B92d1dd19F488AF6Ee107a78Df9DB"
+    "controller": "",
+    "vault": "",
+    "swapLibrary": "",
+    "game": "",
+    "endPoint": "0x0000000000000000000000000000000000000000",
+    "connextHandler": "0x0000000000000000000000000000000000000000",
+    "xChainController": "",
+    "xProvider": ""
   },
   "goerli": {
+    "derbyToken": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
     "dao": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
     "guardian": "0x7A28cf37763279F774916b85b5ef8b64AB421f79",
     "swapLibrary": "0x902dDc55509c88661688f305BEBD020812e80Da2",
-    "controller": "0xaB837301d12cDc4b97f1E910FC56C9179894d9cf"
+    "controller": "0xaB837301d12cDc4b97f1E910FC56C9179894d9cf",
+    "game": "0x0000000000000000000000000000000000000000",
+    "endPoint": "0x0000000000000000000000000000000000000000",
+    "connextHandler": "0x0000000000000000000000000000000000000000",
+    "xChainController": "0x0000000000000000000000000000000000000000"
   }
 }

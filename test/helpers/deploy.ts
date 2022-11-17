@@ -119,7 +119,7 @@ export const deployMainVault = async (
   controller: string,
   { name, symbol, decimals, vaultNumber, vaultCurrency, uScale, gasFeeLiq }: IDeployVault,
 ) => {
-  const Vault = await ethers.getContractFactory('MainVaultMock', {
+  const Vault = await ethers.getContractFactory('MainVault', {
     libraries: {
       Swap: swapLibrary,
     },
@@ -265,12 +265,16 @@ export const deployDerbyToken = (
 
 export const deployGame = (
   deployerSign: Signer,
+  name: string,
+  symbol: string,
   DerbyTokenAddress: string,
   daoAddress: string,
   guardianAddress: string,
   controllerAddress: string,
 ): Promise<Game> => {
   return deployContract(deployerSign, GameArtifact, [
+    name,
+    symbol,
     DerbyTokenAddress,
     daoAddress,
     guardianAddress,

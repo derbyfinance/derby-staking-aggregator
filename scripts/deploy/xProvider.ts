@@ -1,25 +1,27 @@
 import { ethers, hardhatArguments } from 'hardhat';
-import { deployMainVault } from '@testhelp/deploy';
 import { addAddress, INetwork, readAddressFile } from './helpers/helpers';
-import { vaultDeploySettings } from './helpers/settings';
+import { xProviderDeploySettings } from './helpers/settings';
+import { deployXProvider } from '@testhelp/deploy';
 
-export default async function deployVaultLive() {
+export default async function deployXProviderLive() {
   const { network } = hardhatArguments as INetwork;
   const [wallet] = await ethers.getSigners();
   const addresses = readAddressFile();
 
-  const vault = await deployMainVault(
+  const xProvider = await deployXProvider(
     wallet,
-    addresses[network].swapLibrary,
+    addresses[network].endPoint,
+    addresses[network].connextHandler,
     addresses[network].dao,
     addresses[network].game,
-    addresses[network].controller,
-    vaultDeploySettings,
+    addresses[network].xChainController,
+    xProviderDeploySettings.homeChainId,
   );
-  addAddress(network, 'vault', vault.address);
+
+  addAddress(network, 'xProvider', xProvider.address);
 }
 
-deployVaultLive()
+deployXProviderLive()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
