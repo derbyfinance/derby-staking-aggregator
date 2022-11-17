@@ -1,8 +1,8 @@
 import { ethers, hardhatArguments } from 'hardhat';
 import { deployMainVault } from '@testhelp/deploy';
-import { addAddress, INetwork } from './helpers';
-import { vaultDeploySettings } from './settings';
-import deployed from './deployedAddresses.json';
+import { addAddress, INetwork } from './helpers/helpers';
+import { vaultDeploySettings } from './helpers/settings';
+import deployed from './helpers/deployedAddresses.json';
 
 async function main() {
   const { network } = hardhatArguments as INetwork;

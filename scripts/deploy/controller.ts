@@ -1,6 +1,6 @@
 import { ethers, hardhatArguments } from 'hardhat';
 import { deployController } from '@testhelp/deploy';
-import { addAddress, INetwork } from './helpers';
+import { addAddress, INetwork } from './helpers/helpers';
 
 async function main() {
   const { network } = hardhatArguments as INetwork;

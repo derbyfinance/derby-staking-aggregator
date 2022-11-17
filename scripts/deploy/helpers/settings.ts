@@ -1,7 +1,7 @@
 import { usdc } from '@testhelp/addresses';
 
 export const general = {
-  addressfile: 'scripts/deploy/deployedAddresses.json',
+  addressfile: 'scripts/deploy/helpers/deployedAddresses.json',
 };
 
 export const vaultDeploySettings = {
