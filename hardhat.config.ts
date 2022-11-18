@@ -23,7 +23,7 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
-const pkey = process.env.PRIVATE_KEY ?? '';
+const pkeys = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -55,19 +55,19 @@ const config: HardhatUserConfig = {
     },
     ropsten: {
       url: process.env.ROPSTEN_URL ?? '',
-      accounts: [pkey],
+      accounts: pkeys,
     },
     rinkeby: {
       url: process.env.RINKEBY_URL ?? '',
-      accounts: [pkey],
+      accounts: pkeys,
     },
     goerli: {
       url: process.env.GOERLI_URL ?? '',
-      accounts: [pkey],
+      accounts: pkeys,
     },
     bsc: {
       url: process.env.BSC_TESTNET_URL ?? '',
-      accounts: [pkey],
+      accounts: pkeys,
     },
     hardhat: {
       forking: {
