@@ -86,6 +86,12 @@ contract MainVault is Vault, VaultToken {
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
   event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
 
+  function init() external onlyDao {
+    // setHomeXProvider
+    // setChainIds
+    // setGuardian
+  }
+
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
