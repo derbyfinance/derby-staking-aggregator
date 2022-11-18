@@ -53,19 +53,19 @@ const config: HardhatUserConfig = {
     },
     ropsten: {
       url: process.env.ROPSTEN_URL ?? '',
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!] ?? [],
     },
     rinkeby: {
       url: process.env.RINKEBY_URL ?? '',
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!] ?? [],
     },
     goerli: {
       url: process.env.GOERLI_URL ?? '',
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!] ?? [],
     },
     bsc: {
       url: process.env.BSC_TESTNET_URL ?? '',
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: [process.env.PRIVATE_KEY!] ?? [],
     },
     hardhat: {
       forking: {
