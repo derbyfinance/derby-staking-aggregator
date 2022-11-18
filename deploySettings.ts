@@ -1,4 +1,10 @@
-import { usdc } from '@testhelp/addresses';
+import {
+  ChainlinkGasPrice,
+  curve3Pool,
+  uniswapQuoter,
+  uniswapRouter,
+  usdc,
+} from '@testhelp/addresses';
 import { IDeployVault } from '@testhelp/deployInterfaces';
 import { parseEther } from '@testhelp/helpers';
 
@@ -22,6 +28,14 @@ export const vaultDeploySettings: IDeployVault = {
   gasFeeLiq: 10_000 * 1e6,
 };
 
+export const controllerDeploySettings = {
+  curve3Pool,
+  uniswapRouter,
+  uniswapQuoter,
+  poolFee: 3000,
+  ChainlinkGasPrice,
+};
+
 export const gameDeploySettings = {
   nftName: 'DerbyNFT',
   nftSymbol: 'DRBNFT',
@@ -32,5 +46,7 @@ export const xChainControllerDeploySettings = {
 };
 
 export const xProviderDeploySettings = {
+  layerZeroEndpoint: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // dummy
+  connextHandler: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // dummy
   homeChainId: 100,
 };

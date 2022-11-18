@@ -5,6 +5,8 @@ import { HardhatUserConfig, task } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-chai-matchers';
 import '@nomiclabs/hardhat-waffle';
+import '@nomiclabs/hardhat-ethers';
+import 'hardhat-deploy';
 
 dotenv.config();
 
@@ -31,23 +33,39 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+    dao: {
+      default: 0,
+    },
+    guardian: {
+      default: 0,
+    },
+  },
   typechain: {},
   networks: {
+    localhost: {
+      live: false,
+      saveDeployments: true,
+      tags: ['local'],
+    },
     ropsten: {
-      url: process.env.ROPSTEN_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.ROPSTEN_URL ?? '',
+      accounts: [process.env.PRIVATE_KEY!],
     },
     rinkeby: {
-      url: process.env.RINKEBY_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.RINKEBY_URL ?? '',
+      accounts: [process.env.PRIVATE_KEY!],
     },
     goerli: {
-      url: process.env.GOERLI_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.GOERLI_URL ?? '',
+      accounts: [process.env.PRIVATE_KEY!],
     },
     bsc: {
-      url: process.env.BSC_TESTNET_URL || '',
-      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      url: process.env.BSC_TESTNET_URL ?? '',
+      accounts: [process.env.PRIVATE_KEY!],
     },
     hardhat: {
       forking: {
