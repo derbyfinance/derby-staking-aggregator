@@ -5,6 +5,7 @@ import { derbyTokenSettings } from 'deploySettings';
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  ethers,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -13,7 +14,7 @@ const func: DeployFunction = async function ({
 
   await deploy('DerbyToken', {
     from: deployer,
-    args: [name, symbol, totalSupply],
+    args: [name, symbol, ethers.BigNumber.from(totalSupply)],
     log: true,
     autoMine: true,
   });

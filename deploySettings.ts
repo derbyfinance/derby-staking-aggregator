@@ -7,7 +7,7 @@ export const general = {
 export const derbyTokenSettings = {
   name: 'Derby Finance',
   symbol: 'DRB',
-  totalSupply: 100000e18, // 100k
+  totalSupply: 100_000, // 100k
 };
 
 export const vaultDeploySettings: IDeployVault = {
