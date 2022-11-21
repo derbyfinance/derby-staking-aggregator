@@ -10,7 +10,7 @@ import 'hardhat-deploy';
 
 dotenv.config();
 
-require('./tasks/controller_init');
+require('./tasks/controller_tasks');
 
 const pkeys = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
