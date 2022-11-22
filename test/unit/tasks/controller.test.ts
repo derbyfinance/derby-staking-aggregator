@@ -1,18 +1,16 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
-import { dai, usdc, usdt, yearn, yearnUSDC } from '@testhelp/addresses';
+import { usdc, yearn, yearnUSDC } from '@testhelp/addresses';
 import { controllerInit } from 'deploySettings';
 
 describe('Testing controller tasks', () => {
-  const setupController = deployments.createFixture(
-    async ({ deployments, getNamedAccounts, ethers }, options) => {
-      await deployments.fixture(['Controller']);
-      const deployment = await deployments.get('Controller');
-      const controller = await ethers.getContractAt('Controller', deployment.address);
+  const setupController = deployments.createFixture(async ({ deployments, ethers }) => {
+    await deployments.fixture(['Controller']);
+    const deployment = await deployments.get('Controller');
+    const controller = await ethers.getContractAt('Controller', deployment.address);
 
-      return controller;
-    },
-  );
+    return controller;
+  });
 
   it('controller_add_protocol', async function () {
     const controller = await setupController();

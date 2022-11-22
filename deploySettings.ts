@@ -50,4 +50,8 @@ export const controllerInit = {
   daiCurveIndex: 0,
   usdcCurveIndex: 1,
   usdtCurveIndex: 2,
+  uniswapRouter: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+  uniswapQouter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
+  uniswapPoolFee: 3000,
+  chainlinkGasPriceOracle: '0x169e633a2d1e6c10dd91238ba11c4a708dfef37c',
 };
