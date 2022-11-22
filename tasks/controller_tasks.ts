@@ -1,5 +1,6 @@
 import { Controller } from '@typechain';
 import { controllerInit } from 'deploySettings';
+import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -13,18 +14,17 @@ const getController = async ({
   return controller;
 };
 
-task('controller_init', 'initializes the controller').setAction(async (taskArgs, hre) => {
-  const controller = await getController(hre);
-  const [dao] = await hre.ethers.getSigners();
+task('controller_init', 'Initializes the controller').setAction(async (taskArgs, { run }) => {
+  const { dai, usdc, usdt, daiCurveIndex, usdcCurveIndex, usdtCurveIndex } = controllerInit;
 
   await Promise.all([
-    controller.connect(dao).addCurveIndex(controllerInit.dai, 0),
-    controller.connect(dao).addCurveIndex(controllerInit.usdc, 1),
-    controller.connect(dao).addCurveIndex(controllerInit.usdt, 2),
+    run('controller_add_curve_index', { token: dai, index: daiCurveIndex }),
+    run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex }),
+    run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex }),
   ]);
 });
 
-task('controller_add_protocol', 'add protocol to controller')
+task('controller_add_protocol', 'Add protocol to controller')
   .addParam('name', 'Name of the protocol vault combination')
   .addParam('vaultNumber', 'Number of the vault', 0, types.int)
   .addParam('provider', 'Address of the protocol provider')
@@ -37,8 +37,33 @@ task('controller_add_protocol', 'add protocol to controller')
       const controller = await getController(hre);
       const [dao] = await hre.ethers.getSigners();
 
-      await controller
+      const tx = await controller
         .connect(dao)
         .addProtocol(name, vaultNumber, provider, protocolLPToken, underlying, govToken, uScale);
+
+      const receipt = await tx.wait();
+      const { protocolNumber } = receipt.events![0].args as Result;
+
+      return protocolNumber;
     },
   );
+
+task('controller_add_vault', 'Set curve pool index for underlying token')
+  .addParam('token', 'Address of Token')
+  .addParam('index', 'Curve index as decribed in Swap pool', null, types.int)
+  .setAction(async ({ token, index }, hre) => {
+    const controller = await getController(hre);
+    const [dao] = await hre.ethers.getSigners();
+
+    await controller.connect(dao).addCurveIndex(token, index);
+  });
+
+task('controller_add_curve_index', 'Set curve pool index for underlying token')
+  .addParam('token', 'Address of Token')
+  .addParam('index', 'Curve index as decribed in Swap pool', null, types.int)
+  .setAction(async ({ token, index }, hre) => {
+    const controller = await getController(hre);
+    const [dao] = await hre.ethers.getSigners();
+
+    await controller.connect(dao).addCurveIndex(token, index);
+  });
