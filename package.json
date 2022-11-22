@@ -11,7 +11,9 @@
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@openzeppelin/contracts": "^4.7.3",
     "dotenv": "^16.0.2",
+    "ethers": "^5.7.2",
     "hardhat": "^2.11.1",
+    "hardhat-deploy": "^0.11.20",
     "prettier": "^2.7.1",
     "tsconfig-paths": "^4.1.0"
   }

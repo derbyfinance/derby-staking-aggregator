@@ -27,7 +27,11 @@
     "./test",
     "./test-mainnet",
     "index.d.ts",
-    "./typechain-types"
+    "./typechain-types",
+    "./hardhat.config.ts",
+    "./deploy",
+    "deploy",
+    "deploySettings.ts",
   ],
   "files": [
     "./hardhat.config.ts",
