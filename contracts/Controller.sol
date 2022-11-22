@@ -90,13 +90,6 @@ contract Controller is IController {
     }
   }
 
-  /// @notice Set if provider have claimable tokens
-  /// @param _provider Address of the underlying protocol
-  /// @param _bool True of the underlying protocol has claimable tokens
-  function setClaimable(address _provider, bool _bool) external onlyDao {
-    claimable[_provider] = _bool;
-  }
-
   function getUniswapParams() external view returns (UniswapParams memory) {
     return uniswapParams;
   }
@@ -255,6 +248,13 @@ contract Controller is IController {
   /// @param _chainlinkGasPriceOracle Contract address
   function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
     chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
+  }
+
+  /// @notice Set if provider have claimable tokens
+  /// @param _provider Address of the underlying protocol
+  /// @param _bool True of the underlying protocol has claimable tokens
+  function setClaimable(address _provider, bool _bool) external onlyDao {
+    claimable[_provider] = _bool;
   }
 
   /// @notice Setter for DAO address
