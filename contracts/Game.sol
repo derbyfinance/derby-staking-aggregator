@@ -67,9 +67,9 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public lastTimeStamp;
 
   // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
-  int256 private negativeRewardThreshold;
+  int256 internal negativeRewardThreshold;
   // percentage of tokens that will be sold at negative rewards
-  uint256 private negativeRewardFactor;
+  uint256 internal negativeRewardFactor;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):

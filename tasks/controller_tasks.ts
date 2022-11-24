@@ -1,6 +1,6 @@
 import { controllerInit } from 'deploySettings';
 import { Result } from 'ethers/lib/utils';
-import { task, task, types } from 'hardhat/config';
+import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 const getController = async ({ deployments, ethers }: HardhatRuntimeEnvironment) => {

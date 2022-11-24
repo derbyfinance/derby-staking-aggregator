@@ -10,6 +10,7 @@ import 'hardhat-deploy';
 
 // tasks
 import './tasks/controller_tasks';
+import './tasks/game_tasks';
 
 dotenv.config();
 
