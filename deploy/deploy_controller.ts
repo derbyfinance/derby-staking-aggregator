@@ -1,6 +1,5 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { controllerInit } from 'deploySettings';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
