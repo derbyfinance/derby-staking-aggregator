@@ -31,10 +31,10 @@ const config: HardhatUserConfig = {
       default: 0,
     },
     dao: {
-      default: 0,
+      default: 1,
     },
     guardian: {
-      default: 0,
+      default: 2,
     },
   },
   typechain: {},

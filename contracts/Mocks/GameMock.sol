@@ -95,4 +95,16 @@ contract GameMock is Game {
   function getNegativeRewardFactor() external view returns (uint256) {
     return negativeRewardFactor;
   }
+
+  function getNegativeRewardThreshold() external view returns (int256) {
+    return negativeRewardThreshold;
+  }
+
+  function getVaultAddressTest(uint256 _vaultNumber, uint16 _chainId)
+    external
+    view
+    returns (address)
+  {
+    return getVaultAddress(_vaultNumber, _chainId);
+  }
 }

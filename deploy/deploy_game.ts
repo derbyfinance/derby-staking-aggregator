@@ -5,6 +5,7 @@ import { gameDeploySettings } from 'deploySettings';
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  run,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao, guardian } = await getNamedAccounts();
@@ -20,6 +21,8 @@ const func: DeployFunction = async function ({
     log: true,
     autoMine: true,
   });
+
+  await run('game_init');
 };
 export default func;
 func.tags = ['Game'];

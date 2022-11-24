@@ -84,9 +84,11 @@ contract Game is ERC721, ReentrancyGuard {
   // (vaultNumber => bool): true when vault is cross-chain rebalancing
   mapping(uint256 => bool) public isXChainRebalancing;
 
-  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+  event PushProtocolAllocations(uint16 chain, address vault, int256[] deltas);
 
-  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
+  event PushedAllocationsToController(uint256 vaultNumber, int256[] deltas);
+
+  event BasketId(address owner, uint256 basketId);
 
   modifier onlyDao() {
     require(msg.sender == dao, "Game: only DAO");
@@ -121,8 +123,6 @@ contract Game is ERC721, ReentrancyGuard {
     dao = _dao;
     guardian = _guardian;
     lastTimeStamp = block.timestamp;
-
-    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -272,6 +272,8 @@ contract Game is ERC721, ReentrancyGuard {
     baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
     _safeMint(msg.sender, latestBasketId);
     latestBasketId++;
+
+    emit BasketId(msg.sender, latestBasketId - 1);
     return latestBasketId - 1;
   }
 

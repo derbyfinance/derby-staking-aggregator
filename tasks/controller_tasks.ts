@@ -3,9 +3,15 @@ import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-const getController = async ({ deployments, ethers }: HardhatRuntimeEnvironment) => {
+const getController = async ({
+  deployments,
+  ethers,
+  getNamedAccounts,
+}: HardhatRuntimeEnvironment) => {
   await deployments.all();
-  const [dao] = await ethers.getSigners();
+  const accounts = await getNamedAccounts();
+  const dao = await ethers.getSigner(accounts.dao);
+
   const { address } = await deployments.get('Controller');
   const controller = await ethers.getContractAt('Controller', address);
   return { controller, dao };

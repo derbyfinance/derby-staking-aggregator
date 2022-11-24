@@ -5,6 +5,7 @@ import { gameDeploySettings } from 'deploySettings';
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  run,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao, guardian } = await getNamedAccounts();
@@ -14,14 +15,14 @@ const func: DeployFunction = async function ({
   const derbyToken = await deployments.get('DerbyToken');
   const controller = await deployments.get('Controller');
 
-  console.log('deploying mock');
-
   await deploy('GameMock', {
     from: deployer,
     args: [nftName, nftSymbol, derbyToken.address, dao, guardian, controller.address],
     log: true,
     autoMine: true,
   });
+
+  await run('game_init');
 };
 export default func;
 func.tags = ['GameMock'];
