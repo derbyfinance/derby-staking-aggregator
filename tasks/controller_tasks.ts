@@ -1,6 +1,6 @@
 import { controllerInit } from 'deploySettings';
 import { Result } from 'ethers/lib/utils';
-import { task, subtask, types } from 'hardhat/config';
+import { task, task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 const getController = async ({ deployments, ethers }: HardhatRuntimeEnvironment) => {
@@ -63,42 +63,42 @@ task('controller_add_protocol', 'Add protocol to controller')
     },
   );
 
-subtask('controller_add_vault', 'Add vault to controller whitelist')
+task('controller_add_vault', 'Add vault to controller whitelist')
   .addParam('vault', 'Address of the vault')
   .setAction(async ({ vault }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).addVault(vault);
   });
 
-subtask('controller_set_uniswap_router', 'Set the Uniswap Router address')
+task('controller_set_uniswap_router', 'Set the Uniswap Router address')
   .addParam('router', 'Address of the router')
   .setAction(async ({ router }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setUniswapRouter(router);
   });
 
-subtask('controller_set_uniswap_quoter', 'Set the Uniswap Quoter address')
+task('controller_set_uniswap_quoter', 'Set the Uniswap Quoter address')
   .addParam('quoter', 'Address of the quoter')
   .setAction(async ({ quoter }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setUniswapQuoter(quoter);
   });
 
-subtask('controller_set_uniswap_poolfee', 'Set the Uniswap Poolfee')
+task('controller_set_uniswap_poolfee', 'Set the Uniswap Poolfee')
   .addParam('poolFee', 'Uniswap pool fee', null, types.int)
   .setAction(async ({ poolFee }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setUniswapPoolFee(poolFee);
   });
 
-subtask('controller_set_curve_poolfee', 'Set the Curve Poolfee')
+task('controller_set_curve_poolfee', 'Set the Curve Poolfee')
   .addParam('poolFee', 'Curve pool fee', null, types.int)
   .setAction(async ({ poolFee }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setCurvePoolFee(poolFee);
   });
 
-subtask('controller_add_curve_index', 'Set curve pool index for underlying token')
+task('controller_add_curve_index', 'Set curve pool index for underlying token')
   .addParam('token', 'Address of Token')
   .addParam('index', 'Curve index as decribed in Swap pool', null, types.int)
   .setAction(async ({ token, index }, hre) => {
@@ -106,14 +106,14 @@ subtask('controller_add_curve_index', 'Set curve pool index for underlying token
     await controller.connect(dao).addCurveIndex(token, index);
   });
 
-subtask('controller_set_curve_3pool', 'Setter curve3Pool address')
+task('controller_set_curve_3pool', 'Setter curve3Pool address')
   .addParam('pool', 'New dao address')
   .setAction(async ({ pool }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setCurve3Pool(pool);
   });
 
-subtask('controller_add_underlying_scale', 'Set the scale for underlying stable coin')
+task('controller_add_underlying_scale', 'Set the scale for underlying stable coin')
   .addParam('stable', 'Address of stable coin')
   .addParam('scale', 'Scale e.g decimals of stable', null, types.int)
   .setAction(async ({ stable, scale }, hre) => {
@@ -121,14 +121,14 @@ subtask('controller_add_underlying_scale', 'Set the scale for underlying stable 
     await controller.connect(dao).addUnderlyingUScale(stable, scale);
   });
 
-subtask('controller_gas_price_oracle', 'Setter for the Chainlink Gas price oracle')
+task('controller_gas_price_oracle', 'Setter for the Chainlink Gas price oracle')
   .addParam('chainlinkGasPriceOracle', 'Contract address')
   .setAction(async ({ chainlinkGasPriceOracle }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setGasPriceOracle(chainlinkGasPriceOracle);
   });
 
-subtask('controller_set_claimable', 'Set if provider have claimable tokens')
+task('controller_set_claimable', 'Set if provider have claimable tokens')
   .addParam('provider', 'Address of Derby provider')
   .addParam('bool', 'True of the underlying protocol has claimable tokens', null, types.boolean)
   .setAction(async ({ provider, bool }, hre) => {
@@ -136,7 +136,7 @@ subtask('controller_set_claimable', 'Set if provider have claimable tokens')
     await controller.connect(dao).setClaimable(provider, bool);
   });
 
-subtask('controller_set_dao', 'Setter for dao address')
+task('controller_set_dao', 'Setter for dao address')
   .addParam('daoAddr', 'New dao address')
   .setAction(async ({ daoAddr }, hre) => {
     const { controller, dao } = await getController(hre);

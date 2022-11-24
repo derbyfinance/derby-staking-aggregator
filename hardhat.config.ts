@@ -8,9 +8,10 @@ import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-ethers';
 import 'hardhat-deploy';
 
-dotenv.config();
+// tasks
+import './tasks/controller_tasks';
 
-require('./tasks/controller_tasks');
+dotenv.config();
 
 const pkeys = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
