@@ -14,7 +14,7 @@ contract Controller is IController {
   address public curve3Pool;
   address public chainlinkGasPriceOracle;
 
-  uint256 public curve3PoolFee = 15; // 0.15% including slippage
+  uint256 public curve3PoolFee; // 0.15% including slippage
 
   // (vaultNumber => protocolNumber => protocolInfoStruct): struct in IController
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
@@ -40,23 +40,8 @@ contract Controller is IController {
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
-  constructor(
-    address _dao,
-    address _curve3Pool,
-    address _uniswapRouter,
-    address _uniswapQuoter,
-    uint24 _poolFee,
-    address _chainlinkGasPriceOracle
-  ) {
+  constructor(address _dao) {
     dao = _dao;
-    curve3Pool = _curve3Pool;
-    uniswapParams.router = _uniswapRouter;
-    uniswapParams.quoter = _uniswapQuoter;
-    uniswapParams.poolFee = _poolFee;
-    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
-    underlyingUScale[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = 1E6; // USDC
-    underlyingUScale[0x6B175474E89094C44Da98b954EedeAC495271d0F] = 1E18; // DAI
-    underlyingUScale[0xdAC17F958D2ee523a2206206994597C13D831ec7] = 1E6; // USDT
   }
 
   // Modifier for only vault?
@@ -238,6 +223,12 @@ contract Controller is IController {
   /// @param _index Curve index as decribed in Swap pool
   function addCurveIndex(address _token, int128 _index) external onlyDao {
     curveIndex[_token] = _index;
+  }
+
+  /// @notice Set the Curve 3 pool address
+  /// @param _pool New pool address
+  function setCurve3Pool(address _pool) external onlyDao {
+    curve3Pool = _pool;
   }
 
   function addUnderlyingUScale(address _stable, uint256 _uScale) external onlyDao {
