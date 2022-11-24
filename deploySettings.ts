@@ -35,14 +35,6 @@ export const vaultDeploySettings: IDeployVault = {
   gasFeeLiq: 10_000 * 1e6,
 };
 
-export const controllerDeploySettings = {
-  curve3Pool: '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
-  uniswapRouter: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
-  uniswapQuoter: '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6',
-  poolFee: 3000,
-  ChainlinkGasPrice: '0x169e633a2d1e6c10dd91238ba11c4a708dfef37c',
-};
-
 export const gameDeploySettings = {
   nftName: 'DerbyNFT',
   nftSymbol: 'DRBNFT',
