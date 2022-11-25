@@ -31,30 +31,30 @@ task('controller_init', 'Initializes the controller').setAction(async (taskArgs,
     run('controller_add_curve_index', { token: dai, index: daiCurveIndex }),
     run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex }),
     run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex }),
-    run('controller_set_curve_poolfee', { poolFee: curve3PoolFee }),
+    run('controller_set_curve_poolfee', { poolfee: curve3PoolFee }),
     run('controller_set_curve_3pool', { pool: curve3Pool }),
     run('controller_set_uniswap_router', { router: uniswapRouter }),
     run('controller_set_uniswap_quoter', { quoter: uniswapQouter }),
-    run('controller_set_uniswap_poolfee', { poolFee: uniswapPoolFee }),
-    run('controller_gas_price_oracle', { chainlinkGasPriceOracle }),
+    run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee }),
+    run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle }),
   ]);
 });
 
 task('controller_add_protocol', 'Add protocol to controller')
   .addParam('name', 'Name of the protocol vault combination')
-  .addParam('vaultNumber', 'Number of the vault', 0, types.int)
+  .addParam('vaultnumber', 'Number of the vault', 0, types.int)
   .addParam('provider', 'Address of the protocol provider')
-  .addParam('protocolLPToken', 'Address of protocolToken eg cUSDC')
+  .addParam('protocoltoken', 'Address of protocolToken eg cUSDC')
   .addParam('underlying', 'Address of underlying protocol vault eg USDC')
-  .addParam('govToken', 'Address governance token of the protocol')
-  .addParam('uScale', 'Underlying scale of the protocol', 0, types.int)
+  .addParam('govtoken', 'Address governance token of the protocol')
+  .addParam('uscale', 'Underlying scale of the protocol', 0, types.int)
   .setAction(
-    async ({ name, vaultNumber, provider, protocolLPToken, underlying, govToken, uScale }, hre) => {
+    async ({ name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale }, hre) => {
       const { controller, dao } = await getController(hre);
 
       const tx = await controller
         .connect(dao)
-        .addProtocol(name, vaultNumber, provider, protocolLPToken, underlying, govToken, uScale);
+        .addProtocol(name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale);
 
       const receipt = await tx.wait();
       const { protocolNumber } = receipt.events![0].args as Result;
@@ -85,17 +85,17 @@ task('controller_set_uniswap_quoter', 'Set the Uniswap Quoter address')
   });
 
 task('controller_set_uniswap_poolfee', 'Set the Uniswap Poolfee')
-  .addParam('poolFee', 'Uniswap pool fee', null, types.int)
-  .setAction(async ({ poolFee }, hre) => {
+  .addParam('poolfee', 'Uniswap pool fee', null, types.int)
+  .setAction(async ({ poolfee }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setUniswapPoolFee(poolFee);
+    await controller.connect(dao).setUniswapPoolFee(poolfee);
   });
 
 task('controller_set_curve_poolfee', 'Set the Curve Poolfee')
   .addParam('poolFee', 'Curve pool fee', null, types.int)
-  .setAction(async ({ poolFee }, hre) => {
+  .setAction(async ({ poolfee }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setCurvePoolFee(poolFee);
+    await controller.connect(dao).setCurvePoolFee(poolfee);
   });
 
 task('controller_add_curve_index', 'Set curve pool index for underlying token')
@@ -122,10 +122,10 @@ task('controller_add_underlying_scale', 'Set the scale for underlying stable coi
   });
 
 task('controller_gas_price_oracle', 'Setter for the Chainlink Gas price oracle')
-  .addParam('chainlinkGasPriceOracle', 'Contract address')
-  .setAction(async ({ chainlinkGasPriceOracle }, hre) => {
+  .addParam('oracle', 'Contract address')
+  .setAction(async ({ oracle }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setGasPriceOracle(chainlinkGasPriceOracle);
+    await controller.connect(dao).setGasPriceOracle(oracle);
   });
 
 task('controller_set_claimable', 'Set if provider have claimable tokens')
@@ -137,8 +137,8 @@ task('controller_set_claimable', 'Set if provider have claimable tokens')
   });
 
 task('controller_set_dao', 'Setter for dao address')
-  .addParam('daoAddr', 'New dao address')
-  .setAction(async ({ daoAddr }, hre) => {
+  .addParam('daoaddr', 'New dao address')
+  .setAction(async ({ daoaddr }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setDao(daoAddr);
+    await controller.connect(dao).setDao(daoaddr);
   });

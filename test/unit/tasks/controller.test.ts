@@ -19,12 +19,12 @@ describe.only('Testing controller tasks', () => {
 
     const protocolNumber = await run(`controller_add_protocol`, {
       name: 'yearn_usdc_01',
-      vaultNumber: vaultNumber,
+      vaultnumber: vaultNumber,
       provider: providerAddress,
-      protocolLPToken: yearnUSDC,
+      protocoltoken: yearnUSDC,
       underlying: usdc,
-      govToken: yearn,
-      uScale: 1e6,
+      govtoken: yearn,
+      uscale: 1e6,
     });
 
     const protocolInfo = await controller.getProtocolInfo(vaultNumber, protocolNumber);
@@ -51,7 +51,7 @@ describe.only('Testing controller tasks', () => {
     await Promise.all([
       run('controller_set_uniswap_router', { router: uniswapRouter }),
       run('controller_set_uniswap_quoter', { quoter: uniswapQouter }),
-      run('controller_set_uniswap_poolfee', { poolFee: uniswapPoolFee }),
+      run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee }),
     ]);
 
     const uniswapParams = await controller.getUniswapParams();
@@ -64,7 +64,7 @@ describe.only('Testing controller tasks', () => {
     const { curve3PoolFee } = controllerInit;
     const controller = await setupController();
 
-    await run('controller_set_curve_poolfee', { poolFee: curve3PoolFee });
+    await run('controller_set_curve_poolfee', { poolfee: curve3PoolFee });
     expect(await controller.curve3PoolFee()).to.be.equal(curve3PoolFee);
   });
 
@@ -88,7 +88,7 @@ describe.only('Testing controller tasks', () => {
     const { chainlinkGasPriceOracle } = controllerInit;
     const controller = await setupController();
 
-    await run('controller_gas_price_oracle', { chainlinkGasPriceOracle });
+    await run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle });
     expect(await controller.chainlinkGasPriceOracle()).to.be.equal(chainlinkGasPriceOracle);
   });
 
@@ -113,7 +113,7 @@ describe.only('Testing controller tasks', () => {
     const dao = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7';
     const controller = await setupController();
 
-    await run('controller_set_dao', { daoAddr: dao });
+    await run('controller_set_dao', { daoaddr: dao });
     expect(await controller.getDao()).to.be.equal(dao);
   });
 });
