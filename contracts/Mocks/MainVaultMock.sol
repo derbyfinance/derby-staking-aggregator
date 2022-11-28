@@ -18,8 +18,7 @@ contract MainVaultMock is MainVault {
     address _Game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
-    uint256 _gasFeeLiquidity
+    uint256 _uScale
   )
     MainVault(
       _name,
@@ -30,8 +29,7 @@ contract MainVaultMock is MainVault {
       _Game,
       _controller,
       _vaultCurrency,
-      _uScale,
-      _gasFeeLiquidity
+      _uScale
     )
   {}
 
@@ -63,11 +61,10 @@ contract MainVaultMock is MainVault {
     return lastPrices[_protocolId];
   }
 
-  function balanceSharesTEST(uint256 _protocolNum, address _address)
-    external
-    view
-    returns (uint256)
-  {
+  function balanceSharesTEST(
+    uint256 _protocolNum,
+    address _address
+  ) external view returns (uint256) {
     IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
     uint256 balance = IProvider(p.provider).balance(_address, p.LPToken);
 
@@ -144,11 +141,7 @@ contract MainVaultMock is MainVault {
     emit MinAmountOut(minAmountOut);
   }
 
-  function curveSwapTest(
-    uint256 _amount,
-    address _tokenIn,
-    address _tokenOut
-  ) external {
+  function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
     Swap.swapStableCoins(
       Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
       uScale,

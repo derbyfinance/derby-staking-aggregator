@@ -32,7 +32,14 @@ export const vaultDeploySettings: IDeployVault = {
   vaultNumber: 0,
   vaultCurrency: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
   uScale: 1e6,
+};
+
+export const vaultInitSettings = {
   gasFeeLiq: 10_000 * 1e6,
+  rebalanceInterval: 1,
+  marginScale: 1_000 * 1e6,
+  liquidityPercentage: 10,
+  performanceFee: 10,
 };
 
 export const gameDeploySettings = {

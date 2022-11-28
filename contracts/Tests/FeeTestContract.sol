@@ -16,8 +16,7 @@ contract FeeTestContract is MainVault {
     address _Game,
     address _router,
     address _vaultCurrency,
-    uint256 _uScale,
-    uint256 _gasFeeLiquidity
+    uint256 _uScale
   )
     MainVault(
       _name,
@@ -28,8 +27,7 @@ contract FeeTestContract is MainVault {
       _Game,
       _router,
       _vaultCurrency,
-      _uScale,
-      _gasFeeLiquidity
+      _uScale
     )
   {}
 

@@ -9,8 +9,7 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale, gasFeeLiq } =
-    vaultDeploySettings;
+  const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = vaultDeploySettings;
 
   const swapLibrary = await deployments.get('Swap');
   const game = await deployments.get('Game');
@@ -28,7 +27,6 @@ const func: DeployFunction = async function ({
       controller.address,
       vaultCurrency,
       uScale,
-      gasFeeLiq,
     ],
     libraries: {
       Swap: swapLibrary.address,

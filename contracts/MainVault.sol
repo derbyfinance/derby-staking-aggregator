@@ -17,7 +17,7 @@ contract MainVault is Vault, VaultToken {
 
   bool public vaultOff;
   // True when rewards should be swapped to derby tokens
-  bool private swapRewards;
+  bool public swapRewards;
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -45,11 +45,10 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
-    uint256 _gasFeeLiquidity
+    uint256 _uScale
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _gasFeeLiquidity)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale)
   {
     exchangeRate = _uScale;
     game = _game;
@@ -93,7 +92,6 @@ contract MainVault is Vault, VaultToken {
   function deposit(
     uint256 _amount
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
-    console.log(msg.sender);
     uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
@@ -375,7 +373,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Setter for new homeChain Id
-  function setChainIds(uint16 _homeChain) external onlyGuardian {
+  function setHomeChain(uint16 _homeChain) external onlyGuardian {
     homeChain = _homeChain;
   }
 }

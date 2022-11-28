@@ -40,14 +40,14 @@ contract Vault is ReentrancyGuard {
   address public xController;
 
   uint256 public vaultNumber;
-  uint256 public liquidityPerc = 10;
-  uint256 public performanceFee = 10;
+  uint256 public liquidityPerc;
+  uint256 public performanceFee;
   uint256 public rebalancingPeriod = 1;
   uint256 public uScale;
-  int256 public marginScale = 1E10; // 10000 USDC
+  int256 public marginScale;
 
   // UNIX timestamp
-  uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
+  uint256 public rebalanceInterval;
   uint256 public lastTimeStamp;
   uint256 public gasFeeLiquidity;
 
@@ -100,8 +100,7 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
-    uint256 _gasFeeLiquidity
+    uint256 _uScale
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -109,7 +108,6 @@ contract Vault is ReentrancyGuard {
     vaultNumber = _vaultNumber;
     dao = _dao;
     uScale = _uScale;
-    gasFeeLiquidity = _gasFeeLiquidity;
     lastTimeStamp = block.timestamp;
   }
 
@@ -181,10 +179,9 @@ contract Vault is ReentrancyGuard {
   /// @dev the performanceFee and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault.
   /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number.
-  function rebalanceCheckProtocols(uint256 _newTotalUnderlying)
-    internal
-    returns (uint256[] memory)
-  {
+  function rebalanceCheckProtocols(
+    uint256 _newTotalUnderlying
+  ) internal returns (uint256[] memory) {
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
@@ -213,11 +210,10 @@ contract Vault is ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @param _protocol Protocol id number
   /// @return amountToProtocol amount to deposit or withdraw to protocol
-  function calcAmountToProtocol(uint256 _totalUnderlying, uint256 _protocol)
-    internal
-    view
-    returns (int256 amountToProtocol)
-  {
+  function calcAmountToProtocol(
+    uint256 _totalUnderlying,
+    uint256 _protocol
+  ) internal view returns (int256 amountToProtocol) {
     if (totalAllocatedTokens == 0) amountToProtocol = 0;
     else
       amountToProtocol =

@@ -5,5 +5,4 @@ export interface IDeployVault {
   vaultNumber: number;
   vaultCurrency: string;
   uScale: number;
-  gasFeeLiq: number;
 }
