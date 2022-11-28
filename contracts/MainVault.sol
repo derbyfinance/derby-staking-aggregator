@@ -90,18 +90,16 @@ contract MainVault is Vault, VaultToken {
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
   /// @return shares Tokens received by buyer
-  function deposit(uint256 _amount)
-    external
-    nonReentrant
-    onlyWhenVaultIsOn
-    returns (uint256 shares)
-  {
+  function deposit(
+    uint256 _amount
+  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
+    console.log(msg.sender);
     uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = (amount * (10**decimals())) / exchangeRate;
+    shares = (amount * (10 ** decimals())) / exchangeRate;
 
     _mint(msg.sender, shares);
   }
@@ -110,17 +108,14 @@ contract MainVault is Vault, VaultToken {
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
   /// @return value Amount received by seller in vaultCurrency
-  function withdraw(uint256 _amount)
-    external
-    nonReentrant
-    onlyWhenVaultIsOn
-    returns (uint256 value)
-  {
-    value = (_amount * exchangeRate) / (10**decimals());
+  function withdraw(
+    uint256 _amount
+  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
+    value = (_amount * exchangeRate) / (10 ** decimals());
 
-    require(value > 0, "No value");
+    require(value > 0, "!value");
 
-    require(getVaultBalance() >= value, "Not enough funds");
+    require(getVaultBalance() >= value, "!funds");
 
     _burn(msg.sender, _amount);
     vaultCurrency.safeTransfer(msg.sender, value);
@@ -129,15 +124,12 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token
-  function withdrawalRequest(uint256 _amount)
-    external
-    nonReentrant
-    onlyWhenVaultIsOn
-    returns (uint256 value)
-  {
+  function withdrawalRequest(
+    uint256 _amount
+  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
 
-    value = (_amount * exchangeRate) / (10**decimals());
+    value = (_amount * exchangeRate) / (10 ** decimals());
 
     _burn(msg.sender, _amount);
 
@@ -149,12 +141,12 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
-    require(withdrawalAllowance[msg.sender] > 0, "No allowance");
+    require(withdrawalAllowance[msg.sender] > 0, "!allowance");
     require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not arrived");
 
     value = withdrawalAllowance[msg.sender];
 
-    require(vaultCurrency.balanceOf(address(this)) >= value, "No funds");
+    require(vaultCurrency.balanceOf(address(this)) >= value, "!funds");
 
     reservedFunds -= value;
     delete withdrawalAllowance[msg.sender];
@@ -166,13 +158,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
   /// @param _value Amount to set a request in vaultCurrency
   /// @param _user Address of the user
-  function redeemRewardsGame(uint256 _value, address _user)
-    external
-    onlyGame
-    nonReentrant
-    onlyWhenVaultIsOn
-  {
-    require(rewardAllowance[_user] == 0, "No allowance");
+  function redeemRewardsGame(
+    uint256 _value,
+    address _user
+  ) external onlyGame nonReentrant onlyWhenVaultIsOn {
+    require(rewardAllowance[_user] == 0, "!allowance");
 
     rewardAllowance[_user] = _value;
     rewardRequestPeriod[_user] = rebalancingPeriod;
@@ -182,12 +172,12 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
   function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
-    require(rewardAllowance[msg.sender] > 0, "No allowance");
+    require(rewardAllowance[msg.sender] > 0, "!allowance");
     require(rebalancingPeriod > rewardRequestPeriod[msg.sender], "Funds not arrived");
 
     value = rewardAllowance[msg.sender];
 
-    require(vaultCurrency.balanceOf(address(this)) >= value, "No funds");
+    require(vaultCurrency.balanceOf(address(this)) >= value, "!funds");
 
     reservedFunds -= value;
     delete rewardAllowance[msg.sender];
@@ -207,7 +197,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external onlyWhenIdle {
-    require(rebalanceNeeded(), "No rebalance needed");
+    require(rebalanceNeeded(), "!rebalance needed");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance();
@@ -233,10 +223,10 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice See setXChainAllocationInt below
-  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate)
-    external
-    onlyXProvider
-  {
+  function setXChainAllocation(
+    uint256 _amountToSend,
+    uint256 _exchangeRate
+  ) external onlyXProvider {
     require(state == State.PushedUnderlying, "Wrong state");
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
@@ -362,10 +352,10 @@ contract MainVault is Vault, VaultToken {
   */
 
   /// @notice Step 3: Guardian function
-  function setXChainAllocationGuard(uint256 _amountToSend, uint256 _exchangeRate)
-    external
-    onlyGuardian
-  {
+  function setXChainAllocationGuard(
+    uint256 _amountToSend,
+    uint256 _exchangeRate
+  ) external onlyGuardian {
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 

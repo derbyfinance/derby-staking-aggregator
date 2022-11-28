@@ -30,7 +30,7 @@ export const vaultDeploySettings: IDeployVault = {
   symbol: 'dfUSDC',
   decimals: 6,
   vaultNumber: 0,
-  vaultCurrency: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  vaultCurrency: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
   uScale: 1e6,
   gasFeeLiq: 10_000 * 1e6,
 };

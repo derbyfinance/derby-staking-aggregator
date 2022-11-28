@@ -11,6 +11,7 @@ import 'hardhat-deploy';
 // tasks
 import './tasks/controller_tasks';
 import './tasks/game_tasks';
+import './tasks/vault_tasks';
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ const config: HardhatUserConfig = {
     },
     guardian: {
       default: 2,
+    },
+    user: {
+      default: 3,
     },
   },
   typechain: {},
