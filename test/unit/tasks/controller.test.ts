@@ -8,6 +8,7 @@ describe.only('Testing controller tasks', () => {
     await deployments.fixture(['Controller']);
     const deployment = await deployments.get('Controller');
     const controller = await ethers.getContractAt('Controller', deployment.address);
+    await run('controller_init');
 
     return controller;
   });
