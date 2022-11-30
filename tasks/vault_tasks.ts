@@ -2,7 +2,7 @@ import { vaultInitSettings } from 'deploySettings';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-task('vault_init', 'Initializes the game').setAction(async (args, { run, getNamedAccounts }) => {
+task('vault_init', 'Initializes the vault').setAction(async (args, { run, getNamedAccounts }) => {
   const { guardian } = await getNamedAccounts();
   const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
     vaultInitSettings;
@@ -159,7 +159,6 @@ task('vault_set_homexprovider', 'Setter for xProvider address')
   .setAction(async ({ address }, hre) => {
     const vault = await getVault(hre);
     const dao = await getDao(hre);
-
     await vault.connect(dao).setHomeXProvider(address);
   });
 
@@ -168,7 +167,6 @@ task('vault_set_dao_token', 'Setter for derby token address')
   .setAction(async ({ address }, hre) => {
     const vault = await getVault(hre);
     const dao = await getDao(hre);
-
     await vault.connect(dao).setDaoToken(address);
   });
 
@@ -177,7 +175,6 @@ task('vault_set_game', 'Setter for game address')
   .setAction(async ({ address }, hre) => {
     const vault = await getVault(hre);
     const dao = await getDao(hre);
-
     await vault.connect(dao).setGame(address);
   });
 
@@ -186,7 +183,6 @@ task('vault_set_swap_rewards', 'Setter for swapping rewards to derby tokens')
   .setAction(async ({ state }, hre) => {
     const vault = await getVault(hre);
     const dao = await getDao(hre);
-
     await vault.connect(dao).setSwapRewards(state);
   });
 
