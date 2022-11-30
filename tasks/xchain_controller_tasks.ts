@@ -18,8 +18,60 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 // });
 
 /*************
-onlyDao
+CrossChain
 **************/
+// not tested yet
+task(
+  'xcontroller_push_vault_amounts',
+  'Step 3; xChainController pushes exchangeRate and amount the vaults',
+)
+  .addParam('vaultnumber', 'Number of vault')
+  .setAction(async ({ vaultnumber }, hre) => {
+    const xcontroller = await getXController(hre);
+    await xcontroller.pushVaultAmounts(vaultnumber);
+  });
+// not tested yet
+task('xcontroller_send_funds_vault', 'Step 5; Push funds from xChainController to vaults')
+  .addParam('vaultnumber', 'Number of vault')
+  .setAction(async ({ vaultnumber }, hre) => {
+    const xcontroller = await getXController(hre);
+    await xcontroller.sendFundsToVault(vaultnumber);
+  });
+
+/*************
+Only Guardian
+**************/
+
+/*************
+Only Dao
+**************/
+
+task('xcontroller_set_vault_chain_address', 'Set Vault address and underlying for a chainId')
+  .addParam('vaultnumber', 'Number of the vault', null, types.int)
+  .addParam('chainid', 'Number of chain used', null, types.int)
+  .addParam('address', 'Address of the Vault')
+  .addParam('underlying', 'Underlying of the Vault eg USDC')
+  .setAction(async ({ vaultnumber, chainid, address, underlying }, hre) => {
+    const vault = await getXController(hre);
+    const dao = await getDao(hre);
+    await vault.connect(dao).setVaultChainAddress(vaultnumber, chainid, address, underlying);
+  });
+
+task('xcontroller_set_homexprovider', 'Setter for xProvider address')
+  .addParam('address', 'New provider address')
+  .setAction(async ({ address }, hre) => {
+    const vault = await getXController(hre);
+    const dao = await getDao(hre);
+    await vault.connect(dao).setHomeXProvider(address);
+  });
+
+task('xcontroller_set_home_chain', 'Setter for new homeChain Id')
+  .addParam('chainid', 'new homeChain id', null, types.int)
+  .setAction(async ({ chainid }, hre) => {
+    const vault = await getXController(hre);
+    const dao = await getDao(hre);
+    await vault.connect(dao).setHomeChainId(chainid);
+  });
 
 task('xcontroller_set_dao', 'Setter for dao address')
   .addParam('address', 'New dao address')
@@ -37,10 +89,21 @@ task('xcontroller_set_guardian', 'Setter for guardian address')
     await xcontroller.connect(dao).setGuardian(guardian);
   });
 
+task('xcontroller_set_game', 'Setter for game address')
+  .addParam('address', 'New game address')
+  .setAction(async ({ address }, hre) => {
+    const xcontroller = await getXController(hre);
+    const dao = await getDao(hre);
+
+    await xcontroller.connect(dao).setGame(address);
+  });
+
 const getXController = async ({ deployments, ethers, network }: HardhatRuntimeEnvironment) => {
   await deployments.all();
-  const { address } = await deployments.get('XChainController');
-  const vault = await ethers.getContractAt('XChainController', address);
+  const xControllerContract =
+    network.name === 'hardhat' ? 'XChainControllerMock' : 'XChainController';
+  const { address } = await deployments.get(xControllerContract);
+  const vault = await ethers.getContractAt(xControllerContract, address);
   return vault;
 };
 

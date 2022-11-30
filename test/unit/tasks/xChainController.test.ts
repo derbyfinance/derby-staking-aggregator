@@ -1,7 +1,6 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
-import { vaultInitSettings } from 'deploySettings';
-import { XChainController } from '@typechain';
+import { XChainControllerMock } from '@typechain';
 import { erc20, getUSDCSigner } from '@testhelp/helpers';
 import { usdc } from '@testhelp/addresses';
 import { Signer } from 'ethers';
@@ -32,6 +31,42 @@ describe.only('Testing vault tasks', () => {
   Only Dao
   **************/
 
+  it('xcontroller_set_vault_chain_address', async function () {
+    const { xController } = await setupXController();
+    const vaultnumber = random(100);
+    const chainid = random(50_000);
+    const vaultAddress = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
+    const underlying = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+
+    await run('xcontroller_set_vault_chain_address', {
+      vaultnumber,
+      chainid,
+      address: vaultAddress,
+      underlying,
+    });
+
+    expect(await xController.getUnderlyingAddressTEST(vaultnumber, chainid)).to.be.equal(
+      underlying,
+    );
+    expect(await xController.getVaultAddressTEST(vaultnumber, chainid)).to.be.equal(vaultAddress);
+  });
+
+  it('xcontroller_set_homexprovider', async function () {
+    const { xController } = await setupXController();
+    const address = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
+
+    await run('xcontroller_set_homexprovider', { address });
+    expect(await xController.xProvider()).to.be.equal(address);
+  });
+
+  it('xcontroller_set_home_chain', async function () {
+    const { xController } = await setupXController();
+    const chainid = random(10_000);
+
+    await run('xcontroller_set_home_chain', { chainid });
+    expect(await xController.homeChain()).to.be.equal(chainid);
+  });
+
   it('xcontroller_set_dao', async function () {
     const { xController } = await setupXController();
     const dao = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
@@ -48,6 +83,14 @@ describe.only('Testing vault tasks', () => {
     expect(await xController.getGuardian()).to.be.equal(guardian);
   });
 
+  it('xcontroller_set_game', async function () {
+    const { xController } = await setupXController();
+    const address = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+
+    await run('xcontroller_set_game', { address });
+    expect(await xController.game()).to.be.equal(address);
+  });
+
   const random = (max: number) => Math.floor(Math.random() * max);
 
   async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
@@ -61,11 +104,11 @@ describe.only('Testing vault tasks', () => {
   async function deployXChainController(
     deployments: DeploymentsExtension,
     ethers: HardhatEthersHelpers,
-  ): Promise<XChainController> {
-    await deployments.fixture(['XChainController']);
-    const deployment = await deployments.get('XChainController');
-    const xController: XChainController = await ethers.getContractAt(
-      'XChainController',
+  ): Promise<XChainControllerMock> {
+    await deployments.fixture(['XChainControllerMock']);
+    const deployment = await deployments.get('XChainControllerMock');
+    const xController: XChainControllerMock = await ethers.getContractAt(
+      'XChainControllerMock',
       deployment.address,
     );
 

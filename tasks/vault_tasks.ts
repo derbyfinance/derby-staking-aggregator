@@ -7,8 +7,9 @@ task('vault_init', 'Initializes the game').setAction(async (args, { run, getName
   const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
     vaultInitSettings;
 
+  await run('vault_set_guardian', { guardian: guardian });
+
   await Promise.all([
-    run('vault_set_guardian', { guardian: guardian }),
     run('vault_set_gas_fee_liq', { liquidity: gasFeeLiq }),
     run('vault_set_rebalance_interval', { timestamp: rebalanceInterval }),
     run('vault_set_margin_scale', { scale: marginScale }),
