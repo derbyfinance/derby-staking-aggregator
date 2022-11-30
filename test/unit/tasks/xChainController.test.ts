@@ -8,7 +8,7 @@ import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
 import { xChainControllerInitSettings } from 'deploySettings';
 
-describe.only('Testing vault tasks', () => {
+describe.only('Testing xController tasks', () => {
   const setupXController = deployments.createFixture(
     async ({ ethers, deployments, getNamedAccounts }) => {
       const amount = 1_000_000 * 1e6;
