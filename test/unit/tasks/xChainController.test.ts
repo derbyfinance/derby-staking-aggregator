@@ -6,6 +6,7 @@ import { usdc } from '@testhelp/addresses';
 import { Signer } from 'ethers';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
+import { xChainControllerInitSettings } from 'deploySettings';
 
 describe.only('Testing vault tasks', () => {
   const setupXController = deployments.createFixture(
@@ -16,8 +17,7 @@ describe.only('Testing vault tasks', () => {
       const user = await ethers.getSigner(accounts.user);
 
       const xController = await deployXChainController(deployments, ethers);
-      // await run('vault_init');
-      await transferAndApproveUSDC(xController.address, user, amount);
+      await run('xcontroller_init');
 
       return { xController, user };
     },
@@ -26,6 +26,109 @@ describe.only('Testing vault tasks', () => {
   /*************
   Only Guardian
   **************/
+
+  it('xcontroller_set_chain_ids', async function () {
+    const { xController } = await setupXController();
+    const chainids = [
+      random(1000),
+      random(1000),
+      random(1000),
+      random(1000),
+      random(1000),
+      random(1000),
+    ];
+
+    await run('xcontroller_set_chain_ids', { chainids });
+    expect(await xController.getChainIds()).to.be.deep.equal(chainids);
+  });
+
+  it('xcontroller_reset_vault_stages', async function () {
+    const { xController } = await setupXController();
+    const vaultnumber = random(100);
+
+    await xController.setReadyTEST(vaultnumber, true);
+    await xController.setAllocationsReceivedTEST(vaultnumber, true);
+    await xController.upUnderlyingReceivedTEST(vaultnumber);
+    await xController.setReadyTEST(vaultnumber, false);
+
+    const vaultstageBefore = await xController.vaultStage(vaultnumber);
+    expect(vaultstageBefore.ready).to.be.equal(false);
+    expect(vaultstageBefore.allocationsReceived).to.be.equal(true);
+    expect(vaultstageBefore.underlyingReceived).to.be.equal(1);
+
+    await run('xcontroller_reset_vault_stages', { vaultnumber });
+
+    const vaultstage = await xController.vaultStage(vaultnumber);
+    expect(vaultstage.ready).to.be.equal(true);
+    expect(vaultstage.allocationsReceived).to.be.equal(false);
+    expect(vaultstage.underlyingReceived).to.be.equal(0);
+    expect(vaultstage.fundsReceived).to.be.equal(0);
+  });
+
+  it('xcontroller_receive_allocations', async function () {
+    const { xController } = await setupXController();
+    const { chainIds } = xChainControllerInitSettings;
+    const vaultnumber = random(100);
+    const deltas = [random(100_000 * 1e6), random(100_000 * 1e6), random(100_000 * 1e6)];
+
+    await xController.setReadyTEST(vaultnumber, true);
+    await run('xcontroller_receive_allocations', { vaultnumber, deltas });
+
+    const allocationPromise = chainIds.map((chain) => {
+      return xController.getCurrentAllocationTEST(vaultnumber, chain);
+    });
+    const allocations = await Promise.all(allocationPromise);
+
+    expect(allocations).to.be.deep.equal(deltas);
+  });
+
+  it('xcontroller_set_totalunderlying', async function () {
+    const { xController } = await setupXController();
+    const vaultnumber = random(100);
+    const chainid = random(10_000);
+    const underlying = random(10_000_000 * 1e6);
+    const totalsupply = random(10_000_000 * 1e6);
+    const withdrawalrequests = random(1_000_000 * 1e6);
+
+    await run('xcontroller_set_totalunderlying', {
+      vaultnumber,
+      chainid,
+      underlying,
+      totalsupply,
+      withdrawalrequests,
+    });
+
+    expect(await xController.getTotalUnderlyingOnChainTEST(vaultnumber, chainid)).to.be.equal(
+      underlying,
+    );
+    expect(await xController.getWithdrawalRequestsTEST(vaultnumber, chainid)).to.be.equal(
+      withdrawalrequests,
+    );
+    expect(await xController.getTotalSupplyTEST(vaultnumber)).to.be.equal(totalsupply);
+    expect(await xController.getTotalUnderlyingVaultTEST(vaultnumber)).to.be.equal(underlying);
+    expect(await xController.getTotalWithdrawalRequestsTEST(vaultnumber)).to.be.equal(
+      withdrawalrequests,
+    );
+    expect((await xController.vaultStage(vaultnumber)).underlyingReceived).to.be.equal(1);
+  });
+
+  it('xcontroller_guardian_setters', async function () {
+    const { xController } = await setupXController();
+    const vaultnumber = random(100);
+    const activeVaults = random(20);
+    const underlyingReceived = random(20);
+
+    await run('xcontroller_set_active_vaults', { vaultnumber, activevaults: activeVaults });
+    await run('xcontroller_set_ready', { vaultnumber, state: true });
+    await run('xcontroller_set_allocations_received', { vaultnumber, state: true });
+    await run('xcontroller_set_underlying_received', { vaultnumber, received: underlyingReceived });
+
+    const vaultStage = await xController.vaultStage(vaultnumber);
+    expect(vaultStage.activeVaults).to.be.equal(activeVaults);
+    expect(vaultStage.ready).to.be.equal(true);
+    expect(vaultStage.allocationsReceived).to.be.equal(true);
+    expect(vaultStage.underlyingReceived).to.be.equal(underlyingReceived);
+  });
 
   /*************
   Only Dao
@@ -92,14 +195,6 @@ describe.only('Testing vault tasks', () => {
   });
 
   const random = (max: number) => Math.floor(Math.random() * max);
-
-  async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
-    const usdcSigner = await getUSDCSigner();
-    const IUSDC = erc20(usdc);
-
-    await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
-    await IUSDC.connect(user).approve(vault, amount);
-  }
 
   async function deployXChainController(
     deployments: DeploymentsExtension,

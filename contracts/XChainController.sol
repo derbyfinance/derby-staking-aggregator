@@ -119,12 +119,7 @@ contract XChainController {
     _;
   }
 
-  constructor(
-    address _game,
-    address _dao,
-    address _guardian,
-    uint16 _homeChain
-  ) {
+  constructor(address _game, address _dao, address _guardian, uint16 _homeChain) {
     game = _game;
     dao = _dao;
     guardian = _guardian;
@@ -146,29 +141,26 @@ contract XChainController {
 
   /// @notice Setter for stage 1:
   /// @notice AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
-  function setAllocationsReceived(uint256 _vaultNumber, bool _state)
-    internal
-    onlyWhenReady(_vaultNumber)
-  {
+  function setAllocationsReceived(
+    uint256 _vaultNumber,
+    bool _state
+  ) internal onlyWhenReady(_vaultNumber) {
     vaultStage[_vaultNumber].allocationsReceived = _state;
   }
 
   /// @notice Setter to tick up stage 2:
   /// @notice UnderlyingReceived; underlyings received from all active vault contracts
-  function upUnderlyingReceived(uint256 _vaultNumber)
-    internal
-    onlyWhenAllocationsReceived(_vaultNumber)
-  {
+  function upUnderlyingReceived(
+    uint256 _vaultNumber
+  ) internal onlyWhenAllocationsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
   /// @notice Step 4 end; Push funds from vaults to xChainController
   /// @notice FundsReceived; funds received from all active vault contracts
-  function upFundsReceived(uint256 _vaultNumber)
-    external
-    onlyXProvider
-    onlyWhenUnderlyingsReceived(_vaultNumber)
-  {
+  function upFundsReceived(
+    uint256 _vaultNumber
+  ) external onlyXProvider onlyWhenUnderlyingsReceived(_vaultNumber) {
     vaultStage[_vaultNumber].fundsReceived++;
   }
 
@@ -194,11 +186,10 @@ contract XChainController {
   /// @notice Step 1 end; Game pushes totalDeltaAllocations to xChainController
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
-  function receiveAllocationsFromGame(uint256 _vaultNumber, int256[] memory _deltas)
-    external
-    onlyXProvider
-    onlyWhenReady(_vaultNumber)
-  {
+  function receiveAllocationsFromGame(
+    uint256 _vaultNumber,
+    int256[] memory _deltas
+  ) external onlyXProvider onlyWhenReady(_vaultNumber) {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 
@@ -247,11 +238,7 @@ contract XChainController {
 
   /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
   /// @param _state Bool if vault is turned on or off
-  function sendFeedbackToVault(
-    uint256 _vaultNumber,
-    uint16 _chainId,
-    bool _state
-  ) internal {
+  function sendFeedbackToVault(uint256 _vaultNumber, uint16 _chainId, bool _state) internal {
     if (getVaultChainIdOff(_vaultNumber, _chainId) != _state) {
       xProvider.pushStateFeedbackToVault(getVaultAddress(_vaultNumber, _chainId), _chainId, _state);
 
@@ -296,17 +283,16 @@ contract XChainController {
   /// @notice Step 3 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
-  function pushVaultAmounts(uint256 _vaultNumber)
-    external
-    onlyWhenUnderlyingsReceived(_vaultNumber)
-  {
+  function pushVaultAmounts(
+    uint256 _vaultNumber
+  ) external onlyWhenUnderlyingsReceived(_vaultNumber) {
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
     uint256 totalSupply = getTotalSupply(_vaultNumber);
 
     uint256 decimals = xProvider.getDecimals(getVaultAddress(_vaultNumber, homeChain));
-    uint256 newExchangeRate = (totalUnderlying * (10**decimals)) / totalSupply;
+    uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
@@ -418,21 +404,17 @@ contract XChainController {
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
-  function getTotalUnderlyingOnChain(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    view
-    returns (uint256)
-  {
+  function getTotalUnderlyingOnChain(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal view returns (uint256) {
     return vaults[_vaultNumber].totalUnderlyingPerChain[_chainId];
   }
 
   /// @notice Gets saved totalUnderlying for vaultNumber
-  function getTotalUnderlyingVault(uint256 _vaultNumber)
-    internal
-    view
-    onlyWhenUnderlyingsReceived(_vaultNumber)
-    returns (uint256)
-  {
+  function getTotalUnderlyingVault(
+    uint256 _vaultNumber
+  ) internal view onlyWhenUnderlyingsReceived(_vaultNumber) returns (uint256) {
     return vaults[_vaultNumber].totalUnderlying;
   }
 
@@ -442,20 +424,18 @@ contract XChainController {
   }
 
   /// @notice Helper to get underyling address of vaultNumber with given chainID eg USDC
-  function getUnderlyingAddress(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    view
-    returns (address)
-  {
+  function getUnderlyingAddress(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal view returns (address) {
     return vaults[_vaultNumber].vaultUnderlyingAddress[_chainId];
   }
 
   /// @notice Helper to get current allocation per chain of vaultNumber with given chainID
-  function getCurrentAllocation(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    view
-    returns (int256)
-  {
+  function getCurrentAllocation(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal view returns (int256) {
     return vaults[_vaultNumber].currentAllocationPerChain[_chainId];
   }
 
@@ -479,11 +459,10 @@ contract XChainController {
   }
 
   /// @notice Helper to get the amount to deposit in a chain vault
-  function getAmountToDeposit(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    view
-    returns (uint256)
-  {
+  function getAmountToDeposit(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal view returns (uint256) {
     return vaults[_vaultNumber].amountToDepositPerChain[_chainId];
   }
 
@@ -493,17 +472,21 @@ contract XChainController {
   }
 
   /// @notice Helper to get withdrawal requests from the vault on given chainId
-  function getWithdrawalRequests(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    view
-    returns (uint256)
-  {
+  function getWithdrawalRequests(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal view returns (uint256) {
     return vaults[_vaultNumber].withdrawalRequests[_chainId];
   }
 
   /// @notice Helper to get total withdrawal requests from the vault on given chainId
   function getTotalWithdrawalRequests(uint256 _vaultNumber) internal view returns (uint256) {
     return vaults[_vaultNumber].totalWithdrawalRequests;
+  }
+
+  /// @notice Getter for chainId array
+  function getChainIds() public view returns (uint16[] memory) {
+    return chainIds;
   }
 
   /// @notice Getter for dao address
@@ -582,10 +565,10 @@ contract XChainController {
   }
 
   /// @notice Step 1: Guardian function
-  function receiveAllocationsFromGameGuard(uint256 _vaultNumber, int256[] memory _deltas)
-    external
-    onlyGuardian
-  {
+  function receiveAllocationsFromGameGuard(
+    uint256 _vaultNumber,
+    int256[] memory _deltas
+  ) external onlyGuardian {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 
@@ -602,10 +585,10 @@ contract XChainController {
   }
 
   /// @notice Step 4: Guardian function
-  function setFundsReceivedGuard(uint256 _vaultNumber, uint256 _fundsReceived)
-    external
-    onlyGuardian
-  {
+  function setFundsReceivedGuard(
+    uint256 _vaultNumber,
+    uint256 _fundsReceived
+  ) external onlyGuardian {
     vaultStage[_vaultNumber].fundsReceived = _fundsReceived;
   }
 
@@ -625,10 +608,10 @@ contract XChainController {
   }
 
   /// @notice Guardian setter to tick up stage 2:
-  function setUnderlyingReceivedGuard(uint256 _vaultNumber, uint256 _underlyingReceived)
-    external
-    onlyGuardian
-  {
+  function setUnderlyingReceivedGuard(
+    uint256 _vaultNumber,
+    uint256 _underlyingReceived
+  ) external onlyGuardian {
     vaultStage[_vaultNumber].underlyingReceived = _underlyingReceived;
   }
 }

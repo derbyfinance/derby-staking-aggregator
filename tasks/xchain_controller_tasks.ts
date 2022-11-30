@@ -1,21 +1,14 @@
-import { vaultInitSettings } from 'deploySettings';
+import { xChainControllerInitSettings } from 'deploySettings';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-// task('vault_init', 'Initializes the game').setAction(async (args, { run, getNamedAccounts }) => {
-//   const { guardian } = await getNamedAccounts();
-//   const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
-//     vaultInitSettings;
+task('xcontroller_init', 'Initializes the xController').setAction(
+  async (args, { run, getNamedAccounts }) => {
+    const { chainIds } = xChainControllerInitSettings;
 
-//   await Promise.all([
-//     run('vault_set_guardian', { guardian: guardian }),
-//     run('vault_set_gas_fee_liq', { liquidity: gasFeeLiq }),
-//     run('vault_set_rebalance_interval', { timestamp: rebalanceInterval }),
-//     run('vault_set_margin_scale', { scale: marginScale }),
-//     run('vault_set_liquidity_perc', { percentage: liquidityPercentage }),
-//     run('vault_set_performance_fee', { percentage: performanceFee }),
-//   ]);
-// });
+    await Promise.all([run('xcontroller_set_chain_ids', { chainids: chainIds })]);
+  },
+);
 
 /*************
 CrossChain
@@ -42,6 +35,81 @@ task('xcontroller_send_funds_vault', 'Step 5; Push funds from xChainController t
 Only Guardian
 **************/
 
+task('xcontroller_set_chain_ids', 'Setter for chainId array')
+  .addVariadicPositionalParam('chainids', 'Number of chain id set in chainIds array', [], types.int)
+  .setAction(async ({ chainids }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).setChainIds(chainids);
+  });
+
+task('xcontroller_reset_vault_stages', 'Resets all stages in vaultStage struct for a vaultNumber')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .setAction(async ({ vaultnumber }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).resetVaultStagesDao(vaultnumber);
+  });
+
+task('xcontroller_receive_allocations', 'Receive allocations from game manually')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addVariadicPositionalParam('deltas', 'Delta allocations array', [], types.int)
+  .setAction(async ({ vaultnumber, deltas }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).receiveAllocationsFromGameGuard(vaultnumber, deltas);
+  });
+
+task('xcontroller_set_totalunderlying', 'Step 2: Guardian')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addParam('chainid', 'Number of chainid', null, types.int)
+  .addParam('underlying', 'totalUnderlung plus vault balance', null, types.int)
+  .addParam('totalsupply', 'Supply of the LP token of the vault', null, types.int)
+  .addParam('withdrawalrequests', 'Total amount of withdrawal requests', null, types.int)
+  .setAction(async ({ vaultnumber, chainid, underlying, totalsupply, withdrawalrequests }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller
+      .connect(guardian)
+      .setTotalUnderlyingGuard(vaultnumber, chainid, underlying, totalsupply, withdrawalrequests);
+  });
+
+task('xcontroller_set_active_vaults', 'Guardian setter for number of active vaults')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addParam('activevaults', 'Number of active vault', null, types.int)
+  .setAction(async ({ vaultnumber, activevaults }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).setActiveVaultsGuard(vaultnumber, activevaults);
+  });
+
+task('xcontroller_set_ready', 'Guardian setter for stage 0')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addParam('state', 'If vault is ready', null, types.boolean)
+  .setAction(async ({ vaultnumber, state }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).setReadyGuard(vaultnumber, state);
+  });
+
+task('xcontroller_set_allocations_received', 'Guardian setter for stage 1')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addParam('state', 'If allocations received', null, types.boolean)
+  .setAction(async ({ vaultnumber, state }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).setAllocationsReceivedGuard(vaultnumber, state);
+  });
+
+task('xcontroller_set_underlying_received', 'Guardian setter for number of active vaults')
+  .addParam('vaultnumber', 'Number of vault', null, types.int)
+  .addParam('received', 'Number of underlyings received', null, types.int)
+  .setAction(async ({ vaultnumber, received }, hre) => {
+    const xcontroller = await getXController(hre);
+    const guardian = await getGuardian(hre);
+    await xcontroller.connect(guardian).setUnderlyingReceivedGuard(vaultnumber, received);
+  });
+
 /*************
 Only Dao
 **************/
@@ -52,25 +120,25 @@ task('xcontroller_set_vault_chain_address', 'Set Vault address and underlying fo
   .addParam('address', 'Address of the Vault')
   .addParam('underlying', 'Underlying of the Vault eg USDC')
   .setAction(async ({ vaultnumber, chainid, address, underlying }, hre) => {
-    const vault = await getXController(hre);
+    const xcontroller = await getXController(hre);
     const dao = await getDao(hre);
-    await vault.connect(dao).setVaultChainAddress(vaultnumber, chainid, address, underlying);
+    await xcontroller.connect(dao).setVaultChainAddress(vaultnumber, chainid, address, underlying);
   });
 
 task('xcontroller_set_homexprovider', 'Setter for xProvider address')
   .addParam('address', 'New provider address')
   .setAction(async ({ address }, hre) => {
-    const vault = await getXController(hre);
+    const xcontroller = await getXController(hre);
     const dao = await getDao(hre);
-    await vault.connect(dao).setHomeXProvider(address);
+    await xcontroller.connect(dao).setHomeXProvider(address);
   });
 
 task('xcontroller_set_home_chain', 'Setter for new homeChain Id')
   .addParam('chainid', 'new homeChain id', null, types.int)
   .setAction(async ({ chainid }, hre) => {
-    const vault = await getXController(hre);
+    const xcontroller = await getXController(hre);
     const dao = await getDao(hre);
-    await vault.connect(dao).setHomeChainId(chainid);
+    await xcontroller.connect(dao).setHomeChainId(chainid);
   });
 
 task('xcontroller_set_dao', 'Setter for dao address')

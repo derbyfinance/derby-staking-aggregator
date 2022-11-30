@@ -86,7 +86,7 @@ contract XChainControllerMock is XChainController {
   }
 
   function getTotalUnderlyingVaultTEST(uint256 _vaultNumber) external view returns (uint256) {
-    return getTotalUnderlyingVault(_vaultNumber);
+    return vaults[_vaultNumber].totalUnderlying;
   }
 
   function getUnderlyingAddressTEST(
