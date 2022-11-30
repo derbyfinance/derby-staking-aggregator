@@ -5,26 +5,24 @@ import { MainVaultMock } from '@typechain';
 import { erc20, getUSDCSigner } from '@testhelp/helpers';
 import { usdc } from '@testhelp/addresses';
 import { Signer } from 'ethers';
+import { DeploymentsExtension } from 'hardhat-deploy/types';
+import { HardhatEthersHelpers } from 'hardhat/types';
 
 describe.only('Testing vault tasks', () => {
   const setupVault = deployments.createFixture(
     async ({ ethers, deployments, getNamedAccounts }) => {
       const amount = 1_000_000 * 1e6;
 
-      await deployments.fixture(['MainVaultMock']);
-      const deployment = await deployments.get('MainVaultMock');
-      const vault: MainVaultMock = await ethers.getContractAt('MainVaultMock', deployment.address);
-      await run('vault_init');
-
       const accounts = await getNamedAccounts();
       const user = await ethers.getSigner(accounts.user);
+
+      const vault = await deployVault(deployments, ethers);
+      await run('vault_init');
       await transferAndApproveUSDC(vault.address, user, amount);
 
       return { vault, user };
     },
   );
-
-  const random = (max: number) => Math.floor(Math.random() * max);
 
   /*************
   Only Guardian
@@ -144,11 +142,24 @@ describe.only('Testing vault tasks', () => {
     expect(await vault.performanceFee()).to.be.equal(fee);
   });
 
+  const random = (max: number) => Math.floor(Math.random() * max);
+
   async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
     const usdcSigner = await getUSDCSigner();
     const IUSDC = erc20(usdc);
 
     await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
     await IUSDC.connect(user).approve(vault, amount);
+  }
+
+  async function deployVault(
+    deployments: DeploymentsExtension,
+    ethers: HardhatEthersHelpers,
+  ): Promise<MainVaultMock> {
+    await deployments.fixture(['MainVaultMock']);
+    const deployment = await deployments.get('MainVaultMock');
+    const vault: MainVaultMock = await ethers.getContractAt('MainVaultMock', deployment.address);
+
+    return vault;
   }
 });
