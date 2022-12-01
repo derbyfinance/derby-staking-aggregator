@@ -1,15 +1,28 @@
-import { BigNumber, ContractFunction } from 'ethers';
+import { BigNumber, ContractFunction, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
+import { usdc } from './addresses';
 
 const provider = ethers.provider;
 
 const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
+
+export async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
+  const usdcSigner = await getUSDCSigner();
+  const IUSDC = erc20(usdc);
+
+  await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
+  await IUSDC.connect(user).approve(vault, amount);
+
+  return { IUSDC };
+}
+
+export const random = (max: number) => Math.floor(Math.random() * max);
 
 // SIGNERS
 export const getDAISigner = async () => {
