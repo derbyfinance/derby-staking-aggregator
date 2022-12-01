@@ -56,19 +56,17 @@ contract XChainControllerMock is XChainController {
     return getCurrentTotalAllocation(_vaultNumber);
   }
 
-  function getCurrentAllocationTEST(uint256 _vaultNumber, uint16 _chainId)
-    external
-    view
-    returns (int256)
-  {
+  function getCurrentAllocationTEST(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (int256) {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
-  function getTotalUnderlyingOnChainTEST(uint256 _vaultNumber, uint16 _chainId)
-    external
-    view
-    returns (uint256)
-  {
+  function getTotalUnderlyingOnChainTEST(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (uint256) {
     return getTotalUnderlyingOnChain(_vaultNumber, _chainId);
   }
 
@@ -76,11 +74,10 @@ contract XChainControllerMock is XChainController {
     return getTotalSupply(_vaultNumber);
   }
 
-  function getWithdrawalRequestsTEST(uint256 _vaultNumber, uint16 _chainId)
-    external
-    view
-    returns (uint256)
-  {
+  function getWithdrawalRequestsTEST(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (uint256) {
     return getWithdrawalRequests(_vaultNumber, _chainId);
   }
 
@@ -89,6 +86,20 @@ contract XChainControllerMock is XChainController {
   }
 
   function getTotalUnderlyingVaultTEST(uint256 _vaultNumber) external view returns (uint256) {
-    return getTotalUnderlyingVault(_vaultNumber);
+    return vaults[_vaultNumber].totalUnderlying;
+  }
+
+  function getUnderlyingAddressTEST(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (address) {
+    return getUnderlyingAddress(_vaultNumber, _chainId);
+  }
+
+  function getVaultAddressTEST(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (address) {
+    return getVaultAddress(_vaultNumber, _chainId);
   }
 }

@@ -53,6 +53,10 @@ export const xChainControllerDeploySettings = {
   homeChainId: 100,
 };
 
+export const xChainControllerInitSettings = {
+  chainIds: [10, 100, 1000],
+};
+
 export const xProviderDeploySettings = {
   layerZeroEndpoint: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // dummy
   connextHandler: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65', // dummy
