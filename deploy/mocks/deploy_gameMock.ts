@@ -15,7 +15,7 @@ const func: DeployFunction = async function ({
   const derbyToken = await deployments.get('DerbyToken');
   const controller = await deployments.get('Controller');
 
-  await deploy('Game', {
+  await deploy('GameMock', {
     from: deployer,
     args: [nftName, nftSymbol, derbyToken.address, dao, guardian, controller.address],
     log: true,
@@ -25,5 +25,5 @@ const func: DeployFunction = async function ({
   await run('game_init');
 };
 export default func;
-func.tags = ['Game'];
+func.tags = ['GameMock'];
 func.dependencies = ['DerbyToken', 'Controller'];

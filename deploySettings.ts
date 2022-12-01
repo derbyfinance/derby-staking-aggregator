@@ -38,6 +38,8 @@ export const vaultDeploySettings: IDeployVault = {
 export const gameDeploySettings = {
   nftName: 'DerbyNFT',
   nftSymbol: 'DRBNFT',
+  negativeRewardFactor: 50,
+  negativeRewardThreshold: -50_000,
 };
 
 export const xChainControllerDeploySettings = {

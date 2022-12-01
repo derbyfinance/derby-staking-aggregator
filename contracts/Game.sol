@@ -67,9 +67,9 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public lastTimeStamp;
 
   // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
-  int256 private negativeRewardThreshold;
+  int256 internal negativeRewardThreshold;
   // percentage of tokens that will be sold at negative rewards
-  uint256 private negativeRewardFactor;
+  uint256 internal negativeRewardFactor;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
@@ -84,9 +84,11 @@ contract Game is ERC721, ReentrancyGuard {
   // (vaultNumber => bool): true when vault is cross-chain rebalancing
   mapping(uint256 => bool) public isXChainRebalancing;
 
-  event PushProtocolAllocations(uint16 _chain, address _vault, int256[] _deltas);
+  event PushProtocolAllocations(uint16 chain, address vault, int256[] deltas);
 
-  event PushedAllocationsToController(uint256 _vaultNumber, int256[] _deltas);
+  event PushedAllocationsToController(uint256 vaultNumber, int256[] deltas);
+
+  event BasketId(address owner, uint256 basketId);
 
   modifier onlyDao() {
     require(msg.sender == dao, "Game: only DAO");
@@ -121,8 +123,6 @@ contract Game is ERC721, ReentrancyGuard {
     dao = _dao;
     guardian = _guardian;
     lastTimeStamp = block.timestamp;
-
-    negativeRewardFactor = 50;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -141,11 +141,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber number of vault
   /// @param _chainId number of chainId
   /// @return allocation delta allocation
-  function getDeltaAllocationChain(uint256 _vaultNumber, uint256 _chainId)
-    internal
-    view
-    returns (int256)
-  {
+  function getDeltaAllocationChain(
+    uint256 _vaultNumber,
+    uint256 _chainId
+  ) internal view returns (int256) {
     return vaults[_vaultNumber].deltaAllocationChain[_chainId];
   }
 
@@ -180,10 +179,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Setter to set the total number of allocated tokens. Only the owner of the basket can set this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @param _allocation Number of derby tokens that are allocated towards protocols.
-  function setBasketTotalAllocatedTokens(uint256 _basketId, int256 _allocation)
-    internal
-    onlyBasketOwner(_basketId)
-  {
+  function setBasketTotalAllocatedTokens(
+    uint256 _basketId,
+    int256 _allocation
+  ) internal onlyBasketOwner(_basketId) {
     baskets[_basketId].nrOfAllocatedTokens += _allocation;
     require(basketTotalAllocatedTokens(_basketId) >= 0, "Basket: underflow");
   }
@@ -191,12 +190,9 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @return int256 Number of derby tokens that are allocated towards protocols.
-  function basketTotalAllocatedTokens(uint256 _basketId)
-    public
-    view
-    onlyBasketOwner(_basketId)
-    returns (int256)
-  {
+  function basketTotalAllocatedTokens(
+    uint256 _basketId
+  ) public view onlyBasketOwner(_basketId) returns (int256) {
     return baskets[_basketId].nrOfAllocatedTokens;
   }
 
@@ -231,34 +227,28 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Setter for rebalancing period of the basket, used to calculate the rewards
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
   /// @param _vaultNumber number of vault
-  function setBasketRebalancingPeriod(uint256 _basketId, uint256 _vaultNumber)
-    internal
-    onlyBasketOwner(_basketId)
-  {
+  function setBasketRebalancingPeriod(
+    uint256 _basketId,
+    uint256 _vaultNumber
+  ) internal onlyBasketOwner(_basketId) {
     baskets[_basketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
   }
 
   /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @return int256 Total unredeemed rewards.
-  function basketUnredeemedRewards(uint256 _basketId)
-    external
-    view
-    onlyBasketOwner(_basketId)
-    returns (int256)
-  {
+  function basketUnredeemedRewards(
+    uint256 _basketId
+  ) external view onlyBasketOwner(_basketId) returns (int256) {
     return baskets[_basketId].totalUnRedeemedRewards;
   }
 
   /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @return int256 Total redeemed rewards.
-  function basketRedeemedRewards(uint256 _basketId)
-    external
-    view
-    onlyBasketOwner(_basketId)
-    returns (int)
-  {
+  function basketRedeemedRewards(
+    uint256 _basketId
+  ) external view onlyBasketOwner(_basketId) returns (int) {
     return baskets[_basketId].totalRedeemedRewards;
   }
 
@@ -272,6 +262,8 @@ contract Game is ERC721, ReentrancyGuard {
     baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
     _safeMint(msg.sender, latestBasketId);
     latestBasketId++;
+
+    emit BasketId(msg.sender, latestBasketId - 1);
     return latestBasketId - 1;
   }
 
@@ -305,10 +297,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
   /// @param _unlockedTokens Amount of derby tokens to unlock and send to user
   /// @return tokensToBurn Amount of derby tokens that are burned
-  function redeemNegativeRewards(uint256 _basketId, uint256 _unlockedTokens)
-    internal
-    returns (uint256)
-  {
+  function redeemNegativeRewards(
+    uint256 _basketId,
+    uint256 _unlockedTokens
+  ) internal returns (uint256) {
     int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
     if (unredeemedRewards > negativeRewardThreshold) return 0;
 
@@ -327,11 +319,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev Finally it locks or unlocks tokens
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @param _deltaAllocations delta allocations set by the user of the basket. Allocations are scaled (so * 1E18).
-  function rebalanceBasket(uint256 _basketId, int256[][] memory _deltaAllocations)
-    external
-    onlyBasketOwner(_basketId)
-    nonReentrant
-  {
+  function rebalanceBasket(
+    uint256 _basketId,
+    int256[][] memory _deltaAllocations
+  ) external onlyBasketOwner(_basketId) nonReentrant {
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
     require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
 
@@ -483,10 +474,10 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Creates array with delta allocations in protocols for given chainId
   /// @return deltas Array with allocations where the index matches the protocolId
-  function protocolAllocationsToArray(uint256 _vaultNumber, uint16 _chainId)
-    internal
-    returns (int256[] memory deltas)
-  {
+  function protocolAllocationsToArray(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) internal returns (int256[] memory deltas) {
     uint256 latestId = latestProtocolId[_chainId];
     deltas = new int[](latestId);
 
@@ -574,6 +565,11 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Getter for guardian address
   function getGuardian() public view returns (address) {
     return guardian;
+  }
+
+  /// @notice Getter for chainId array
+  function getChainIds() public view returns (uint16[] memory) {
+    return chainIds;
   }
 
   /*

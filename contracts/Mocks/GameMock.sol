@@ -91,4 +91,20 @@ contract GameMock is Game {
   ) external view returns (int256) {
     return getRewardsPerLockedToken(_vaultNumber, _chainId, _rebalancingPeriod, _protocolId);
   }
+
+  function getNegativeRewardFactor() external view returns (uint256) {
+    return negativeRewardFactor;
+  }
+
+  function getNegativeRewardThreshold() external view returns (int256) {
+    return negativeRewardThreshold;
+  }
+
+  function getVaultAddressTest(uint256 _vaultNumber, uint16 _chainId)
+    external
+    view
+    returns (address)
+  {
+    return getVaultAddress(_vaultNumber, _chainId);
+  }
 }
