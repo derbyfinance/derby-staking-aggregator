@@ -15,8 +15,6 @@ const func: DeployFunction = async function ({
     log: true,
     autoMine: true,
   });
-
-  await run('controller_init');
 };
 export default func;
 func.tags = ['Controller'];

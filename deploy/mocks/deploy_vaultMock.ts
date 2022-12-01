@@ -7,7 +7,7 @@ const func: DeployFunction = async function ({
   deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer, dao } = await getNamedAccounts();
+  const { deployer, dao, guardian } = await getNamedAccounts();
 
   const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = vaultDeploySettings;
 
@@ -15,7 +15,7 @@ const func: DeployFunction = async function ({
   const game = await deployments.get('Game');
   const controller = await deployments.get('Controller');
 
-  await deploy('MainVault', {
+  await deploy('MainVaultMock', {
     from: deployer,
     args: [
       name,
@@ -36,5 +36,5 @@ const func: DeployFunction = async function ({
   });
 };
 export default func;
-func.tags = ['MainVault'];
+func.tags = ['MainVaultMock'];
 func.dependencies = ['Swap', 'Controller', 'Game'];
