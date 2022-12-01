@@ -158,7 +158,7 @@ export const deployMainVaultMock = async (
       Swap: swapLibrary.address,
     },
   });
-  const vault = await Vault.deploy(
+  const vault = (await Vault.deploy(
     name,
     symbol,
     decimals,
@@ -169,7 +169,7 @@ export const deployMainVaultMock = async (
     vaultCurrency,
     uScale,
     gasFeeLiq,
-  );
+  )) as MainVaultMock;
   await vault.setGuardian(guardianAddress);
 
   return vault;

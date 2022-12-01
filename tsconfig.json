@@ -30,8 +30,10 @@
     "./typechain-types",
     "./hardhat.config.ts",
     "./deploy",
+    "./tasks",
     "deploy",
     "deploySettings.ts",
+    "tasks/controller_tasks.ts",
   ],
   "files": [
     "./hardhat.config.ts",
