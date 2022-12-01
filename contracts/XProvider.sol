@@ -381,10 +381,10 @@ contract XProvider is ILayerZeroReceiver {
   /// @notice Receives protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
-  function receiveProtocolAllocationsToVault(address _vault, int256[] memory _deltas)
-    external
-    onlySelf
-  {
+  function receiveProtocolAllocationsToVault(
+    address _vault,
+    int256[] memory _deltas
+  ) external onlySelf {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
@@ -481,8 +481,8 @@ contract XProvider is ILayerZeroReceiver {
     xControllerProvider = _xControllerProvider;
   }
 
-  /// @notice Setter for xControllerProvider address
-  /// @param _xControllerChain New address of xProvider for xController chain
+  /// @notice Setter for xController chain id
+  /// @param _xControllerChain new xController chainId
   function setXControllerChainId(uint16 _xControllerChain) external onlyDao {
     xControllerChain = _xControllerChain;
   }
