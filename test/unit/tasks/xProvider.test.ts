@@ -1,29 +1,18 @@
-import { deployments, ethers, run } from 'hardhat';
+import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { XProvider } from '@typechain';
-import { erc20, getUSDCSigner } from '@testhelp/helpers';
-import { usdc } from '@testhelp/addresses';
-import { Signer } from 'ethers';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
-import { xChainControllerInitSettings } from 'deploySettings';
 
 describe.only('Testing xProvider tasks', () => {
-  const setupXProvider = deployments.createFixture(
-    async ({ ethers, deployments, getNamedAccounts }) => {
-      const amount = 1_000_000 * 1e6;
+  const setupXProvider = deployments.createFixture(async ({ ethers, deployments }) => {
+    const xProvider = await deployXProvider(deployments, ethers);
 
-      const accounts = await getNamedAccounts();
-      const user = await ethers.getSigner(accounts.user);
-
-      const xProvider = await deployXProvider(deployments, ethers);
-
-      return { xProvider, user };
-    },
-  );
+    return { xProvider };
+  });
 
   /*************
-  Only Guardian
+  Only Dao
   **************/
 
   it('xprovider_set_trusted_remote', async function () {
@@ -77,8 +66,8 @@ describe.only('Testing xProvider tasks', () => {
 
   it('xprovider_set_connext_chain', async function () {
     const { xProvider } = await setupXProvider();
-    const layerzero = random(100_000);
-    const connext = random(100_000);
+    const layerzero = random(10_000);
+    const connext = random(10_000);
 
     await run('xprovider_set_connext_chain', { layerzerochain: layerzero, connextchain: connext });
     expect(await xProvider.connextChainId(layerzero)).to.be.equal(connext);

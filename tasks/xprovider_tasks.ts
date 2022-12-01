@@ -1,14 +1,5 @@
-import { xChainControllerInitSettings } from 'deploySettings';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-
-// task('xcontroller_init', 'Initializes the xController').setAction(
-//   async (args, { run, getNamedAccounts }) => {
-//     const { chainIds } = xChainControllerInitSettings;
-
-//     await Promise.all([run('xcontroller_set_chain_ids', { chainids: chainIds })]);
-//   },
-// );
 
 /*************
   Only Dao
@@ -106,9 +97,4 @@ const getXProvider = async ({ deployments, ethers }: HardhatRuntimeEnvironment) 
 const getDao = async ({ ethers, getNamedAccounts }: HardhatRuntimeEnvironment) => {
   const { dao } = await getNamedAccounts();
   return ethers.getSigner(dao);
-};
-
-const getGuardian = async ({ ethers, getNamedAccounts }: HardhatRuntimeEnvironment) => {
-  const { guardian } = await getNamedAccounts();
-  return ethers.getSigner(guardian);
 };
