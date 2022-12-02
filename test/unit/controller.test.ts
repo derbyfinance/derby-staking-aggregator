@@ -117,11 +117,26 @@ describe.only('Testing controller', async () => {
     let blacklisted = await controller
       .connect(vault)
       .getProtocolBlacklist(vaultNumber, yearnNumber);
-    expect(blacklisted).to.be.equal(false);
+    expect(blacklisted).to.equal(false);
 
     await controller.connect(vault).setProtocolBlacklist(vaultNumber, yearnNumber);
 
     blacklisted = await controller.connect(vault).getProtocolBlacklist(vaultNumber, yearnNumber);
-    expect(blacklisted).to.be.equal(true);
+    expect(blacklisted).to.equal(true);
+  });
+
+  it('Should reach the claim function in compound Provider', async function () {
+    const { controller, vault, compoundProviderMock, compNumber } = await setupController();
+
+    await run('controller_set_claimable', { provider: compoundProviderMock.address, bool: true });
+
+    // Using revert here to make sure the function actually reached the mocked fucntion with arguments
+    await compoundProviderMock.mock.claim
+      .withArgs(compoundUSDC, vault.address)
+      .revertsWithReason('Claimed tokens');
+
+    await expect(controller.connect(vault).claim(vaultNumber, compNumber)).to.be.revertedWith(
+      'Claimed tokens',
+    );
   });
 });
