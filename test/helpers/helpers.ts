@@ -1,10 +1,18 @@
 import { BigNumber, ContractFunction, Signer } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { ethers, network, run } from 'hardhat';
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
-import { usdc } from './addresses';
+import {
+  aave as aaveGov,
+  aaveUSDC,
+  compoundUSDC,
+  compToken,
+  usdc,
+  yearn as yearnGov,
+  yearnUSDC,
+} from './addresses';
 
 const provider = ethers.provider;
 
@@ -20,6 +28,41 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   await IUSDC.connect(user).approve(vault, amount);
 
   return { IUSDC };
+}
+
+export async function deployStarterProtocols(
+  { yearn, compound, aave }: IStarterProviders,
+  vaultNumber: number,
+) {
+  const yearnNumber = await run(`controller_add_protocol`, {
+    name: 'yearn_usdc_01',
+    vaultNumber: vaultNumber,
+    provider: yearn,
+    protocolLPToken: yearnUSDC,
+    underlying: usdc,
+    govToken: yearnGov,
+    uScale: 1e6,
+  });
+  const compNumber = await run(`controller_add_protocol`, {
+    name: 'compound_usdc_01',
+    vaultNumber: vaultNumber,
+    provider: compound,
+    protocolLPToken: compoundUSDC,
+    underlying: usdc,
+    govToken: compToken,
+    uScale: 1e6,
+  });
+  const aaveNumber = await run(`controller_add_protocol`, {
+    name: 'aave_usdc_01',
+    vaultNumber: vaultNumber,
+    provider: aave,
+    protocolLPToken: aaveUSDC,
+    underlying: usdc,
+    govToken: aaveGov,
+    uScale: 1e6,
+  });
+
+  return [yearnNumber, compNumber, aaveNumber];
 }
 
 export const random = (max: number) => Math.floor(Math.random() * max);
@@ -108,3 +151,9 @@ export const formatUSDC = (amount: string | BigNumber) =>
   Number(ethers.utils.formatUnits(amount, 6));
 export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18);
 export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18);
+
+type IStarterProviders = {
+  yearn: string;
+  compound: string;
+  aave: string;
+};

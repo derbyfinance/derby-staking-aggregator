@@ -14,69 +14,45 @@ import {
   yearnUSDC,
   aaveUSDC,
 } from '@testhelp/addresses';
+import { deployStarterProtocols } from '@testhelp/helpers';
+import { getAllSigners, getController } from '@testhelp/deployHelpers';
 
 const vaultNumber = 4;
 
-describe('Testing controller', async () => {
-  const setupController = deployments.createFixture(
-    async ({ deployments, ethers, getNamedAccounts }) => {
-      await deployments.fixture(['Controller']);
-      const deployment = await deployments.get('Controller');
-      const controller = await ethers.getContractAt('Controller', deployment.address);
+describe.only('Testing controller', async () => {
+  const setupController = deployments.createFixture(async (hre) => {
+    const controller = await getController(hre);
+    const { deployer, vault } = await getAllSigners(hre);
 
-      const { deploy, vault } = await getNamedAccounts();
-      const deployer = await ethers.getSigner(deploy);
-      const vaultSigner = await ethers.getSigner(vault);
+    await run('controller_init');
+    await run('controller_add_vault', { vault: vault.address });
 
-      await run('controller_init');
-      await run('controller_add_vault', { vault });
+    const [yearnProviderMock, compoundProviderMock, aaveProviderMock] = await Promise.all([
+      deployYearnProviderMock(deployer),
+      deployCompoundProviderMock(deployer),
+      deployAaveProviderMock(deployer),
+    ]);
 
-      const [yearnProviderMock, compoundProviderMock, aaveProviderMock] = await Promise.all([
-        deployYearnProviderMock(deployer),
-        deployCompoundProviderMock(deployer),
-        deployAaveProviderMock(deployer),
-      ]);
+    const [yearnNumber, compNumber, aaveNumber] = await deployStarterProtocols(
+      {
+        yearn: yearnProviderMock.address,
+        compound: compoundProviderMock.address,
+        aave: aaveProviderMock.address,
+      },
+      vaultNumber,
+    );
 
-      const yearnNumber = await run(`controller_add_protocol`, {
-        name: 'yearn_usdc_01',
-        vaultNumber: vaultNumber,
-        provider: yearnProviderMock.address,
-        protocolLPToken: yearnUSDC,
-        underlying: usdc,
-        govToken: yearnGov,
-        uScale: 1e6,
-      });
-      const compNumber = await run(`controller_add_protocol`, {
-        name: 'compound_usdc_01',
-        vaultNumber: vaultNumber,
-        provider: compoundProviderMock.address,
-        protocolLPToken: compoundUSDC,
-        underlying: usdc,
-        govToken: compGov,
-        uScale: 1e6,
-      });
-      const aaveNumber = await run(`controller_add_protocol`, {
-        name: 'aave_usdc_01',
-        vaultNumber: vaultNumber,
-        provider: aaveProviderMock.address,
-        protocolLPToken: aaveUSDC,
-        underlying: usdc,
-        govToken: aaveGov,
-        uScale: 1e6,
-      });
-
-      return {
-        controller,
-        vaultSigner,
-        yearnProviderMock,
-        compoundProviderMock,
-        aaveProviderMock,
-        yearnNumber,
-        compNumber,
-        aaveNumber,
-      };
-    },
-  );
+    return {
+      controller,
+      vault,
+      yearnProviderMock,
+      compoundProviderMock,
+      aaveProviderMock,
+      yearnNumber,
+      compNumber,
+      aaveNumber,
+    };
+  });
 
   it('Should correctly set controller mappings for the protocol names', async function () {
     const { controller, yearnNumber, compNumber, aaveNumber } = await setupController();
@@ -136,18 +112,16 @@ describe('Testing controller', async () => {
   });
 
   it('Should correctly set protocol blacklist', async function () {
-    const { controller, vaultSigner, yearnNumber } = await setupController();
+    const { controller, vault, yearnNumber } = await setupController();
 
     let blacklisted = await controller
-      .connect(vaultSigner)
+      .connect(vault)
       .getProtocolBlacklist(vaultNumber, yearnNumber);
     expect(blacklisted).to.be.equal(false);
 
-    await controller.connect(vaultSigner).setProtocolBlacklist(vaultNumber, yearnNumber);
+    await controller.connect(vault).setProtocolBlacklist(vaultNumber, yearnNumber);
 
-    blacklisted = await controller
-      .connect(vaultSigner)
-      .getProtocolBlacklist(vaultNumber, yearnNumber);
+    blacklisted = await controller.connect(vault).getProtocolBlacklist(vaultNumber, yearnNumber);
     expect(blacklisted).to.be.equal(true);
   });
 });

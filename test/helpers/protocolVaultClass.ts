@@ -1,7 +1,6 @@
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, Signer, utils } from 'ethers';
 import { Result } from 'ethers/lib/utils';
 import { Controller, GameMock, MainVaultMock } from '@typechain';
-import { parseEther } from './helpers';
 
 export interface IProtocolVault {
   name: string;
@@ -22,8 +21,8 @@ export class ProtocolVault {
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
-  price: BigNumber = parseEther('0');
-  reward: BigNumber = parseEther('0');
+  price: BigNumber = utils.parseEther('0');
+  reward: BigNumber = utils.parseEther('0');
   scale: number;
 
   constructor({
