@@ -130,7 +130,7 @@ describe.only('Testing controller', async () => {
 
     await run('controller_set_claimable', { provider: compoundProviderMock.address, bool: true });
 
-    // Using revert here to make sure the function actually reached the mocked fucntion with arguments
+    // Using revert here to make sure the function actually reached the mocked function with arguments
     await compoundProviderMock.mock.claim
       .withArgs(compoundUSDC, vault.address)
       .revertsWithReason('Claimed tokens');
