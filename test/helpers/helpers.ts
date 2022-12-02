@@ -36,30 +36,30 @@ export async function deployStarterProtocols(
 ) {
   const yearnNumber = await run(`controller_add_protocol`, {
     name: 'yearn_usdc_01',
-    vaultNumber: vaultNumber,
+    vaultnumber: vaultNumber,
     provider: yearn,
-    protocolLPToken: yearnUSDC,
+    protocoltoken: yearnUSDC,
     underlying: usdc,
-    govToken: yearnGov,
-    uScale: 1e6,
+    govtoken: yearnGov,
+    uscale: 1e6,
   });
   const compNumber = await run(`controller_add_protocol`, {
     name: 'compound_usdc_01',
-    vaultNumber: vaultNumber,
+    vaultnumber: vaultNumber,
     provider: compound,
-    protocolLPToken: compoundUSDC,
+    protocoltoken: compoundUSDC,
     underlying: usdc,
-    govToken: compToken,
-    uScale: 1e6,
+    govtoken: compToken,
+    uscale: 1e6,
   });
   const aaveNumber = await run(`controller_add_protocol`, {
     name: 'aave_usdc_01',
-    vaultNumber: vaultNumber,
+    vaultnumber: vaultNumber,
     provider: aave,
-    protocolLPToken: aaveUSDC,
+    protocoltoken: aaveUSDC,
     underlying: usdc,
-    govToken: aaveGov,
-    uScale: 1e6,
+    govtoken: aaveGov,
+    uscale: 1e6,
   });
 
   return [yearnNumber, compNumber, aaveNumber];
