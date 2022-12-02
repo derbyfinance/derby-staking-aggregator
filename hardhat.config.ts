@@ -13,6 +13,7 @@ import './tasks/controller_tasks';
 import './tasks/game_tasks';
 import './tasks/vault_tasks';
 import './tasks/xchain_controller_tasks';
+import './tasks/xprovider_tasks';
 
 dotenv.config();
 

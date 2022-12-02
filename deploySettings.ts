@@ -1,9 +1,5 @@
 import { IDeployVault } from '@testhelp/deployInterfaces';
 
-export const general = {
-  addressfile: 'scripts/deploy/helpers/deployedAddresses.json',
-};
-
 export const derbyTokenSettings = {
   name: 'Derby Finance',
   symbol: 'DRB',
