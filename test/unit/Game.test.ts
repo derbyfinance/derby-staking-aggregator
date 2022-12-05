@@ -1,6 +1,6 @@
 import { deployments, ethers, run } from 'hardhat';
 import { expect } from 'chai';
-import { Signer, Contract, BigNumber } from 'ethers';
+import { Signer, Contract, BigNumber, BigNumberish } from 'ethers';
 import {
   erc20,
   formatEther,
@@ -30,8 +30,9 @@ import { getAllocations, initController } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/allMockProvidersClass';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 import { deployGameMock, deployDerbyToken } from '@testhelp/deploy';
-import { getAllSigners, getDerbyToken, getGame } from '@testhelp/deployHelpers';
+import { getAllSigners, getContract, getDerbyToken, getGame } from '@testhelp/deployHelpers';
 import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
+import deployProviderTest from 'deploy/mocks/deploy_xProviderMock';
 
 const basketNum = 0;
 const nftName = 'DerbyNFT';
@@ -42,21 +43,6 @@ const totalDerbySupply = parseEther((1e8).toString());
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
 describe.only('Testing Game', async () => {
-  const setupGame = deployments.createFixture(async (hre) => {
-    const game = await getGame(hre);
-    const derbyToken = await getDerbyToken(hre);
-    const { deployer, dao, user } = await getAllSigners(hre);
-
-    const vaultNumber = random(100);
-    const amount = 10_000 * 1e18;
-
-    await run('game_init');
-
-    await derbyToken.transfer(user.address, 100_000);
-
-    return { game, derbyToken, user, dao, vaultNumber };
-  });
-
   let vault: MainVaultMock,
     controller: Controller,
     dao: Signer,
@@ -65,140 +51,167 @@ describe.only('Testing Game', async () => {
     IUSDc: Contract,
     daoAddr: string,
     userAddr: string,
-    DerbyToken: DerbyToken,
+    derbyToken: DerbyToken,
     game: GameMock,
+    basketId: BigNumberish,
+    vaultNumber: BigNumberish,
+    chainIds: BigNumberish[],
     xChainController: XChainControllerMock,
     xProvider10: XProvider,
     xProvider100: XProvider,
     LZEndpoint10: LZEndpointMock,
     LZEndpoint100: LZEndpointMock;
 
-  // before(async function () {
-  //   [dao, user] = await ethers.getSigners();
+  const setupGame = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['XChainControllerMock']);
+    game = await getGame(hre); ///////////////////////////////////////////
+    derbyToken = await getDerbyToken(hre); /////////////////////////////////////
+    xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
+    console.log(xChainController.address);
 
-  //   [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
-  //     getUSDCSigner(),
-  //     erc20(usdc),
-  //     dao.getAddress(),
-  //     user.getAddress(),
-  //   ]);
+    const signers = await getAllSigners(hre);
+    dao = signers.dao;
+    user = signers.user;
+    vaultNumber = random(100);
 
-  //   controller = await deployController(dao, daoAddr);
-  //   DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-  //   game = await deployGameMock(
-  //     user,
-  //     nftName,
-  //     nftSymbol,
-  //     DerbyToken.address,
-  //     daoAddr,
-  //     daoAddr,
-  //     controller.address,
-  //   );
-  //   vault = await deployMainVaultMock(
-  //     dao,
-  //     name,
-  //     symbol,
-  //     decimals,
-  //     vaultNumber,
-  //     daoAddr,
-  //     daoAddr,
-  //     game.address,
-  //     controller.address,
-  //     usdc,
-  //     uScale,
-  //     gasFeeLiquidity,
-  //   );
-  //   xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
+    await run('game_init');
+    await run('xcontroller_init');
 
-  //   [LZEndpoint10, LZEndpoint100] = await Promise.all([
-  //     deployLZEndpointMock(dao, 10),
-  //     deployLZEndpointMock(dao, 100),
-  //   ]);
+    const test = await deployProviderTest(hre);
+    console.log(test);
+  });
 
-  //   [xProvider10, xProvider100] = await Promise.all([
-  //     deployXProvider(
-  //       dao,
-  //       LZEndpoint10.address,
-  //       daoAddr,
-  //       daoAddr,
-  //       game.address,
-  //       xChainController.address,
-  //       10,
-  //     ),
-  //     deployXProvider(
-  //       dao,
-  //       LZEndpoint100.address,
-  //       daoAddr,
-  //       daoAddr,
-  //       game.address,
-  //       xChainController.address,
-  //       100,
-  //     ),
-  //   ]);
+  before(async function () {
+    await setupGame();
 
-  //   await Promise.all([
-  //     xProvider10.setXControllerProvider(xProvider100.address),
-  //     xProvider10.setXControllerChainId(100),
-  //     xProvider100.setXControllerProvider(xProvider100.address),
-  //     xProvider100.setXControllerChainId(100),
-  //     xProvider10.setXControllerProvider(xProvider100.address),
-  //     xProvider100.setXControllerProvider(xProvider100.address),
-  //     xProvider10.setGameChainId(10),
-  //     xProvider100.setGameChainId(10),
-  //     xProvider10.setTrustedRemote(100, xProvider100.address),
-  //     xProvider100.setTrustedRemote(10, xProvider10.address),
-  //     game.connect(dao).setXProvider(xProvider10.address),
-  //   ]);
+    const amount = 1_000 * 1e6;
+    chainIds = gameInitSettings.chainids;
+    await derbyToken.transfer(await user.getAddress(), amount);
 
-  //   // With MOCK Providers
-  //   await Promise.all([
-  //     vault.connect(dao).setSwapRewards(true),
-  //     initController(controller, [game.address, vault.address]),
-  //     game.connect(dao).setChainIds([10, 100, 1000]),
-  //     xChainController.connect(dao).setHomeXProvider(xProvider100.address),
-  //     xChainController.connect(dao).setChainIds(chainIds),
-  //     AllMockProviders.deployAllMockProviders(dao),
-  //     IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
-  //     IUSDc.connect(user).approve(vault.address, amountUSDC),
-  //   ]);
+    //   [dao, user] = await ethers.getSigners();
 
-  //   await Promise.all([
-  //     game.connect(dao).setLatestProtocolId(10, 5),
-  //     game.connect(dao).setLatestProtocolId(100, 5),
-  //     game.connect(dao).setLatestProtocolId(1000, 5),
-  //     game.connect(dao).setHomeVault(vault.address),
-  //     game.connect(dao).setNegativeRewardThreshold(-50000),
-  //     game.connect(dao).setNegativeRewardFactor(50),
-  //   ]);
+    //   [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
+    //     getUSDCSigner(),
+    //     erc20(usdc),
+    //     dao.getAddress(),
+    //     user.getAddress(),
+    //   ]);
 
-  //   await Promise.all([
-  //     LZEndpoint10.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
-  //     LZEndpoint100.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
-  //   ]);
+    //   controller = await deployController(dao, daoAddr);
+    //   DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
+    //   game = await deployGameMock(
+    //     user,
+    //     nftName,
+    //     nftSymbol,
+    //     DerbyToken.address,
+    //     daoAddr,
+    //     daoAddr,
+    //     controller.address,
+    //   );
+    //   vault = await deployMainVaultMock(
+    //     dao,
+    //     name,
+    //     symbol,
+    //     decimals,
+    //     vaultNumber,
+    //     daoAddr,
+    //     daoAddr,
+    //     game.address,
+    //     controller.address,
+    //     usdc,
+    //     uScale,
+    //     gasFeeLiquidity,
+    //   );
+    //   xChainController = await deployXChainControllerMock(dao, daoAddr, daoAddr, daoAddr, 100);
 
-  // for (const protocol of protocols.values()) {
-  //   await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
-  // }
-  // });
+    //   [LZEndpoint10, LZEndpoint100] = await Promise.all([
+    //     deployLZEndpointMock(dao, 10),
+    //     deployLZEndpointMock(dao, 100),
+    //   ]);
+
+    //   [xProvider10, xProvider100] = await Promise.all([
+    //     deployXProvider(
+    //       dao,
+    //       LZEndpoint10.address,
+    //       daoAddr,
+    //       daoAddr,
+    //       game.address,
+    //       xChainController.address,
+    //       10,
+    //     ),
+    //     deployXProvider(
+    //       dao,
+    //       LZEndpoint100.address,
+    //       daoAddr,
+    //       daoAddr,
+    //       game.address,
+    //       xChainController.address,
+    //       100,
+    //     ),
+    //   ]);
+
+    //   await Promise.all([
+    //     xProvider10.setXControllerProvider(xProvider100.address),
+    //     xProvider10.setXControllerChainId(100),
+    //     xProvider100.setXControllerProvider(xProvider100.address),
+    //     xProvider100.setXControllerChainId(100),
+    //     xProvider10.setXControllerProvider(xProvider100.address),
+    //     xProvider100.setXControllerProvider(xProvider100.address),
+    //     xProvider10.setGameChainId(10),
+    //     xProvider100.setGameChainId(10),
+    //     xProvider10.setTrustedRemote(100, xProvider100.address),
+    //     xProvider100.setTrustedRemote(10, xProvider10.address),
+    //     game.connect(dao).setXProvider(xProvider10.address),
+    //   ]);
+
+    //   // With MOCK Providers
+    //   await Promise.all([
+    //     vault.connect(dao).setSwapRewards(true),
+    //     initController(controller, [game.address, vault.address]),
+    //     game.connect(dao).setChainIds([10, 100, 1000]),
+    //     xChainController.connect(dao).setHomeXProvider(xProvider100.address),
+    //     xChainController.connect(dao).setChainIds(chainIds),
+    //     AllMockProviders.deployAllMockProviders(dao),
+    //     IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
+    //     IUSDc.connect(user).approve(vault.address, amountUSDC),
+    //   ]);
+
+    //   await Promise.all([
+    //     game.connect(dao).setLatestProtocolId(10, 5),
+    //     game.connect(dao).setLatestProtocolId(100, 5),
+    //     game.connect(dao).setLatestProtocolId(1000, 5),
+    //     game.connect(dao).setHomeVault(vault.address),
+    //     game.connect(dao).setNegativeRewardThreshold(-50000),
+    //     game.connect(dao).setNegativeRewardFactor(50),
+    //   ]);
+
+    //   await Promise.all([
+    //     LZEndpoint10.setDestLzEndpoint(xProvider100.address, LZEndpoint100.address),
+    //     LZEndpoint100.setDestLzEndpoint(xProvider10.address, LZEndpoint10.address),
+    //   ]);
+
+    // for (const protocol of protocols.values()) {
+    //   await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
+    // }
+  });
 
   it('DerbyToken should have name, symbol and totalSupply set', async function () {
-    const { derbyToken } = await setupGame();
+    //const { derbyToken } = await setupGame();
     const { name, symbol, totalSupply } = derbyTokenSettings;
     expect(await derbyToken.name()).to.be.equal(name);
     expect(await derbyToken.symbol()).to.be.equal(symbol);
-    expect(await derbyToken.totalSupply()).to.be.equal(totalSupply);
+    expect(await derbyToken.totalSupply()).to.be.equal(parseEther(totalSupply.toString()));
   });
 
   it('game should have DerbyToken contract addresses set', async function () {
-    const { game, derbyToken } = await setupGame();
+    //const { game, derbyToken } = await setupGame();
     expect(await game.derbyToken()).to.be.equal(derbyToken.address);
   });
 
   it('Should Lock tokens, mint basket and set correct deltas', async function () {
-    const { game, derbyToken, dao, user, vaultNumber } = await setupGame();
-    const { chainids: chainIds } = gameInitSettings;
+    //const { game, derbyToken, dao, user, vaultNumber } = await setupGame();
 
-    const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
+    basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
 
     const allocationArray = [
       [100, 0, 0, 200, 0], // 300
@@ -250,7 +263,7 @@ describe.only('Testing Game', async () => {
     expect(chainId2).to.deep.equal(allocationArray[2]);
   });
 
-  it.skip('Should Unlock lokens and read allocations in basket', async function () {
+  it('Should Unlock lokens and read allocations in basket', async function () {
     const allocationDeltaArray = [
       [-100, 0, 0, 0, 0],
       [0, 0, -100, -100, -200],
@@ -263,30 +276,33 @@ describe.only('Testing Game', async () => {
       [0, 100, 0, 100, 300], // 500
     ];
 
-    const tokenBalanceBefore = await DerbyToken.balanceOf(userAddr);
-    await game.rebalanceBasket(basketNum, allocationDeltaArray);
-    const tokenBalanceAfter = await DerbyToken.balanceOf(userAddr);
+    await expect(() =>
+      game.connect(user).rebalanceBasket(basketId, allocationDeltaArray),
+    ).to.changeTokenBalance(derbyToken, user, 1000);
 
-    // received 1000 tokens
-    expect(tokenBalanceAfter.sub(tokenBalanceBefore)).to.be.equal(1000);
-
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(200);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(200);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(500);
-    expect(await game.basketTotalAllocatedTokens(basketNum)).to.be.equal(1900 - 1000);
+    expect(
+      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[0]),
+    ).to.be.equal(200);
+    expect(
+      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[1]),
+    ).to.be.equal(200);
+    expect(
+      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[2]),
+    ).to.be.equal(500);
+    expect(await game.connect(user).basketTotalAllocatedTokens(basketId)).to.be.equal(1900 - 1000);
 
     // looping through all of allocationArray
     allocationTestArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(
-          chainIdArray[j],
-        );
+        expect(
+          await game.connect(user).basketAllocationInProtocol(vaultNumber, chainIds[i], j),
+        ).to.be.equal(chainIdArray[j]);
       }
     });
   });
 
   // Allocations in protocols are not resetted at this point
-  it.skip('Should push delta allocations from game to xChainController', async function () {
+  it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
@@ -314,13 +330,13 @@ describe.only('Testing Game', async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(basketNum, [[0, 1]])).to.be.revertedWith(
+    await expect(game.rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
       'Game: vault is xChainRebalancing',
     );
 
     // reset allocations and state for testing
     await game.setXChainRebalanceState(vaultNumber, false);
-    await game.rebalanceBasket(basketNum, [
+    await game.rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
       [0, -100, 0, -100, -300], // 500

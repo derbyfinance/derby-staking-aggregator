@@ -14,7 +14,7 @@ const func: DeployFunction = async function ({
 
   await deploy('DerbyToken', {
     from: deployer,
-    args: [name, symbol, ethers.BigNumber.from(totalSupply)],
+    args: [name, symbol, ethers.utils.parseEther(totalSupply.toString())],
     log: true,
     autoMine: true,
   });

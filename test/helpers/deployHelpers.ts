@@ -1,4 +1,5 @@
 import { Controller, DerbyToken, GameMock } from '@typechain';
+import { Contract } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 export async function getController({
@@ -16,7 +17,6 @@ export async function getGame({
   deployments,
   ethers,
 }: HardhatRuntimeEnvironment): Promise<GameMock> {
-  await deployments.fixture(['GameMock']);
   const deployment = await deployments.get('GameMock');
   const game: GameMock = await ethers.getContractAt('GameMock', deployment.address);
 
@@ -31,6 +31,16 @@ export async function getDerbyToken({
   const derbyToken: DerbyToken = await ethers.getContractAt('DerbyToken', deployment.address);
 
   return derbyToken;
+}
+
+export async function getContract(
+  contractName: string,
+  { deployments, ethers }: HardhatRuntimeEnvironment,
+): Promise<Contract> {
+  const deployment = await deployments.get(contractName);
+  const contract = await ethers.getContractAt(contractName, deployment.address);
+
+  return contract;
 }
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {
