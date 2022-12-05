@@ -45,6 +45,11 @@ export const gameDeploySettings = {
   negativeRewardThreshold: -50_000,
 };
 
+export const gameInitSettings = {
+  chainids: [10, 100, 1000],
+  latestprotocolid: 5,
+};
+
 export const xChainControllerDeploySettings = {
   homeChainId: 100,
 };

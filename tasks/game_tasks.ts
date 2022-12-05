@@ -1,14 +1,19 @@
-import { gameDeploySettings } from 'deploySettings';
+import { gameDeploySettings, gameInitSettings } from 'deploySettings';
 import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('game_init', 'Initializes the game').setAction(async (args, { run }) => {
   const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
+  const { chainids, latestprotocolid } = gameInitSettings;
 
   await Promise.all([
     run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
     run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
+    run('game_set_chain_ids', { chainids }),
+    run('game_latest_protocol_id', { chainid: chainids[0], latestprotocolid }),
+    run('game_latest_protocol_id', { chainid: chainids[1], latestprotocolid }),
+    run('game_latest_protocol_id', { chainid: chainids[2], latestprotocolid }),
   ]);
 });
 
@@ -16,7 +21,8 @@ task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
   .addParam('vaultnumber', 'Number of the vault. Same as in Router', null, types.int)
   .setAction(async ({ vaultnumber }, hre) => {
     const game = await getGame(hre);
-    const tx = await game.mintNewBasket(vaultnumber);
+    const user = await getUser(hre);
+    const tx = await game.connect(user).mintNewBasket(vaultnumber);
     const receipt = await tx.wait();
     const { basketId } = receipt.events![1].args as Result;
     return Number(basketId);
@@ -171,6 +177,12 @@ const getDao = async ({ ethers, getNamedAccounts }: HardhatRuntimeEnvironment) =
   const accounts = await getNamedAccounts();
   const dao = await ethers.getSigner(accounts.dao);
   return dao;
+};
+
+const getUser = async ({ ethers, getNamedAccounts }: HardhatRuntimeEnvironment) => {
+  const accounts = await getNamedAccounts();
+  const user = await ethers.getSigner(accounts.user);
+  return user;
 };
 
 const getGuardian = async ({ ethers, getNamedAccounts }: HardhatRuntimeEnvironment) => {
