@@ -179,7 +179,6 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
   function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlySelf {
-    console.log("Receiving allocations %s", xController);
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
