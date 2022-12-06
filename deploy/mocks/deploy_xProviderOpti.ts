@@ -31,4 +31,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = ['XProviderOpti'];
-func.dependencies = ['GameMock', 'XChainControllerMock'];
+func.dependencies = ['GameMock', 'XChainControllerMock', 'LZEndpointOpti'];

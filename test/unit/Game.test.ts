@@ -31,11 +31,12 @@ import AllMockProviders from '@testhelp/allMockProvidersClass';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 import { deployGameMock, deployDerbyToken } from '@testhelp/deploy';
 import {
-  deployAndGetProviders,
+  getProviders,
   getAllSigners,
   getContract,
   getDerbyToken,
   getGame,
+  getEndpoints,
 } from '@testhelp/deployHelpers';
 import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
 
@@ -64,11 +65,16 @@ describe.only('Testing Game', async () => {
     xChainController: XChainControllerMock,
     xProviderMain: XProvider,
     xProviderArbi: XProvider,
-    LZEndpoint10: LZEndpointMock,
-    LZEndpoint100: LZEndpointMock;
+    LZEndpointMain: LZEndpointMock,
+    LZEndpointArbi: LZEndpointMock;
 
   const setupGame = deployments.createFixture(async (hre) => {
-    await deployments.fixture(['XChainControllerMock']);
+    await deployments.fixture([
+      'XChainControllerMock',
+      'XProviderMain',
+      'XProviderArbi',
+      'XProviderOpti',
+    ]);
     game = await getGame(hre); ///////////////////////////////////////////
     derbyToken = await getDerbyToken(hre); /////////////////////////////////////
     xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
@@ -83,7 +89,8 @@ describe.only('Testing Game', async () => {
     await run('game_init');
     await run('xcontroller_init');
 
-    [xProviderMain, xProviderArbi] = await deployAndGetProviders(hre, 100, 10);
+    [xProviderMain, xProviderArbi] = await getProviders(hre, 100, 10);
+    [LZEndpointMain, LZEndpointArbi] = await getEndpoints(hre);
   });
 
   before(async function () {
@@ -94,6 +101,9 @@ describe.only('Testing Game', async () => {
     await derbyToken.transfer(await user.getAddress(), amount);
     await xProviderMain.connect(dao).setTrustedRemote(100, xProviderArbi.address);
     await xProviderArbi.connect(dao).setTrustedRemote(10, xProviderMain.address);
+
+    await LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address);
+    await LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address);
 
     //   [dao, user] = await ethers.getSigners();
 
@@ -309,7 +319,7 @@ describe.only('Testing Game', async () => {
   });
 
   // Allocations in protocols are not resetted at this point
-  it.skip('Should push delta allocations from game to xChainController', async function () {
+  it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];

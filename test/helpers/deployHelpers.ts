@@ -1,9 +1,6 @@
-import { Controller, DerbyToken, GameMock, XProvider } from '@typechain';
+import { Controller, DerbyToken, GameMock, LZEndpointMock, XProvider } from '@typechain';
 import { Contract } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import deployXProviderMain from 'deploy/mocks/deploy_xProviderMain';
-import deployXProviderArbi from 'deploy/mocks/deploy_xProviderArbi';
-import deployXProviderOpti from 'deploy/mocks/deploy_xProviderOpti';
 
 export async function getController({
   deployments,
@@ -46,16 +43,12 @@ export async function getContract(
   return contract;
 }
 
-export async function deployAndGetProviders(
+export async function getProviders(
   hre: HardhatRuntimeEnvironment,
   xControllerChain: number,
   gameChain: number,
 ): Promise<XProvider[]> {
   const { deployments, ethers, run } = hre;
-  // can only deploy 1 at a time
-  await deployXProviderMain(hre);
-  await deployXProviderArbi(hre);
-  await deployXProviderOpti(hre);
 
   const [main, arbitrum, optimism] = await Promise.all([
     deployments.get('XProviderMain'),
@@ -79,6 +72,24 @@ export async function deployAndGetProviders(
   }
 
   return [...xProviders];
+}
+
+export async function getEndpoints(hre: HardhatRuntimeEnvironment): Promise<LZEndpointMock[]> {
+  const { deployments, ethers } = hre;
+
+  const [main, arbitrum, optimism] = await Promise.all([
+    deployments.get('LZEndpointMain'),
+    deployments.get('LZEndpointArbi'),
+    deployments.get('LZEndpointOpti'),
+  ]);
+
+  const [LZEndpointMain, LZEndpointArbi, LZEndpointOpti] = await Promise.all([
+    ethers.getContractAt('LZEndpointMock', main.address),
+    ethers.getContractAt('LZEndpointMock', arbitrum.address),
+    ethers.getContractAt('LZEndpointMock', optimism.address),
+  ]);
+
+  return [LZEndpointMain, LZEndpointArbi, LZEndpointOpti];
 }
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {
