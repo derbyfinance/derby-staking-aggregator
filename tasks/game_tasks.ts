@@ -3,19 +3,22 @@ import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-task('game_init', 'Initializes the game').setAction(async (args, { run }) => {
-  const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
-  const { chainids, latestprotocolid } = gameInitSettings;
+task('game_init', 'Initializes the game')
+  .addParam('provider', 'Address of the provider')
+  .setAction(async ({ provider }, { run }) => {
+    const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
+    const { chainids, latestprotocolid } = gameInitSettings;
 
-  await Promise.all([
-    run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
-    run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
-    run('game_set_chain_ids', { chainids }),
-    run('game_latest_protocol_id', { chainid: chainids[0], latestprotocolid }),
-    run('game_latest_protocol_id', { chainid: chainids[1], latestprotocolid }),
-    run('game_latest_protocol_id', { chainid: chainids[2], latestprotocolid }),
-  ]);
-});
+    await Promise.all([
+      run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
+      run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
+      run('game_set_chain_ids', { chainids }),
+      run('game_latest_protocol_id', { chainid: chainids[0], latestprotocolid }),
+      run('game_latest_protocol_id', { chainid: chainids[1], latestprotocolid }),
+      run('game_latest_protocol_id', { chainid: chainids[2], latestprotocolid }),
+      run('game_set_xprovider', { provider }),
+    ]);
+  });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
   .addParam('vaultnumber', 'Number of the vault. Same as in Router', null, types.int)

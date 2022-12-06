@@ -8,6 +8,7 @@ import {
   parseEther,
   parseUSDC,
   random,
+  transferAndApproveUSDC,
 } from '@testhelp/helpers';
 import type {
   Controller,
@@ -44,6 +45,7 @@ const basketNum = 0;
 const nftName = 'DerbyNFT';
 const nftSymbol = 'DRBNFT';
 const amount = 100000;
+const chainIds = [10, 100, 1000];
 const amountUSDC = parseUSDC(amount.toString());
 const totalDerbySupply = parseEther((1e8).toString());
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
@@ -54,9 +56,7 @@ describe.only('Testing Game', async () => {
     dao: Signer,
     user: Signer,
     USDCSigner: Signer,
-    IUSDc: Contract,
-    daoAddr: string,
-    userAddr: string,
+    IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
     game: GameMock,
     basketId: BigNumberish,
@@ -71,6 +71,7 @@ describe.only('Testing Game', async () => {
   const setupGame = deployments.createFixture(async (hre) => {
     await deployments.fixture([
       'XChainControllerMock',
+      'MainVaultMock',
       'XProviderMain',
       'XProviderArbi',
       'XProviderOpti',
@@ -78,6 +79,7 @@ describe.only('Testing Game', async () => {
     game = await getGame(hre); ///////////////////////////////////////////
     derbyToken = await getDerbyToken(hre); /////////////////////////////////////
     xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
+    vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
 
     console.log(xChainController.address);
 
@@ -86,17 +88,21 @@ describe.only('Testing Game', async () => {
     user = signers.user;
     vaultNumber = random(100);
 
-    await run('game_init');
-    await run('xcontroller_init');
-
     [xProviderMain, xProviderArbi] = await getProviders(hre, 100, 10);
     [LZEndpointMain, LZEndpointArbi] = await getEndpoints(hre);
+
+    await run('game_init', { provider: xProviderMain.address });
+    await run('game_set_home_vault', { vault: vault.address });
+    await run('xcontroller_init');
+    await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
+    await run('vault_init');
+    await run('controller_init');
   });
 
   before(async function () {
     await setupGame();
 
-    const amount = 1_000 * 1e6;
+    const amount = parseEther('2100');
     chainIds = gameInitSettings.chainids;
     await derbyToken.transfer(await user.getAddress(), amount);
     await xProviderMain.connect(dao).setTrustedRemote(100, xProviderArbi.address);
@@ -105,6 +111,8 @@ describe.only('Testing Game', async () => {
     await LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address);
     await LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address);
 
+    await transferAndApproveUSDC(vault.address, user, 100_000 * 1e6);
+    await vault.connect(dao).setSwapRewards(true);
     //   [dao, user] = await ethers.getSigners();
 
     //   [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
@@ -347,27 +355,27 @@ describe.only('Testing Game', async () => {
     expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
 
     // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
+    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
       'Game: vault is xChainRebalancing',
     );
 
     // reset allocations and state for testing
     await game.setXChainRebalanceState(vaultNumber, false);
-    await game.rebalanceBasket(basketId, [
+    await game.connect(user).rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
       [0, -100, 0, -100, -300], // 500
     ]);
   });
 
-  it.skip('Calculate rewards during rebalance Basket', async function () {
-    await mockRewards(game, DerbyToken);
+  it('Calculate rewards during rebalance Basket', async function () {
+    await mockRewards(game, derbyToken, user, vaultNumber, basketId);
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
     ];
-    await game.rebalanceBasket(basketNum, newAllocations);
+    await game.connect(user).rebalanceBasket(basketId, newAllocations);
 
     // allocations in mockRewards function
     /*
@@ -380,22 +388,26 @@ describe.only('Testing Game', async () => {
     200 * 200 = 40_000
     total = 2_120_000
     */
-    const rewards = await game.basketUnredeemedRewards(basketNum);
+    const rewards = await game.connect(user).basketUnredeemedRewards(basketId);
     expect(rewards).to.be.equal(2_120_000); // rebalancing period not correct? CHECK
   });
 
-  it.skip('Should be able to redeem rewards / set rewardAllowance', async function () {
-    await game.redeemRewards(basketNum);
-    await expect(game.redeemRewards(basketNum)).to.be.revertedWith('Nothing to claim');
+  it('Should be able to redeem rewards / set rewardAllowance', async function () {
+    await game.connect(user).redeemRewards(basketId);
+    await expect(game.connect(user).redeemRewards(basketId)).to.be.revertedWith('Nothing to claim');
 
-    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
+    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(2_120_000);
     expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
   });
 
-  it.skip('Should redeem and swap rewards to UNI tokens', async function () {
+  it('Should redeem and swap rewards to UNI tokens', async function () {
     const IUniswap = erc20(uniswapToken);
+    const userAddr = await user.getAddress();
 
-    await Promise.all([vault.setDaoToken(uniswapToken), vault.setExchangeRateTEST(parseUSDC('1'))]);
+    await Promise.all([
+      vault.connect(dao).setDaoToken(uniswapToken),
+      vault.setExchangeRateTEST(parseUSDC('1')),
+    ]);
 
     // Deposit so the vault has funds
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
@@ -409,27 +421,27 @@ describe.only('Testing Game', async () => {
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('No allowance');
+    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!allowance');
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
   });
 
-  it.skip('Mocking rewards again to test when swappingRewards is false', async function () {
-    await mockRewards(game, DerbyToken);
+  it('Mocking rewards again to test when swappingRewards is false', async function () {
+    await mockRewards(game, derbyToken, user, vaultNumber, basketId);
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
     ];
-    await game.rebalanceBasket(basketNum, newAllocations);
-    await game.redeemRewards(basketNum);
+    await game.connect(user).rebalanceBasket(basketId, newAllocations);
+    await game.connect(user).redeemRewards(basketId);
 
     // double the allocations
-    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(4_240_000);
+    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(4_240_000);
   });
 
-  it.skip('Should redeem rewards and receive USDC instead of UNI tokens', async function () {
+  it('Should redeem rewards and receive USDC instead of UNI tokens', async function () {
     // Swaprewards to false
     await vault.connect(dao).setSwapRewards(false);
 
@@ -442,48 +454,49 @@ describe.only('Testing Game', async () => {
       4_240_000,
     );
 
-    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
+    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
-  });
-
-  it.skip('Should correctly set dao address', async function () {
-    await game.connect(dao).setDao(userAddr);
-    expect(await game.getDao()).to.be.equal(userAddr);
   });
 });
 
-async function mockRewards(game: GameMock, DerbyToken: DerbyToken) {
+async function mockRewards(
+  game: GameMock,
+  DerbyToken: DerbyToken,
+  user: Signer,
+  vaultNum: BigNumberish,
+  basketId: BigNumberish,
+) {
   let allocations = [
     [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
     [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
   ];
   const totalAllocations = parseEther('1000');
 
-  await game.upRebalancingPeriod(vaultNumber);
+  await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    await game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
-    await game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
+    await game.mockRewards(vaultNum, chainIds[0], [1, 1, 1, 1, 1]),
+    await game.mockRewards(vaultNum, chainIds[1], [1, 1, 1, 1, 1]),
   ]);
 
-  await DerbyToken.increaseAllowance(game.address, totalAllocations);
-  await game.rebalanceBasket(basketNum, allocations);
+  await DerbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
+  await game.connect(user).rebalanceBasket(basketId, allocations);
 
   // This rebalance should be skipped for the basket
-  await game.upRebalancingPeriod(vaultNumber);
+  await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
   ]);
 
-  await game.upRebalancingPeriod(vaultNumber);
+  await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
   ]);
 
-  await game.upRebalancingPeriod(vaultNumber);
+  await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNumber, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
+    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
   ]);
 }

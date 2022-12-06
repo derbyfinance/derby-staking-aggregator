@@ -197,6 +197,7 @@ contract XChainController {
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGameInt(uint256 _vaultNumber, int256[] memory _deltas) internal {
+    console.log("Receiving allocations Controller");
     uint256 activeVaults;
 
     for (uint256 i = 0; i < chainIds.length; i++) {
