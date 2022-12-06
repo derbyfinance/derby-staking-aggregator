@@ -57,12 +57,10 @@ contract Controller is IController {
   /// @notice Harvest tokens from underlying protocols
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNumber Protocol number linked to protocol vault
-  function claim(uint256 _vaultNumber, uint256 _protocolNumber)
-    external
-    override
-    onlyVault
-    returns (bool)
-  {
+  function claim(
+    uint256 _vaultNumber,
+    uint256 _protocolNumber
+  ) external override onlyVault returns (bool) {
     if (claimable[protocolInfo[_vaultNumber][_protocolNumber].provider]) {
       return
         IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).claim(
@@ -99,36 +97,30 @@ contract Controller is IController {
   /// @notice Getter for protocol blacklist, given an vaultnumber and protocol number returns true if blacklisted. Can only be called by vault.
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolBlacklist(uint256 _vaultNumber, uint256 _protocolNum)
-    external
-    view
-    override
-    onlyVault
-    returns (bool)
-  {
+  function getProtocolBlacklist(
+    uint256 _vaultNumber,
+    uint256 _protocolNum
+  ) external view override onlyVault returns (bool) {
     return protocolBlacklist[_vaultNumber][_protocolNum];
   }
 
   /// @notice Getter for the ProtocolInfo struct
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNum Protocol number linked to protocol vault
-  function getProtocolInfo(uint256 _vaultNumber, uint256 _protocolNum)
-    external
-    view
-    override
-    returns (ProtocolInfoS memory)
-  {
+  function getProtocolInfo(
+    uint256 _vaultNumber,
+    uint256 _protocolNum
+  ) external view override returns (ProtocolInfoS memory) {
     return protocolInfo[_vaultNumber][_protocolNum];
   }
 
   /// @notice Setter for protocol blacklist, given an vaultnumber and protocol number puts the protocol on the blacklist. Can only be called by vault.
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNum Protocol number linked to protocol vault
-  function setProtocolBlacklist(uint256 _vaultNumber, uint256 _protocolNum)
-    external
-    override
-    onlyVault
-  {
+  function setProtocolBlacklist(
+    uint256 _vaultNumber,
+    uint256 _protocolNum
+  ) external override onlyVault {
     protocolBlacklist[_vaultNumber][_protocolNum] = true;
   }
 

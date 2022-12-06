@@ -42,6 +42,9 @@ const config: HardhatUserConfig = {
     user: {
       default: 3,
     },
+    vault: {
+      default: 4,
+    },
   },
   typechain: {},
   networks: {

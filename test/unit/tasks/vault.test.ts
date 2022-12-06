@@ -2,9 +2,7 @@ import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { vaultInitSettings } from 'deploySettings';
 import { MainVaultMock } from '@typechain';
-import { erc20, getUSDCSigner } from '@testhelp/helpers';
-import { usdc } from '@testhelp/addresses';
-import { Signer } from 'ethers';
+import { transferAndApproveUSDC } from '@testhelp/helpers';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
 
@@ -143,14 +141,6 @@ describe.only('Testing vault tasks', () => {
   });
 
   const random = (max: number) => Math.floor(Math.random() * max);
-
-  async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
-    const usdcSigner = await getUSDCSigner();
-    const IUSDC = erc20(usdc);
-
-    await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
-    await IUSDC.connect(user).approve(vault, amount);
-  }
 
   async function deployVault(
     deployments: DeploymentsExtension,

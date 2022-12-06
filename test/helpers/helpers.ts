@@ -1,15 +1,71 @@
-import { BigNumber, ContractFunction } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { BigNumber, ContractFunction, Signer } from 'ethers';
+import { ethers, network, run } from 'hardhat';
 import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
+import {
+  aave as aaveGov,
+  aaveUSDC,
+  compoundUSDC,
+  compToken,
+  usdc,
+  yearn as yearnGov,
+  yearnUSDC,
+} from './addresses';
 
 const provider = ethers.provider;
 
 const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
+
+export async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
+  const usdcSigner = await getUSDCSigner();
+  const IUSDC = erc20(usdc);
+
+  await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
+  await IUSDC.connect(user).approve(vault, amount);
+
+  return { IUSDC };
+}
+
+export async function deployStarterProtocols(
+  { yearn, compound, aave }: IStarterProviders,
+  vaultNumber: number,
+) {
+  const yearnNumber = await run(`controller_add_protocol`, {
+    name: 'yearn_usdc_01',
+    vaultnumber: vaultNumber,
+    provider: yearn,
+    protocoltoken: yearnUSDC,
+    underlying: usdc,
+    govtoken: yearnGov,
+    uscale: 1e6,
+  });
+  const compNumber = await run(`controller_add_protocol`, {
+    name: 'compound_usdc_01',
+    vaultnumber: vaultNumber,
+    provider: compound,
+    protocoltoken: compoundUSDC,
+    underlying: usdc,
+    govtoken: compToken,
+    uscale: 1e6,
+  });
+  const aaveNumber = await run(`controller_add_protocol`, {
+    name: 'aave_usdc_01',
+    vaultnumber: vaultNumber,
+    provider: aave,
+    protocoltoken: aaveUSDC,
+    underlying: usdc,
+    govtoken: aaveGov,
+    uscale: 1e6,
+  });
+
+  return [yearnNumber, compNumber, aaveNumber];
+}
+
+export const random = (max: number) => Math.floor(Math.random() * max);
 
 // SIGNERS
 export const getDAISigner = async () => {
@@ -95,3 +151,9 @@ export const formatUSDC = (amount: string | BigNumber) =>
   Number(ethers.utils.formatUnits(amount, 6));
 export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18);
 export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18);
+
+type IStarterProviders = {
+  yearn: string;
+  compound: string;
+  aave: string;
+};
