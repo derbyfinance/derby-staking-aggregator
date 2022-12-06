@@ -30,9 +30,14 @@ import { getAllocations, initController } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/allMockProvidersClass';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 import { deployGameMock, deployDerbyToken } from '@testhelp/deploy';
-import { getAllSigners, getContract, getDerbyToken, getGame } from '@testhelp/deployHelpers';
+import {
+  deployAndGetProviders,
+  getAllSigners,
+  getContract,
+  getDerbyToken,
+  getGame,
+} from '@testhelp/deployHelpers';
 import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
-import deployProviderTest from 'deploy/mocks/deploy_xProviderMock';
 
 const basketNum = 0;
 const nftName = 'DerbyNFT';
@@ -57,8 +62,8 @@ describe.only('Testing Game', async () => {
     vaultNumber: BigNumberish,
     chainIds: BigNumberish[],
     xChainController: XChainControllerMock,
-    xProvider10: XProvider,
-    xProvider100: XProvider,
+    xProviderMain: XProvider,
+    xProviderArbi: XProvider,
     LZEndpoint10: LZEndpointMock,
     LZEndpoint100: LZEndpointMock;
 
@@ -67,6 +72,7 @@ describe.only('Testing Game', async () => {
     game = await getGame(hre); ///////////////////////////////////////////
     derbyToken = await getDerbyToken(hre); /////////////////////////////////////
     xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
+
     console.log(xChainController.address);
 
     const signers = await getAllSigners(hre);
@@ -77,8 +83,7 @@ describe.only('Testing Game', async () => {
     await run('game_init');
     await run('xcontroller_init');
 
-    const test = await deployProviderTest(hre);
-    console.log(test);
+    [xProviderMain, xProviderArbi] = await deployAndGetProviders(hre, 100, 10);
   });
 
   before(async function () {
@@ -87,6 +92,8 @@ describe.only('Testing Game', async () => {
     const amount = 1_000 * 1e6;
     chainIds = gameInitSettings.chainids;
     await derbyToken.transfer(await user.getAddress(), amount);
+    await xProviderMain.connect(dao).setTrustedRemote(100, xProviderArbi.address);
+    await xProviderArbi.connect(dao).setTrustedRemote(10, xProviderMain.address);
 
     //   [dao, user] = await ethers.getSigners();
 
@@ -302,7 +309,7 @@ describe.only('Testing Game', async () => {
   });
 
   // Allocations in protocols are not resetted at this point
-  it('Should push delta allocations from game to xChainController', async function () {
+  it.skip('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];

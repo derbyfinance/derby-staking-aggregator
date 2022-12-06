@@ -1,6 +1,9 @@
-import { Controller, DerbyToken, GameMock } from '@typechain';
+import { Controller, DerbyToken, GameMock, XProvider } from '@typechain';
 import { Contract } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import deployXProviderMain from 'deploy/mocks/deploy_xProviderMain';
+import deployXProviderArbi from 'deploy/mocks/deploy_xProviderArbi';
+import deployXProviderOpti from 'deploy/mocks/deploy_xProviderOpti';
 
 export async function getController({
   deployments,
@@ -41,6 +44,41 @@ export async function getContract(
   const contract = await ethers.getContractAt(contractName, deployment.address);
 
   return contract;
+}
+
+export async function deployAndGetProviders(
+  hre: HardhatRuntimeEnvironment,
+  xControllerChain: number,
+  gameChain: number,
+): Promise<XProvider[]> {
+  const { deployments, ethers, run } = hre;
+  // can only deploy 1 at a time
+  await deployXProviderMain(hre);
+  await deployXProviderArbi(hre);
+  await deployXProviderOpti(hre);
+
+  const [main, arbitrum, optimism] = await Promise.all([
+    deployments.get('XProviderMain'),
+    deployments.get('XProviderArbi'),
+    deployments.get('XProviderOpti'),
+  ]);
+
+  const xProviders = await Promise.all([
+    ethers.getContractAt('XProvider', main.address),
+    ethers.getContractAt('XProvider', arbitrum.address),
+    ethers.getContractAt('XProvider', optimism.address),
+  ]);
+
+  for (const provider of xProviders) {
+    await run('xprovider_init', {
+      xProvider: provider,
+      controllerProvider: arbitrum.address,
+      xControllerChainId: xControllerChain,
+      gameChainId: gameChain,
+    });
+  }
+
+  return [...xProviders];
 }
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {
