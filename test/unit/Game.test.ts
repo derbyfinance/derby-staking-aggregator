@@ -9,16 +9,15 @@ import {
   random,
   transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type {
-  GameMock,
-  MainVaultMock,
-  DerbyToken,
-  XProvider,
-  XChainControllerMock,
-  LZEndpointMock,
-} from '@typechain';
+import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import { getProviders, getAllSigners, getContract, getEndpoints } from '@testhelp/deployHelpers';
+import {
+  getProviders,
+  getAllSigners,
+  getContract,
+  InitProviders,
+  InitEndpoints,
+} from '@testhelp/deployHelpers';
 import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
@@ -27,17 +26,14 @@ describe.only('Testing Game', async () => {
   let vault: MainVaultMock,
     dao: Signer,
     user: Signer,
+    userAddr: string,
     IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
     game: GameMock,
     basketId: BigNumberish,
     vaultNumber: BigNumberish = random(100),
     chainIds: BigNumberish[] = gameInitSettings.chainids,
-    xChainController: XChainControllerMock,
-    xProviderMain: XProvider,
-    xProviderArbi: XProvider,
-    LZEndpointMain: LZEndpointMock,
-    LZEndpointArbi: LZEndpointMock;
+    xChainController: XChainControllerMock;
 
   const setupGame = deployments.createFixture(async (hre) => {
     await deployments.fixture([
@@ -54,9 +50,11 @@ describe.only('Testing Game', async () => {
     vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
 
     [dao, user] = await getAllSigners(hre);
+    userAddr = await user.getAddress();
 
-    [xProviderMain, xProviderArbi] = await getProviders(hre, 100, 10);
-    [LZEndpointMain, LZEndpointArbi] = await getEndpoints(hre);
+    const [xProviderMain, xProviderArbi] = await getProviders(hre, { xController: 100, game: 10 });
+    await InitProviders(dao, [xProviderMain, xProviderArbi]);
+    await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
 
     basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
     await run('game_init', { provider: xProviderMain.address });
@@ -66,17 +64,8 @@ describe.only('Testing Game', async () => {
     await run('vault_init');
     await run('controller_init');
 
-    const amount = parseEther('2100');
-
-    await derbyToken.transfer(await user.getAddress(), amount);
-    await xProviderMain.connect(dao).setTrustedRemote(100, xProviderArbi.address);
-    await xProviderArbi.connect(dao).setTrustedRemote(10, xProviderMain.address);
-
-    await LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address);
-    await LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address);
-
+    await derbyToken.transfer(userAddr, parseEther('2100'));
     await transferAndApproveUSDC(vault.address, user, 100_000 * 1e6);
-    await vault.connect(dao).setSwapRewards(true);
   });
 
   before(async function () {
@@ -259,13 +248,12 @@ describe.only('Testing Game', async () => {
     await game.connect(user).redeemRewards(basketId);
     await expect(game.connect(user).redeemRewards(basketId)).to.be.revertedWith('Nothing to claim');
 
-    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(2_120_000);
+    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(2_120_000);
     expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
   });
 
   it('Should redeem and swap rewards to UNI tokens', async function () {
     const IUniswap = erc20(uniswapToken);
-    const userAddr = await user.getAddress();
 
     await Promise.all([
       vault.connect(dao).setDaoToken(uniswapToken),
@@ -301,7 +289,7 @@ describe.only('Testing Game', async () => {
     await game.connect(user).redeemRewards(basketId);
 
     // double the allocations
-    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(4_240_000);
+    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(4_240_000);
   });
 
   it('Should redeem rewards and receive USDC instead of UNI tokens', async function () {
@@ -317,7 +305,7 @@ describe.only('Testing Game', async () => {
       4_240_000,
     );
 
-    expect(await vault.getRewardAllowanceTEST(await user.getAddress())).to.be.equal(0);
+    expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
   });
 });

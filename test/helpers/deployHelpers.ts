@@ -1,5 +1,5 @@
 import { Controller, LZEndpointMock, XProvider } from '@typechain';
-import { Contract } from 'ethers';
+import { Contract, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 export async function getController({
@@ -25,8 +25,10 @@ export async function getContract(
 
 export async function getProviders(
   hre: HardhatRuntimeEnvironment,
-  xControllerChain: number,
-  gameChain: number,
+  chains: {
+    xController: number;
+    game: number;
+  },
 ): Promise<XProvider[]> {
   const { deployments, ethers, run } = hre;
 
@@ -46,12 +48,31 @@ export async function getProviders(
     await run('xprovider_init', {
       xProvider: provider,
       controllerProvider: arbitrum.address,
-      xControllerChainId: xControllerChain,
-      gameChainId: gameChain,
+      xControllerChainId: chains.xController,
+      gameChainId: chains.game,
     });
   }
 
   return [...xProviders];
+}
+
+export async function InitProviders(dao: Signer, xProviders: XProvider[]) {
+  const [xProviderMain, xProviderArbi] = xProviders;
+
+  await Promise.all([
+    xProviderMain.connect(dao).setTrustedRemote(100, xProviderArbi.address),
+    xProviderArbi.connect(dao).setTrustedRemote(10, xProviderMain.address),
+  ]);
+}
+
+export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
+  const [LZEndpointMain, LZEndpointArbi] = await getEndpoints(hre);
+  const [xProviderMain, xProviderArbi] = xProviders;
+
+  await Promise.all([
+    LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
+    LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
+  ]);
 }
 
 export async function getEndpoints(hre: HardhatRuntimeEnvironment): Promise<LZEndpointMock[]> {
