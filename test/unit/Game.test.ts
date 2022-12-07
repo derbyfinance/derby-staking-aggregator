@@ -326,8 +326,8 @@ async function mockRewards(
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    await game.mockRewards(vaultNum, chainIds[0], [1, 1, 1, 1, 1]),
-    await game.mockRewards(vaultNum, chainIds[1], [1, 1, 1, 1, 1]),
+    game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
+    game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
   ]);
 
   await DerbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
