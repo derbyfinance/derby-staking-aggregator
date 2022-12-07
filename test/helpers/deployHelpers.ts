@@ -1,4 +1,4 @@
-import { Controller, DerbyToken, GameMock, LZEndpointMock, XProvider } from '@typechain';
+import { Controller, LZEndpointMock, XProvider } from '@typechain';
 import { Contract } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -11,26 +11,6 @@ export async function getController({
   const controller = await ethers.getContractAt('Controller', deployment.address);
 
   return controller;
-}
-
-export async function getGame({
-  deployments,
-  ethers,
-}: HardhatRuntimeEnvironment): Promise<GameMock> {
-  const deployment = await deployments.get('GameMock');
-  const game: GameMock = await ethers.getContractAt('GameMock', deployment.address);
-
-  return game;
-}
-
-export async function getDerbyToken({
-  deployments,
-  ethers,
-}: HardhatRuntimeEnvironment): Promise<DerbyToken> {
-  const deployment = await deployments.get('DerbyToken');
-  const derbyToken: DerbyToken = await ethers.getContractAt('DerbyToken', deployment.address);
-
-  return derbyToken;
 }
 
 export async function getContract(
@@ -94,12 +74,11 @@ export async function getEndpoints(hre: HardhatRuntimeEnvironment): Promise<LZEn
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {
   const accounts = await getNamedAccounts();
-  const [deployer, dao, guardian, user, vault] = await Promise.all([
-    ethers.getSigner(accounts.deployer),
+  return Promise.all([
     ethers.getSigner(accounts.dao),
-    ethers.getSigner(accounts.guardian),
     ethers.getSigner(accounts.user),
+    ethers.getSigner(accounts.guardian),
     ethers.getSigner(accounts.vault),
+    ethers.getSigner(accounts.deployer),
   ]);
-  return { deployer, dao, guardian, user, vault };
 }

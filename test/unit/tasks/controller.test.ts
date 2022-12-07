@@ -20,12 +20,12 @@ describe.only('Testing controller tasks', () => {
 
     const protocolNumber = await run(`controller_add_protocol`, {
       name: 'yearn_usdc_01',
-      vaultNumber: vaultNumber,
+      vaultnumber: vaultNumber,
       provider: providerAddress,
-      protocolLPToken: yearnUSDC,
+      protocoltoken: yearnUSDC,
       underlying: usdc,
-      govToken: yearn,
-      uScale: 1e6,
+      govtoken: yearn,
+      uscale: 1e6,
     });
 
     const protocolInfo = await controller.getProtocolInfo(vaultNumber, protocolNumber);

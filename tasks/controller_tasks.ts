@@ -48,19 +48,19 @@ task('controller_init', 'Initializes the controller').setAction(async (taskArgs,
 
 task('controller_add_protocol', 'Add protocol to controller')
   .addParam('name', 'Name of the protocol vault combination')
-  .addParam('vaultNumber', 'Number of the vault', 0, types.int)
+  .addParam('vaultnumber', 'Number of the vault', 0, types.int)
   .addParam('provider', 'Address of the protocol provider')
-  .addParam('protocolLPToken', 'Address of protocolToken eg cUSDC')
+  .addParam('protocoltoken', 'Address of protocolToken eg cUSDC')
   .addParam('underlying', 'Address of underlying protocol vault eg USDC')
-  .addParam('govToken', 'Address governance token of the protocol')
-  .addParam('uScale', 'Underlying scale of the protocol', 0, types.int)
+  .addParam('govtoken', 'Address governance token of the protocol')
+  .addParam('uscale', 'Underlying scale of the protocol', 0, types.int)
   .setAction(
-    async ({ name, vaultNumber, provider, protocolLPToken, underlying, govToken, uScale }, hre) => {
+    async ({ name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale }, hre) => {
       const { controller, dao } = await getController(hre);
 
       const tx = await controller
         .connect(dao)
-        .addProtocol(name, vaultNumber, provider, protocolLPToken, underlying, govToken, uScale);
+        .addProtocol(name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale);
 
       const receipt = await tx.wait();
       const { protocolNumber } = receipt.events![0].args as Result;

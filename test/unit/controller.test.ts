@@ -22,7 +22,7 @@ const vaultNumber = 4;
 describe.only('Testing controller', async () => {
   const setupController = deployments.createFixture(async (hre) => {
     const controller = await getController(hre);
-    const { deployer, vault } = await getAllSigners(hre);
+    const [, , , vault, deployer] = await getAllSigners(hre);
 
     await run('controller_init');
     await run('controller_add_vault', { vault: vault.address });

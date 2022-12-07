@@ -191,7 +191,6 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @return int256 Number of derby tokens that are allocated towards protocols.
   function basketTotalAllocatedTokens(uint256 _basketId) public view returns (int256) {
-    console.log(" baskert id %s", _basketId);
     return baskets[_basketId].nrOfAllocatedTokens;
   }
 
