@@ -17,34 +17,39 @@ const getController = async ({
   return { controller, dao };
 };
 
-task('controller_init', 'Initializes the controller').setAction(async (taskArgs, { run }) => {
-  const {
-    dai,
-    usdc,
-    usdt,
-    daiCurveIndex,
-    usdcCurveIndex,
-    usdtCurveIndex,
-    uniswapRouter,
-    uniswapQouter,
-    uniswapPoolFee,
-    chainlinkGasPriceOracle,
-    curve3PoolFee,
-    curve3Pool,
-  } = controllerInit;
+task('controller_init', 'Initializes the controller').setAction(
+  async (taskArgs, { run, ethers }) => {
+    const {
+      dai,
+      usdc,
+      usdt,
+      daiCurveIndex,
+      usdcCurveIndex,
+      usdtCurveIndex,
+      uniswapRouter,
+      uniswapQouter,
+      uniswapPoolFee,
+      chainlinkGasPriceOracle,
+      curve3PoolFee,
+      curve3Pool,
+    } = controllerInit;
 
-  await Promise.all([
-    run('controller_add_curve_index', { token: dai, index: daiCurveIndex }),
-    run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex }),
-    run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex }),
-    run('controller_set_curve_poolfee', { poolfee: curve3PoolFee }),
-    run('controller_set_curve_3pool', { pool: curve3Pool }),
-    run('controller_set_uniswap_router', { router: uniswapRouter }),
-    run('controller_set_uniswap_quoter', { quoter: uniswapQouter }),
-    run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee }),
-    run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle }),
-  ]);
-});
+    await Promise.all([
+      run('controller_add_curve_index', { token: dai, index: daiCurveIndex }),
+      run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex }),
+      run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex }),
+      run('controller_set_curve_poolfee', { poolfee: curve3PoolFee }),
+      run('controller_set_curve_3pool', { pool: curve3Pool }),
+      run('controller_set_uniswap_router', { router: uniswapRouter }),
+      run('controller_set_uniswap_quoter', { quoter: uniswapQouter }),
+      run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee }),
+      run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle }),
+      run('controller_add_underlying_scale', { stable: usdc, decimals: 6 }),
+      run('controller_add_underlying_scale', { stable: dai, decimals: 18 }),
+      run('controller_add_underlying_scale', { stable: usdt, decimals: 6 }),
+    ]);
+  },
+);
 
 task('controller_add_protocol', 'Add protocol to controller')
   .addParam('name', 'Name of the protocol vault combination')
@@ -121,10 +126,10 @@ task('controller_set_curve_3pool', 'Setter curve3Pool address')
 
 task('controller_add_underlying_scale', 'Set the scale for underlying stable coin')
   .addParam('stable', 'Address of stable coin')
-  .addParam('scale', 'Scale e.g decimals of stable', null, types.int)
-  .setAction(async ({ stable, scale }, hre) => {
+  .addParam('decimals', 'Scale e.g decimals of stable', null, types.int)
+  .setAction(async ({ stable, decimals }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).addUnderlyingUScale(stable, scale);
+    await controller.connect(dao).addUnderlyingUScale(stable, decimals);
   });
 
 task('controller_gas_price_oracle', 'Setter for the Chainlink Gas price oracle')

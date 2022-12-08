@@ -1,17 +1,14 @@
-import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Contract } from 'ethers';
-import { erc20, formatUSDC, parseUSDC, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { Controller, MainVaultMock } from '@typechain';
+import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
-import allProviders from '@testhelp/allProvidersClass';
 import AllMockProviders from '@testhelp/allMockProvidersClass';
-import { getAllSigners, getContract } from '@testhelp/deployHelpers';
 import { vaultDeploySettings } from 'deploySettings';
+import { setupVault } from './setup';
 
-describe('Testing Vault, unit test', async () => {
-  let IUSDc: Contract = erc20(usdc),
+describe.only('Testing Vault, unit test', async () => {
+  const IUSDc: Contract = erc20(usdc),
     vaultNumber: number = vaultDeploySettings.vaultNumber;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
@@ -20,35 +17,6 @@ describe('Testing Vault, unit test', async () => {
 
   const amount = 100_000;
   const amountUSDC = parseUSDC(amount.toString());
-
-  const setupVault = deployments.createFixture(async (hre) => {
-    await deployments.fixture([
-      'MainVaultMock',
-      'YearnProvider',
-      'CompoundProvider',
-      'AaveProvider',
-    ]);
-
-    const [dao, user, guardian] = await getAllSigners(hre);
-
-    const vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
-    const controller = (await getContract('Controller', hre)) as Controller;
-
-    await run('vault_init');
-    await run('controller_init');
-    await run('controller_add_vault', { vault: vault.address });
-    await run('controller_add_vault', { vault: guardian.address }); // using guardian as mock signer
-
-    await allProviders.setProviders(hre);
-    await AllMockProviders.deployAllMockProviders(dao);
-    await transferAndApproveUSDC(vault.address, user, 1_000_000 * 1e6);
-
-    for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);
-    }
-
-    return { vault, controller, dao, user, guardian };
-  });
 
   it('Should have a name and symbol', async function () {
     const { vault } = await setupVault();
@@ -145,7 +113,9 @@ describe('Testing Vault, unit test', async () => {
   });
 
   it('Should store prices on rebalance', async function () {
-    const { vault, user } = await setupVault();
+    const { vault, user, dao } = await setupVault();
+    await AllMockProviders.deployAllMockProviders(dao);
+
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
     await vault.setDeltaAllocationsReceivedTEST(true);
     let compoundPrice = 1;
