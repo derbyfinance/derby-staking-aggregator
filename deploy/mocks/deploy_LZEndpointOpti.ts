@@ -1,23 +1,23 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { derbyTokenSettings } from 'deploySettings';
+import { xProviderDeploySettings } from 'deploySettings';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ethers,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const { name, symbol, totalSupply } = derbyTokenSettings;
+  const { optimism } = xProviderDeploySettings;
 
-  await deploy('DerbyToken', {
+  await deploy('LZEndpointOpti', {
     from: deployer,
-    args: [name, symbol, ethers.utils.parseEther(totalSupply.toString())],
+    contract: 'LZEndpointMock',
+    args: [optimism],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['DerbyToken'];
+func.tags = ['LZEndpointOpti'];

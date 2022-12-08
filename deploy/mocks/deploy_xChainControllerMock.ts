@@ -11,7 +11,7 @@ const func: DeployFunction = async function ({
 
   const { homeChainId } = xChainControllerDeploySettings;
 
-  const game = await deployments.get('Game');
+  const game = await deployments.get('GameMock');
 
   await deploy('XChainControllerMock', {
     from: deployer,
@@ -22,4 +22,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = ['XChainControllerMock'];
-func.dependencies = ['Game'];
+func.dependencies = ['GameMock'];

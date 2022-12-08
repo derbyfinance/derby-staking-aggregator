@@ -8,7 +8,9 @@ describe.only('Testing game tasks', () => {
     await deployments.fixture(['GameMock']);
     const deployment = await deployments.get('GameMock');
     const game: GameMock = await ethers.getContractAt('GameMock', deployment.address);
-    await run('game_init');
+
+    const dummyProvider = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7';
+    await run('game_init', { provider: dummyProvider });
 
     return game;
   });

@@ -190,9 +190,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice function to see the total number of allocated tokens. Only the owner of the basket can view this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   /// @return int256 Number of derby tokens that are allocated towards protocols.
-  function basketTotalAllocatedTokens(
-    uint256 _basketId
-  ) public view onlyBasketOwner(_basketId) returns (int256) {
+  function basketTotalAllocatedTokens(uint256 _basketId) public view returns (int256) {
     return baskets[_basketId].nrOfAllocatedTokens;
   }
 

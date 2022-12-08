@@ -15,6 +15,7 @@ task('vault_init', 'Initializes the vault').setAction(async (args, { run, getNam
     run('vault_set_margin_scale', { scale: marginScale }),
     run('vault_set_liquidity_perc', { percentage: liquidityPercentage }),
     run('vault_set_performance_fee', { percentage: performanceFee }),
+    run('vault_set_swap_rewards', { state: true }),
   ]);
 });
 
