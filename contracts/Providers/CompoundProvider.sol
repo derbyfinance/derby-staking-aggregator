@@ -89,17 +89,15 @@ contract CompoundProvider is IProvider {
   /// @param _address Address to request balance from, most likely a Vault
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _cToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _cToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _cToken);
     // The returned exchange rate from comp is scaled by 1 * 10^(18 - 8 + Underlying Token Decimals).
     uint256 price = exchangeRate(_cToken);
     uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
-    return (balanceShares * price) / 10**(10 + decimals);
+    return (balanceShares * price) / 10 ** (10 + decimals);
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -109,7 +107,7 @@ contract CompoundProvider is IProvider {
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _cToken) external view override returns (uint256) {
     uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
-    uint256 shares = (_amount * (10**(10 + decimals))) / exchangeRate(_cToken);
+    uint256 shares = (_amount * (10 ** (10 + decimals))) / exchangeRate(_cToken);
     return shares;
   }
 

@@ -1,4 +1,11 @@
-import { Controller, LZEndpointMock, XProvider } from '@typechain';
+import {
+  AaveProvider,
+  CompoundProvider,
+  Controller,
+  LZEndpointMock,
+  XProvider,
+  YearnProvider,
+} from '@typechain';
 import { Contract, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -23,7 +30,25 @@ export async function getContract(
   return contract;
 }
 
-export async function getProviders(
+export async function getProviders(hre: HardhatRuntimeEnvironment): Promise<any> {
+  const { deployments, ethers, run } = hre;
+
+  const [yearn, compound, aave] = await Promise.all([
+    deployments.get('YearnProvider'),
+    deployments.get('CompoundProvider'),
+    deployments.get('AaveProvider'),
+  ]);
+
+  const [yearnProvider, compProvider, aaveProvider] = await Promise.all([
+    ethers.getContractAt('YearnProvider', yearn.address),
+    ethers.getContractAt('CompoundProvider', compound.address),
+    ethers.getContractAt('AaveProvider', aave.address),
+  ]);
+
+  return { yearnProvider, compProvider, aaveProvider };
+}
+
+export async function getXProviders(
   hre: HardhatRuntimeEnvironment,
   chains: {
     xController: number;

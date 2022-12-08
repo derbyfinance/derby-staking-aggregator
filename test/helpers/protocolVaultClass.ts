@@ -55,9 +55,9 @@ export class ProtocolVault {
     this.reward = reward;
   }
 
-  async setDeltaAllocation(vault: MainVaultMock, game: Signer, allocation: number): Promise<void> {
+  async setDeltaAllocation(vault: MainVaultMock, allocation: number): Promise<void> {
     this.allocation += allocation;
-    await vault.connect(game).setDeltaAllocations(this.number, allocation);
+    await vault.setDeltaAllocations(this.number, allocation);
   }
 
   async setDeltaAllocationsWithGame(
@@ -100,16 +100,23 @@ export class ProtocolVault {
     await vault.resetDeltaAllocations(this.number);
   }
 
-  async addProtocolToController(controller: Controller, ETFnumber: number, allProviders: any) {
-    const tx = await controller.addProtocol(
-      this.name,
-      ETFnumber,
-      allProviders.getProviderAddress(this.name),
-      this.protocolToken,
-      this.underlyingToken,
-      this.govToken,
-      (10 ** this.decimals).toString(),
-    );
+  async addProtocolToController(
+    controller: Controller,
+    dao: Signer,
+    vaultNumber: number,
+    allProviders: any,
+  ) {
+    const tx = await controller
+      .connect(dao)
+      .addProtocol(
+        this.name,
+        vaultNumber,
+        allProviders.getProviderAddress(this.name),
+        this.protocolToken,
+        this.underlyingToken,
+        this.govToken,
+        (10 ** this.decimals).toString(),
+      );
     const receipt = await tx.wait();
     const { protocolNumber } = receipt.events![0].args as Result;
 

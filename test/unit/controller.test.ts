@@ -14,7 +14,7 @@ import {
   yearnUSDC,
   aaveUSDC,
 } from '@testhelp/addresses';
-import { deployStarterProtocols } from '@testhelp/helpers';
+import { addStarterProtocols } from '@testhelp/helpers';
 import { getAllSigners, getController } from '@testhelp/deployHelpers';
 
 const vaultNumber = 4;
@@ -33,7 +33,7 @@ describe.only('Testing controller', async () => {
       deployAaveProviderMock(deployer),
     ]);
 
-    const [yearnNumber, compNumber, aaveNumber] = await deployStarterProtocols(
+    const [yearnNumber, compNumber, aaveNumber] = await addStarterProtocols(
       {
         yearn: yearnProviderMock.address,
         compound: compoundProviderMock.address,

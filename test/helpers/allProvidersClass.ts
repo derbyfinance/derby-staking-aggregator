@@ -1,51 +1,24 @@
 import { Signer } from 'ethers';
-import {
-  AaveProvider,
-  BetaProvider,
-  CompoundProvider,
-  Controller,
-  HomoraProvider,
-  IdleProvider,
-  TruefiProvider,
-  YearnProvider,
-} from '@typechain';
 import { comptroller } from './addresses';
-import {
-  deployAaveProvider,
-  deployBetaProvider,
-  deployCompoundProvider,
-  deployHomoraProvider,
-  deployIdleProvider,
-  deployTruefiProvider,
-  deployYearnProvider,
-} from './deploy';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { Deployment } from 'hardhat-deploy/types';
 
 class AllProviders {
-  yearnProvider!: YearnProvider;
-  compoundProvider!: CompoundProvider;
-  aaveProvider!: AaveProvider;
-  truefiProvider!: TruefiProvider;
-  homoraProvider!: HomoraProvider;
-  idleProvider!: IdleProvider;
-  betaProvider!: BetaProvider;
+  yearnProvider!: Deployment;
+  compoundProvider!: Deployment;
+  aaveProvider!: Deployment;
+  // truefiProvider!: TruefiProvider;
+  // homoraProvider!: HomoraProvider;
+  // idleProvider!: IdleProvider;
+  // betaProvider!: BetaProvider;
 
-  async deployAllProviders(dao: Signer, controller: Controller): Promise<void> {
-    [
-      this.yearnProvider,
-      this.compoundProvider,
-      this.aaveProvider,
-      this.truefiProvider,
-      this.homoraProvider,
-      this.idleProvider,
-      this.betaProvider,
-    ] = await Promise.all([
-      deployYearnProvider(dao),
-      deployCompoundProvider(dao, comptroller),
-      deployAaveProvider(dao),
-      deployTruefiProvider(dao),
-      deployHomoraProvider(dao),
-      deployIdleProvider(dao),
-      deployBetaProvider(dao),
+  async setProviders(hre: HardhatRuntimeEnvironment): Promise<any> {
+    const { deployments } = hre;
+
+    [this.yearnProvider, this.compoundProvider, this.aaveProvider] = await Promise.all([
+      deployments.get('YearnProvider'),
+      deployments.get('CompoundProvider'),
+      deployments.get('AaveProvider'),
     ]);
   }
 
@@ -53,10 +26,10 @@ class AllProviders {
     if (name.includes('yearn')) return this.yearnProvider.address;
     if (name.includes('compound')) return this.compoundProvider.address;
     if (name.includes('aave')) return this.aaveProvider.address;
-    if (name.includes('truefi')) return this.truefiProvider.address;
-    if (name.includes('homora')) return this.homoraProvider.address;
-    if (name.includes('beta')) return this.betaProvider.address;
-    if (name.includes('idle')) return this.idleProvider.address;
+    // if (name.includes('truefi')) return this.truefiProvider.address;
+    // if (name.includes('homora')) return this.homoraProvider.address;
+    // if (name.includes('beta')) return this.betaProvider.address;
+    // if (name.includes('idle')) return this.idleProvider.address;
     else return 'none';
   }
 }
