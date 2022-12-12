@@ -14,7 +14,6 @@ task('vault_init', 'Initializes the vault').setAction(async (args, { run, getNam
   } = vaultInitSettings;
 
   await run('vault_set_guardian', { guardian: guardian });
-  console.log('setting vault init', guardian);
 
   await Promise.all([
     run('vault_set_gas_fee_liq', { liquidity: gasFeeLiq }),

@@ -35,8 +35,6 @@ const func: DeployFunction = async function ({
     log: true,
     autoMine: true,
   });
-
-  await run('vault_init');
 };
 export default func;
 func.tags = ['MainVaultMock'];

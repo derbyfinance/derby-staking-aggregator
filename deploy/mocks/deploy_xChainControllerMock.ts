@@ -20,8 +20,6 @@ const func: DeployFunction = async function ({
     log: true,
     autoMine: true,
   });
-
-  await run('xcontroller_init');
 };
 export default func;
 func.tags = ['XChainControllerMock'];

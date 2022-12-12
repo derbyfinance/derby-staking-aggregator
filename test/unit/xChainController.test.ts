@@ -302,7 +302,6 @@ describe('Testing XChainController, unit test', async () => {
         vault3.address,
       ]),
 
-      allProviders.deployAllProviders(dao, controller),
       IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(5)),
       IUSDc.connect(user).approve(vault1.address, amountUSDC),
       IUSDc.connect(user).approve(vault2.address, amountUSDC.mul(2)),
@@ -313,10 +312,10 @@ describe('Testing XChainController, unit test', async () => {
       vault2.setHomeXProvider(xProviderArbitrum.address),
       vault3.setHomeXProvider(xProviderOptimism.address),
       vault4.setHomeXProvider(xProviderBnbChain.address),
-      vault1.setChainIds(goerli),
-      vault2.setChainIds(arbitrumGoerli),
-      vault3.setChainIds(optimismGoerli),
-      vault4.setChainIds(bnbChain),
+      vault1.setHomeChain(goerli),
+      vault2.setHomeChain(arbitrumGoerli),
+      vault3.setHomeChain(optimismGoerli),
+      vault4.setHomeChain(bnbChain),
     ]);
 
     await Promise.all([
