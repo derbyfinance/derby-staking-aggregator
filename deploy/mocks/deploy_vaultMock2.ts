@@ -16,8 +16,9 @@ const func: DeployFunction = async function ({
   const game = await deployments.get('GameMock');
   const controller = await deployments.get('Controller');
 
-  await deploy('MainVaultMock', {
+  await deploy('Vault2', {
     from: deployer,
+    contract: 'MainVaultMock',
     args: [
       name,
       symbol,
@@ -39,5 +40,5 @@ const func: DeployFunction = async function ({
   await run('vault_init');
 };
 export default func;
-func.tags = ['MainVaultMock'];
+func.tags = ['Vault2'];
 func.dependencies = ['Swap', 'Controller', 'GameMock'];
