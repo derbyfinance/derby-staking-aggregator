@@ -36,6 +36,7 @@ export const vaultInitSettings = {
   marginScale: 1_000 * 1e6,
   liquidityPercentage: 10,
   performanceFee: 10,
+  chainIds: [10, 100, 1000],
 };
 
 export const gameDeploySettings = {

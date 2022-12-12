@@ -9,17 +9,18 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  const { layerZeroEndpoint, connextHandler, optimism } = xProviderDeploySettings;
+  const { layerZeroEndpoint, optimism } = xProviderDeploySettings;
 
   const game = await deployments.get('GameMock');
   const xChainController = await deployments.get('XChainControllerMock');
+  const connextHandler = await deployments.get('ConnextHandlerMock');
 
   await deploy('XProviderOpti', {
     from: deployer,
     contract: 'XProvider',
     args: [
       layerZeroEndpoint,
-      connextHandler,
+      connextHandler.address,
       dao,
       game.address,
       xChainController.address,
@@ -31,4 +32,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = ['XProviderOpti'];
-func.dependencies = ['GameMock', 'XChainControllerMock', 'LZEndpointOpti'];
+func.dependencies = ['GameMock', 'XChainControllerMock', 'LZEndpointOpti', 'ConnextHandlerMock'];

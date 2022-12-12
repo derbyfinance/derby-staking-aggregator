@@ -1,8 +1,22 @@
-import { ethers } from 'hardhat';
+import { deployments, ethers, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract } from 'ethers';
-import { erc20, getUSDCSigner, parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
-import type { Controller, DerbyToken, GameMock, MainVaultMock, XProvider } from '@typechain';
+import {
+  erc20,
+  getUSDCSigner,
+  parseEther,
+  parseUnits,
+  parseUSDC,
+  transferAndApproveUSDC,
+} from '@testhelp/helpers';
+import type {
+  Controller,
+  DerbyToken,
+  GameMock,
+  MainVaultMock,
+  XChainControllerMock,
+  XProvider,
+} from '@typechain';
 import {
   deployController,
   deployDerbyToken,
@@ -27,6 +41,16 @@ import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/allMockProvidersClass';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 import { ProtocolVault } from '@testhelp/protocolVaultClass';
+import {
+  getAllSigners,
+  getContract,
+  getXProviders,
+  InitEndpoints,
+  InitProviders,
+} from '@testhelp/deployHelpers';
+import allProviders from '@testhelp/allProvidersClass';
+import { allProtocols } from '@testhelp/addresses';
+import { vaultDeploySettings } from 'deploySettings';
 
 const amount = 1_000_000;
 const homeChain = 10;
@@ -63,72 +87,133 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   const compoundDAIVault = protocols.get('compound_dai_01')!;
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
-  before(async function () {
-    [dao, user] = await ethers.getSigners();
-
-    [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
-      getUSDCSigner(),
-      erc20(usdc),
-      dao.getAddress(),
-      user.getAddress(),
+  const setupContracts = deployments.createFixture(async (hre) => {
+    await deployments.fixture([
+      'XChainControllerMock',
+      'MainVaultMock',
+      'XProviderMain',
+      'XProviderArbi',
+      'XProviderOpti',
     ]);
 
-    controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(
-      dao,
-      name,
-      symbol,
-      decimals,
-      vaultNumber,
-      daoAddr,
-      daoAddr,
-      userAddr,
-      controller.address,
-      usdc,
-      uScale,
-      gasFeeLiquidity,
-    );
-    DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(
-      user,
-      nftName,
-      nftSymbol,
-      DerbyToken.address,
-      daoAddr,
-      daoAddr,
-      controller.address,
-    );
-    xProvider = await deployXProvider(
-      dao,
-      controller.address,
-      controller.address,
-      daoAddr,
-      game.address,
-      controller.address,
-      homeChain,
-    );
+    const [dao, user, guardian] = await getAllSigners(hre);
 
-    await Promise.all([
-      initController(controller, [userAddr, vault.address]),
-      AllMockProviders.deployAllMockProviders(dao),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
-      IUSDc.connect(user).approve(vault.address, amountUSDC.mul(10)),
-    ]);
+    const game = (await getContract('GameMock', hre)) as GameMock;
+    const controller = (await getContract('Controller', hre)) as Controller;
+    const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
+    const xChainController = (await getContract(
+      'XChainControllerMock',
+      hre,
+    )) as XChainControllerMock;
+    const vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
 
-    await Promise.all([
-      vault.setHomeXProvider(xProvider.address),
-      vault.setChainIds(homeChain),
-      xProvider.setGameChainId(homeChain),
-      xProvider.toggleVaultWhitelist(vault.address),
-      game.connect(dao).setXProvider(xProvider.address),
-    ]);
+    // await allProviders.setProviders(hre);
+    await AllMockProviders.deployAllMockProviders(dao);
+    await transferAndApproveUSDC(vault.address, user, 10_000_000 * 1e6);
 
+    const [xProviderMain, xProviderArbi] = await getXProviders(hre, { xController: 100, game: 10 });
+    await InitProviders(dao, [xProviderMain, xProviderArbi]);
+    await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
+
+    await xProviderMain.connect(dao).toggleVaultWhitelist(vault.address);
+
+    const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
+
+    await run('game_init', { provider: xProviderMain.address });
+    await run('vault_init');
+    await run('controller_init');
+    await run('xcontroller_init');
+
+    await run('game_set_home_vault', { vault: vault.address });
+    await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
+
+    await run('controller_add_vault', { vault: vault.address });
+    await run('vault_set_homexprovider', { address: xProviderMain.address });
+
+    // add all protocol vaults to controller
     for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
+      await protocol.addProtocolToController(
+        controller,
+        dao,
+        vaultDeploySettings.vaultNumber,
+        AllMockProviders,
+      );
     }
+
+    return { vault, controller, game, dao, user, guardian };
   });
 
-  it('Should store historical prices and rewards, rebalance: 1', async function () {
+  before(async function () {
+    const setup = await setupContracts();
+    vault = setup.vault;
+    controller = setup.controller;
+    user = setup.user;
+    game = setup.game;
+    // [dao, user] = await ethers.getSigners();
+
+    // [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
+    //   getUSDCSigner(),
+    //   erc20(usdc),
+    //   dao.getAddress(),
+    //   user.getAddress(),
+    // ]);
+
+    // controller = await deployController(dao, daoAddr);
+    // vault = await deployMainVaultMock(
+    //   dao,
+    //   name,
+    //   symbol,
+    //   decimals,
+    //   vaultNumber,
+    //   daoAddr,
+    //   daoAddr,
+    //   userAddr,
+    //   controller.address,
+    //   usdc,
+    //   uScale,
+    //   gasFeeLiquidity,
+    // );
+    // DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
+    // game = await deployGameMock(
+    //   user,
+    //   nftName,
+    //   nftSymbol,
+    //   DerbyToken.address,
+    //   daoAddr,
+    //   daoAddr,
+    //   controller.address,
+    // );
+    // xProvider = await deployXProvider(
+    //   dao,
+    //   controller.address,
+    //   controller.address,
+    //   daoAddr,
+    //   game.address,
+    //   controller.address,
+    //   homeChain,
+    // );
+
+    // await Promise.all([
+    //   initController(controller, [userAddr, vault.address]),
+    //   AllMockProviders.deployAllMockProviders(dao),
+    //   IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
+    //   IUSDc.connect(user).approve(vault.address, amountUSDC.mul(10)),
+    // ]);
+
+    // await Promise.all([
+    //   vault.setHomeXProvider(xProvider.address),
+    //   vault.setChainIds(homeChain),
+    //   xProvider.setGameChainId(homeChain),
+    //   xProvider.toggleVaultWhitelist(vault.address),
+    //   game.connect(dao).setXProvider(xProvider.address),
+    // ]);
+
+    // for (const protocol of protocols.values()) {
+    //   await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
+    // }
+  });
+
+  it.only('Should store historical prices and rewards, rebalance: 1', async function () {
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
 
     await vault.setTotalAllocatedTokensTest(parseEther('10000')); // 10k
@@ -148,9 +233,14 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
       aaveProvider.mock.exchangeRate.withArgs(aaveUSDT).returns(aaveUSDTVault.price),
     ]);
 
+    console.log('mocked exchange rates');
+
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
+
+    console.log('before rebalance');
     await rebalanceETF(vault);
+    console.log('after rebalance');
 
     await game.upRebalancingPeriod(vaultNumber);
     await vault.sendRewardsToGame();
