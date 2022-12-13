@@ -222,8 +222,8 @@ contract Controller is IController {
     curve3Pool = _pool;
   }
 
-  function addUnderlyingUScale(address _stable, uint256 _uScale) external onlyDao {
-    underlyingUScale[_stable] = _uScale;
+  function addUnderlyingUScale(address _stable, uint256 _decimals) external onlyDao {
+    underlyingUScale[_stable] = 10 ** _decimals;
   }
 
   /// @notice Setter for the Chainlink Gas price oracle contract address in case it changes

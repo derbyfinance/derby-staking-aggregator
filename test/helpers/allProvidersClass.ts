@@ -1,35 +1,20 @@
 import { Signer } from 'ethers';
-import {
-  AaveProvider,
-  BetaProvider,
-  CompoundProvider,
-  Controller,
-  HomoraProvider,
-  IdleProvider,
-  TruefiProvider,
-  YearnProvider,
-} from '@typechain';
 import { comptroller } from './addresses';
-import {
-  deployAaveProvider,
-  deployBetaProvider,
-  deployCompoundProvider,
-  deployHomoraProvider,
-  deployIdleProvider,
-  deployTruefiProvider,
-  deployYearnProvider,
-} from './deploy';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { Deployment } from 'hardhat-deploy/types';
 
 class AllProviders {
-  yearnProvider!: YearnProvider;
-  compoundProvider!: CompoundProvider;
-  aaveProvider!: AaveProvider;
-  truefiProvider!: TruefiProvider;
-  homoraProvider!: HomoraProvider;
-  idleProvider!: IdleProvider;
-  betaProvider!: BetaProvider;
+  yearnProvider!: Deployment;
+  compoundProvider!: Deployment;
+  aaveProvider!: Deployment;
+  truefiProvider!: Deployment;
+  homoraProvider!: Deployment;
+  idleProvider!: Deployment;
+  betaProvider!: Deployment;
 
-  async deployAllProviders(dao: Signer, controller: Controller): Promise<void> {
+  async setProviders(hre: HardhatRuntimeEnvironment): Promise<any> {
+    const { deployments } = hre;
+
     [
       this.yearnProvider,
       this.compoundProvider,
@@ -39,13 +24,13 @@ class AllProviders {
       this.idleProvider,
       this.betaProvider,
     ] = await Promise.all([
-      deployYearnProvider(dao),
-      deployCompoundProvider(dao, comptroller),
-      deployAaveProvider(dao),
-      deployTruefiProvider(dao),
-      deployHomoraProvider(dao),
-      deployIdleProvider(dao),
-      deployBetaProvider(dao),
+      deployments.get('YearnProvider'),
+      deployments.get('CompoundProvider'),
+      deployments.get('AaveProvider'),
+      deployments.get('TruefiProvider'),
+      deployments.get('HomoraProvider'),
+      deployments.get('IdleProvider'),
+      deployments.get('BetaProvider'),
     ]);
   }
 

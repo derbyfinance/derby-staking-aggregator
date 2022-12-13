@@ -23,7 +23,7 @@ export async function getContract(
   return contract;
 }
 
-export async function getProviders(
+export async function getXProviders(
   hre: HardhatRuntimeEnvironment,
   chains: {
     xController: number;

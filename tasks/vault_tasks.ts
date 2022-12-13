@@ -123,7 +123,7 @@ task('vault_set_rebalance_interval', 'Set minimum interval for the rebalance fun
     const guardian = await getGuardian(hre);
     await vault.connect(guardian).setRebalanceInterval(timestamp);
   });
-// not tested yet
+
 task('vault_blacklist_protocol', 'Blacklist a protolNumber')
   .addParam('protocol', 'Protocol number', null, types.int)
   .setAction(async ({ protocol }, hre) => {

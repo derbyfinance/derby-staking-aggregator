@@ -12,7 +12,7 @@ import {
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import {
-  getProviders,
+  getXProviders,
   getAllSigners,
   getContract,
   InitProviders,
@@ -52,7 +52,7 @@ describe.only('Testing Game', async () => {
     [dao, user] = await getAllSigners(hre);
     userAddr = await user.getAddress();
 
-    const [xProviderMain, xProviderArbi] = await getProviders(hre, { xController: 100, game: 10 });
+    const [xProviderMain, xProviderArbi] = await getXProviders(hre, { xController: 100, game: 10 });
     await InitProviders(dao, [xProviderMain, xProviderArbi]);
     await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
 

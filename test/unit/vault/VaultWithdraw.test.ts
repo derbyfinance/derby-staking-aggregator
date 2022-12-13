@@ -1,72 +1,19 @@
-import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Signer, Contract } from 'ethers';
-
-import type { Controller, MainVaultMock } from '@typechain';
-import { erc20, formatEther, getUSDCSigner, parseEther, parseUSDC } from '@testhelp/helpers';
-import { deployController, deployMainVaultMock } from '@testhelp/deploy';
+import { Contract } from 'ethers';
+import { erc20, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
-import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
-import allProviders from '@testhelp/allProvidersClass';
-import { vaultInfo } from '@testhelp/vaultHelpers';
+import { rebalanceETF } from '@testhelp/vaultHelpers';
+import { setupVault } from './setup';
 
-const amount = 100_000;
-const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
-
-describe('Testing VaultWithdraw, unit test', async () => {
-  let vault: MainVaultMock,
-    controller: Controller,
-    dao: Signer,
-    user: Signer,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    daoAddr: string,
-    userAddr: string;
+describe.only('Testing VaultWithdraw, unit test', async () => {
+  const IUSDc: Contract = erc20(usdc);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
-  beforeEach(async function () {
-    [dao, user] = await ethers.getSigners();
-
-    [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
-      getUSDCSigner(),
-      erc20(usdc),
-      dao.getAddress(),
-      user.getAddress(),
-    ]);
-
-    controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(
-      dao,
-      name,
-      symbol,
-      decimals,
-      vaultNumber,
-      daoAddr,
-      daoAddr,
-      userAddr,
-      controller.address,
-      usdc,
-      uScale,
-      gasFeeLiquidity,
-    );
-
-    await Promise.all([
-      initController(controller, [userAddr, vault.address]),
-      allProviders.deployAllProviders(dao, controller),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC),
-      IUSDc.connect(user).approve(vault.address, amountUSDC),
-    ]);
-
-    for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, allProviders);
-    }
-  });
-
   it('Should not be able to withdraw when vault is off', async function () {
+    const { vault, user } = await setupVault();
     await vault.toggleVaultOnOffTEST(true);
 
     await expect(vault.connect(user).withdraw(1 * 1e6)).to.be.revertedWith('Vault is off');
@@ -74,8 +21,9 @@ describe('Testing VaultWithdraw, unit test', async () => {
   });
 
   it('Should be able to withdraw LP tokens from vault balance', async function () {
+    const { vault, user } = await setupVault();
     // 100k USDC to vault
-    await IUSDc.connect(USDCSigner).transfer(vault.address, 100_000 * 1e6);
+    await IUSDc.connect(user).transfer(vault.address, 100_000 * 1e6);
     // deposit 10k USDC
     await vault.connect(user).deposit(50_000 * 1e6);
 
@@ -107,12 +55,13 @@ describe('Testing VaultWithdraw, unit test', async () => {
   });
 
   it('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
+    const { vault, user } = await setupVault();
     await vault.connect(user).deposit(100_000 * 1e6);
 
     await Promise.all([
-      compoundVault.setDeltaAllocation(vault, dao, 40 * 1e6),
-      aaveVault.setDeltaAllocation(vault, dao, 60 * 1e6),
-      yearnVault.setDeltaAllocation(vault, dao, 20 * 1e6),
+      compoundVault.setDeltaAllocation(vault, 40 * 1e6),
+      aaveVault.setDeltaAllocation(vault, 60 * 1e6),
+      yearnVault.setDeltaAllocation(vault, 20 * 1e6),
     ]);
 
     // mocking vault in correct state and exchangerate to 1.05
@@ -124,10 +73,11 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await rebalanceETF(vault);
     await vault.setVaultState(0);
 
-    await expect(vault.connect(user).withdraw(20_000 * 1e6)).to.be.revertedWith('Not enough funds');
+    await expect(vault.connect(user).withdraw(20_000 * 1e6)).to.be.revertedWith('!funds');
   });
 
   it('Should set withdrawal request and withdraw the allowance later', async function () {
+    const { vault, user } = await setupVault();
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
 
@@ -163,6 +113,6 @@ describe('Testing VaultWithdraw, unit test', async () => {
     );
 
     // trying to withdraw allowance again
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('No allowance');
+    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!allowance');
   });
 });
