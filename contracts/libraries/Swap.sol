@@ -100,10 +100,10 @@ library Swap {
   /// @param _swap Number of tokens to sell, token to sell, token to receive
   /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee
   /// @return Amountout Number of tokens received
-  function swapTokensSingle(SwapInOut memory _swap, IController.UniswapParams memory _uniswap)
-    public
-    returns (uint256)
-  {
+  function swapTokensSingle(
+    SwapInOut memory _swap,
+    IController.UniswapParams memory _uniswap
+  ) public returns (uint256) {
     IERC20(_swap.tokenIn).safeIncreaseAllowance(_uniswap.router, _swap.amount);
 
     uint256 amountOutMinimum = amountOutSingleSwap(
@@ -167,7 +167,7 @@ library Swap {
   /// @notice Will unwrap WETH and send to DAO / governed address
   /// @param _governed DAO / governed address
   /// @param _amount amount to unwrap and transfer
-  function unWrapWETHtoGov(address payable _governed, uint256 _amount) internal {
+  function unWrapWETHtoGov(address payable _governed, uint256 _amount) public {
     IWETH9(WETH).withdraw(_amount);
     (bool sent, ) = _governed.call{value: _amount}("");
     require(sent, "Ether not sent");

@@ -30,7 +30,7 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   return { IUSDC };
 }
 
-export async function deployStarterProtocols(
+export async function addStarterProtocols(
   { yearn, compound, aave }: IStarterProviders,
   vaultNumber: number,
 ) {

@@ -78,11 +78,11 @@ describe.only('Testing controller tasks', () => {
   });
 
   it('controller_add_underlying_scale', async function () {
-    const uScale = 2e8;
+    const decimals = 8;
     const controller = await setupController();
 
-    await run('controller_add_underlying_scale', { stable: usdc, scale: uScale });
-    expect(await controller.underlyingUScale(usdc)).to.be.equal(uScale);
+    await run('controller_add_underlying_scale', { stable: usdc, decimals: decimals });
+    expect(await controller.underlyingUScale(usdc)).to.be.equal(10 ** decimals);
   });
 
   it('controller_gas_price_oracle', async function () {

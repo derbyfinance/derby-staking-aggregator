@@ -1,88 +1,35 @@
-import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
-import type { Controller, MainVaultMock } from '@typechain';
-import { deployController, deployMainVaultMock } from '@testhelp/deploy';
-import { allProtocols, usdc, dai, usdt } from '@testhelp/addresses';
-import { rebalanceETF, vaultInfo } from '@testhelp/vaultHelpers';
+import { Contract } from 'ethers';
+import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
+import { allProtocols, usdc } from '@testhelp/addresses';
+import { rebalanceETF } from '@testhelp/vaultHelpers';
 import { formatUnits } from 'ethers/lib/utils';
-import allProviders from '@testhelp/allProvidersClass';
+import { setupVault } from './setup';
 
 // const amount = 5_000_000;0
 const amount = Math.floor(Math.random() * 1_000_000) + 1_000_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
-describe('Testing balanceUnderlying for every single protocol vault', async () => {
-  let vault: MainVaultMock,
-    controller: Controller,
-    dao: Signer,
-    game: Signer,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    daoAddr: string,
-    gameAddr: string,
-    protocols: any;
-
-  beforeEach(async function () {
-    [dao, game] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    gameAddr = await game.getAddress();
-
-    [USDCSigner, IUSDc, controller] = await Promise.all([
-      getUSDCSigner(),
-      erc20(usdc),
-      deployController(dao, daoAddr),
-    ]);
-
-    vault = await deployMainVaultMock(
-      dao,
-      name,
-      symbol,
-      decimals,
-      vaultNumber,
-      daoAddr,
-      daoAddr,
-      gameAddr,
-      controller.address,
-      usdc,
-      uScale,
-      gasFeeLiquidity,
-    );
-
-    await Promise.all([
-      allProviders.deployAllProviders(dao, controller),
-      controller.addVault(gameAddr),
-      controller.addVault(vault.address),
-      controller.addCurveIndex(dai, 0),
-      controller.addCurveIndex(usdc, 1),
-      controller.addCurveIndex(usdt, 2),
-      IUSDc.connect(USDCSigner).transfer(gameAddr, amountUSDC),
-      IUSDc.connect(game).approve(vault.address, amountUSDC),
-    ]);
-
-    // add all protocols to controller
-    for (const protocol of allProtocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, allProviders);
-      await protocol.resetAllocation(vault);
-    }
-  });
+describe.only('Testing balanceUnderlying for every single protocol vault', async () => {
+  const IUSDc: Contract = erc20(usdc);
 
   it('Should calc balanceUnderlying for all known protocols correctly', async function () {
+    const { vault, user } = await setupVault();
+    const liquidityPerc = 10;
+
     // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
-      await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
+      await protocol.setDeltaAllocation(vault, getRandomAllocation());
     }
 
-    await vault.connect(game).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     const gasUsed = await rebalanceETF(vault);
     const gasUsedUSDC = Number(formatUSDC(gasUsed));
-    console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
+    // console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     const liquidityVault = (amount * liquidityPerc) / 100; // 10% liq vault
@@ -94,10 +41,10 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       const expectedBalance =
         (amount - liquidityVault) * (protocol.allocation / totalAllocatedTokens);
 
-      console.log(`---------------------------`);
-      console.log(protocol.name);
-      console.log({ balanceUnderlying });
-      console.log({ expectedBalance });
+      // console.log(`---------------------------`);
+      // console.log(protocol.name);
+      // console.log({ balanceUnderlying });
+      // console.log({ expectedBalance });
 
       // 1000 margin cause of trading stables
       expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 1000);
@@ -113,16 +60,17 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
   });
 
   it('Should calc Shares for all known protocols correctly', async function () {
+    const { vault, user } = await setupVault();
     // set random allocations for all protocols
     for (const protocol of allProtocols.values()) {
-      await protocol.setDeltaAllocation(vault, game, getRandomAllocation());
+      await protocol.setDeltaAllocation(vault, getRandomAllocation());
     }
 
-    await vault.connect(game).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     const gasUsed = await rebalanceETF(vault);
-    console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
+    // console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
 
     // Get balance of LP shares for each protocol vault
     // Compare it with calcShares with the balanceUnderlying, should match up if calculation is correct.
@@ -138,11 +86,11 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
         protocol.decimals,
       );
 
-      console.log(`---------------------------`);
-      console.log(protocol.name);
-      console.log({ balUnderlying });
-      console.log({ calculateShares });
-      console.log({ balanceShares });
+      // console.log(`---------------------------`);
+      // console.log(protocol.name);
+      // console.log({ balUnderlying });
+      // console.log({ calculateShares });
+      // console.log({ balanceShares });
 
       expect(Number(calculateShares)).to.be.closeTo(Number(balanceShares), 100);
     }
