@@ -1,75 +1,37 @@
-import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import {
-  erc20,
-  formatEther,
-  parseEther,
-  parseUSDC,
-  random,
-  transferAndApproveUSDC,
-} from '@testhelp/helpers';
+import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import {
-  getXProviders,
-  getAllSigners,
-  getContract,
-  InitProviders,
-  InitEndpoints,
-} from '@testhelp/deployHelpers';
 import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
+import { setupGame } from './setup';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
 describe.only('Testing Game', async () => {
   let vault: MainVaultMock,
+    derbyToken: DerbyToken,
     dao: Signer,
     user: Signer,
     userAddr: string,
     IUSDc: Contract = erc20(usdc),
-    derbyToken: DerbyToken,
     game: GameMock,
     basketId: BigNumberish,
-    vaultNumber: BigNumberish = random(100),
+    vaultNumber: BigNumberish,
     chainIds: BigNumberish[] = gameInitSettings.chainids,
     xChainController: XChainControllerMock;
 
-  const setupGame = deployments.createFixture(async (hre) => {
-    await deployments.fixture([
-      'XChainControllerMock',
-      'MainVaultMock',
-      'XProviderMain',
-      'XProviderArbi',
-      'XProviderOpti',
-    ]);
-
-    game = (await getContract('GameMock', hre)) as GameMock;
-    derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-    xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
-    vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
-
-    [dao, user] = await getAllSigners(hre);
-    userAddr = await user.getAddress();
-
-    const [xProviderMain, xProviderArbi] = await getXProviders(hre, { xController: 100, game: 10 });
-    await InitProviders(dao, [xProviderMain, xProviderArbi]);
-    await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
-
-    basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
-    await run('game_init', { provider: xProviderMain.address });
-    await run('game_set_home_vault', { vault: vault.address });
-    await run('xcontroller_init');
-    await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
-    await run('vault_init');
-    await run('controller_init');
-
-    await derbyToken.transfer(userAddr, parseEther('2100'));
-    await transferAndApproveUSDC(vault.address, user, 100_000 * 1e6);
-  });
-
   before(async function () {
-    await setupGame();
+    const setup = await setupGame();
+    game = setup.game;
+    vault = setup.vault;
+    derbyToken = setup.derbyToken;
+    dao = setup.dao;
+    user = setup.user;
+    userAddr = setup.userAddr;
+    vaultNumber = setup.vaultNumber;
+    basketId = setup.basketId;
+    xChainController = setup.xChainController;
   });
 
   it('DerbyToken should have name, symbol and totalSupply set', async function () {
