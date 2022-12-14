@@ -109,27 +109,27 @@ describe('Testing XChainController, unit test', async () => {
     await run('game_set_home_vault', { vault: vault1.address });
     await run('controller_add_vault', { vault: vault1.address });
 
-    await InitVault(hre, vault1, guardian, dao, {
+    await InitVault(vault1, guardian, dao, {
       homeXProvider: xProviderMain.address,
       homeChain: 10,
     });
-    await InitVault(hre, vault2, guardian, dao, {
+    await InitVault(vault2, guardian, dao, {
       homeXProvider: xProviderArbi.address,
       homeChain: 100,
     });
 
-    await InitXController(xChainController, guardian, dao, {
+    await InitXController(hre, xChainController, guardian, dao, {
       vaultNumber,
       chainIds,
       homeXProvider: xProviderArbi.address,
-      chainVault: vault1.address,
+      // chainVault: vault1.address,
     });
 
-    await InitXController(xChainControllerDUMMY, guardian, dao, {
+    await InitXController(hre, xChainControllerDUMMY, guardian, dao, {
       vaultNumber,
       chainIds,
       homeXProvider: xProviderArbi.address,
-      chainVault: vault1.address,
+      // chainVault: vault1.address,
     });
 
     await Promise.all([

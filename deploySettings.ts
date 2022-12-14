@@ -1,5 +1,3 @@
-import { IDeployVault } from '@testhelp/deployInterfaces';
-
 export const derbyTokenSettings = {
   name: 'Derby Finance',
   symbol: 'DRB',
@@ -21,7 +19,7 @@ export const controllerInit = {
   chainlinkGasPriceOracle: '0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C',
 };
 
-export const vaultDeploySettings: IDeployVault = {
+export const vaultDeploySettings = {
   name: 'DerbyUSDC',
   symbol: 'dfUSDC',
   decimals: 6,
