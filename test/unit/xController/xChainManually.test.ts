@@ -58,6 +58,7 @@ describe('Testing XChainController, unit test', async () => {
       'XProviderMain',
       'XProviderArbi',
       'XProviderOpti',
+      'XProviderBnb',
     ]);
 
     const [dao, user, guardian] = await getAllSigners(hre);

@@ -2,13 +2,7 @@ import { deployments, run } from 'hardhat';
 import { parseEther, random, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 
-import {
-  getProviders,
-  getAllSigners,
-  getContract,
-  InitProviders,
-  InitEndpoints,
-} from '@testhelp/deployHelpers';
+import { getAllSigners, getContract, InitEndpoints, getXProviders } from '@testhelp/deployHelpers';
 
 export const setupGame = deployments.createFixture(async (hre) => {
   await deployments.fixture([
@@ -17,6 +11,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
     'XProviderMain',
     'XProviderArbi',
     'XProviderOpti',
+    'XProviderBnb',
   ]);
 
   const game = (await getContract('GameMock', hre)) as GameMock;
@@ -28,9 +23,15 @@ export const setupGame = deployments.createFixture(async (hre) => {
   const userAddr = await user.getAddress();
   const vaultNumber = random(100);
 
-  const [xProviderMain, xProviderArbi] = await getProviders(hre, { xController: 100, game: 10 });
-  await InitProviders(dao, [xProviderMain, xProviderArbi]);
-  await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getXProviders(
+    hre,
+    dao,
+    {
+      xController: 100,
+      game: 10,
+    },
+  );
+  await InitEndpoints(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
 
   const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
   await run('game_init', { provider: xProviderMain.address });
