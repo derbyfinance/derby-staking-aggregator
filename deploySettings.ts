@@ -65,4 +65,5 @@ export const xProviderDeploySettings = {
   mainnet: 10, // dummy
   arbitrum: 100, // dummy
   optimism: 1000, // dummy
+  bnb: 10_000, // dummy
 };

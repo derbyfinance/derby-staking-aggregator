@@ -1,5 +1,12 @@
-import { Controller, LZEndpointMock, MainVaultMock, XChainController, XProvider } from '@typechain';
-import { vaultInitSettings } from 'deploySettings';
+import {
+  Controller,
+  GameMock,
+  LZEndpointMock,
+  MainVaultMock,
+  XChainController,
+  XProvider,
+} from '@typechain';
+import { gameDeploySettings, gameInitSettings, vaultInitSettings } from 'deploySettings';
 import { BigNumberish, Contract, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
@@ -25,6 +32,26 @@ export async function getContract(
   return contract;
 }
 
+export async function getTestVaults(hre: HardhatRuntimeEnvironment): Promise<MainVaultMock[]> {
+  const { deployments, ethers } = hre;
+
+  const [vault1, vault2, vault3, vault4] = await Promise.all([
+    deployments.get('TestVault1'),
+    deployments.get('TestVault2'),
+    deployments.get('TestVault3'),
+    deployments.get('TestVault4'),
+  ]);
+
+  const vaults = await Promise.all([
+    ethers.getContractAt('MainVaultMock', vault1.address),
+    ethers.getContractAt('MainVaultMock', vault2.address),
+    ethers.getContractAt('MainVaultMock', vault3.address),
+    ethers.getContractAt('MainVaultMock', vault4.address),
+  ]);
+
+  return vaults;
+}
+
 export async function getXProviders(
   hre: HardhatRuntimeEnvironment,
   dao: Signer,
@@ -35,16 +62,18 @@ export async function getXProviders(
 ): Promise<XProvider[]> {
   const { deployments, ethers, run } = hre;
 
-  const [main, arbitrum, optimism] = await Promise.all([
+  const [main, arbitrum, optimism, bnb] = await Promise.all([
     deployments.get('XProviderMain'),
     deployments.get('XProviderArbi'),
     deployments.get('XProviderOpti'),
+    deployments.get('XProviderBnb'),
   ]);
 
   const xProviders = await Promise.all([
     ethers.getContractAt('XProvider', main.address),
     ethers.getContractAt('XProvider', arbitrum.address),
     ethers.getContractAt('XProvider', optimism.address),
+    ethers.getContractAt('XProvider', bnb.address),
   ]);
 
   for (const xProvider of xProviders) {
@@ -55,8 +84,10 @@ export async function getXProviders(
       xProvider.connect(dao).setTrustedRemote(10, main.address),
       xProvider.connect(dao).setTrustedRemote(100, arbitrum.address),
       xProvider.connect(dao).setTrustedRemote(1000, optimism.address),
+      xProvider.connect(dao).setTrustedRemote(10000, bnb.address),
       xProvider.connect(dao).setConnextChainId(10, testConnextChainIds.goerli),
       xProvider.connect(dao).setConnextChainId(100, testConnextChainIds.mumbai),
+      xProvider.connect(dao).setConnextChainId(1000, testConnextChainIds.optimismGoerli),
     ]);
   }
 
@@ -102,46 +133,95 @@ export async function InitVault(
   await vault.connect(dao).setGuardian(guardianAddr);
 
   await Promise.all([
-    run('vault_set_gas_fee_liq', { liquidity: gasFeeLiq }),
-    run('vault_set_rebalance_interval', { timestamp: rebalanceInterval }),
-    run('vault_set_margin_scale', { scale: marginScale }),
-    run('vault_set_liquidity_perc', { percentage: liquidityPercentage }),
-    run('vault_set_performance_fee', { percentage: performanceFee }),
-    run('vault_set_swap_rewards', { state: true }),
-  ]);
-
-  await Promise.all([
     vault.connect(dao).setHomeXProvider(homeXProvider),
+    vault.connect(dao).setPerformanceFee(performanceFee),
+    vault.connect(dao).setSwapRewards(true),
     vault.connect(guardian).setHomeChain(homeChain),
+    vault.connect(guardian).setGasFeeLiquidity(gasFeeLiq),
+    vault.connect(guardian).setRebalanceInterval(rebalanceInterval),
+    vault.connect(guardian).setMarginScale(marginScale),
+    vault.connect(guardian).setLiquidityPerc(liquidityPercentage),
   ]);
 }
 
-export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
-  const [LZEndpointMain, LZEndpointArbi] = await getEndpoints(hre);
-  const [xProviderMain, xProviderArbi] = xProviders;
+export async function InitGame(
+  { run, deployments }: HardhatRuntimeEnvironment,
+  game: GameMock,
+  guardian: Signer,
+  info: {
+    vaultNumber: number;
+    gameXProvider: string;
+    chainIds: BigNumberish[];
+  },
+) {
+  const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
+  const { latestprotocolid } = gameInitSettings;
+  const { vaultNumber, chainIds, gameXProvider } = info;
 
   await Promise.all([
-    LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
-    LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
+    run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
+    run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
+    run('game_set_chain_ids', { chainids: chainIds }),
+    run('game_latest_protocol_id', { chainid: chainIds[0], latestprotocolid }),
+    run('game_latest_protocol_id', { chainid: chainIds[1], latestprotocolid }),
+    run('game_latest_protocol_id', { chainid: chainIds[2], latestprotocolid }),
+    run('game_latest_protocol_id', { chainid: chainIds[3], latestprotocolid }),
+    run('game_set_xprovider', { provider: gameXProvider }),
+  ]);
+
+  const [vault1, vault2, vault3, vault4] = await Promise.all([
+    deployments.get('TestVault1'),
+    deployments.get('TestVault2'),
+    deployments.get('TestVault3'),
+    deployments.get('TestVault4'),
+  ]);
+
+  await Promise.all([
+    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[0], vault1.address),
+    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[1], vault2.address),
+    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[2], vault3.address),
+    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[3], vault4.address),
   ]);
 }
 
 export async function getEndpoints(hre: HardhatRuntimeEnvironment): Promise<LZEndpointMock[]> {
   const { deployments, ethers } = hre;
 
-  const [main, arbitrum, optimism] = await Promise.all([
+  const [main, arbitrum, optimism, bnb] = await Promise.all([
     deployments.get('LZEndpointMain'),
     deployments.get('LZEndpointArbi'),
     deployments.get('LZEndpointOpti'),
+    deployments.get('LZEndpointBnb'),
   ]);
 
-  const [LZEndpointMain, LZEndpointArbi, LZEndpointOpti] = await Promise.all([
+  const endpoints = await Promise.all([
     ethers.getContractAt('LZEndpointMock', main.address),
     ethers.getContractAt('LZEndpointMock', arbitrum.address),
     ethers.getContractAt('LZEndpointMock', optimism.address),
+    ethers.getContractAt('LZEndpointMock', bnb.address),
   ]);
 
-  return [LZEndpointMain, LZEndpointArbi, LZEndpointOpti];
+  return endpoints;
+}
+
+export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
+  const [LZEndpointMain, LZEndpointArbi, LZEndpointOpti, LZEndpointBnb] = await getEndpoints(hre);
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = xProviders;
+
+  await Promise.all([
+    LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
+    LZEndpointMain.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
+    LZEndpointMain.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
+    LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
+    LZEndpointArbi.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
+    LZEndpointArbi.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
+    LZEndpointOpti.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
+    LZEndpointOpti.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
+    LZEndpointOpti.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
+    LZEndpointBnb.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
+    LZEndpointBnb.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
+    LZEndpointBnb.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
+  ]);
 }
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {

@@ -158,6 +158,7 @@ contract XProvider is ILayerZeroReceiver {
         keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]),
       "Not trusted"
     );
+    console.log("src chain %s", _srcChainId);
 
     (bool success, ) = address(this).call(_payload);
     require(success, "LZReceive: No success");
@@ -294,7 +295,11 @@ contract XProvider is ILayerZeroReceiver {
     uint256 _amount,
     address _asset
   ) external onlyVaults {
+    console.log("entering xtransfer");
     if (homeChain == xControllerChain) {
+      console.log("is home chain");
+      console.log("msg sender %s", msg.sender);
+      console.log("xController %s", xController);
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {

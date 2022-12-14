@@ -26,6 +26,7 @@ import {
   getContract,
   getXProviders,
   InitEndpoints,
+  InitGame,
   InitVault,
   InitXController,
 } from '@testhelp/deployHelpers';
@@ -86,12 +87,18 @@ describe('Testing XChainController, unit test', async () => {
     //await allProviders.setProviders(hre);
     await transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6);
 
-    const [xProviderMain, xProviderArbi] = await getXProviders(hre, dao, {
-      xController: 100,
-      game: 10,
-    });
+    const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getXProviders(
+      hre,
+      dao,
+      {
+        xController: 100,
+        game: 10,
+      },
+    );
 
-    await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
+    await InitGame(hre, game, dao, { vaultNumber, gameXProvider: xProviderMain.address, chainIds });
+
+    await InitEndpoints(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
 
     await xChainControllerDUMMY.connect(dao).setGuardian(guardian.address);
     await derbyToken.transfer(user.address, parseEther('2100'));
@@ -138,7 +145,6 @@ describe('Testing XChainController, unit test', async () => {
 
       IUSDc.connect(user).approve(vault2.address, amountUSDC.mul(2)),
     ]);
-    console.log('hjimdfsa', guardian.address);
 
     await Promise.all([
       xChainController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
