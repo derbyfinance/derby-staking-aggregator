@@ -1,43 +1,18 @@
-import { deployments, ethers, run } from 'hardhat';
+import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import {
-  erc20,
-  formatUSDC,
-  getUSDCSigner,
-  parseEther,
-  parseUSDC,
-  transferAndApproveUSDC,
-} from '@testhelp/helpers';
-import type {
-  ConnextHandlerMock,
-  Controller,
-  DerbyToken,
-  GameMock,
-  LZEndpointMock,
-  MainVaultMock,
-  XChainControllerMock,
-  XProvider,
-} from '@typechain';
+import { erc20, formatUSDC } from '@testhelp/helpers';
+import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { deployXChainControllerMock } from '@testhelp/deploy';
 import { usdc } from '@testhelp/addresses';
-import {
-  getAllSigners,
-  getContract,
-  getXProviders,
-  InitEndpoints,
-  InitGame,
-  InitVault,
-  InitXController,
-} from '@testhelp/deployHelpers';
+import { getAndInitXProviders, InitXController } from '@testhelp/InitialiseContracts';
 import { vaultDeploySettings } from 'deploySettings';
+import { getAllSigners } from '@testhelp/getContracts';
+import { setupXChain } from './setup';
 
-const amount = 500_000;
 const chainIds = [10, 100];
 
-const amountUSDC = parseUSDC(amount.toString());
-
-describe('Testing XChainController, unit test', async () => {
+describe.only('Testing XChainController, unit test for manual execution', async () => {
   let vault1: MainVaultMock,
     vault2: MainVaultMock,
     xChainController: XChainControllerMock,
@@ -50,135 +25,50 @@ describe('Testing XChainController, unit test', async () => {
     game: GameMock,
     vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber;
 
-  const setupXChain = deployments.createFixture(async (hre) => {
-    await deployments.fixture([
-      'XChainControllerMock',
-      'MainVaultMock',
-      'Vault2',
-      'XProviderMain',
-      'XProviderArbi',
-      'XProviderOpti',
-      'XProviderBnb',
-    ]);
+  const setupXChainExtended = deployments.createFixture(async (hre) => {
+    const [dao, guardian] = await getAllSigners(hre);
+    const addr = dao.address;
 
-    const [dao, user, guardian] = await getAllSigners(hre);
-    const vaultNumber = vaultDeploySettings.vaultNumber;
+    const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
+    const [xProviderMain, xProviderArbi] = allXProviders;
 
-    const game = (await getContract('GameMock', hre)) as GameMock;
-    const controller = (await getContract('Controller', hre)) as Controller;
-    const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-    const xChainController = (await getContract(
-      'XChainControllerMock',
-      hre,
-    )) as XChainControllerMock;
     const xChainControllerDUMMY = await deployXChainControllerMock(
       dao,
-      dao.address,
-      dao.address,
-      dao.address,
+      addr,
+      addr,
+      guardian.address,
       100,
     );
-    const vault1 = (await getContract('MainVaultMock', hre)) as MainVaultMock;
-    const deployment = await deployments.get('Vault2');
-    const vault2 = (await hre.ethers.getContractAt(
-      'MainVaultMock',
-      deployment.address,
-    )) as MainVaultMock;
-
-    //await allProviders.setProviders(hre);
-    await transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6);
-
-    const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getXProviders(
-      hre,
-      dao,
-      {
-        xController: 100,
-        game: 10,
-      },
-    );
-
-    await InitGame(hre, game, dao, { vaultNumber, gameXProvider: xProviderMain.address, chainIds });
-
-    await InitEndpoints(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
-
-    await xChainControllerDUMMY.connect(dao).setGuardian(guardian.address);
-    await derbyToken.transfer(user.address, parseEther('2100'));
-
-    await run('game_init', { provider: xProviderMain.address });
-    await run('controller_init');
-
-    await run('game_set_home_vault', { vault: vault1.address });
-    await run('controller_add_vault', { vault: vault1.address });
-
-    await InitVault(vault1, guardian, dao, {
-      homeXProvider: xProviderMain.address,
-      homeChain: 10,
-    });
-    await InitVault(vault2, guardian, dao, {
-      homeXProvider: xProviderArbi.address,
-      homeChain: 100,
-    });
-
-    await InitXController(hre, xChainController, guardian, dao, {
-      vaultNumber,
-      chainIds,
-      homeXProvider: xProviderArbi.address,
-      // chainVault: vault1.address,
-    });
-
-    await InitXController(hre, xChainControllerDUMMY, guardian, dao, {
-      vaultNumber,
-      chainIds,
-      homeXProvider: xProviderArbi.address,
-      // chainVault: vault1.address,
-    });
 
     await Promise.all([
-      xProviderMain.connect(dao).toggleVaultWhitelist(vault1.address),
-      xProviderMain.connect(dao).toggleVaultWhitelist(vault2.address),
-      xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
-
       xProviderMain.connect(dao).setXController(xChainControllerDUMMY.address),
       xProviderArbi.connect(dao).setXController(xChainControllerDUMMY.address),
 
-      game.connect(guardian).setVaultAddress(vaultNumber, 10, vault1.address),
-      game.connect(guardian).setVaultAddress(vaultNumber, 100, vault2.address),
-
-      IUSDc.connect(user).approve(vault2.address, amountUSDC.mul(2)),
+      InitXController(hre, xChainControllerDUMMY, guardian, dao, {
+        vaultNumber,
+        chainIds,
+        homeXProvider: xProviderArbi.address,
+      }),
     ]);
 
-    await Promise.all([
-      xChainController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
-      xChainControllerDUMMY
-        .connect(dao)
-        .setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
-    ]);
-
-    return {
-      vault1,
-      vault2,
-      controller,
-      game,
-      xChainController,
-      xChainControllerDUMMY,
-      derbyToken,
-      dao,
-      user,
-      guardian,
-    };
+    return xChainControllerDUMMY;
   });
 
   before(async function () {
-    const setup = await setupXChain();
+    const setup = await setupXChain(chainIds);
+    xChainControllerDUMMY = await setupXChainExtended();
+
     vault1 = setup.vault1;
     vault2 = setup.vault2;
     game = setup.game;
     xChainController = setup.xChainController;
-    xChainControllerDUMMY = setup.xChainControllerDUMMY;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
     user = setup.user;
     guardian = setup.guardian;
+
+    await xChainController.connect(guardian).setChainIds(chainIds);
+    await game.connect(guardian).setChainIds(chainIds);
   });
 
   it('1) Store allocations in Game contract', async function () {
@@ -245,6 +135,7 @@ describe('Testing XChainController, unit test', async () => {
   it('Step 1: Game pushes totalDeltaAllocations to xChainController', async function () {
     // Setting a dummy Controller here so transactions later succeeds but doesnt arrive in the correct Controller
     // Will be corrected by the guardian
+    await xChainControllerDUMMY.connect(dao).setGuardian(await guardian.getAddress());
     await xChainControllerDUMMY.connect(guardian).resetVaultStagesDao(vaultNumber);
     await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
 

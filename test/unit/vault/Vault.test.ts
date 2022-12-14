@@ -3,7 +3,7 @@ import { Contract } from 'ethers';
 import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
-import AllMockProviders from '@testhelp/allMockProvidersClass';
+import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { vaultDeploySettings } from 'deploySettings';
 import { setupVault } from './setup';
 

@@ -24,7 +24,7 @@ import {
   compound_usdc_01,
 } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
-import { ProtocolVault } from '@testhelp/protocolVaultClass';
+import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupVault } from './setup';
 
 describe.only('Testing VaultSwap, unit test', async () => {

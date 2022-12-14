@@ -22,7 +22,7 @@ import { deployContract } from 'ethereum-waffle';
 import { Signer, Contract } from 'ethers';
 import { formatUSDC, parseUSDC } from '@testhelp/helpers';
 import type { MainVaultMock, Controller } from '../../typechain-types';
-import allProviders from '@testhelp/allProvidersClass';
+import allProviders from '@testhelp/classes/allProvidersClass';
 
 interface Protocol {
   number: number;

@@ -15,10 +15,11 @@ import {
   aaveUSDT,
 } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
-import AllMockProviders from '@testhelp/allMockProvidersClass';
-import { ProtocolVault } from '@testhelp/protocolVaultClass';
+import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
+import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { vaultDeploySettings } from 'deploySettings';
 import { setupVaultXChain } from './setup';
+import { setupXChain } from '../xController/setup';
 
 const amount = 1_000_000;
 const homeChain = 10;
@@ -45,8 +46,8 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
   before(async function () {
-    const setup = await setupVaultXChain();
-    vault = setup.vault;
+    const setup = await setupXChain();
+    vault = setup.vault1;
     controller = setup.controller;
     user = setup.user;
     game = setup.game;

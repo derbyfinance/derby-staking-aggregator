@@ -1,30 +1,15 @@
-import { deployments, ethers, run } from 'hardhat';
+import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type {
-  Controller,
-  DerbyToken,
-  GameMock,
-  MainVaultMock,
-  XChainControllerMock,
-} from '@typechain';
+import { erc20, formatUSDC } from '@testhelp/helpers';
+import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import {
-  getAllSigners,
-  getContract,
-  getTestVaults,
-  getXProviders,
-  InitEndpoints,
-  InitGame,
-  InitVault,
-  InitXController,
-} from '@testhelp/deployHelpers';
 import { vaultDeploySettings } from 'deploySettings';
+import { setupXChain } from './setup';
 
 const chainIds = [10, 100, 1000, 10000];
 
-describe('Testing XChainController, integration test', async () => {
+describe.only('Testing XChainController, integration test', async () => {
   let vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber,
     basketId: BigNumberish,
     vault1: MainVaultMock,
@@ -38,108 +23,6 @@ describe('Testing XChainController, integration test', async () => {
     IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
     game: GameMock;
-
-  const setupXChain = deployments.createFixture(async (hre) => {
-    await deployments.fixture([
-      'XChainControllerMock',
-      'TestVault1',
-      'TestVault2',
-      'TestVault3',
-      'TestVault4',
-      'XProviderMain',
-      'XProviderArbi',
-      'XProviderOpti',
-      'XProviderBnb',
-    ]);
-
-    const [dao, user, guardian] = await getAllSigners(hre);
-    const vaultNumber = vaultDeploySettings.vaultNumber;
-
-    const game = (await getContract('GameMock', hre)) as GameMock;
-    const controller = (await getContract('Controller', hre)) as Controller;
-    const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-    const xChainController = (await getContract(
-      'XChainControllerMock',
-      hre,
-    )) as XChainControllerMock;
-    const [vault1, vault2, vault3, vault4] = await getTestVaults(hre);
-
-    await transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6);
-
-    const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getXProviders(
-      hre,
-      dao,
-      {
-        xController: 100,
-        game: 10,
-      },
-    );
-
-    await InitEndpoints(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
-
-    await derbyToken.transfer(user.address, parseEther('2100'));
-
-    // await run('game_init', { provider: xProviderMain.address });
-    await InitGame(hre, game, guardian, {
-      vaultNumber,
-      gameXProvider: xProviderMain.address,
-      chainIds,
-    });
-    await run('controller_init');
-
-    await run('game_set_home_vault', { vault: vault1.address });
-    await run('controller_add_vault', { vault: vault1.address });
-    await run('controller_add_vault', { vault: vault2.address });
-    await run('controller_add_vault', { vault: vault3.address });
-    await run('controller_add_vault', { vault: vault4.address });
-
-    await InitVault(vault1, guardian, dao, {
-      homeXProvider: xProviderMain.address,
-      homeChain: 10,
-    });
-    await InitVault(vault2, guardian, dao, {
-      homeXProvider: xProviderArbi.address,
-      homeChain: 100,
-    });
-    await InitVault(vault3, guardian, dao, {
-      homeXProvider: xProviderOpti.address,
-      homeChain: 1000,
-    });
-    await InitVault(vault4, guardian, dao, {
-      homeXProvider: xProviderBnb.address,
-      homeChain: 10000,
-    });
-
-    await InitXController(hre, xChainController, guardian, dao, {
-      vaultNumber,
-      chainIds,
-      homeXProvider: xProviderArbi.address,
-    });
-
-    await Promise.all([
-      xProviderMain.connect(dao).toggleVaultWhitelist(vault1.address),
-      xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
-      xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
-      xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
-
-      IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
-      IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
-    ]);
-
-    return {
-      vault1,
-      vault2,
-      vault3,
-      vault4,
-      controller,
-      game,
-      xChainController,
-      derbyToken,
-      dao,
-      user,
-      guardian,
-    };
-  });
 
   before(async function () {
     const setup = await setupXChain();
@@ -176,9 +59,9 @@ describe('Testing XChainController, integration test', async () => {
     // looping through all of allocationArray
     allocationArray.forEach(async (chainIdArray, i) => {
       for (let j = 0; j < chainIdArray.length; j++) {
-        expect(await game.basketAllocationInProtocol(vaultNumber, chainIds[i], j)).to.be.equal(
-          chainIdArray[j],
-        );
+        expect(
+          await game.connect(user).basketAllocationInProtocol(basketId, chainIds[i], j),
+        ).to.be.equal(chainIdArray[j]);
       }
     });
   });

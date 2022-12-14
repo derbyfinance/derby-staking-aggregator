@@ -4,7 +4,7 @@ import { erc20, parseUSDC } from '@testhelp/helpers';
 import type { MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
-import { setupVaultXChain } from './setup';
+import { setupXChain } from '../xController/setup';
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
@@ -20,8 +20,8 @@ describe.only('Testing XChainController, unit test', async () => {
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   before(async function () {
-    const setup = await setupVaultXChain();
-    vault = setup.vault;
+    const setup = await setupXChain();
+    vault = setup.vault1;
     user = setup.user;
     xChainController = setup.xChainController;
   });

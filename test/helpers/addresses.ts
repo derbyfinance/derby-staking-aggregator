@@ -1,4 +1,4 @@
-import { ProtocolVault } from './protocolVaultClass';
+import { ProtocolVault } from './classes/protocolVaultClass';
 
 // https://layerzero.gitbook.io/docs/technical-reference/testnet/testnet-addresses
 export const testLayerzeroChainIds = {

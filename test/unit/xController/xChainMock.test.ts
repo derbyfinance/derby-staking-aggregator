@@ -25,7 +25,7 @@ import { usdc } from '@testhelp/addresses';
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe('Testing XProviderMocks, unit test', async () => {
+describe.only('Testing XProviderMocks, unit test', async () => {
   let dao: Signer,
     user: Signer,
     USDCSigner: Signer,

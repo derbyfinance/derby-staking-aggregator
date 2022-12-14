@@ -2,7 +2,8 @@ import { deployments, run } from 'hardhat';
 import { parseEther, random, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 
-import { getAllSigners, getContract, InitEndpoints, getXProviders } from '@testhelp/deployHelpers';
+import { getAndInitXProviders, InitEndpoints } from '@testhelp/InitialiseContracts';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 export const setupGame = deployments.createFixture(async (hre) => {
   await deployments.fixture([
@@ -23,7 +24,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   const userAddr = await user.getAddress();
   const vaultNumber = random(100);
 
-  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getXProviders(
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getAndInitXProviders(
     hre,
     dao,
     {

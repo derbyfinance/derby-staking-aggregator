@@ -86,12 +86,6 @@ describe.only('Testing balanceUnderlying for every single protocol vault', async
         protocol.decimals,
       );
 
-      // console.log(`---------------------------`);
-      // console.log(protocol.name);
-      // console.log({ balUnderlying });
-      // console.log({ calculateShares });
-      // console.log({ balanceShares });
-
       expect(Number(calculateShares)).to.be.closeTo(Number(balanceShares), 100);
     }
   });

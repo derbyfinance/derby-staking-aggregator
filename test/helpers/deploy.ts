@@ -60,7 +60,6 @@ import LZXProviderMockArtifact from '@artifacts/Mocks/LayerZero/LZXProviderMock.
 import XReceiveMockArtifact from '@artifacts/Mocks/XReceiveMock.sol/XReceiveMock.json';
 import XSendMockArtifact from '@artifacts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from './addresses';
-import { IDeployVault } from './deployInterfaces';
 
 export const deployTokenTimeLock = (
   deployerSign: Signer,
@@ -117,7 +116,7 @@ export const deployMainVault = async (
   daoAddress: string,
   gameAddress: string,
   controller: string,
-  { name, symbol, decimals, vaultNumber, vaultCurrency, uScale, gasFeeLiq }: IDeployVault,
+  { name, symbol, decimals, vaultNumber, vaultCurrency, uScale, gasFeeLiq }: any,
 ) => {
   const Vault = await ethers.getContractFactory('MainVault', {
     libraries: {
