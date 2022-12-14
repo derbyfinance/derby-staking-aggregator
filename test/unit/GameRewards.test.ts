@@ -20,7 +20,7 @@ const totalDerbySupply = parseEther((1e8).toString());
 const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
-describe('Testing Game', async () => {
+describe('Testing Game Rewards', async () => {
   let vault: MainVaultMock,
     controller: Controller,
     dao: Signer,

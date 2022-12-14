@@ -24,7 +24,7 @@ import { vaultDeploySettings } from 'deploySettings';
 
 const chainIds = [10, 100, 1000, 10000];
 
-describe('Testing XChainController, unit test', async () => {
+describe('Testing XChainController, integration test', async () => {
   let vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber,
     basketId: BigNumberish,
     vault1: MainVaultMock,

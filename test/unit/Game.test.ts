@@ -52,7 +52,10 @@ describe.only('Testing Game', async () => {
     [dao, user] = await getAllSigners(hre);
     userAddr = await user.getAddress();
 
-    const [xProviderMain, xProviderArbi] = await getXProviders(hre, { xController: 100, game: 10 });
+    const [xProviderMain, xProviderArbi] = await getXProviders(hre, dao, {
+      xController: 100,
+      game: 10,
+    });
     await InitProviders(dao, [xProviderMain, xProviderArbi]);
     await InitEndpoints(hre, [xProviderMain, xProviderArbi]);
 
