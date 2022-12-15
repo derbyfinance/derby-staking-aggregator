@@ -15,13 +15,15 @@ import {
   aaveUSDC,
 } from '@testhelp/addresses';
 import { addStarterProtocols } from '@testhelp/helpers';
-import { getAllSigners, getController } from '@testhelp/deployHelpers';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { Controller } from '@typechain';
 
 const vaultNumber = 4;
 
 describe.only('Testing controller', async () => {
   const setupController = deployments.createFixture(async (hre) => {
-    const controller = await getController(hre);
+    await deployments.fixture(['Controller']);
+    const controller = (await getContract('Controller', hre)) as Controller;
     const [, , , vault, deployer] = await getAllSigners(hre);
 
     await run('controller_init');

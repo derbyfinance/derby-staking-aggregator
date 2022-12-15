@@ -1,10 +1,10 @@
 import { deployments, run } from 'hardhat';
 import { transferAndApproveUSDC } from '@testhelp/helpers';
-import { Controller, MainVaultMock } from '@typechain';
+import { Controller, MainVaultMock, XChainControllerMock } from '@typechain';
 import { allProtocols } from '@testhelp/addresses';
-import allProviders from '@testhelp/allProvidersClass';
-import { getAllSigners, getContract } from '@testhelp/deployHelpers';
+import allProviders from '@testhelp/classes/allProvidersClass';
 import { vaultDeploySettings } from 'deploySettings';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
   await deployments.fixture([

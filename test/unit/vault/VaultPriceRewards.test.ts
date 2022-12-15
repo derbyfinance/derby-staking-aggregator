@@ -1,17 +1,8 @@
-import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Signer, Contract } from 'ethers';
-import { erc20, getUSDCSigner, parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
-import type { Controller, DerbyToken, GameMock, MainVaultMock, XProvider } from '@typechain';
+import { Signer, BigNumberish } from 'ethers';
+import { parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, GameMock, MainVaultMock } from '@typechain';
 import {
-  deployController,
-  deployDerbyToken,
-  deployGameMock,
-  deployMainVaultMock,
-  deployXProvider,
-} from '@testhelp/deploy';
-import {
-  usdc,
   compound_dai_01,
   aave_usdt_01,
   yearn_usdc_01,
@@ -23,31 +14,22 @@ import {
   yearnUSDC,
   aaveUSDT,
 } from '@testhelp/addresses';
-import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
-import AllMockProviders from '@testhelp/allMockProvidersClass';
-import { vaultInfo } from '@testhelp/vaultHelpers';
-import { ProtocolVault } from '@testhelp/protocolVaultClass';
+import { rebalanceETF } from '@testhelp/vaultHelpers';
+import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
+import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
+import { vaultDeploySettings } from 'deploySettings';
+import { setupVaultXChain } from './setup';
+import { setupXChain } from '../xController/setup';
 
 const amount = 1_000_000;
 const homeChain = 10;
-const chainIds = [10, 100, 1000, 2000];
-const nftName = 'DerbyNFT';
-const nftSymbol = 'DRBNFT';
 const amountUSDC = parseUSDC(amount.toString());
-const totalDerbySupply = parseEther((1e8).toString());
-const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity } = vaultInfo;
 
 describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   let vault: MainVaultMock,
-    controller: Controller,
-    dao: Signer,
     user: Signer,
-    xProvider: XProvider,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    daoAddr: string,
-    userAddr: string,
-    DerbyToken: DerbyToken,
+    controller: Controller,
+    vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber,
     game: GameMock;
 
   const protocols = new Map<string, ProtocolVault>()
@@ -64,68 +46,11 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
   before(async function () {
-    [dao, user] = await ethers.getSigners();
-
-    [USDCSigner, IUSDc, daoAddr, userAddr] = await Promise.all([
-      getUSDCSigner(),
-      erc20(usdc),
-      dao.getAddress(),
-      user.getAddress(),
-    ]);
-
-    controller = await deployController(dao, daoAddr);
-    vault = await deployMainVaultMock(
-      dao,
-      name,
-      symbol,
-      decimals,
-      vaultNumber,
-      daoAddr,
-      daoAddr,
-      userAddr,
-      controller.address,
-      usdc,
-      uScale,
-      gasFeeLiquidity,
-    );
-    DerbyToken = await deployDerbyToken(user, name, symbol, totalDerbySupply);
-    game = await deployGameMock(
-      user,
-      nftName,
-      nftSymbol,
-      DerbyToken.address,
-      daoAddr,
-      daoAddr,
-      controller.address,
-    );
-    xProvider = await deployXProvider(
-      dao,
-      controller.address,
-      controller.address,
-      daoAddr,
-      game.address,
-      controller.address,
-      homeChain,
-    );
-
-    await Promise.all([
-      initController(controller, [userAddr, vault.address]),
-      AllMockProviders.deployAllMockProviders(dao),
-      IUSDc.connect(USDCSigner).transfer(userAddr, amountUSDC.mul(10)),
-      IUSDc.connect(user).approve(vault.address, amountUSDC.mul(10)),
-    ]);
-
-    await Promise.all([
-      vault.setHomeXProvider(xProvider.address),
-      vault.setChainIds(homeChain),
-      xProvider.setGameChainId(homeChain),
-      xProvider.toggleVaultWhitelist(vault.address),
-      game.connect(dao).setXProvider(xProvider.address),
-    ]);
-
-    for (const protocol of protocols.values()) {
-      await protocol.addProtocolToController(controller, vaultNumber, AllMockProviders);
-    }
+    const setup = await setupXChain();
+    vault = setup.vault1;
+    controller = setup.controller;
+    user = setup.user;
+    game = setup.game;
   });
 
   it('Should store historical prices and rewards, rebalance: 1', async function () {
@@ -150,13 +75,14 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
 
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
+
     await rebalanceETF(vault);
 
     await game.upRebalancingPeriod(vaultNumber);
     await vault.sendRewardsToGame();
 
     for (const protocol of protocols.values()) {
-      expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
+      //expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
       expect(
         await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 1, protocol.number),
       ).to.be.equal(0);
@@ -188,7 +114,7 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
     await vault.sendRewardsToGame();
 
     for (const protocol of protocols.values()) {
-      expect(await vault.getHistoricalPriceTEST(2, protocol.number)).to.be.equal(protocol.price);
+      //expect(await vault.getHistoricalPriceTEST(2, protocol.number)).to.be.equal(protocol.price);
     }
 
     // 1_000_000 - 100_000 (liq) * percentage gain

@@ -1,21 +1,5 @@
-import { subtask, task, types } from 'hardhat/config';
+import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-
-// Only used for testing for now
-subtask('xprovider_init', 'Initializes the xprovider')
-  .addParam('xProvider', 'Provider to init', null, types.any)
-  .addParam('controllerProvider', 'Provider address of the xChainController')
-  .addParam('xControllerChainId', 'ChainId of the xChainController', null, types.int)
-  .addParam('gameChainId', 'ChainId of the Game', null, types.int)
-  .setAction(async ({ xProvider, controllerProvider, xControllerChainId, gameChainId }, hre) => {
-    const dao = await getDao(hre);
-
-    await Promise.all([
-      xProvider.connect(dao).setXControllerProvider(controllerProvider),
-      xProvider.connect(dao).setXControllerChainId(xControllerChainId),
-      xProvider.connect(dao).setGameChainId(gameChainId),
-    ]);
-  });
 
 /*************
   Only Dao

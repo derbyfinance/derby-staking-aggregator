@@ -4,8 +4,14 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('vault_init', 'Initializes the vault').setAction(async (args, { run, getNamedAccounts }) => {
   const { guardian } = await getNamedAccounts();
-  const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
-    vaultInitSettings;
+  const {
+    gasFeeLiq,
+    rebalanceInterval,
+    marginScale,
+    liquidityPercentage,
+    performanceFee,
+    chainIds,
+  } = vaultInitSettings;
 
   await run('vault_set_guardian', { guardian: guardian });
 

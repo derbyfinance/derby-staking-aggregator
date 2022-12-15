@@ -5,7 +5,7 @@ import type { Controller, MainVaultMock } from '@typechain';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
-import allProviders from '@testhelp/allProvidersClass';
+import allProviders from '@testhelp/classes/allProvidersClass';
 import { ethers } from 'hardhat';
 import { vaultInfo } from '@testhelp/vaultHelpers';
 

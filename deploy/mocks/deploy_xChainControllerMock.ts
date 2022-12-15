@@ -5,6 +5,7 @@ import { xChainControllerDeploySettings } from 'deploySettings';
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  run,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao, guardian } = await getNamedAccounts();

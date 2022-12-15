@@ -4,7 +4,7 @@ import { parseEther } from '@testhelp/helpers';
 import { gameInitSettings } from 'deploySettings';
 import { setupGame } from './setup';
 
-describe('Testing Game', async () => {
+describe('Testing Game Rewards', async () => {
   const chainIds: BigNumberish[] = gameInitSettings.chainids;
 
   it('Calculate rewards during rebalance Basket', async function () {

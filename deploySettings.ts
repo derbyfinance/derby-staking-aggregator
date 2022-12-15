@@ -1,5 +1,3 @@
-import { IDeployVault } from '@testhelp/deployInterfaces';
-
 export const derbyTokenSettings = {
   name: 'Derby Finance',
   symbol: 'DRB',
@@ -21,7 +19,7 @@ export const controllerInit = {
   chainlinkGasPriceOracle: '0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C',
 };
 
-export const vaultDeploySettings: IDeployVault = {
+export const vaultDeploySettings = {
   name: 'DerbyUSDC',
   symbol: 'dfUSDC',
   decimals: 6,
@@ -36,6 +34,7 @@ export const vaultInitSettings = {
   marginScale: 1_000 * 1e6,
   liquidityPercentage: 10,
   performanceFee: 10,
+  chainIds: [10, 100, 1000],
 };
 
 export const gameDeploySettings = {
@@ -64,4 +63,5 @@ export const xProviderDeploySettings = {
   mainnet: 10, // dummy
   arbitrum: 100, // dummy
   optimism: 1000, // dummy
+  bnb: 10_000, // dummy
 };
