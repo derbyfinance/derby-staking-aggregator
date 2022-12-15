@@ -6,9 +6,13 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 export async function getContract(
   contractName: string,
   { deployments, ethers }: HardhatRuntimeEnvironment,
+  contractType?: string,
 ): Promise<Contract> {
   const deployment = await deployments.get(contractName);
-  const contract = await ethers.getContractAt(contractName, deployment.address);
+  const contract = await ethers.getContractAt(
+    contractType ? contractType : contractName,
+    deployment.address,
+  );
 
   return contract;
 }

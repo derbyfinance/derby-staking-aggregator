@@ -3,7 +3,7 @@ import { join } from 'path';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 
-const vaultName = 'MainVault';
+const vaultName = 'DerbyHardhatUSDC';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
