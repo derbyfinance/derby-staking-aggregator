@@ -14,7 +14,7 @@ npx hardhat --network localhost deploy --tags Controller,DerbyToken,Game,Swap,Ma
 
 ## Goerli vault deployment flow example
 
-- Add deploy_vault template to deploy/localhost/
+- Add deploy_vault template to deploy/localhost/ and check the contract name getters
 - Change vaultName in template
 - Set deployment + init settings in deploy/config file with the SAME vaultName
 - npx hardhat --network goerli deploy --tags DerbyGoerliUSDC

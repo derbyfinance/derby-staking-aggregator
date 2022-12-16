@@ -1,11 +1,62 @@
 {
-  "DerbyHardhatUSDC": {
+  "TestVault1": {
     "deploy": {
       "name": "DerbyUSDC",
       "symbol": "dfUSDC",
       "decimals": 6,
-      "vaultNumber": 1,
-      "vaultCurrency": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+      "vaultNumber": 10,
+      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "uScale": 1e6
+    },
+    "init": {
+      "gasFeeLiq": 1e10,
+      "rebalanceInterval": 1,
+      "marginScale": 1e9,
+      "liquidityPercentage": 10,
+      "performanceFee": 10
+    }
+  },
+  "TestVault2": {
+    "deploy": {
+      "name": "DerbyUSDC",
+      "symbol": "dfUSDC",
+      "decimals": 6,
+      "vaultNumber": 10,
+      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "uScale": 1e6
+    },
+    "init": {
+      "gasFeeLiq": 1e10,
+      "rebalanceInterval": 1,
+      "marginScale": 1e9,
+      "liquidityPercentage": 10,
+      "performanceFee": 10
+    }
+  },
+  "TestVault3": {
+    "deploy": {
+      "name": "DerbyUSDC",
+      "symbol": "dfUSDC",
+      "decimals": 6,
+      "vaultNumber": 10,
+      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "uScale": 1e6
+    },
+    "init": {
+      "gasFeeLiq": 1e10,
+      "rebalanceInterval": 1,
+      "marginScale": 1e9,
+      "liquidityPercentage": 10,
+      "performanceFee": 10
+    }
+  },
+  "TestVault4": {
+    "deploy": {
+      "name": "DerbyUSDC",
+      "symbol": "dfUSDC",
+      "decimals": 6,
+      "vaultNumber": 10,
+      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       "uScale": 1e6
     },
     "init": {

@@ -18,7 +18,6 @@ import { rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { vaultDeploySettings } from 'deploySettings';
-import { setupVaultXChain } from './setup';
 import { setupXChain } from '../xController/setup';
 
 const amount = 1_000_000;

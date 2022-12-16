@@ -2,27 +2,25 @@ import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { vaultInitSettings } from 'deploySettings';
 import { MainVaultMock } from '@typechain';
-import { transferAndApproveUSDC } from '@testhelp/helpers';
-import { DeploymentsExtension } from 'hardhat-deploy/types';
-import { HardhatEthersHelpers } from 'hardhat/types';
+import { random, transferAndApproveUSDC } from '@testhelp/helpers';
+import { getContract } from '@testhelp/getContracts';
 
 describe.only('Testing vault tasks', () => {
-  const setupVault = deployments.createFixture(
-    async ({ ethers, deployments, getNamedAccounts }) => {
-      const amount = 1_000_000 * 1e6;
-      const contract = 'DerbyHardhatUSDC';
+  const setupVault = deployments.createFixture(async (hre) => {
+    const { ethers, deployments, getNamedAccounts } = hre;
+    const amount = 1_000_000 * 1e6;
+    const contract = 'TestVault1';
+    await deployments.fixture([contract]);
 
-      const accounts = await getNamedAccounts();
-      const user = await ethers.getSigner(accounts.user);
+    const accounts = await getNamedAccounts();
+    const user = await ethers.getSigner(accounts.user);
+    const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
 
-      const vault = await deployVault(deployments, contract, ethers);
+    await run('vault_init', { contract });
+    await transferAndApproveUSDC(vault.address, user, amount);
 
-      await run('vault_init', { contract });
-      await transferAndApproveUSDC(vault.address, user, amount);
-
-      return { vault, user, contract };
-    },
-  );
+    return { vault, user, contract };
+  });
 
   /*************
   Only Guardian
@@ -142,18 +140,4 @@ describe.only('Testing vault tasks', () => {
     await run('vault_set_performance_fee', { contract, percentage: fee });
     expect(await vault.performanceFee()).to.be.equal(fee);
   });
-
-  const random = (max: number) => Math.floor(Math.random() * max);
-
-  async function deployVault(
-    deployments: DeploymentsExtension,
-    contract: string,
-    ethers: HardhatEthersHelpers,
-  ): Promise<MainVaultMock> {
-    await deployments.fixture([contract]);
-    const deployment = await deployments.get(contract);
-    const vault: MainVaultMock = await ethers.getContractAt('MainVaultMock', deployment.address);
-
-    return vault;
-  }
 });

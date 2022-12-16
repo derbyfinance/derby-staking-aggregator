@@ -11,6 +11,7 @@ const func: DeployFunction = async function ({
 
   await deploy('Controller', {
     from: deployer,
+    contract: 'Controller',
     args: [dao],
     log: true,
     autoMine: true,

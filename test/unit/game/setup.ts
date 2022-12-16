@@ -8,17 +8,18 @@ import { getAllSigners, getContract } from '@testhelp/getContracts';
 export const setupGame = deployments.createFixture(async (hre) => {
   await deployments.fixture([
     'XChainControllerMock',
-    'MainVaultMock',
+    'TestVault1',
     'XProviderMain',
     'XProviderArbi',
     'XProviderOpti',
     'XProviderBnb',
   ]);
 
+  const contract = 'TestVault1';
   const game = (await getContract('GameMock', hre)) as GameMock;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
-  const vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
+  const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
 
   const [dao, user] = await getAllSigners(hre);
   const userAddr = await user.getAddress();
@@ -39,7 +40,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await run('game_set_home_vault', { vault: vault.address });
   await run('xcontroller_init');
   await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
-  await run('vault_init');
+  await run('vault_init', { contract });
   await run('controller_init');
 
   await derbyToken.transfer(userAddr, parseEther('2100'));

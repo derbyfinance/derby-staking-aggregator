@@ -1,9 +1,8 @@
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
+import { getDeployConfigVault } from '@testhelp/deployHelpers';
 
-const vaultName = 'DerbyHardhatUSDC';
+const vaultName = 'MainVault';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
@@ -13,9 +12,7 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  const path = join(__dirname, '..', 'configs', `${network.name}.json`);
-  const config = JSON.parse(await readFile(path, 'utf8'));
-  const deployConfig = config[vaultName]?.deploy;
+  const deployConfig = await getDeployConfigVault(vaultName, network.name);
   if (!deployConfig) throw 'Unknown contract name';
 
   const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = deployConfig;

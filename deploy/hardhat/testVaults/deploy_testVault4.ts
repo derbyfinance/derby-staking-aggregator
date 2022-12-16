@@ -1,22 +1,27 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { vaultDeploySettings } from 'deploySettings';
+import { getDeployConfigVault } from '@testhelp/deployHelpers';
+
+const vaultName = 'TestVault4';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  run,
+  network,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = vaultDeploySettings;
+  const deployConfig = await getDeployConfigVault(vaultName, network.name);
+  if (!deployConfig) throw 'Unknown contract name';
+
+  const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = deployConfig;
 
   const swapLibrary = await deployments.get('Swap');
   const game = await deployments.get('GameMock');
   const controller = await deployments.get('Controller');
 
-  await deploy('TestVault2', {
+  await deploy(vaultName, {
     from: deployer,
     contract: 'MainVaultMock',
     args: [
@@ -38,5 +43,5 @@ const func: DeployFunction = async function ({
   });
 };
 export default func;
-func.tags = ['TestVault2'];
+func.tags = [vaultName];
 func.dependencies = ['Swap', 'Controller', 'GameMock'];

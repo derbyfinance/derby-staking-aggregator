@@ -1,20 +1,13 @@
-import { vaultInitSettings } from 'deploySettings';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { getInitConfigVault } from '@testhelp/deployHelpers';
 
 task('vault_init', 'Initializes the vault')
   .addParam('contract', 'Name of the contract')
   .setAction(async ({ contract }, hre) => {
     const { getNamedAccounts, run, network } = hre;
     const { guardian } = await getNamedAccounts();
-
-    const path = join(__dirname, '..', 'deploy', 'configs', `${network.name}.json`);
-    const config = JSON.parse(await readFile(path, 'utf8'));
-    const initConfig = config[contract]?.init;
-
+    const initConfig = await getInitConfigVault(contract, network.name);
     if (!initConfig) throw 'Unknown contract name';
 
     const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
