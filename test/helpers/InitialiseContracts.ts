@@ -1,5 +1,5 @@
 import { GameMock, MainVaultMock, XChainController, XProvider } from '@typechain';
-import { gameDeploySettings, gameInitSettings, vaultInitSettings } from 'deploySettings';
+import { gameDeploySettings, gameInitSettings } from 'deploySettings';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';

@@ -1,9 +1,8 @@
 import { deployments, run } from 'hardhat';
 import { transferAndApproveUSDC } from '@testhelp/helpers';
-import { Controller, MainVaultMock, XChainControllerMock } from '@typechain';
+import { Controller, MainVaultMock } from '@typechain';
 import { allProtocols } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
-import { vaultDeploySettings } from 'deploySettings';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
@@ -18,6 +17,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
     'BetaProvider',
   ]);
 
+  const vaultNumber = 10;
   const contract = 'TestVault1';
   const [dao, user, guardian] = await getAllSigners(hre);
 
@@ -38,12 +38,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
 
   // add all protocol vaults to controller
   for (const protocol of allProtocols.values()) {
-    await protocol.addProtocolToController(
-      controller,
-      dao,
-      vaultDeploySettings.vaultNumber,
-      allProviders,
-    );
+    await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);
   }
 
   return { vault, controller, dao, user, guardian };

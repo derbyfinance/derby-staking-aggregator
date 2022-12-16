@@ -4,13 +4,12 @@ import { Signer, Contract, BigNumberish } from 'ethers';
 import { erc20, formatUSDC } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import { vaultDeploySettings } from 'deploySettings';
 import { setupXChain } from './setup';
 
 const chainIds = [10, 100, 1000, 10000];
 
 describe.only('Testing XChainController, integration test', async () => {
-  let vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber,
+  let vaultNumber: BigNumberish = 10,
     basketId: BigNumberish,
     vault1: MainVaultMock,
     vault2: MainVaultMock,

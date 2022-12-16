@@ -1,13 +1,13 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
-import { vaultInitSettings } from 'deploySettings';
 import { MainVaultMock } from '@typechain';
 import { random, transferAndApproveUSDC } from '@testhelp/helpers';
 import { getContract } from '@testhelp/getContracts';
+import { getInitConfigVault } from '@testhelp/deployHelpers';
 
 describe.only('Testing vault tasks', () => {
   const setupVault = deployments.createFixture(async (hre) => {
-    const { ethers, deployments, getNamedAccounts } = hre;
+    const { ethers, deployments, getNamedAccounts, network } = hre;
     const amount = 1_000_000 * 1e6;
     const contract = 'TestVault1';
     await deployments.fixture([contract]);
@@ -18,8 +18,9 @@ describe.only('Testing vault tasks', () => {
 
     await run('vault_init', { contract });
     await transferAndApproveUSDC(vault.address, user, amount);
+    const initSettings = await getInitConfigVault(contract, network.name);
 
-    return { vault, user, contract };
+    return { vault, user, contract, initSettings };
   });
 
   /*************
@@ -45,10 +46,10 @@ describe.only('Testing vault tasks', () => {
   });
 
   it('vault_set_gas_fee_liq', async function () {
-    const { vault, contract } = await setupVault();
+    const { vault, contract, initSettings } = await setupVault();
     const liquidity = random(100_000 * 1e6);
 
-    expect(await vault.gasFeeLiquidity()).to.be.equal(vaultInitSettings.gasFeeLiq);
+    expect(await vault.gasFeeLiquidity()).to.be.equal(initSettings.gasFeeLiq);
     await run('vault_set_gas_fee_liq', { contract, liquidity });
     expect(await vault.gasFeeLiquidity()).to.be.equal(liquidity);
   });
@@ -62,19 +63,19 @@ describe.only('Testing vault tasks', () => {
   });
 
   it('vault_set_margin_scale', async function () {
-    const { vault, contract } = await setupVault();
+    const { vault, contract, initSettings } = await setupVault();
     const scale = random(100_000_000_000);
 
-    expect(await vault.marginScale()).to.be.equal(vaultInitSettings.marginScale);
+    expect(await vault.marginScale()).to.be.equal(initSettings.marginScale);
     await run('vault_set_margin_scale', { contract, scale });
     expect(await vault.marginScale()).to.be.equal(scale);
   });
 
   it('vault_set_liquidity_perc', async function () {
-    const { vault, contract } = await setupVault();
+    const { vault, contract, initSettings } = await setupVault();
     const percentage = random(100);
 
-    expect(await vault.liquidityPerc()).to.be.equal(vaultInitSettings.liquidityPercentage);
+    expect(await vault.liquidityPerc()).to.be.equal(initSettings.liquidityPercentage);
     await run('vault_set_liquidity_perc', { contract, percentage });
     expect(await vault.liquidityPerc()).to.be.equal(percentage);
   });
@@ -133,10 +134,10 @@ describe.only('Testing vault tasks', () => {
   });
 
   it('vault_set_performance_fee', async function () {
-    const { vault, contract } = await setupVault();
+    const { vault, contract, initSettings } = await setupVault();
     const fee = random(100);
 
-    expect(await vault.liquidityPerc()).to.be.equal(vaultInitSettings.performanceFee);
+    expect(await vault.liquidityPerc()).to.be.equal(initSettings.performanceFee);
     await run('vault_set_performance_fee', { contract, percentage: fee });
     expect(await vault.performanceFee()).to.be.equal(fee);
   });

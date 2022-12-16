@@ -17,7 +17,6 @@ import {
 import { rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
-import { vaultDeploySettings } from 'deploySettings';
 import { setupXChain } from '../xController/setup';
 
 const amount = 1_000_000;
@@ -28,7 +27,7 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   let vault: MainVaultMock,
     user: Signer,
     controller: Controller,
-    vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber,
+    vaultNumber: BigNumberish = 10,
     game: GameMock;
 
   const protocols = new Map<string, ProtocolVault>()

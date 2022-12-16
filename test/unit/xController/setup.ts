@@ -9,7 +9,6 @@ import {
   InitGame,
   InitXController,
 } from '@testhelp/InitialiseContracts';
-import { vaultDeploySettings } from 'deploySettings';
 import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 
@@ -92,7 +91,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     await protocol.addProtocolToController(
       controller,
       dao,
-      vaultDeploySettings.vaultNumber,
+      vaultNumber,
       allProvidersClass,
     );
   }

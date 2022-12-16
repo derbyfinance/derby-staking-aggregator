@@ -6,7 +6,6 @@ import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '
 import { deployXChainControllerMock } from '@testhelp/deploy';
 import { usdc } from '@testhelp/addresses';
 import { getAndInitXProviders, InitXController } from '@testhelp/InitialiseContracts';
-import { vaultDeploySettings } from 'deploySettings';
 import { getAllSigners } from '@testhelp/getContracts';
 import { setupXChain } from './setup';
 
@@ -23,7 +22,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
     game: GameMock,
-    vaultNumber: BigNumberish = vaultDeploySettings.vaultNumber;
+    vaultNumber: BigNumberish = 10;
 
   const setupXChainExtended = deployments.createFixture(async (hre) => {
     const [dao, guardian] = await getAllSigners(hre);

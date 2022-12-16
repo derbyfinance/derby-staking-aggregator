@@ -19,24 +19,6 @@ export const controllerInit = {
   chainlinkGasPriceOracle: '0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C',
 };
 
-export const vaultDeploySettings = {
-  name: 'DerbyUSDC',
-  symbol: 'dfUSDC',
-  decimals: 6,
-  vaultNumber: 10,
-  vaultCurrency: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-  uScale: 1e6,
-};
-
-export const vaultInitSettings = {
-  gasFeeLiq: 10_000 * 1e6,
-  rebalanceInterval: 1,
-  marginScale: 1_000 * 1e6,
-  liquidityPercentage: 10,
-  performanceFee: 10,
-  chainIds: [10, 100, 1000],
-};
-
 export const gameDeploySettings = {
   nftName: 'DerbyNFT',
   nftSymbol: 'DRBNFT',
