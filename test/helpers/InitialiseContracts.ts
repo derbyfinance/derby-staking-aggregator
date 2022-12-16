@@ -72,35 +72,6 @@ export async function InitXController(
   ]);
 }
 
-export async function InitVault(
-  vault: MainVaultMock,
-  guardian: Signer,
-  dao: Signer,
-  info: {
-    xProvider: string;
-    homeChain: number;
-  },
-) {
-  const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
-    vaultInitSettings;
-
-  const guardianAddr = await guardian.getAddress();
-  const { xProvider, homeChain } = info;
-
-  await vault.connect(dao).setGuardian(guardianAddr);
-
-  await Promise.all([
-    vault.connect(dao).setHomeXProvider(xProvider),
-    vault.connect(dao).setPerformanceFee(performanceFee),
-    vault.connect(dao).setSwapRewards(true),
-    vault.connect(guardian).setHomeChain(homeChain),
-    vault.connect(guardian).setGasFeeLiquidity(gasFeeLiq),
-    vault.connect(guardian).setRebalanceInterval(rebalanceInterval),
-    vault.connect(guardian).setMarginScale(marginScale),
-    vault.connect(guardian).setLiquidityPerc(liquidityPercentage),
-  ]);
-}
-
 export async function InitGame(
   { run, deployments }: HardhatRuntimeEnvironment,
   game: GameMock,

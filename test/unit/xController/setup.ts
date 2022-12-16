@@ -7,7 +7,6 @@ import {
   InitController,
   InitEndpoints,
   InitGame,
-  InitVault,
   InitXController,
 } from '@testhelp/InitialiseContracts';
 import { vaultDeploySettings } from 'deploySettings';
@@ -17,6 +16,7 @@ import allProvidersClass from '@testhelp/classes/allProvidersClass';
 const chainIds = [10, 100, 1000, 10000];
 
 export const setupXChain = deployments.createFixture(async (hre) => {
+  const { run } = hre;
   await deployments.fixture([
     'XChainControllerMock',
     'YearnProvider',
@@ -38,7 +38,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
 
   const IUSDc = erc20(usdc);
   const [dao, user, guardian] = await getAllSigners(hre);
-  const vaultNumber = vaultDeploySettings.vaultNumber;
+  const vaultNumber = 10;
 
   const game = (await getContract('GameMock', hre)) as GameMock;
   const controller = (await getContract('Controller', hre)) as Controller;
@@ -58,10 +58,14 @@ export const setupXChain = deployments.createFixture(async (hre) => {
       chainIds,
       homeVault: vault1.address,
     }),
-    InitVault(vault1, guardian, dao, { xProvider: xProviderMain.address, homeChain: 10 }),
-    InitVault(vault2, guardian, dao, { xProvider: xProviderArbi.address, homeChain: 100 }),
-    InitVault(vault3, guardian, dao, { xProvider: xProviderOpti.address, homeChain: 1000 }),
-    InitVault(vault4, guardian, dao, { xProvider: xProviderBnb.address, homeChain: 10000 }),
+    run('vault_init', { contract: 'TestVault1' }),
+    run('vault_init', { contract: 'TestVault2' }),
+    run('vault_init', { contract: 'TestVault3' }),
+    run('vault_init', { contract: 'TestVault4' }),
+    run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
+    run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
+    run('vault_set_homexprovider', { contract: 'TestVault3', address: xProviderOpti.address }),
+    run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderBnb.address }),
     InitXController(hre, xChainController, guardian, dao, {
       vaultNumber,
       chainIds,

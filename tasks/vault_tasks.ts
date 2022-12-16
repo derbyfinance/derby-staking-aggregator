@@ -10,8 +10,14 @@ task('vault_init', 'Initializes the vault')
     const initConfig = await getInitConfigVault(contract, network.name);
     if (!initConfig) throw 'Unknown contract name';
 
-    const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
-      initConfig;
+    const {
+      gasFeeLiq,
+      rebalanceInterval,
+      marginScale,
+      liquidityPercentage,
+      performanceFee,
+      homeChain,
+    } = initConfig;
 
     await run('vault_set_guardian', { contract, guardian: guardian });
     await run('vault_set_gas_fee_liq', { contract, liquidity: gasFeeLiq });
@@ -20,6 +26,7 @@ task('vault_init', 'Initializes the vault')
     await run('vault_set_liquidity_perc', { contract, percentage: liquidityPercentage });
     await run('vault_set_performance_fee', { contract, percentage: performanceFee });
     await run('vault_set_swap_rewards', { contract, state: true });
+    await run('vault_set_home_chain', { contract, chainid: homeChain });
   });
 
 /*************

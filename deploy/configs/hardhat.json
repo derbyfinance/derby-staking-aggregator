@@ -13,7 +13,8 @@
       "rebalanceInterval": 1,
       "marginScale": 1e9,
       "liquidityPercentage": 10,
-      "performanceFee": 10
+      "performanceFee": 10,
+      "homeChain": 10
     }
   },
   "TestVault2": {
@@ -30,7 +31,8 @@
       "rebalanceInterval": 1,
       "marginScale": 1e9,
       "liquidityPercentage": 10,
-      "performanceFee": 10
+      "performanceFee": 10,
+      "homeChain": 100
     }
   },
   "TestVault3": {
@@ -47,7 +49,8 @@
       "rebalanceInterval": 1,
       "marginScale": 1e9,
       "liquidityPercentage": 10,
-      "performanceFee": 10
+      "performanceFee": 10,
+      "homeChain": 1000
     }
   },
   "TestVault4": {
@@ -64,7 +67,8 @@
       "rebalanceInterval": 1,
       "marginScale": 1e9,
       "liquidityPercentage": 10,
-      "performanceFee": 10
+      "performanceFee": 10,
+      "homeChain": 10000
     }
   }
 }

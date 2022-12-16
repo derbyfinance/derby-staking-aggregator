@@ -16,6 +16,7 @@ type IInitVaultConfig = {
   marginScale: number;
   liquidityPercentage: number;
   performanceFee: number;
+  homeChain: number;
 };
 
 export async function getDeployConfigVault(
