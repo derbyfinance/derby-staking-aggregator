@@ -123,10 +123,8 @@ export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: 
   ]);
 }
 
-export async function InitController({ run, deployments }: HardhatRuntimeEnvironment) {
+export async function AddAllVaultsToController({ run, deployments }: HardhatRuntimeEnvironment) {
   const vaults = await getTestVaultDeployments(deployments);
-
-  await run('controller_init');
 
   for (const vault of vaults) {
     await run('controller_add_vault', { vault: vault.address });

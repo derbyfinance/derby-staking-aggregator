@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-type IDeployConfig = {
+type IDeployVaultConfig = {
   name: string;
   symbol: string;
   decimals: number;
@@ -19,10 +19,25 @@ type IInitVaultConfig = {
   homeChain: number;
 };
 
+type IInitControllerConfig = {
+  dai: string;
+  usdc: string;
+  usdt: string;
+  daiCurveIndex: number;
+  usdcCurveIndex: number;
+  usdtCurveIndex: number;
+  curve3PoolFee: number;
+  curve3Pool: string;
+  uniswapRouter: string;
+  uniswapQouter: string;
+  uniswapPoolFee: number;
+  chainlinkGasPriceOracle: string;
+};
+
 export async function getDeployConfigVault(
   vaultName: string,
   network: string,
-): Promise<IDeployConfig> {
+): Promise<IDeployVaultConfig> {
   const config = await getConfig(network);
   return config[vaultName]?.deploy;
 }
@@ -33,6 +48,17 @@ export async function getInitConfigVault(
 ): Promise<IInitVaultConfig> {
   const config = await getConfig(network);
   return config[vaultName]?.init;
+}
+
+export async function getDeployConfigController(network: string): Promise<IDeployVaultConfig> {
+  const config = await getConfig(network);
+  return config['Controller']?.deploy;
+}
+
+export async function getInitConfigController(network: string): Promise<IInitControllerConfig> {
+  console.log(network);
+  const config = await getConfig(network);
+  return config['Controller']?.init;
 }
 
 export async function getConfig(network: string) {

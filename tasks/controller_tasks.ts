@@ -1,4 +1,4 @@
-import { controllerInit } from 'deploySettings';
+import { getInitConfigController } from '@testhelp/deployHelpers';
 import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -17,39 +17,38 @@ const getController = async ({
   return { controller, dao };
 };
 
-task('controller_init', 'Initializes the controller').setAction(
-  async (taskArgs, { run, ethers }) => {
-    const {
-      dai,
-      usdc,
-      usdt,
-      daiCurveIndex,
-      usdcCurveIndex,
-      usdtCurveIndex,
-      uniswapRouter,
-      uniswapQouter,
-      uniswapPoolFee,
-      chainlinkGasPriceOracle,
-      curve3PoolFee,
-      curve3Pool,
-    } = controllerInit;
+task('controller_init', 'Initializes the controller').setAction(async (_, { run, network }) => {
+  const initConfig = await getInitConfigController(network.name);
+  if (!initConfig) throw 'Unknown contract name';
 
-    await Promise.all([
-      run('controller_add_curve_index', { token: dai, index: daiCurveIndex }),
-      run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex }),
-      run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex }),
-      run('controller_set_curve_poolfee', { poolfee: curve3PoolFee }),
-      run('controller_set_curve_3pool', { pool: curve3Pool }),
-      run('controller_set_uniswap_router', { router: uniswapRouter }),
-      run('controller_set_uniswap_quoter', { quoter: uniswapQouter }),
-      run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee }),
-      run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle }),
-      run('controller_add_underlying_scale', { stable: usdc, decimals: 6 }),
-      run('controller_add_underlying_scale', { stable: dai, decimals: 18 }),
-      run('controller_add_underlying_scale', { stable: usdt, decimals: 6 }),
-    ]);
-  },
-);
+  const {
+    dai,
+    usdc,
+    usdt,
+    daiCurveIndex,
+    usdcCurveIndex,
+    usdtCurveIndex,
+    uniswapRouter,
+    uniswapQouter,
+    uniswapPoolFee,
+    chainlinkGasPriceOracle,
+    curve3PoolFee,
+    curve3Pool,
+  } = initConfig;
+
+  await run('controller_add_curve_index', { token: dai, index: daiCurveIndex });
+  await run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex });
+  await run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex });
+  await run('controller_set_curve_poolfee', { poolfee: curve3PoolFee });
+  await run('controller_set_curve_3pool', { pool: curve3Pool });
+  await run('controller_set_uniswap_router', { router: uniswapRouter });
+  await run('controller_set_uniswap_quoter', { quoter: uniswapQouter });
+  await run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee });
+  await run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle });
+  await run('controller_add_underlying_scale', { stable: usdc, decimals: 6 });
+  await run('controller_add_underlying_scale', { stable: dai, decimals: 18 });
+  await run('controller_add_underlying_scale', { stable: usdt, decimals: 6 });
+});
 
 task('controller_add_protocol', 'Add protocol to controller')
   .addParam('name', 'Name of the protocol vault combination')

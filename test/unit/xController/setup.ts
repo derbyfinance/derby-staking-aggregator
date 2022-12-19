@@ -4,7 +4,7 @@ import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@ty
 import { allProtocols, usdc } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
-  InitController,
+  AddAllVaultsToController,
   InitEndpoints,
   InitGame,
   InitXController,
@@ -50,7 +50,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
 
   await Promise.all([
     InitEndpoints(hre, allXProviders),
-    InitController(hre),
+    run('controller_init'),
     InitGame(hre, game, guardian, {
       vaultNumber,
       gameXProvider: xProviderMain.address,
@@ -78,6 +78,8 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
     xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
 
+    AddAllVaultsToController(hre),
+
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
     derbyToken.transfer(user.address, parseEther('2100')),
@@ -88,12 +90,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
 
   // add all protocol vaults to controller
   for (const protocol of allProtocols.values()) {
-    await protocol.addProtocolToController(
-      controller,
-      dao,
-      vaultNumber,
-      allProvidersClass,
-    );
+    await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   }
 
   return {
