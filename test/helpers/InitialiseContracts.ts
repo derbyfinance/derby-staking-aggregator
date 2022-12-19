@@ -1,5 +1,4 @@
 import { GameMock, MainVaultMock, XChainController, XProvider } from '@typechain';
-import { gameDeploySettings, gameInitSettings } from 'deploySettings';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
@@ -72,34 +71,26 @@ export async function InitXController(
   ]);
 }
 
-export async function InitGame(
+export async function setGameLatestProtocolIds(
   { run, deployments }: HardhatRuntimeEnvironment,
   game: GameMock,
   guardian: Signer,
   info: {
     vaultNumber: number;
-    gameXProvider: string;
-    chainIds: BigNumberish[];
-    homeVault: string;
+    latestProtocolId: number;
+    chainids: BigNumberish[];
   },
 ) {
-  const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
-  const { latestprotocolid } = gameInitSettings;
-  const { vaultNumber, chainIds, gameXProvider, homeVault } = info;
-
-  await Promise.all([
-    run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
-    run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
-    run('game_set_chain_ids', { chainids: chainIds }),
-    run('game_set_xprovider', { provider: gameXProvider }),
-    run('game_set_home_vault', { vault: homeVault }),
-  ]);
+  const { vaultNumber, chainids, latestProtocolId } = info;
 
   const vaults = await getTestVaultDeployments(deployments);
 
-  for (let i = 0; i < chainIds.length; i++) {
-    await run('game_latest_protocol_id', { chainid: chainIds[i], latestprotocolid });
-    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[i], vaults[i].address);
+  for (let i = 0; i < chainids.length; i++) {
+    await run('game_latest_protocol_id', {
+      chainid: chainids[i],
+      latestprotocolid: latestProtocolId,
+    });
+    game.connect(guardian).setVaultAddress(vaultNumber, chainids[i], vaults[i].address);
   }
 }
 

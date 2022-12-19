@@ -3,7 +3,7 @@ import { Signer, Contract, BigNumberish } from 'ethers';
 import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import { derbyTokenSettings, gameInitSettings } from 'deploySettings';
+import { derbyTokenSettings } from 'deploySettings';
 import { setupGame } from './setup';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
@@ -18,7 +18,7 @@ describe.only('Testing Game', async () => {
     game: GameMock,
     basketId: BigNumberish,
     vaultNumber: BigNumberish,
-    chainIds: BigNumberish[] = gameInitSettings.chainids,
+    chainIds: BigNumberish[] = [10, 100, 1000],
     xChainController: XChainControllerMock;
 
   before(async function () {

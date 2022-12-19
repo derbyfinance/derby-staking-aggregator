@@ -6,13 +6,13 @@ import {
   getAndInitXProviders,
   AddAllVaultsToController,
   InitEndpoints,
-  InitGame,
+  setGameLatestProtocolIds,
   InitXController,
 } from '@testhelp/InitialiseContracts';
 import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 
-const chainIds = [10, 100, 1000, 10000];
+const chainids = [10, 100, 1000, 10000];
 
 export const setupXChain = deployments.createFixture(async (hre) => {
   const { run } = hre;
@@ -49,25 +49,22 @@ export const setupXChain = deployments.createFixture(async (hre) => {
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
 
   await Promise.all([
-    InitEndpoints(hre, allXProviders),
     run('controller_init'),
-    InitGame(hre, game, guardian, {
-      vaultNumber,
-      gameXProvider: xProviderMain.address,
-      chainIds,
-      homeVault: vault1.address,
-    }),
+
+    run('game_init', { provider: xProviderMain.address, homevault: vault1.address, chainids }),
+
     run('vault_init', { contract: 'TestVault1' }),
     run('vault_init', { contract: 'TestVault2' }),
     run('vault_init', { contract: 'TestVault3' }),
     run('vault_init', { contract: 'TestVault4' }),
+
     run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
     run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
     run('vault_set_homexprovider', { contract: 'TestVault3', address: xProviderOpti.address }),
     run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderBnb.address }),
     InitXController(hre, xChainController, guardian, dao, {
       vaultNumber,
-      chainIds,
+      chainIds: chainids,
       homeXProvider: xProviderArbi.address,
     }),
   ]);
@@ -78,7 +75,14 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
     xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
 
+    InitEndpoints(hre, allXProviders),
+    
     AddAllVaultsToController(hre),
+    setGameLatestProtocolIds(hre, game, guardian, {
+      vaultNumber,
+      latestProtocolId: 5,
+      chainids,
+    }),
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),

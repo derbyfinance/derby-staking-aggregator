@@ -1,6 +1,52 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
+export async function getDeployConfigGame(network: string): Promise<IDeployGameConfig> {
+  const config = await getConfig(network);
+  return config['Game']?.deploy;
+}
+
+export async function getInitConfigGame(network: string): Promise<IInitGameConfig> {
+  const config = await getConfig(network);
+  return config['Game']?.init;
+}
+
+export async function getDeployConfigVault(
+  vaultName: string,
+  network: string,
+): Promise<IDeployVaultConfig> {
+  const config = await getConfig(network);
+  return config[vaultName]?.deploy;
+}
+
+export async function getInitConfigVault(
+  vaultName: string,
+  network: string,
+): Promise<IInitVaultConfig> {
+  const config = await getConfig(network);
+  return config[vaultName]?.init;
+}
+
+export async function getInitConfigController(network: string): Promise<IInitControllerConfig> {
+  const config = await getConfig(network);
+  return config['Controller']?.init;
+}
+
+export async function getConfig(network: string) {
+  const path = join(__dirname, '..', '..', 'deploy', 'configs', `${network}.json`);
+  return JSON.parse(await readFile(path, 'utf8'));
+}
+
+type IDeployGameConfig = {
+  nftName: string;
+  nftSymbol: string;
+};
+
+type IInitGameConfig = {
+  negativeRewardFactor: number;
+  negativeRewardThreshold: number;
+};
+
 type IDeployVaultConfig = {
   name: string;
   symbol: string;
@@ -33,35 +79,3 @@ type IInitControllerConfig = {
   uniswapPoolFee: number;
   chainlinkGasPriceOracle: string;
 };
-
-export async function getDeployConfigVault(
-  vaultName: string,
-  network: string,
-): Promise<IDeployVaultConfig> {
-  const config = await getConfig(network);
-  return config[vaultName]?.deploy;
-}
-
-export async function getInitConfigVault(
-  vaultName: string,
-  network: string,
-): Promise<IInitVaultConfig> {
-  const config = await getConfig(network);
-  return config[vaultName]?.init;
-}
-
-export async function getDeployConfigController(network: string): Promise<IDeployVaultConfig> {
-  const config = await getConfig(network);
-  return config['Controller']?.deploy;
-}
-
-export async function getInitConfigController(network: string): Promise<IInitControllerConfig> {
-  console.log(network);
-  const config = await getConfig(network);
-  return config['Controller']?.init;
-}
-
-export async function getConfig(network: string) {
-  const path = join(__dirname, '..', '..', 'deploy', 'configs', `${network}.json`);
-  return JSON.parse(await readFile(path, 'utf8'));
-}

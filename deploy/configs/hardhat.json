@@ -1,4 +1,14 @@
 {
+  "Game": {
+    "deploy": {
+      "nftName": "DerbyNFT",
+      "nftSymbol": "DRBNFT"
+    },
+    "init": {
+      "negativeRewardFactor": 50,
+      "negativeRewardThreshold": -50000
+    }
+  },
   "Controller": {
     "init": {
       "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
