@@ -49,18 +49,14 @@ export const setupGame = deployments.createFixture(async (hre) => {
     homevault: vault.address,
     chainids,
   });
-  await run('xcontroller_init');
+  await run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address });
   await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
   await run('vault_init', { contract });
   await run('controller_init');
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
   await transferAndApproveUSDC(vault.address, user, 100_000_000 * 1e6);
-  await setGameLatestProtocolIds(hre, game, guardian, {
-    vaultNumber,
-    latestProtocolId: 5,
-    chainids: chainids,
-  });
+  await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
 
   return { game, derbyToken, vault, dao, user, userAddr, vaultNumber, basketId, xChainController };
 });

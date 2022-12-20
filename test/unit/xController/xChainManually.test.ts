@@ -5,7 +5,7 @@ import { erc20, formatUSDC } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { deployXChainControllerMock } from '@testhelp/deploy';
 import { usdc } from '@testhelp/addresses';
-import { getAndInitXProviders, InitXController } from '@testhelp/InitialiseContracts';
+import { getAndInitXProviders, addVaultsToXController } from '@testhelp/InitialiseContracts';
 import { getAllSigners } from '@testhelp/getContracts';
 import { setupXChain } from './setup';
 
@@ -43,11 +43,9 @@ describe.only('Testing XChainController, unit test for manual execution', async 
       xProviderMain.connect(dao).setXController(xChainControllerDUMMY.address),
       xProviderArbi.connect(dao).setXController(xChainControllerDUMMY.address),
 
-      InitXController(hre, xChainControllerDUMMY, guardian, dao, {
-        vaultNumber,
-        chainIds,
-        homeXProvider: xProviderArbi.address,
-      }),
+      addVaultsToXController(hre, xChainControllerDUMMY, dao, vaultNumber),
+      xChainControllerDUMMY.connect(guardian).setChainIds(chainIds),
+      xChainControllerDUMMY.connect(dao).setHomeXProvider(xProviderArbi.address),
     ]);
 
     return xChainControllerDUMMY;

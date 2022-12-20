@@ -12,12 +12,13 @@ describe.only('Testing xController tasks', () => {
   const setupXController = deployments.createFixture(
     async ({ ethers, deployments, getNamedAccounts }) => {
       const amount = 1_000_000 * 1e6;
+      const chainids = [10, 100, 1000];
 
       const accounts = await getNamedAccounts();
       const user = await ethers.getSigner(accounts.user);
 
       const xController = await deployXChainController(deployments, ethers);
-      await run('xcontroller_init');
+      await run('xcontroller_init', { chainids, homexprovider: xController.address });
 
       return { xController, user };
     },

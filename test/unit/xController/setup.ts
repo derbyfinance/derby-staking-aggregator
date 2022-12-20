@@ -4,10 +4,11 @@ import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@ty
 import { allProtocols, usdc } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
-  AddAllVaultsToController,
+  AddAllVaultsToController as addVaultsToController,
   InitEndpoints,
   setGameLatestProtocolIds,
-  InitXController,
+  addVaultsToXController,
+  setWhitelistVaults,
 } from '@testhelp/InitialiseContracts';
 import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
@@ -62,27 +63,16 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
     run('vault_set_homexprovider', { contract: 'TestVault3', address: xProviderOpti.address }),
     run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderBnb.address }),
-    InitXController(hre, xChainController, guardian, dao, {
-      vaultNumber,
-      chainIds: chainids,
-      homeXProvider: xProviderArbi.address,
-    }),
+
+    run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address }),
   ]);
 
   await Promise.all([
-    xProviderMain.connect(dao).toggleVaultWhitelist(vault1.address),
-    xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
-    xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
-    xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
-
+    setWhitelistVaults(hre, allXProviders, dao),
     InitEndpoints(hre, allXProviders),
-    
-    AddAllVaultsToController(hre),
-    setGameLatestProtocolIds(hre, game, guardian, {
-      vaultNumber,
-      latestProtocolId: 5,
-      chainids,
-    }),
+    addVaultsToController(hre),
+    addVaultsToXController(hre, xChainController, dao, vaultNumber),
+    setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),

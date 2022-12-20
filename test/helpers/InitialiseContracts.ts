@@ -1,4 +1,4 @@
-import { GameMock, MainVaultMock, XChainController, XProvider } from '@typechain';
+import { GameMock, XChainController, XProvider } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
@@ -46,24 +46,31 @@ export async function getAndInitXProviders(
   return [...xProviders];
 }
 
-export async function InitXController(
+export async function setWhitelistVaults(
   { deployments }: HardhatRuntimeEnvironment,
-  xController: XChainController,
-  guardian: Signer,
+  allXProviders: XProvider[],
   dao: Signer,
-  info: {
-    vaultNumber: BigNumberish;
-    chainIds: BigNumberish[];
-    homeXProvider: string;
-  },
 ) {
-  const { vaultNumber, chainIds, homeXProvider } = info;
-
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
   const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
 
   await Promise.all([
-    xController.connect(guardian).setChainIds(chainIds),
-    xController.connect(dao).setHomeXProvider(homeXProvider),
+    xProviderMain.connect(dao).toggleVaultWhitelist(vault1.address),
+    xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
+    xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
+    xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
+  ]);
+}
+
+export async function addVaultsToXController(
+  { deployments }: HardhatRuntimeEnvironment,
+  xController: XChainController,
+  dao: Signer,
+  vaultNumber: number | BigNumberish,
+) {
+  const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
+
+  await Promise.all([
     xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
     xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
     xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
@@ -73,24 +80,23 @@ export async function InitXController(
 
 export async function setGameLatestProtocolIds(
   { run, deployments }: HardhatRuntimeEnvironment,
-  game: GameMock,
-  guardian: Signer,
   info: {
     vaultNumber: number;
-    latestProtocolId: number;
+    latestId: number;
     chainids: BigNumberish[];
   },
 ) {
-  const { vaultNumber, chainids, latestProtocolId } = info;
+  const { vaultNumber, chainids, latestId } = info;
 
   const vaults = await getTestVaultDeployments(deployments);
 
   for (let i = 0; i < chainids.length; i++) {
-    await run('game_latest_protocol_id', {
+    await run('game_latest_protocol_id', { chainid: chainids[i], latestprotocolid: latestId });
+    await run('game_set_vault_address', {
+      vaultnumber: vaultNumber,
       chainid: chainids[i],
-      latestprotocolid: latestProtocolId,
+      address: vaults[i].address,
     });
-    game.connect(guardian).setVaultAddress(vaultNumber, chainids[i], vaults[i].address);
   }
 }
 
