@@ -1,6 +1,18 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
+export async function getTokenConfig(network: string): Promise<ITokenConfig> {
+  const config = await getConfig(network);
+  return config['DerbyToken'];
+}
+
+export async function getDeployConfigXController(
+  network: string,
+): Promise<IDeployXControllerConfig> {
+  const config = await getConfig(network);
+  return config['XChainController']?.deploy;
+}
+
 export async function getDeployConfigGame(network: string): Promise<IDeployGameConfig> {
   const config = await getConfig(network);
   return config['Game']?.deploy;
@@ -9,6 +21,11 @@ export async function getDeployConfigGame(network: string): Promise<IDeployGameC
 export async function getInitConfigGame(network: string): Promise<IInitGameConfig> {
   const config = await getConfig(network);
   return config['Game']?.init;
+}
+
+export async function getDeployConfigXProvider(network: string): Promise<IDeployXProviderConfig> {
+  const config = await getConfig(network);
+  return config['XProvider']?.deploy;
 }
 
 export async function getDeployConfigVault(
@@ -37,6 +54,16 @@ export async function getConfig(network: string) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
+type ITokenConfig = {
+  name: string;
+  symbol: string;
+  totalSupply: number;
+};
+
+type IDeployXControllerConfig = {
+  homeChainId: number;
+};
+
 type IDeployGameConfig = {
   nftName: string;
   nftSymbol: string;
@@ -45,6 +72,15 @@ type IDeployGameConfig = {
 type IInitGameConfig = {
   negativeRewardFactor: number;
   negativeRewardThreshold: number;
+};
+
+type IDeployXProviderConfig = {
+  layerZeroEndpoint: string;
+  connextHandler: string;
+  mainnet: number;
+  arbitrum: number;
+  optimism: number;
+  bnb: number;
 };
 
 type IDeployVaultConfig = {

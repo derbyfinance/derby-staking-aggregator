@@ -3,8 +3,8 @@ import { Signer, Contract, BigNumberish } from 'ethers';
 import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
-import { derbyTokenSettings } from 'deploySettings';
 import { setupGame } from './setup';
+import { getTokenConfig } from '@testhelp/deployHelpers';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
@@ -35,7 +35,10 @@ describe.only('Testing Game', async () => {
   });
 
   it('DerbyToken should have name, symbol and totalSupply set', async function () {
-    const { name, symbol, totalSupply } = derbyTokenSettings;
+    const tokenConfig = await getTokenConfig('hardhat');
+    if (!tokenConfig) throw 'Unknown contract name';
+    const { name, symbol, totalSupply } = tokenConfig;
+
     expect(await derbyToken.name()).to.be.equal(name);
     expect(await derbyToken.symbol()).to.be.equal(symbol);
     expect(await derbyToken.totalSupply()).to.be.equal(parseEther(totalSupply.toString()));

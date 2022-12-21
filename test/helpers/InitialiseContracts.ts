@@ -1,4 +1,4 @@
-import { GameMock, XChainController, XProvider } from '@typechain';
+import { XChainController, XProvider } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
