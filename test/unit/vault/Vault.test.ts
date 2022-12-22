@@ -4,12 +4,12 @@ import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
-import { vaultDeploySettings } from 'deploySettings';
 import { setupVault } from './setup';
+import { getDeployConfigVault } from '@testhelp/deployHelpers';
 
 describe.only('Testing Vault, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
-    vaultNumber: number = vaultDeploySettings.vaultNumber;
+    vaultNumber: number = 10;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
@@ -20,7 +20,7 @@ describe.only('Testing Vault, unit test', async () => {
 
   it('Should have a name and symbol', async function () {
     const { vault } = await setupVault();
-    const { name, symbol, decimals } = vaultDeploySettings;
+    const { name, symbol, decimals } = await getDeployConfigVault('TestVault1', 'hardhat');
     expect(await vault.name()).to.be.equal(name);
     expect(await vault.symbol()).to.be.equal(symbol);
     expect(await vault.decimals()).to.be.equal(decimals);

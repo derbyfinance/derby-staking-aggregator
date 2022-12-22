@@ -1,14 +1,14 @@
 import { deployments, run } from 'hardhat';
 import { transferAndApproveUSDC } from '@testhelp/helpers';
-import { Controller, MainVaultMock, XChainControllerMock } from '@typechain';
+import { Controller, MainVaultMock } from '@typechain';
 import { allProtocols } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
-import { vaultDeploySettings } from 'deploySettings';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { AddAllVaultsToController } from '@testhelp/InitialiseContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
   await deployments.fixture([
-    'MainVaultMock',
+    'TestVault1',
     'YearnProvider',
     'CompoundProvider',
     'AaveProvider',
@@ -18,15 +18,17 @@ export const setupVault = deployments.createFixture(async (hre) => {
     'BetaProvider',
   ]);
 
+  const vaultNumber = 10;
+  const contract = 'TestVault1';
   const [dao, user, guardian] = await getAllSigners(hre);
 
-  const vault = (await getContract('MainVaultMock', hre)) as MainVaultMock;
+  const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
   const controller = (await getContract('Controller', hre)) as Controller;
 
   await allProviders.setProviders(hre);
   await transferAndApproveUSDC(vault.address, user, 10_000_000 * 1e6);
 
-  await run('vault_init');
+  await run('vault_init', { contract });
   await run('controller_init');
   await run('controller_add_vault', { vault: vault.address });
   await run('controller_add_vault', { vault: guardian.address }); // using guardian as mock signer
@@ -37,12 +39,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
 
   // add all protocol vaults to controller
   for (const protocol of allProtocols.values()) {
-    await protocol.addProtocolToController(
-      controller,
-      dao,
-      vaultDeploySettings.vaultNumber,
-      allProviders,
-    );
+    await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);
   }
 
   return { vault, controller, dao, user, guardian };

@@ -1,16 +1,19 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { gameDeploySettings } from 'deploySettings';
+import { getDeployConfigGame } from '@testhelp/deployHelpers';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  run,
+  network,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao, guardian } = await getNamedAccounts();
 
-  const { nftName, nftSymbol } = gameDeploySettings;
+  const deployConfig = await getDeployConfigGame(network.name);
+  if (!deployConfig) throw 'Unknown contract name';
+
+  const { nftName, nftSymbol } = deployConfig;
 
   const derbyToken = await deployments.get('DerbyToken');
   const controller = await deployments.get('Controller');

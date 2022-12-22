@@ -1,23 +1,23 @@
-import { gameDeploySettings, gameInitSettings } from 'deploySettings';
+import { getInitConfigGame } from '@testhelp/deployHelpers';
 import { Result } from 'ethers/lib/utils';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('game_init', 'Initializes the game')
   .addParam('provider', 'Address of the provider')
-  .setAction(async ({ provider }, { run }) => {
-    const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
-    const { chainids, latestprotocolid } = gameInitSettings;
+  .addParam('homevault', 'Address of the home vault')
+  .addVariadicPositionalParam('chainids', 'array of chainids', [], types.int)
+  .setAction(async ({ provider, homevault, chainids }, { run, network }) => {
+    const initConfig = await getInitConfigGame(network.name);
+    if (!initConfig) throw 'Unknown contract name';
 
-    await Promise.all([
-      run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
-      run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
-      run('game_set_chain_ids', { chainids }),
-      run('game_latest_protocol_id', { chainid: chainids[0], latestprotocolid }),
-      run('game_latest_protocol_id', { chainid: chainids[1], latestprotocolid }),
-      run('game_latest_protocol_id', { chainid: chainids[2], latestprotocolid }),
-      run('game_set_xprovider', { provider }),
-    ]);
+    const { negativeRewardThreshold, negativeRewardFactor } = initConfig;
+
+    await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
+    await run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold });
+    await run('game_set_chain_ids', { chainids });
+    await run('game_set_xprovider', { provider });
+    await run('game_set_home_vault', { vault: homevault });
   });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')

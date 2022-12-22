@@ -1,5 +1,4 @@
-import { GameMock, MainVaultMock, XChainController, XProvider } from '@typechain';
-import { gameDeploySettings, gameInitSettings, vaultInitSettings } from 'deploySettings';
+import { XChainController, XProvider } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
@@ -47,24 +46,31 @@ export async function getAndInitXProviders(
   return [...xProviders];
 }
 
-export async function InitXController(
+export async function setWhitelistVaults(
   { deployments }: HardhatRuntimeEnvironment,
-  xController: XChainController,
-  guardian: Signer,
+  allXProviders: XProvider[],
   dao: Signer,
-  info: {
-    vaultNumber: BigNumberish;
-    chainIds: BigNumberish[];
-    homeXProvider: string;
-  },
 ) {
-  const { vaultNumber, chainIds, homeXProvider } = info;
-
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
   const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
 
   await Promise.all([
-    xController.connect(guardian).setChainIds(chainIds),
-    xController.connect(dao).setHomeXProvider(homeXProvider),
+    xProviderMain.connect(dao).toggleVaultWhitelist(vault1.address),
+    xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
+    xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
+    xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
+  ]);
+}
+
+export async function addVaultsToXController(
+  { deployments }: HardhatRuntimeEnvironment,
+  xController: XChainController,
+  dao: Signer,
+  vaultNumber: number | BigNumberish,
+) {
+  const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
+
+  await Promise.all([
     xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
     xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
     xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
@@ -72,63 +78,25 @@ export async function InitXController(
   ]);
 }
 
-export async function InitVault(
-  vault: MainVaultMock,
-  guardian: Signer,
-  dao: Signer,
-  info: {
-    xProvider: string;
-    homeChain: number;
-  },
-) {
-  const { gasFeeLiq, rebalanceInterval, marginScale, liquidityPercentage, performanceFee } =
-    vaultInitSettings;
-
-  const guardianAddr = await guardian.getAddress();
-  const { xProvider, homeChain } = info;
-
-  await vault.connect(dao).setGuardian(guardianAddr);
-
-  await Promise.all([
-    vault.connect(dao).setHomeXProvider(xProvider),
-    vault.connect(dao).setPerformanceFee(performanceFee),
-    vault.connect(dao).setSwapRewards(true),
-    vault.connect(guardian).setHomeChain(homeChain),
-    vault.connect(guardian).setGasFeeLiquidity(gasFeeLiq),
-    vault.connect(guardian).setRebalanceInterval(rebalanceInterval),
-    vault.connect(guardian).setMarginScale(marginScale),
-    vault.connect(guardian).setLiquidityPerc(liquidityPercentage),
-  ]);
-}
-
-export async function InitGame(
+export async function setGameLatestProtocolIds(
   { run, deployments }: HardhatRuntimeEnvironment,
-  game: GameMock,
-  guardian: Signer,
   info: {
     vaultNumber: number;
-    gameXProvider: string;
-    chainIds: BigNumberish[];
-    homeVault: string;
+    latestId: number;
+    chainids: BigNumberish[];
   },
 ) {
-  const { negativeRewardThreshold, negativeRewardFactor } = gameDeploySettings;
-  const { latestprotocolid } = gameInitSettings;
-  const { vaultNumber, chainIds, gameXProvider, homeVault } = info;
-
-  await Promise.all([
-    run('game_set_negative_reward_factor', { factor: negativeRewardFactor }),
-    run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold }),
-    run('game_set_chain_ids', { chainids: chainIds }),
-    run('game_set_xprovider', { provider: gameXProvider }),
-    run('game_set_home_vault', { vault: homeVault }),
-  ]);
+  const { vaultNumber, chainids, latestId } = info;
 
   const vaults = await getTestVaultDeployments(deployments);
 
-  for (let i = 0; i < chainIds.length; i++) {
-    await run('game_latest_protocol_id', { chainid: chainIds[i], latestprotocolid });
-    game.connect(guardian).setVaultAddress(vaultNumber, chainIds[i], vaults[i].address);
+  for (let i = 0; i < chainids.length; i++) {
+    await run('game_latest_protocol_id', { chainid: chainids[i], latestprotocolid: latestId });
+    await run('game_set_vault_address', {
+      vaultnumber: vaultNumber,
+      chainid: chainids[i],
+      address: vaults[i].address,
+    });
   }
 }
 
@@ -152,10 +120,8 @@ export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: 
   ]);
 }
 
-export async function InitController({ run, deployments }: HardhatRuntimeEnvironment) {
+export async function AddAllVaultsToController({ run, deployments }: HardhatRuntimeEnvironment) {
   const vaults = await getTestVaultDeployments(deployments);
-
-  await run('controller_init');
 
   for (const vault of vaults) {
     await run('controller_add_vault', { vault: vault.address });

@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
 import { parseEther } from '@testhelp/helpers';
-import { gameInitSettings } from 'deploySettings';
 import { setupGame } from './setup';
 
 describe('Testing Game Rewards', async () => {
-  const chainIds: BigNumberish[] = gameInitSettings.chainids;
+  const chainIds: BigNumberish[] = [10, 100, 1000];
 
   it('Calculate rewards during rebalance Basket', async function () {
     const { game, derbyToken, vault, user, vaultNumber, basketId } = await setupGame();

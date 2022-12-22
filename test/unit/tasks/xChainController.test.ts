@@ -1,23 +1,20 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { XChainControllerMock } from '@typechain';
-import { erc20, getUSDCSigner } from '@testhelp/helpers';
-import { usdc } from '@testhelp/addresses';
-import { Signer } from 'ethers';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
-import { xChainControllerInitSettings } from 'deploySettings';
 
 describe.only('Testing xController tasks', () => {
   const setupXController = deployments.createFixture(
     async ({ ethers, deployments, getNamedAccounts }) => {
       const amount = 1_000_000 * 1e6;
+      const chainids = [10, 100, 1000];
 
       const accounts = await getNamedAccounts();
       const user = await ethers.getSigner(accounts.user);
 
       const xController = await deployXChainController(deployments, ethers);
-      await run('xcontroller_init');
+      await run('xcontroller_init', { chainids, homexprovider: xController.address });
 
       return { xController, user };
     },
@@ -67,7 +64,7 @@ describe.only('Testing xController tasks', () => {
 
   it('xcontroller_receive_allocations', async function () {
     const { xController } = await setupXController();
-    const { chainIds } = xChainControllerInitSettings;
+    const  chainIds  = [10, 100, 1000];
     const vaultnumber = random(100);
     const deltas = [random(100_000 * 1e6), random(100_000 * 1e6), random(100_000 * 1e6)];
 

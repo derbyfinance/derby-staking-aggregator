@@ -1,23 +1,26 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { derbyTokenSettings } from 'deploySettings';
+import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ethers,
+  network,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const { name, symbol, totalSupply } = derbyTokenSettings;
+  const deployConfig = await getDeployConfigXProvider(network.name);
+  if (!deployConfig) throw 'Unknown contract name';
+  const { bnb } = deployConfig;
 
-  await deploy('DerbyToken', {
+  await deploy('LZEndpointBnb', {
     from: deployer,
-    args: [name, symbol, ethers.utils.parseEther(totalSupply.toString())],
+    contract: 'LZEndpointMock',
+    args: [bnb],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['DerbyToken'];
+func.tags = ['LZEndpointBnb'];

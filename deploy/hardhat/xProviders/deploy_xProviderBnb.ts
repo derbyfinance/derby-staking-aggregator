@@ -1,22 +1,25 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { xProviderDeploySettings } from 'deploySettings';
+import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  network,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  const { mainnet } = xProviderDeploySettings;
+  const deployConfig = await getDeployConfigXProvider(network.name);
+  if (!deployConfig) throw 'Unknown contract name';
+  const { bnb } = deployConfig;
 
   const game = await deployments.get('GameMock');
   const xChainController = await deployments.get('XChainControllerMock');
-  const LZEndpoint = await deployments.get('LZEndpointMain');
+  const LZEndpoint = await deployments.get('LZEndpointBnb');
   const connextHandler = await deployments.get('ConnextHandlerMock');
 
-  await deploy('XProviderMain', {
+  await deploy('XProviderBnb', {
     from: deployer,
     contract: 'XProvider',
     args: [
@@ -25,12 +28,12 @@ const func: DeployFunction = async function ({
       dao,
       game.address,
       xChainController.address,
-      mainnet,
+      bnb,
     ],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['XProviderMain'];
-func.dependencies = ['GameMock', 'XChainControllerMock', 'LZEndpointMain', 'ConnextHandlerMock'];
+func.tags = ['XProviderBnb'];
+func.dependencies = ['GameMock', 'XChainControllerMock', 'LZEndpointBnb', 'ConnextHandlerMock'];

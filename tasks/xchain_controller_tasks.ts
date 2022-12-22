@@ -1,14 +1,13 @@
-import { xChainControllerInitSettings } from 'deploySettings';
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-task('xcontroller_init', 'Initializes the xController').setAction(
-  async (args, { run, getNamedAccounts }) => {
-    const { chainIds } = xChainControllerInitSettings;
-
-    await Promise.all([run('xcontroller_set_chain_ids', { chainids: chainIds })]);
-  },
-);
+task('xcontroller_init', 'Initializes the xController')
+  .addVariadicPositionalParam('chainids', 'array of chainids', [], types.int)
+  .addParam('homexprovider', 'Number of vault')
+  .setAction(async ({ homexprovider, chainids }, { run }) => {
+    await run('xcontroller_set_chain_ids', { chainids });
+    await run('xcontroller_set_homexprovider', { address: homexprovider });
+  });
 
 /*************
 CrossChain
