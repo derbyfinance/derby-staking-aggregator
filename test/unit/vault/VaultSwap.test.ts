@@ -57,7 +57,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     const amountToDeposit = parseUSDC('100000');
 
     // Deposit and rebalance with 100k in only Compound
-    await vault.connect(user).deposit(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit, user.address);
     await vault.setVaultState(3);
     await vault.rebalanceETF();
     // mine 100 blocks to gain COMP Tokens
@@ -160,7 +160,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     ]);
 
     // Deposit and rebalance with 100k
-    await vault.connect(user).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC, user.address);
     await vault.setVaultState(3);
     let gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
@@ -236,7 +236,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
       aaveVault.setDeltaAllocation(vault, 60),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
-    await vault.connect(user).deposit(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit, user.address);
 
     const ETHBalanceBefore = await dao.getBalance();
     await vault.setVaultState(3);
@@ -264,7 +264,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     ]);
 
     // Deposit and rebalance with 100k
-    await vault.connect(user).deposit(amountToDeposit);
+    await vault.connect(user).deposit(amountToDeposit, user.address);
     await vault.setVaultState(3);
 
     let gasUsed = formatUSDC(await rebalanceETF(vault));
@@ -285,8 +285,8 @@ describe.only('Testing VaultSwap, unit test', async () => {
     ]);
 
     await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).deposit(amountToWithdraw);
-    await vault.connect(user).withdraw(amountToWithdraw);
+    await vault.connect(user).deposit(amountToWithdraw, user.address);
+    await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
     await vault.setVaultState(3);
     gasUsed = formatUSDC(await rebalanceETF(vault));
 
@@ -300,8 +300,8 @@ describe.only('Testing VaultSwap, unit test', async () => {
     // console.log('-----------------withdraw another 42k = 92k total-----------------');
     amountToWithdraw = parseUSDC('42000');
     await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).deposit(amountToWithdraw);
-    await vault.connect(user).withdraw(amountToWithdraw);
+    await vault.connect(user).deposit(amountToWithdraw, user.address);
+    await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.setVaultState(3);
     await rebalanceETF(vault);

@@ -50,7 +50,7 @@ describe.only('Testing Vault, unit test', async () => {
       yearnVault.setExpectedBalance(15_000).setDeltaAllocation(vault, 20),
     ]);
 
-    await vault.connect(user).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
     await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
     let gasUsedUSDC = formatUSDC(gasUsed);
@@ -90,7 +90,7 @@ describe.only('Testing Vault, unit test', async () => {
     ]);
 
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
-    await vault.connect(user).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
 
     await vault.setVaultState(3);
     const gasUsed = await rebalanceETF(vault);
@@ -143,7 +143,7 @@ describe.only('Testing Vault, unit test', async () => {
       aaveVault.setDeltaAllocation(vault, 60),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
-    await vault.connect(user).deposit(amountUSDC);
+    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
     await vault.setVaultState(3);
     await rebalanceETF(vault);
   });
