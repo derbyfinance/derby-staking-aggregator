@@ -28,7 +28,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     const [dao, guardian] = await getAllSigners(hre);
     const addr = dao.address;
 
-    const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
+    const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
     const [xProviderMain, xProviderArbi] = allXProviders;
 
     const xChainControllerDUMMY = await deployXChainControllerMock(
@@ -36,7 +36,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
       addr,
       addr,
       guardian.address,
-      100,
+      10,
     );
 
     await Promise.all([
@@ -45,7 +45,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
       addVaultsToXController(hre, xChainControllerDUMMY, dao, vaultNumber),
       xChainControllerDUMMY.connect(guardian).setChainIds(chainIds),
-      xChainControllerDUMMY.connect(dao).setHomeXProvider(xProviderArbi.address),
+      xChainControllerDUMMY.connect(dao).setHomeXProvider(xProviderMain.address),
     ]);
 
     return xChainControllerDUMMY;
