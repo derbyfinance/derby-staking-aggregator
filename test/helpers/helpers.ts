@@ -151,6 +151,8 @@ export const formatUSDC = (amount: string | BigNumber) =>
   Number(ethers.utils.formatUnits(amount, 6));
 export const parseDAI = (amount: string) => ethers.utils.parseUnits(amount, 18);
 export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnits(amount, 18);
+export const parseDRB = (amount: number) => ethers.utils.parseUnits(amount.toString(), 18);
+export const formatDRB = (amount: number | BigNumber) => ethers.utils.formatUnits(amount, 18);
 
 type IStarterProviders = {
   yearn: string;

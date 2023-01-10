@@ -2,7 +2,7 @@
   "DerbyToken": {
     "name": "Derby Finance",
     "symbol": "DRB",
-    "totalSupply": 100000
+    "totalSupply": 1000000
   },
   "Game": {
     "deploy": {
@@ -32,7 +32,7 @@
   },
   "XChainController": {
     "deploy": {
-      "homeChainId": 100
+      "homeChainId": 10
     },
     "init": {}
   },
