@@ -37,7 +37,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
     hre,
     dao,
     {
-      xController: 100,
+      xController: 10,
       game: 10,
     },
   );
@@ -49,8 +49,8 @@ export const setupGame = deployments.createFixture(async (hre) => {
     homevault: vault.address,
     chainids,
   });
-  await run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address });
-  await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
+  await run('xcontroller_init', { chainids, homexprovider: xProviderMain.address });
+  await run('xcontroller_set_homexprovider', { address: xProviderMain.address });
   await run('vault_init', { contract });
   await run('controller_init');
 
