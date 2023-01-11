@@ -168,6 +168,17 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
   function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyGame {
+    bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
+    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
+
+    xSend(xControllerChain, callData);
+  }
+
+  /// @notice Step 1 receive; Game pushes totalDeltaAllocations to xChainController
+  /// @notice Receives the delta allocations from the game and routes to xChainController
+  /// @param _vaultNumber number of the vault
+  /// @param _deltas Array with delta Allocations for all chainIds
+  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlySelf {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
