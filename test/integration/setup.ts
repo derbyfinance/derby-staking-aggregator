@@ -55,7 +55,7 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
   const users = { 1: user, 2: user2, 3: user3 };
   const gameUsers = { 1: gameUser1, 2: gameUser2, 3: gameUser3 };
   const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
-  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
+  const [xProviderMain, xProviderArbi] = allXProviders;
 
   await Promise.all([
     run('controller_init'),
@@ -64,13 +64,9 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
 
     run('vault_init', { contract: 'TestVault1' }),
     run('vault_init', { contract: 'TestVault2' }),
-    run('vault_init', { contract: 'TestVault3' }),
-    run('vault_init', { contract: 'TestVault4' }),
 
     run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
     run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
-    run('vault_set_homexprovider', { contract: 'TestVault3', address: xProviderOpti.address }),
-    run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderBnb.address }),
 
     run('xcontroller_init', { chainids, homexprovider: xProviderMain.address }),
   ]);

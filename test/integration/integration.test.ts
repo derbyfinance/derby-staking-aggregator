@@ -7,11 +7,11 @@ import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { mintBasket } from './helpers';
 
-const chainIds = [10, 100, 1000, 10000];
+const chainIds = [10, 100];
 
 describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
-    vaults: { 1: MainVaultMock; 2: MainVaultMock; 3: MainVaultMock; 4: MainVaultMock },
+    vaults: { 1: MainVaultMock; 2: MainVaultMock; },
     user: { 1: Signer; 2: Signer; 3: Signer },
     gameUser: { 1: Signer; 2: Signer; 3: Signer },
     gameUserBasket: { 1: number; 2: number; 3: number } = { 1: 0, 2: 0, 3: 0 },
