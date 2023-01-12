@@ -23,7 +23,6 @@ import {
   aave_usdc_01,
   compound_usdc_01,
 } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupVault } from './setup';
 
@@ -59,7 +58,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     // Deposit and rebalance with 100k in only Compound
     await vault.connect(user).deposit(amountToDeposit, user.address);
     await vault.setVaultState(3);
-    await vault.rebalanceETF();
+    await vault.rebalance();
     // mine 100 blocks to gain COMP Tokens
     for (let i = 0; i <= 100; i++) await network.provider.send('evm_mine');
 
@@ -162,8 +161,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     // Deposit and rebalance with 100k
     await vault.connect(user).deposit(amountUSDC, user.address);
     await vault.setVaultState(3);
-    let gasUsed = await rebalanceETF(vault);
-    let gasUsedUSDC = formatUSDC(gasUsed);
+    await vault.rebalance();
 
     let totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
@@ -174,7 +172,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
       const expectedBalance =
-        (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+        (amount - balanceVault) * (protocol.allocation / totalAllocatedTokens);
 
       // console.log(`---------------------------`);
       // console.log(protocol.name);
@@ -199,8 +197,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
 
-    gasUsed = gasUsed.add(await rebalanceETF(vault));
-    gasUsedUSDC = formatUSDC(gasUsed);
+    await vault.rebalance();
 
     totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
@@ -211,7 +208,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     for (const protocol of protocols.values()) {
       const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
       const expectedBalance =
-        (amount - balanceVault - gasUsedUSDC) * (protocol.allocation / totalAllocatedTokens);
+        (amount - balanceVault) * (protocol.allocation / totalAllocatedTokens);
 
       // console.log(`---------------------------`);
       // console.log(protocol.name);
@@ -223,29 +220,6 @@ describe.only('Testing VaultSwap, unit test', async () => {
 
       expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 400);
     }
-  });
-
-  it('Swapping USDC to Ether, unwrap and send to DAO to cover gas costs', async function () {
-    const { vault, user, dao } = await setupVault();
-    for (const protocol of protocols.values()) await protocol.resetAllocation(vault);
-
-    const amountToDeposit = parseUSDC('100000');
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault, 40),
-      aaveVault.setDeltaAllocation(vault, 60),
-      yearnVault.setDeltaAllocation(vault, 20),
-    ]);
-    await vault.connect(user).deposit(amountToDeposit, user.address);
-
-    const ETHBalanceBefore = await dao.getBalance();
-    await vault.setVaultState(3);
-    await vault.connect(dao).rebalanceETF();
-    const ETHBalanceReceived = (await dao.getBalance()).sub(ETHBalanceBefore);
-    // console.log({ ETHBalanceReceived });
-
-    // gas costs in hardhat are hard to compare, so we expect to receive atleast some Ether (0.03) back after the rebalance function
-    expect(Number(ETHBalanceReceived)).to.be.greaterThan(Number(parseEther('0.03')));
   });
 
   it('Should always have some liquidity to pay for Rebalance fee', async function () {
@@ -267,14 +241,14 @@ describe.only('Testing VaultSwap, unit test', async () => {
     await vault.connect(user).deposit(amountToDeposit, user.address);
     await vault.setVaultState(3);
 
-    let gasUsed = formatUSDC(await rebalanceETF(vault));
+    await vault.rebalance();
 
     let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
     let USDCBalanceUser = await IUSDc.balanceOf(user.address);
     // console.log({ gasUsed });
     // console.log(USDCBalanceUser);
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed));
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity);
 
     // console.log('-----------------withdraw 50k-----------------');
     await vault.setDeltaAllocationsReceivedTEST(true);
@@ -288,14 +262,14 @@ describe.only('Testing VaultSwap, unit test', async () => {
     await vault.connect(user).deposit(amountToWithdraw, user.address);
     await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
     await vault.setVaultState(3);
-    gasUsed = formatUSDC(await rebalanceETF(vault));
+    await vault.rebalance();
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
     USDCBalanceUser = await IUSDc.balanceOf(user.address);
     // console.log({ gasUsed });
     // console.log(USDCBalanceUser);
 
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity - Number(gasUsed));
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity);
 
     // console.log('-----------------withdraw another 42k = 92k total-----------------');
     amountToWithdraw = parseUSDC('42000');
@@ -304,7 +278,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.setVaultState(3);
-    await rebalanceETF(vault);
+    await vault.rebalance();
 
     balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
     USDCBalanceUser = await IUSDc.balanceOf(user.address);
@@ -312,7 +286,7 @@ describe.only('Testing VaultSwap, unit test', async () => {
     // console.log(USDCBalanceUser);
 
     // 3 times gas for rebalances
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000 - Number(gasUsed) * 3);
+    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000);
   });
 
   it('Should take into account token balance first', async function () {

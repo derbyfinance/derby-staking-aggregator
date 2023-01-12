@@ -75,8 +75,6 @@ contract Vault is ReentrancyGuard {
   // (protocolNumber => lastPrice): last price of underlying protocol vault
   mapping(uint256 => uint256) public lastPrices;
 
-  event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
-
   modifier onlyDao() {
     require(msg.sender == dao, "Vault: only DAO");
     _;
@@ -85,14 +83,6 @@ contract Vault is ReentrancyGuard {
   modifier onlyGuardian() {
     require(msg.sender == guardian, "only Guardian");
     _;
-  }
-
-  modifier returnGasFee() {
-    uint256 gasStart = gasleft();
-    _;
-    uint256 gasUsed = gasStart - gasleft();
-    // console.log("gasUsed %s", gasUsed);
-    swapAndPayGasFee(gasUsed);
   }
 
   constructor(
@@ -138,7 +128,7 @@ contract Vault is ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external returnGasFee nonReentrant {
+  function rebalance() external nonReentrant {
     require(state == State.RebalanceVault, "Wrong state");
     require(deltaAllocationsReceived, "!Delta allocations");
 
@@ -251,29 +241,6 @@ contract Vault is ReentrancyGuard {
     for (uint256 i = 0; i < latestId; i++) {
       rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
     }
-  }
-
-  /// @notice Swaps the gas used from RebalanceETF, from vaultcurrency to ETH and send it to the dao
-  /// @notice This way the vault will pay the gas for the RebalanceETF function
-  /// @param _gasUsed total gas used by RebalanceETF
-  function swapAndPayGasFee(uint256 _gasUsed) internal {
-    uint256 amountEtherToVaultCurrency = Swap.amountOutSingleSwap(
-      Swap.SwapInOut(
-        (_gasUsed + Swap.gasUsedForSwap) * controller.getGasPrice(),
-        Swap.WETH,
-        address(vaultCurrency)
-      ),
-      controller.getUniswapQuoter(),
-      controller.getUniswapPoolFee()
-    );
-
-    uint256 wethReceived = Swap.swapTokensSingle(
-      Swap.SwapInOut(amountEtherToVaultCurrency, address(vaultCurrency), Swap.WETH),
-      controller.getUniswapParams()
-    );
-    Swap.unWrapWETHtoGov(payable(dao), wethReceived);
-
-    emit GasPaidRebalanceETF(amountEtherToVaultCurrency);
   }
 
   /// @notice Helper function to set allocations

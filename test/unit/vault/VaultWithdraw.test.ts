@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { Contract } from 'ethers';
 import { erc20, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import { setupVault } from './setup';
 
 describe.only('Testing VaultWithdraw, unit test', async () => {
@@ -70,7 +69,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
       vault.setVaultState(3),
       vault.setDeltaAllocationsReceivedTEST(true),
     ]);
-    await rebalanceETF(vault);
+    await vault.rebalance();
     await vault.setVaultState(0);
 
     await expect(vault.connect(user).withdraw(20_000 * 1e6, user.address, user.address)).to.be.revertedWith('!funds');
