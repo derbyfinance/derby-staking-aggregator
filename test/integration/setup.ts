@@ -14,7 +14,7 @@ import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContract
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 import { allNamedAccountsToSigners } from './helpers';
 
-const chainids = [10, 100, 1000, 10000];
+const chainids = [10, 100];
 
 export const setupIntegration = deployments.createFixture(async (hre) => {
   const { run } = hre;
@@ -81,11 +81,13 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
-    derbyToken.transfer(user.address, parseDRB(2100)),
 
     derbyToken.transfer(gameUser0.address, parseDRB(10_000)),
     derbyToken.transfer(gameUser1.address, parseDRB(10_000)),
-    transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
+
+    transferAndApproveUSDC(vault1.address, user, 1_000_000 * 1e6),
+    transferAndApproveUSDC(vault1.address, user1, 1_000_000 * 1e6),
+    transferAndApproveUSDC(vault2.address, user2, 1_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),
   ]);

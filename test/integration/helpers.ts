@@ -1,4 +1,4 @@
-import { GameMock } from '@typechain';
+import { GameMock, MainVaultMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { Result } from 'ethers/lib/utils';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -29,8 +29,15 @@ export async function allNamedAccountsToSigners({
   return [...signers];
 }
 
-export type IBasket = {
-  gameUser: Signer;
+export type IVaultUser = {
+  user: Signer;
+  chain: number;
+  vault: MainVaultMock;
+  depositAmount: BigNumberish;
+};
+
+export type IGameUser = {
+  user: Signer;
   basketId: number;
   allocations: BigNumberish[][];
   totalAllocations: number;

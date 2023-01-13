@@ -559,7 +559,8 @@ contract XChainController {
   }
 
   /// @notice Resets all stages in vaultStage struct for a vaultNumber
-  /// @dev onlyDao modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
+  /// @notice Must be run when a new vaultNumber is deployed
+  /// @dev onlyGuardian modifier so the dao can reset all stages for a vaultNumber incase something goes wrong
   function resetVaultStagesDao(uint256 _vaultNumber) external onlyGuardian {
     return resetVaultStages(_vaultNumber);
   }
