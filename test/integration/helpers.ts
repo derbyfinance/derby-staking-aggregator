@@ -47,3 +47,11 @@ export type IChainId = {
   id: number;
   totalAllocations: number;
 };
+
+export type IVaults = {
+  vault: MainVaultMock;
+  homeChain: number;
+  underlying: BigNumberish;
+  totalSupply: BigNumberish;
+  totalWithdrawalRequests: BigNumberish;
+};

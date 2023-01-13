@@ -1,28 +1,27 @@
 import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, parseDRB, parseUSDC } from '@testhelp/helpers';
+import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
-import { IGameUser, IChainId, mintBasket, IVaultUser } from './helpers';
+import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
 
 describe('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
-    vaults: { 1: MainVaultMock; 2: MainVaultMock },
-    xChainController: XChainControllerMock,
     dao: Signer,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
-    derbyToken: DerbyToken,
+    vaults: IVaults[],
+    xChainController: XChainControllerMock,
     game: GameMock,
+    derbyToken: DerbyToken,
     vaultUsers: IVaultUser[],
     gameUsers: IGameUser[],
     chains: IChainId[];
 
   before(async function () {
     const setup = await setupIntegration();
-    vaults = setup.vaults;
     game = setup.game;
     xChainController = setup.xChainController;
     derbyToken = setup.derbyToken;
@@ -32,11 +31,11 @@ describe('Testing full integration test', async () => {
     chains = [
       {
         id: 10,
-        totalAllocations: 3000, // * 10^18
+        totalAllocations: 3000, // * 10^18 (DRB tokens)
       },
       {
         id: 100,
-        totalAllocations: 6000, // * 10^18
+        totalAllocations: 6000, // * 10^18 (DRB tokens)
       },
     ];
 
@@ -44,20 +43,39 @@ describe('Testing full integration test', async () => {
       {
         user: setup.users[0],
         chain: 10,
-        vault: vaults[1],
+        vault: setup.vaults[0],
         depositAmount: parseUSDC(10_000),
       },
       {
         user: setup.users[1],
         chain: 10,
-        vault: vaults[1],
+        vault: setup.vaults[0],
         depositAmount: parseUSDC(100_000),
       },
       {
         user: setup.users[2],
         chain: 100,
-        vault: vaults[2],
+        vault: setup.vaults[1],
         depositAmount: parseUSDC(1_000_000),
+      },
+    ];
+
+    vaults = [
+      {
+        // based on vaultUsers deposits
+        vault: setup.vaults[0],
+        homeChain: 10,
+        underlying: parseUSDC(110_000),
+        totalSupply: parseUnits(110_000, 6),
+        totalWithdrawalRequests: 0,
+      },
+      {
+        // based on vaultUsers deposits
+        vault: setup.vaults[1],
+        homeChain: 100,
+        underlying: parseUSDC(1_000_000),
+        totalSupply: parseUnits(1_000_000, 6),
+        totalWithdrawalRequests: 0,
       },
     ];
 
@@ -160,7 +178,7 @@ describe('Testing full integration test', async () => {
   });
 
   describe('Rebalance Step 1: Game pushes allocations to controller', async function () {
-    it('Should emit correct event', async function () {
+    it('Trigger should emit PushedAllocationsToController event', async function () {
       await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
 
       await expect(game.pushAllocationsToController(vaultNumber))
@@ -173,11 +191,33 @@ describe('Testing full integration test', async () => {
 
     it('Should have moved delta allocations from game to xChainController', async function () {
       for (const chain of chains) {
-        expect(await game.getDeltaAllocationChainTEST(vaultNumber, chain.id)).to.be.equal(10);
+        expect(await game.getDeltaAllocationChainTEST(vaultNumber, chain.id)).to.be.equal(0);
         expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chain.id)).to.be.equal(
           parseDRB(chain.totalAllocations),
         );
       }
+    });
+  });
+
+  describe('Rebalance Step 2: Trigger vaults to push totalUnderlyings', async function () {
+    it('Trigger should emit PushTotalUnderlying event', async function () {
+      for (const { vault, homeChain, underlying, totalSupply, totalWithdrawalRequests } of vaults) {
+        await expect(vault.pushTotalUnderlyingToController())
+          .to.emit(vault, 'PushTotalUnderlying')
+          .withArgs(vaultNumber, homeChain, underlying, totalSupply, totalWithdrawalRequests);
+      }
+    });
+
+    it('Should set totalUnderlying correctly in xChainController', async function () {
+      for (const { homeChain, underlying } of vaults) {
+        expect(
+          await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, homeChain),
+        ).to.be.equal(underlying);
+      }
+
+      expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(
+        parseUSDC(1_110_000), // 1m + 110k
+      );
     });
   });
 });

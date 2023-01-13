@@ -51,8 +51,8 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
-  const [vault1, vault2, vault3, vault4] = await getTestVaults(hre);
-  const vaults = { 1: vault1, 2: vault2, 3: vault3, 4: vault4 };
+  const [vault1, vault2] = await getTestVaults(hre);
+  const vaults = [vault1, vault2];
   const users = [user, user1, user2];
   const gameUsers = [gameUser0, gameUser1];
   const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
