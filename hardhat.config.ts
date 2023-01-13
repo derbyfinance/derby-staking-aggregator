@@ -42,23 +42,20 @@ const config: HardhatUserConfig = {
     user: {
       default: 3,
     },
-    user2: {
+    user1: {
       default: 4,
     },
-    user3: {
+    user2: {
       default: 5,
     },
     vault: {
       default: 6,
     },
-    gameUser1: {
+    gameUser0: {
       default: 7,
     },
-    gameUser2: {
+    gameUser1: {
       default: 8,
-    },
-    gameUser3: {
-      default: 9,
     },
   },
   typechain: {},

@@ -41,8 +41,9 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
   // const [dao, user, user2, user3, gameUser1, gameUser2, gameUser3, guardian] = await getAllSigners(
   //   hre,
   // );
-  const [dao, guardian, user, user2, user3, gameUser1, gameUser2, gameUser3] =
-    await allNamedAccountsToSigners(hre);
+  const [dao, guardian, user, user1, user2, gameUser0, gameUser1] = await allNamedAccountsToSigners(
+    hre,
+  );
   const vaultNumber = 10;
 
   const game = (await getContract('GameMock', hre)) as GameMock;
@@ -52,8 +53,8 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
 
   const [vault1, vault2, vault3, vault4] = await getTestVaults(hre);
   const vaults = { 1: vault1, 2: vault2, 3: vault3, 4: vault4 };
-  const users = { 1: user, 2: user2, 3: user3 };
-  const gameUsers = { 1: gameUser1, 2: gameUser2, 3: gameUser3 };
+  const users = [user, user1, user2];
+  const gameUsers = [gameUser0, gameUser1];
   const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
   const [xProviderMain, xProviderArbi] = allXProviders;
 
@@ -81,8 +82,8 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
     derbyToken.transfer(user.address, parseDRB(2100)),
-    derbyToken.transfer(user2.address, parseDRB(10_000)),
-    derbyToken.transfer(user3.address, parseDRB(100_000)),
+    derbyToken.transfer(user1.address, parseDRB(10_000)),
+    derbyToken.transfer(user2.address, parseDRB(100_000)),
     transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),

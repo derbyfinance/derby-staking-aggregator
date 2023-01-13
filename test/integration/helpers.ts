@@ -28,3 +28,10 @@ export async function allNamedAccountsToSigners({
 
   return [...signers];
 }
+
+export type IBasket = {
+  gameUser: Signer;
+  basketId: number;
+  allocations: BigNumberish[][];
+  totalAllocations: BigNumberish;
+};
