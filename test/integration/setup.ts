@@ -82,8 +82,9 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
     derbyToken.transfer(user.address, parseDRB(2100)),
-    derbyToken.transfer(user1.address, parseDRB(10_000)),
-    derbyToken.transfer(user2.address, parseDRB(100_000)),
+
+    derbyToken.transfer(gameUser0.address, parseDRB(10_000)),
+    derbyToken.transfer(gameUser1.address, parseDRB(10_000)),
     transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),

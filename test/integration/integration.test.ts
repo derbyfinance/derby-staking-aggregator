@@ -5,9 +5,7 @@ import { erc20, formatUSDC, parseDRB } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
-import { IBasket, mintBasket } from './helpers';
-
-const chainIds = [10, 100];
+import { IBasket, IChainId, mintBasket } from './helpers';
 
 describe('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
@@ -15,6 +13,7 @@ describe('Testing full integration test', async () => {
     users: Signer[],
     gameUsers: Signer[],
     baskets: IBasket[],
+    chains: IChainId[],
     xChainController: XChainControllerMock,
     dao: Signer,
     guardian: Signer,
@@ -33,6 +32,17 @@ describe('Testing full integration test', async () => {
     users = setup.users;
     gameUsers = setup.gameUsers;
 
+    chains = [
+      {
+        id: 10,
+        totalAllocations: 3000, // * 10^18
+      },
+      {
+        id: 100,
+        totalAllocations: 6000, // * 10^18
+      },
+    ];
+
     baskets = [
       {
         gameUser: gameUsers[0],
@@ -41,69 +51,81 @@ describe('Testing full integration test', async () => {
           [parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100)],
           [parseDRB(200), parseDRB(200), parseDRB(200), parseDRB(200), parseDRB(200)],
         ],
-        totalAllocations: parseDRB(1500),
+        totalAllocations: 1500, // * 10^18
       },
       {
-        gameUser: gameUsers[0],
-        basketId: 0,
+        gameUser: gameUsers[1],
+        basketId: 1,
         allocations: [
           [parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500)],
           [parseDRB(1_000), parseDRB(1_000), parseDRB(1_000), parseDRB(1_000), parseDRB(1_000)],
         ],
-        totalAllocations: parseDRB(1700),
+        totalAllocations: 7500, // * 10^18
       },
     ];
   });
 
-  describe('Create and rebalance basket for 3 game users', async function () {
+  describe('Create and rebalance basket for 2 game users', async function () {
     it('Rebalance basket allocation array for both game users', async function () {
-      for await (const basket of baskets) {
-        basket.basketId = await mintBasket(game, basket.gameUser, vaultNumber);
+      for await (let { basketId, gameUser, totalAllocations, allocations } of baskets) {
+        basketId = await mintBasket(game, gameUser, vaultNumber);
 
         await derbyToken
-          .connect(basket.gameUser)
-          .increaseAllowance(game.address, basket.totalAllocations);
+          .connect(gameUser)
+          .increaseAllowance(game.address, parseDRB(totalAllocations));
 
         await expect(() =>
-          game.connect(basket.gameUser).rebalanceBasket(basket.basketId, basket.allocations),
-        ).to.changeTokenBalance(derbyToken, basket.gameUser, -basket.totalAllocations);
-      }
+          game.connect(gameUser).rebalanceBasket(basketId, allocations),
+        ).to.changeTokenBalance(derbyToken, gameUser, parseDRB(-totalAllocations));
 
-      // expect(await game.connect(user[1]).basketTotalAllocatedTokens(gameUserBasket[1])).to.be.equal(
-      //   parseDRB(100 * (2 * 5)),
-      // );
-      // expect(await game.connect(user[2]).basketTotalAllocatedTokens(gameUserBasket[2])).to.be.equal(
-      //   parseDRB(500 * (2 * 5)),
-      // );
+        expect(await game.connect(gameUser).basketTotalAllocatedTokens(basketId)).to.be.equal(
+          parseDRB(totalAllocations),
+        );
+      }
     });
 
-    // it('Rebalance basket allocation array for both game users', async function () {
-    //   baskets[0].basketId = await mintBasket(game, gameUsers[0], vaultNumber);
-    //   baskets[1].basketId = await mintBasket(game, gameUsers[1], vaultNumber);
+    it('Should set protocol allocations correctly in baskets', async function () {
+      // loops through allocations arrays from both baskets
+      for await (const { gameUser, basketId, allocations } of baskets) {
+        for (let i = 0; i < allocations[0].length; i++) {
+          expect(
+            await game.connect(gameUser).basketAllocationInProtocol(basketId, chains[0].id, i),
+          ).to.be.equal(allocations[0][i]);
+          expect(
+            await game.connect(gameUser).basketAllocationInProtocol(basketId, chains[1].id, i),
+          ).to.be.equal(allocations[1][i]);
+        }
+      }
+    });
 
-    //   baskets.forEach(async (user, i) => {
-    //     await derbyToken
-    //       .connect(gameUsers[i])
-    //       .increaseAllowance(game.address, baskets[i].totalAllocations);
+    it('Should set chain allocations correctly in game contract', async function () {
+      for await (const chain of chains) {
+        expect(await game.getDeltaAllocationChainTEST(vaultNumber, chain.id)).to.be.equal(
+          parseDRB(chain.totalAllocations),
+        );
+      }
+    });
 
-    //     await expect(() =>
-    //       game.connect(gameUsers[i]).rebalanceBasket(baskets[i].basketId, baskets[i].allocations),
-    //     ).to.changeTokenBalance(derbyToken, user, -baskets[i].totalAllocations);
-    //   });
+    it('Should set protocol allocations correctly in game contract', async function () {
+      // basket allocation arrays added together
+      const expectedAllocations = [
+        [parseDRB(600), parseDRB(600), parseDRB(600), parseDRB(600), parseDRB(600)],
+        [parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200)],
+      ];
+      for (let i = 0; i < expectedAllocations[0].length; i++) {
+        expect(await game.getDeltaAllocationProtocolTEST(vaultNumber, chains[0].id, i)).to.be.equal(
+          expectedAllocations[0][i],
+        );
+        expect(await game.getDeltaAllocationProtocolTEST(vaultNumber, chains[1].id, i)).to.be.equal(
+          expectedAllocations[1][i],
+        );
+      }
+    });
 
-    //   // expect(await game.connect(user[1]).basketTotalAllocatedTokens(gameUserBasket[1])).to.be.equal(
-    //   //   parseDRB(100 * (2 * 5)),
-    //   // );
-    //   // expect(await game.connect(user[2]).basketTotalAllocatedTokens(gameUserBasket[2])).to.be.equal(
-    //   //   parseDRB(500 * (2 * 5)),
-    //   // );
-    // });
-
-    // it('Should set allocations correctly in game contract', async function () {
-    //   const test = await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0]);
-    //   const test2 = await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1]);
-    //   console.log({ test });
-    //   console.log({ test2 });
-    // });
+    it('Game contract should have derbyTokens locked', async function () {
+      expect(await derbyToken.balanceOf(game.address)).to.be.equal(
+        parseDRB(baskets[0].totalAllocations + baskets[1].totalAllocations),
+      );
+    });
   });
 });

@@ -33,5 +33,10 @@ export type IBasket = {
   gameUser: Signer;
   basketId: number;
   allocations: BigNumberish[][];
-  totalAllocations: BigNumberish;
+  totalAllocations: number;
+};
+
+export type IChainId = {
+  id: number;
+  totalAllocations: number;
 };
