@@ -62,7 +62,7 @@ describe('Testing full integration test', async () => {
 
     vaults = [
       {
-        // based on vaultUsers deposits
+        // expected stats based on vaultUsers deposits
         vault: setup.vaults[0],
         homeChain: 10,
         underlying: parseUSDC(110_000),
@@ -70,7 +70,7 @@ describe('Testing full integration test', async () => {
         totalWithdrawalRequests: 0,
       },
       {
-        // based on vaultUsers deposits
+        // expected stats based on vaultUsers deposits
         vault: setup.vaults[1],
         homeChain: 100,
         underlying: parseUSDC(1_000_000),
@@ -218,6 +218,31 @@ describe('Testing full integration test', async () => {
       expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(
         parseUSDC(1_110_000), // 1m + 110k
       );
+    });
+  });
+
+  describe('Rebalance Step 3: Set amount to deposit or withdraw in vault', async function () {
+    const expectedVault0 = 0; // will receive 260k
+    const expectedVault1 = 1_000_000 - (6000 / 9000) * 1_110_000; // = 260k
+    const exchangeRate = 1e6;
+
+    it('Trigger should emit SendXChainAmount event', async function () {
+      await expect(xChainController.pushVaultAmounts(vaultNumber))
+        .to.emit(xChainController, 'SendXChainAmount')
+        .withArgs(vaults[0].vault.address, chains[0].id, expectedVault0, exchangeRate)
+        .to.emit(xChainController, 'SendXChainAmount')
+        .withArgs(vaults[1].vault.address, chains[1].id, parseUSDC(expectedVault1), exchangeRate);
+    });
+
+    it('Should set amount to deposit or withdraw in vault ', async function () {
+      expect(formatUSDC(await vaults[0].vault.amountToSendXChain())).to.be.equal(expectedVault0);
+      expect(formatUSDC(await vaults[1].vault.amountToSendXChain())).to.be.equal(expectedVault1);
+
+      expect(await vaults[0].vault.exchangeRate()).to.be.equal(exchangeRate);
+      expect(await vaults[1].vault.exchangeRate()).to.be.equal(exchangeRate);
+
+      expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
+      expect(await vaults[1].vault.state()).to.be.equal(2);
     });
   });
 });

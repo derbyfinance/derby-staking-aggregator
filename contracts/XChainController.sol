@@ -376,6 +376,8 @@ contract XChainController {
       xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
       emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
+      console.log("1 %s 2 %s 3 %s", vault, _chainId, _amountToWithdraw);
+      console.log("1 %s", _exchangeRate);
   }
 
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
