@@ -398,7 +398,7 @@ contract XProvider is ILayerZeroReceiver {
     uint16 _chainId,
     int256[] memory _rewards
   ) external onlyVaults {
-    if (_chainId == homeChain) {
+    if (_chainId == gameChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     } else {
       bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint16,int256[])"));

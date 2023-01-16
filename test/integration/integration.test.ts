@@ -1,21 +1,7 @@
-import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import {
-  controllerAddProtocol,
-  erc20,
-  formatUSDC,
-  parseDRB,
-  parseUnits,
-  parseUSDC,
-} from '@testhelp/helpers';
-import type {
-  Controller,
-  DerbyToken,
-  GameMock,
-  MainVaultMock,
-  XChainControllerMock,
-} from '@typechain';
+import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
@@ -254,11 +240,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Should set amount to deposit or withdraw in vault', async function () {
-      expect(await vaults[0].vault.amountToSendXChain()).to.be.equal(vaults[0].amountToSend);
-      expect(await vaults[1].vault.amountToSendXChain()).to.be.equal(vaults[1].amountToSend);
-
-      expect(await vaults[0].vault.exchangeRate()).to.be.equal(exchangeRate);
-      expect(await vaults[1].vault.exchangeRate()).to.be.equal(exchangeRate);
+      for (const { vault, amountToSend } of vaults) {
+        expect(await vault.amountToSendXChain()).to.be.equal(amountToSend);
+        expect(await vault.exchangeRate()).to.be.equal(exchangeRate);
+      }
     });
 
     it('Should correctly set states', async function () {
@@ -299,10 +284,11 @@ describe('Testing full integration test', async () => {
   describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
 
-    const expectedBalance = [
-      (3000 / 9000) * 1_110_000, // vault 0 = 370k
-      (6000 / 9000) * 1_110_000, // vault 1 = 740k
-    ];
+    // expected vault balances after rebalance
+    before(function () {
+      vaults[0].newUnderlying = (3000 / 9000) * 1_110_000; // vault 0 = 370k
+      vaults[1].newUnderlying = (6000 / 9000) * 1_110_000; // vault 0 = 370k
+    });
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 0 will receive funds
@@ -313,8 +299,10 @@ describe('Testing full integration test', async () => {
 
     it('Vaults should have received all the funds', async function () {
       expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(0);
-      expect(await vaults[0].vault.getVaultBalance()).to.be.equal(parseUSDC(expectedBalance[0]));
-      expect(await vaults[1].vault.getVaultBalance()).to.be.equal(parseUSDC(expectedBalance[1]));
+      for (const { vault, newUnderlying } of vaults) {
+        expect(await vault.getVaultBalance()).to.be.equal(parseUSDC(newUnderlying!));
+        expect(await vault.getVaultBalance()).to.be.equal(parseUSDC(newUnderlying!));
+      }
     });
 
     it('Should correctly set states', async function () {
@@ -364,6 +352,81 @@ describe('Testing full integration test', async () => {
     it('Should set deltaAllocationsReceived to true in vaults', async function () {
       for (const { vault } of vaults) {
         expect(await vault.deltaAllocationsReceived()).to.be.true;
+      }
+    });
+  });
+
+  describe('Rebalance Step 7: Vaults rebalance', async function () {
+    // expectedProtocolBalance = (allocation / totalAllocations) * (totalUnderlying - vaultLiquidity)
+    before(function () {
+      vaults[0].liquidity = vaults[0].newUnderlying! * 0.1; // 10% liquidity
+      vaults[0].newUnderlying = vaults[0].newUnderlying! - vaults[0].liquidity;
+      vaults[0].expectedProtocolBalance = (600 / 3000) * vaults[0].newUnderlying!;
+
+      vaults[1].liquidity = vaults[1].newUnderlying! * 0.1; // 10% liquidity
+      vaults[1].newUnderlying = vaults[1].newUnderlying! - vaults[1].liquidity;
+      vaults[1].expectedProtocolBalance = (1200 / 6000) * vaults[1].newUnderlying!;
+    });
+
+    it('Trigger rebalance vaults', async function () {
+      for (const { vault } of vaults) {
+        await vault.rebalanceETF();
+      }
+    });
+
+    it('Check savedTotalUnderlying in vaults', async function () {
+      for (const { vault, newUnderlying } of vaults) {
+        expect(formatUSDC(await vault.savedTotalUnderlying())).to.be.closeTo(newUnderlying, 100);
+      }
+    });
+
+    it('Check liquidity in vaults', async function () {
+      for (const { vault, liquidity } of vaults) {
+        expect(formatUSDC(await vault.getVaultBalance())).to.be.equal(liquidity);
+      }
+    });
+
+    it('Check balance for every protocol in vaults', async function () {
+      const id = await controller.latestProtocolId(vaultNumber);
+
+      for (const { vault, expectedProtocolBalance } of vaults) {
+        for (let i = 0; i < Number(id); i++) {
+          // closeTo because of the stable coin swapping in the vault
+          expect(formatUSDC(await vault.balanceUnderlying(i))).to.be.closeTo(
+            expectedProtocolBalance,
+            100,
+          );
+        }
+      }
+    });
+  });
+
+  describe('Rebalance Step 8: Vaults push rewardsPerLockedToken to game', async function () {
+    before(function () {
+      // set expectedRewards
+      vaults[0].rewards = [0, 0, 0, 0, 0];
+      vaults[1].rewards = [0, 0, 0, 0, 0];
+    });
+
+    it('Trigger should emit PushedRewardsToGame event', async function () {
+      for (const { vault, homeChain, rewards } of vaults) {
+        await expect(vault.sendRewardsToGame())
+          .to.emit(vault, 'PushedRewardsToGame')
+          .withArgs(vaultNumber, homeChain, rewards);
+      }
+    });
+
+    it('Check rewards for every protocolId', async function () {
+      const id = await controller.latestProtocolId(vaultNumber);
+
+      for (let i = 0; i < Number(id); i++) {
+        // rewards are 0 because it is the first rebalance
+        expect(
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, 0, i),
+        ).to.be.equal(0);
+        expect(
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, 0, i),
+        ).to.be.equal(0);
       }
     });
   });
