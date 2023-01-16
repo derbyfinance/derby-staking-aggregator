@@ -1,7 +1,15 @@
 import { deployments } from 'hardhat';
 import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
-import { allProtocols, usdc } from '@testhelp/addresses';
+import {
+  aave_usdc_01,
+  aave_usdt_01,
+  allProtocols,
+  compound_dai_01,
+  compound_usdc_01,
+  usdc,
+  yearn_usdc_01,
+} from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
@@ -13,6 +21,7 @@ import {
 import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 import { allNamedAccountsToSigners } from './helpers';
+import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 
 const chainids = [10, 100];
 
@@ -55,7 +64,7 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
   const vaults = [vault1, vault2];
   const users = [user, user1, user2];
   const gameUsers = [gameUser0, gameUser1];
-  const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
+  const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
   const [xProviderMain, xProviderArbi] = allXProviders;
 
   await Promise.all([
@@ -69,7 +78,7 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
     run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
 
-    run('xcontroller_init', { chainids, homexprovider: xProviderMain.address }),
+    run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address }),
   ]);
 
   await Promise.all([
@@ -92,8 +101,21 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     allProvidersClass.setProviders(hre),
   ]);
 
+  const protocols = new Map<string, ProtocolVault>()
+    .set('compound_usdc_01', compound_usdc_01)
+    .set('aave_usdc_01', aave_usdc_01)
+    .set('yearn_usdc_01', yearn_usdc_01)
+    .set('compound_dai_01', compound_dai_01)
+    .set('aave_usdt_01', aave_usdt_01);
+
+  const compoundVault = protocols.get('compound_usdc_01')!;
+  const aaveVault = protocols.get('aave_usdc_01')!;
+  const yearnVault = protocols.get('yearn_usdc_01')!;
+  const compoundDAIVault = protocols.get('compound_dai_01')!;
+  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
+
   // add all protocol vaults to controller
-  for (const protocol of allProtocols.values()) {
+  for (const protocol of protocols.values()) {
     await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   }
 

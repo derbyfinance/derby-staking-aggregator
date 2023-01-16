@@ -32,7 +32,7 @@
   },
   "XChainController": {
     "deploy": {
-      "homeChainId": 10
+      "homeChainId": 100
     },
     "init": {}
   },

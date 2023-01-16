@@ -55,4 +55,5 @@ export type IVaults = {
   totalSupply: BigNumberish;
   totalWithdrawalRequests: BigNumberish;
   amountToSend?: BigNumberish;
+  chainAllocs?: BigNumberish[];
 };

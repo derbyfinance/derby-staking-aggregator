@@ -1,8 +1,21 @@
 import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
-import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
+import {
+  controllerAddProtocol,
+  erc20,
+  formatUSDC,
+  parseDRB,
+  parseUnits,
+  parseUSDC,
+} from '@testhelp/helpers';
+import type {
+  Controller,
+  DerbyToken,
+  GameMock,
+  MainVaultMock,
+  XChainControllerMock,
+} from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
@@ -14,6 +27,7 @@ describe('Testing full integration test', async () => {
     IUSDc: Contract = erc20(usdc),
     vaults: IVaults[],
     xChainController: XChainControllerMock,
+    controller: Controller,
     game: GameMock,
     derbyToken: DerbyToken,
     vaultUsers: IVaultUser[],
@@ -24,6 +38,7 @@ describe('Testing full integration test', async () => {
     const setup = await setupIntegration();
     game = setup.game;
     xChainController = setup.xChainController;
+    controller = setup.controller;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
     guardian = setup.guardian;
@@ -167,12 +182,11 @@ describe('Testing full integration test', async () => {
     it('Deposit funds in vault 1 and 2 for all 3 vault users', async function () {
       for (const { user, vault, depositAmount } of vaultUsers) {
         const expectedLPTokens = depositAmount; // exchangeRate is 1
+        const userAddr = await user.getAddress();
 
-        await expect(() => vault.connect(user).deposit(depositAmount)).to.changeTokenBalance(
-          vault,
-          user,
-          expectedLPTokens,
-        );
+        await expect(() =>
+          vault.connect(user).deposit(depositAmount, userAddr),
+        ).to.changeTokenBalance(vault, user, expectedLPTokens);
       }
     });
   });
@@ -285,10 +299,72 @@ describe('Testing full integration test', async () => {
   describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
 
+    const expectedBalance = [
+      (3000 / 9000) * 1_110_000, // vault 0 = 370k
+      (6000 / 9000) * 1_110_000, // vault 1 = 740k
+    ];
+
     it('Trigger should emit SentFundsToVault event', async function () {
+      // only vault 0 will receive funds
       await expect(xChainController.sendFundsToVault(vaultNumber))
         .to.emit(xChainController, 'SentFundsToVault')
-        .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend);
+        .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
+    });
+
+    it('Vaults should have received all the funds', async function () {
+      expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(0);
+      expect(await vaults[0].vault.getVaultBalance()).to.be.equal(parseUSDC(expectedBalance[0]));
+      expect(await vaults[1].vault.getVaultBalance()).to.be.equal(parseUSDC(expectedBalance[1]));
+    });
+
+    it('Should correctly set states', async function () {
+      expect(await vaults[0].vault.state()).to.be.equal(4);
+      expect(await vaults[1].vault.state()).to.be.equal(4);
+    });
+  });
+
+  describe('Rebalance Step 6: Game pushes deltaAllocations to vaults', async function () {
+    // total expected chain allocatioons
+    before(function () {
+      vaults[0].chainAllocs = [
+        parseDRB(600),
+        parseDRB(600),
+        parseDRB(600),
+        parseDRB(600),
+        parseDRB(600),
+      ];
+      vaults[1].chainAllocs = [
+        parseDRB(1200),
+        parseDRB(1200),
+        parseDRB(1200),
+        parseDRB(1200),
+        parseDRB(1200),
+      ];
+    });
+
+    it('Trigger should emit PushProtocolAllocations event', async function () {
+      await expect(game.pushAllocationsToVaults(vaultNumber))
+        .to.emit(game, 'PushProtocolAllocations')
+        .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs)
+        .to.emit(game, 'PushProtocolAllocations')
+        .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
+    });
+
+    it('Should set protocol allocations in vaults', async function () {
+      const id = await controller.latestProtocolId(vaultNumber);
+
+      // looping through expected chain allocations set above for both vaults and compare them
+      for (const { vault, chainAllocs } of vaults) {
+        for (let i = 0; i < Number(id); i++) {
+          expect(await vault.getDeltaAllocationTEST(i)).to.be.equal(chainAllocs![i]);
+        }
+      }
+    });
+
+    it('Should set deltaAllocationsReceived to true in vaults', async function () {
+      for (const { vault } of vaults) {
+        expect(await vault.deltaAllocationsReceived()).to.be.true;
+      }
     });
   });
 });
