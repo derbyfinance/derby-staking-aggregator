@@ -376,8 +376,6 @@ contract XChainController {
       xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
       emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
-      console.log("1 %s 2 %s 3 %s", vault, _chainId, _amountToWithdraw);
-      console.log("1 %s", _exchangeRate);
   }
 
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
@@ -390,9 +388,14 @@ contract XChainController {
 
       uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, chain);
 
+      console.log("amount to deposit %s", amountToDeposit);
+
       if (amountToDeposit > 0) {
         address underlying = getUnderlyingAddress(_vaultNumber, chain);
         address vault = getVaultAddress(_vaultNumber, chain);
+
+        console.log("underlying %s", underlying);
+        console.log("chain %s", chain);
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);

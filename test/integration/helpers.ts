@@ -54,4 +54,5 @@ export type IVaults = {
   underlying: BigNumberish;
   totalSupply: BigNumberish;
   totalWithdrawalRequests: BigNumberish;
+  amountToSend?: BigNumberish;
 };

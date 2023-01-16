@@ -179,6 +179,7 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance Step 1: Game pushes allocations to controller', async function () {
     it('Trigger should emit PushedAllocationsToController event', async function () {
+      // should be done for every new vaultNumber deployed
       await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
 
       await expect(game.pushAllocationsToController(vaultNumber))
@@ -221,28 +222,73 @@ describe('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 3: Set amount to deposit or withdraw in vault', async function () {
-    const expectedVault0 = 0; // will receive 260k
-    const expectedVault1 = 1_000_000 - (6000 / 9000) * 1_110_000; // = 260k
+  describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     const exchangeRate = 1e6;
+
+    // setting expected amountToSend
+    before(function () {
+      vaults[0].amountToSend = parseUSDC(0); // will receive 260k
+      vaults[1].amountToSend = parseUSDC(1_000_000 - (6000 / 9000) * 1_110_000); // = 260k
+    });
 
     it('Trigger should emit SendXChainAmount event', async function () {
       await expect(xChainController.pushVaultAmounts(vaultNumber))
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[0].vault.address, chains[0].id, expectedVault0, exchangeRate)
+        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate)
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[1].vault.address, chains[1].id, parseUSDC(expectedVault1), exchangeRate);
+        .withArgs(vaults[1].vault.address, chains[1].id, vaults[1].amountToSend, exchangeRate);
     });
 
-    it('Should set amount to deposit or withdraw in vault ', async function () {
-      expect(formatUSDC(await vaults[0].vault.amountToSendXChain())).to.be.equal(expectedVault0);
-      expect(formatUSDC(await vaults[1].vault.amountToSendXChain())).to.be.equal(expectedVault1);
+    it('Should set amount to deposit or withdraw in vault', async function () {
+      expect(await vaults[0].vault.amountToSendXChain()).to.be.equal(vaults[0].amountToSend);
+      expect(await vaults[1].vault.amountToSendXChain()).to.be.equal(vaults[1].amountToSend);
 
       expect(await vaults[0].vault.exchangeRate()).to.be.equal(exchangeRate);
       expect(await vaults[1].vault.exchangeRate()).to.be.equal(exchangeRate);
+    });
 
+    it('Should correctly set states', async function () {
       expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
       expect(await vaults[1].vault.state()).to.be.equal(2);
+    });
+  });
+
+  describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
+    const vaultCurrency = usdc;
+    const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
+
+    it('Vault 0 should revert because they will receive funds', async function () {
+      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+    });
+
+    it('Trigger should emit RebalanceXChain event', async function () {
+      await expect(vaults[1].vault.rebalanceXChain())
+        .to.emit(vaults[1].vault, 'RebalanceXChain')
+        .withArgs(vaultNumber, vaults[1].amountToSend, vaultCurrency);
+    });
+
+    it('xChainController should have received funds ', async function () {
+      expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(vaults[1].amountToSend);
+      expect(await IUSDc.balanceOf(vaults[0].vault.address)).to.be.equal(vaults[0].underlying); // 110k
+      expect(await IUSDc.balanceOf(vaults[1].vault.address)).to.be.equal(balanceVault1); // 200k - 68k
+
+      // 2 vaults
+      expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(2);
+    });
+
+    it('Should correctly set states', async function () {
+      expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
+      expect(await vaults[1].vault.state()).to.be.equal(4);
+    });
+  });
+
+  describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
+    const underlying = usdc;
+
+    it('Trigger should emit SentFundsToVault event', async function () {
+      await expect(xChainController.sendFundsToVault(vaultNumber))
+        .to.emit(xChainController, 'SentFundsToVault')
+        .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend);
     });
   });
 });

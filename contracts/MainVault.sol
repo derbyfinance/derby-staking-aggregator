@@ -26,6 +26,7 @@ contract MainVault is Vault, VaultToken {
   uint256 public exchangeRate;
   uint16 public homeChain;
   uint256 public amountToSendXChain;
+  string internal stateError = "Wrong state";
 
   // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
   mapping(address => uint256) internal withdrawalAllowance;
@@ -226,7 +227,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _amountToSend,
     uint256 _exchangeRate
   ) external onlyXProvider {
-    require(state == State.PushedUnderlying, "Wrong state");
+    require(state == State.PushedUnderlying, stateError);
     setXChainAllocationInt(_amountToSend, _exchangeRate);
   }
 
@@ -246,7 +247,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
   function rebalanceXChain() external {
-    if (state != State.SendingFundsXChain) return;
+    require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
 
@@ -257,10 +258,10 @@ contract MainVault is Vault, VaultToken {
       address(vaultCurrency)
     );
 
+    emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));
+
     amountToSendXChain = 0;
     settleReservedFunds();
-
-    emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));
   }
 
   /// @notice Step 5 end; Push funds from xChainController to vaults
@@ -297,7 +298,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external {
-    require(state == State.SendRewardsPerToken, "Wrong state");
+    require(state == State.SendRewardsPerToken, stateError);
 
     int256[] memory rewards = rewardsToArray();
     IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
