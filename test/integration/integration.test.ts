@@ -370,7 +370,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger rebalance vaults', async function () {
       for (const { vault } of vaults) {
-        await vault.rebalanceETF();
+        await vault.rebalance();
       }
     });
 

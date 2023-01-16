@@ -193,7 +193,7 @@ describe.only('Testing XChainController, integration test', async () => {
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
     await vault1.rebalanceXChain();
     await vault2.rebalanceXChain();
-    await vault3.rebalanceXChain();
+    await expect(vault3.rebalanceXChain()).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
     expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_000) * 1e6);
