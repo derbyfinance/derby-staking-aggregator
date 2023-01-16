@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { Contract } from 'ethers';
 import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
 import { allProtocols, usdc } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import { formatUnits } from 'ethers/lib/utils';
 import { setupVault } from './setup';
 
@@ -27,9 +26,7 @@ describe.only('Testing balanceUnderlying for every single protocol vault', async
     await vault.connect(user).deposit(amountUSDC, user.address);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
-    const gasUsed = await rebalanceETF(vault);
-    const gasUsedUSDC = Number(formatUSDC(gasUsed));
-    // console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
+    await vault.rebalance();
 
     const totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
     const liquidityVault = (amount * liquidityPerc) / 100; // 10% liq vault
@@ -52,7 +49,7 @@ describe.only('Testing balanceUnderlying for every single protocol vault', async
 
     const totalUnderlying = await vault.savedTotalUnderlying();
     const balanceVault = await IUSDc.balanceOf(vault.address);
-    const expectedBalanceVault = (amount * liquidityPerc) / 100 - gasUsedUSDC;
+    const expectedBalanceVault = (amount * liquidityPerc) / 100;
 
     // 1500 margin over 1m+ underlying cause of trading stables
     expect(Number(formatUSDC(totalUnderlying))).to.be.closeTo(amount - liquidityVault, 1500);
@@ -69,8 +66,7 @@ describe.only('Testing balanceUnderlying for every single protocol vault', async
     await vault.connect(user).deposit(amountUSDC, user.address);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
-    const gasUsed = await rebalanceETF(vault);
-    // console.log(`Gas Used RebalanceETF: $${Number(formatUSDC(gasUsed))}`);
+    await vault.rebalance();
 
     // Get balance of LP shares for each protocol vault
     // Compare it with calcShares with the balanceUnderlying, should match up if calculation is correct.

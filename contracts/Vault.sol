@@ -75,8 +75,6 @@ contract Vault is ReentrancyGuard {
   // (protocolNumber => lastPrice): last price of underlying protocol vault
   mapping(uint256 => uint256) public lastPrices;
 
-  event GasPaidRebalanceETF(uint256 gasInVaultCurrency);
-
   modifier onlyDao() {
     require(msg.sender == dao, "Vault: only DAO");
     _;
@@ -130,7 +128,7 @@ contract Vault is ReentrancyGuard {
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
-  function rebalanceETF() external nonReentrant {
+  function rebalance() external nonReentrant {
     require(state == State.RebalanceVault, "Wrong state");
     require(deltaAllocationsReceived, "!Delta allocations");
 

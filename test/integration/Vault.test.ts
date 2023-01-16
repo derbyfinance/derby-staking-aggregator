@@ -4,14 +4,11 @@ import { erc20, formatUSDC, getUSDCSigner, parseUSDC } from '@testhelp/helpers';
 import type { Controller, MainVaultMock } from '@typechain';
 import { deployController, deployMainVaultMock } from '@testhelp/deploy';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
-import { initController, rebalanceETF } from '@testhelp/vaultHelpers';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { ethers } from 'hardhat';
-import { vaultInfo } from '@testhelp/vaultHelpers';
 
 const amount = 200_000;
 const amountUSDC = parseUSDC(amount.toString());
-const { name, symbol, decimals, vaultNumber, uScale, gasFeeLiquidity, liquidityPerc } = vaultInfo;
 
 describe.skip('Testing Vault, integration test', async () => {
   let vault: MainVaultMock,

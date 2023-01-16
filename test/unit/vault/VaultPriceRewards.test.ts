@@ -14,7 +14,6 @@ import {
   yearnUSDC,
   aaveUSDT,
 } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupXChain } from '../xController/setup';
@@ -74,7 +73,7 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
 
-    await rebalanceETF(vault);
+    await vault.rebalance();
 
     await game.upRebalancingPeriod(vaultNumber);
     await vault.sendRewardsToGame();
@@ -106,7 +105,7 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
 
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
-    await rebalanceETF(vault);
+    await vault.rebalance();
 
     await game.upRebalancingPeriod(vaultNumber);
     await vault.sendRewardsToGame();

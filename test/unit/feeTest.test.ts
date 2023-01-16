@@ -16,7 +16,6 @@ import {
   usdt,
   dai,
 } from '@testhelp/addresses';
-import { setDeltaAllocations, getAllocations, getAndLogBalances } from '@testhelp/vaultHelpers';
 import FeeTestContractArtifact from '@artifacts/Tests/FeeTestContract.sol/FeeTestContract.json';
 import { deployContract } from 'ethereum-waffle';
 import { Signer, Contract } from 'ethers';
@@ -259,7 +258,7 @@ describe.skip('Testing feeTest. Simulate looping through game players and calcul
 
     await setDeltaAllocations(user, vault, protocols);
     await vault.connect(user).deposit(amountUSDC);
-    await vault.rebalanceETF();
+    await vault.rebalance()
     console.log('total alloc: %s', await vault.totalAllocatedTokens());
 
     const [allocations, balances] = await Promise.all([

@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { Contract } from 'ethers';
 import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { setupVault } from './setup';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
@@ -52,15 +51,14 @@ describe.only('Testing Vault, unit test', async () => {
 
     await vault.connect(user).deposit(amountUSDC, await user.getAddress());
     await vault.setVaultState(3);
-    const gasUsed = await rebalanceETF(vault);
-    let gasUsedUSDC = formatUSDC(gasUsed);
+    await vault.rebalance();
 
     // blacklist compound_usdc_01
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
-    let expectedVaultLiquidity = 40000 - gasUsedUSDC;
+    let expectedVaultLiquidity = 40000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
@@ -93,12 +91,11 @@ describe.only('Testing Vault, unit test', async () => {
     await vault.connect(user).deposit(amountUSDC, await user.getAddress());
 
     await vault.setVaultState(3);
-    const gasUsed = await rebalanceETF(vault);
-    let gasUsedUSDC = formatUSDC(gasUsed);
+    await vault.rebalance();
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
-    let expectedVaultLiquidity = 40000 - gasUsedUSDC;
+    let expectedVaultLiquidity = 40000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
@@ -145,6 +142,6 @@ describe.only('Testing Vault, unit test', async () => {
     ]);
     await vault.connect(user).deposit(amountUSDC, await user.getAddress());
     await vault.setVaultState(3);
-    await rebalanceETF(vault);
+    await vault.rebalance();
   });
 });

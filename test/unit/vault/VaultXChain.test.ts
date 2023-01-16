@@ -3,7 +3,6 @@ import { Signer, Contract } from 'ethers';
 import { erc20, parseUSDC } from '@testhelp/helpers';
 import type { MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
-import { rebalanceETF } from '@testhelp/vaultHelpers';
 import { setupXChain } from '../xController/setup';
 
 const amount = 100_000;
@@ -38,7 +37,7 @@ describe.only('Testing XChainController, unit test', async () => {
     ]);
 
     await vault.setVaultState(3);
-    await rebalanceETF(vault);
+    await vault.rebalance();
 
     // Testing rebalance X Chain function
     await vault.setVaultState(1);
