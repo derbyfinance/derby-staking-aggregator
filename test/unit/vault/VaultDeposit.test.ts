@@ -4,7 +4,7 @@ import { setupVault } from './setup';
 describe.only('Testing VaultDeposit, unit test', async () => {
   it('Deposit, mint and return Derby LP tokens', async function () {
     const { vault, user } = await setupVault();
-    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6, user.address)).to.changeTokenBalance(
       vault,
       user,
       10_000 * 1e6,
@@ -14,7 +14,7 @@ describe.only('Testing VaultDeposit, unit test', async () => {
     await vault.setExchangeRateTEST(0.9 * 1e6);
 
     let expectedLPTokens = Math.trunc((10_000 / 0.9) * 1e6);
-    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6, user.address)).to.changeTokenBalance(
       vault,
       user,
       expectedLPTokens,
@@ -24,7 +24,7 @@ describe.only('Testing VaultDeposit, unit test', async () => {
     await vault.setExchangeRateTEST(1.321 * 1e6);
 
     expectedLPTokens = Math.trunc((10_000 / 1.321) * 1e6);
-    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6, user.address)).to.changeTokenBalance(
       vault,
       user,
       expectedLPTokens,
@@ -35,6 +35,6 @@ describe.only('Testing VaultDeposit, unit test', async () => {
     const { vault, user } = await setupVault();
     await vault.toggleVaultOnOffTEST(true);
 
-    await expect(vault.connect(user).deposit(10_000 * 1e6)).to.be.revertedWith('Vault is off');
+    await expect(vault.connect(user).deposit(10_000 * 1e6, user.address)).to.be.revertedWith('Vault is off');
   });
 });

@@ -5,6 +5,8 @@ import { erc20, formatUSDC } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupXChain } from './setup';
+import { string } from 'hardhat/internal/core/params/argumentTypes';
+import { getAddress } from 'ethers/lib/utils';
 
 const chainIds = [10, 100, 1000, 10000];
 
@@ -21,7 +23,8 @@ describe.only('Testing XChainController, integration test', async () => {
     user: Signer,
     IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
-    game: GameMock;
+    game: GameMock,
+    userAddr: string;
 
   before(async function () {
     const setup = await setupXChain();
@@ -35,6 +38,7 @@ describe.only('Testing XChainController, integration test', async () => {
     dao = setup.dao;
     guardian = setup.guardian;
     user = setup.user;
+    userAddr = await user.getAddress();
   });
 
   it('1) Store allocations in Game contract', async function () {
@@ -125,8 +129,8 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('3) Trigger vaults to push totalUnderlyings to xChainController', async function () {
-    await vault1.connect(user).deposit(100_000 * 1e6);
-    await vault2.connect(user).deposit(200_000 * 1e6);
+    await vault1.connect(user).deposit(100_000 * 1e6, userAddr);
+    await vault2.connect(user).deposit(200_000 * 1e6, userAddr);
 
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);

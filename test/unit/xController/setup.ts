@@ -46,7 +46,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
   const [vault1, vault2, vault3, vault4] = await getTestVaults(hre);
-  const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
+  const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
 
   await Promise.all([
@@ -64,7 +64,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     run('vault_set_homexprovider', { contract: 'TestVault3', address: xProviderOpti.address }),
     run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderBnb.address }),
 
-    run('xcontroller_init', { chainids, homexprovider: xProviderMain.address }),
+    run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address }),
   ]);
 
   await Promise.all([

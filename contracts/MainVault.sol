@@ -89,9 +89,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
+  /// @param _receiver Receiving adress for the tokens
   /// @return shares Tokens received by buyer
   function deposit(
-    uint256 _amount
+    uint256 _amount,
+    address _receiver
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
     uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
@@ -100,15 +102,18 @@ contract MainVault is Vault, VaultToken {
     uint256 amount = balanceAfter - balanceBefore;
     shares = (amount * (10 ** decimals())) / exchangeRate;
 
-    _mint(msg.sender, shares);
+    _mint(_receiver, shares);
   }
 
   /// @notice Withdraw from Vault
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
   /// @param _amount Amount to withdraw in LP tokens
+  /// @param _receiver Receiving adress for the vaultcurrency
   /// @return value Amount received by seller in vaultCurrency
   function withdraw(
-    uint256 _amount
+    uint256 _amount,
+    address _receiver,
+    address _owner
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
     value = (_amount * exchangeRate) / (10 ** decimals());
 
@@ -117,7 +122,7 @@ contract MainVault is Vault, VaultToken {
     require(getVaultBalance() >= value, "!funds");
 
     _burn(msg.sender, _amount);
-    vaultCurrency.safeTransfer(msg.sender, value);
+    vaultCurrency.safeTransfer(_receiver, value);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available

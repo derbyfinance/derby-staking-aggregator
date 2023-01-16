@@ -16,7 +16,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     const { vault, user } = await setupVault();
     await vault.toggleVaultOnOffTEST(true);
 
-    await expect(vault.connect(user).withdraw(1 * 1e6)).to.be.revertedWith('Vault is off');
+    await expect(vault.connect(user).withdraw(1 * 1e6, user.address, user.address)).to.be.revertedWith('Vault is off');
     await vault.toggleVaultOnOffTEST(false);
   });
 
@@ -25,9 +25,9 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     // 100k USDC to vault
     await IUSDc.connect(user).transfer(vault.address, 100_000 * 1e6);
     // deposit 10k USDC
-    await vault.connect(user).deposit(50_000 * 1e6);
+    await vault.connect(user).deposit(50_000 * 1e6, user.address);
 
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
       IUSDc,
       user,
       10_000 * 1e6,
@@ -37,7 +37,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     await vault.setExchangeRateTEST(1.05 * 1e6);
 
     let expectedUSDCReceived = 10_000 * 1.05 * 1e6;
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
       IUSDc,
       user,
       expectedUSDCReceived,
@@ -47,7 +47,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     await vault.setExchangeRateTEST(1.2 * 1e6);
 
     expectedUSDCReceived = 30_000 * 1.2 * 1e6;
-    await expect(() => vault.connect(user).withdraw(30_000 * 1e6)).to.changeTokenBalance(
+    await expect(() => vault.connect(user).withdraw(30_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
       IUSDc,
       user,
       expectedUSDCReceived,
@@ -56,7 +56,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
 
   it('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
     const { vault, user } = await setupVault();
-    await vault.connect(user).deposit(100_000 * 1e6);
+    await vault.connect(user).deposit(100_000 * 1e6, user.address);
 
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40 * 1e6),
@@ -73,12 +73,12 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     await rebalanceETF(vault);
     await vault.setVaultState(0);
 
-    await expect(vault.connect(user).withdraw(20_000 * 1e6)).to.be.revertedWith('!funds');
+    await expect(vault.connect(user).withdraw(20_000 * 1e6, user.address, user.address)).to.be.revertedWith('!funds');
   });
 
   it('Should set withdrawal request and withdraw the allowance later', async function () {
     const { vault, user } = await setupVault();
-    await vault.connect(user).deposit(parseUSDC('10000')); // 10k
+    await vault.connect(user).deposit(parseUSDC('10000'), user.address); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC('10000')); // 10k
 
     // mocking exchangerate to 0.9

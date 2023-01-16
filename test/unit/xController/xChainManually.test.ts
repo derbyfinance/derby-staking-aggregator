@@ -18,6 +18,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     xChainControllerDUMMY: XChainControllerMock,
     dao: Signer,
     user: Signer,
+    userAddr: string,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
     derbyToken: DerbyToken,
@@ -28,7 +29,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     const [dao, guardian] = await getAllSigners(hre);
     const addr = dao.address;
 
-    const allXProviders = await getAndInitXProviders(hre, dao, { xController: 10, game: 10 });
+    const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
     const [xProviderMain, xProviderArbi] = allXProviders;
 
     const xChainControllerDUMMY = await deployXChainControllerMock(
@@ -36,7 +37,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
       addr,
       addr,
       guardian.address,
-      10,
+      100,
     );
 
     await Promise.all([
@@ -45,7 +46,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
       addVaultsToXController(hre, xChainControllerDUMMY, dao, vaultNumber),
       xChainControllerDUMMY.connect(guardian).setChainIds(chainIds),
-      xChainControllerDUMMY.connect(dao).setHomeXProvider(xProviderMain.address),
+      xChainControllerDUMMY.connect(dao).setHomeXProvider(xProviderArbi.address),
     ]);
 
     return xChainControllerDUMMY;
@@ -63,6 +64,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     dao = setup.dao;
     user = setup.user;
     guardian = setup.guardian;
+    userAddr = await user.getAddress();
 
     await xChainController.connect(guardian).setChainIds(chainIds);
     await game.connect(guardian).setChainIds(chainIds);
@@ -158,8 +160,8 @@ describe.only('Testing XChainController, unit test for manual execution', async 
   });
 
   it('Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController', async function () {
-    await vault1.connect(user).deposit(400_000 * 1e6);
-    await vault2.connect(user).deposit(1000 * 1e6);
+    await vault1.connect(user).deposit(400_000 * 1e6, userAddr);
+    await vault2.connect(user).deposit(1000 * 1e6, userAddr);
 
     await expect(vault1.pushTotalUnderlyingToController())
       .to.emit(vault1, 'PushTotalUnderlying')
