@@ -6,7 +6,7 @@ import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
 
-describe('Testing full integration test', async () => {
+describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
     dao: Signer,
     guardian: Signer,
