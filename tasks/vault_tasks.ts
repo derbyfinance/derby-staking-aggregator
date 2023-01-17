@@ -10,17 +10,10 @@ task('vault_init', 'Initializes the vault')
     const initConfig = await getInitConfigVault(contract, network.name);
     if (!initConfig) throw 'Unknown contract name';
 
-    const {
-      gasFeeLiq,
-      rebalanceInterval,
-      marginScale,
-      liquidityPercentage,
-      performanceFee,
-      homeChain,
-    } = initConfig;
+    const { rebalanceInterval, marginScale, liquidityPercentage, performanceFee, homeChain } =
+      initConfig;
 
     await run('vault_set_guardian', { contract, guardian: guardian });
-    await run('vault_set_gas_fee_liq', { contract, liquidity: gasFeeLiq });
     await run('vault_set_rebalance_interval', { contract, timestamp: rebalanceInterval });
     await run('vault_set_margin_scale', { contract, scale: marginScale });
     await run('vault_set_liquidity_perc', { contract, percentage: liquidityPercentage });
@@ -125,15 +118,6 @@ task('vault_set_home_chain', 'Setter for new homeChain Id')
     const vault = await getVault(hre, contract);
     const guardian = await getGuardian(hre);
     await vault.connect(guardian).setHomeChain(chainid);
-  });
-
-task('vault_set_gas_fee_liq', 'Liquidity in vaultcurrency which always should be kept in vault')
-  .addParam('contract', 'Name of the contract')
-  .addParam('liquidity', 'New gas fee liquidity', null, types.int)
-  .setAction(async ({ contract, liquidity }, hre) => {
-    const vault = await getVault(hre, contract);
-    const guardian = await getGuardian(hre);
-    await vault.connect(guardian).setGasFeeLiquidity(liquidity);
   });
 
 task('vault_set_rebalance_interval', 'Set minimum interval for the rebalance function')

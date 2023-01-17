@@ -93,7 +93,6 @@ type IDeployVaultConfig = {
 };
 
 type IInitVaultConfig = {
-  gasFeeLiq: number;
   rebalanceInterval: number;
   marginScale: number;
   liquidityPercentage: number;

@@ -399,6 +399,7 @@ contract Game is ERC721, ReentrancyGuard {
           allocation;
       }
     }
+    //console.log('total rewards %s', uint(baskets[_basketId].totalUnRedeemedRewards));
   }
 
   /// @notice Internal helper to lock or unlock tokens from the game contract

@@ -36,7 +36,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
     provider: allProviders.compoundProvider.address,
     bool: true,
   });
-
+  await run('vault_set_liquidity_perc', { contract, percentage: 10 });
   // add all protocol vaults to controller
   for (const protocol of allProtocols.values()) {
     await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);

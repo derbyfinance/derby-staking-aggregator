@@ -45,15 +45,6 @@ describe.only('Testing vault tasks', () => {
     expect(await vault.homeChain()).to.be.equal(chainid);
   });
 
-  it('vault_set_gas_fee_liq', async function () {
-    const { vault, contract, initSettings } = await setupVault();
-    const liquidity = random(100_000 * 1e6);
-
-    expect(await vault.gasFeeLiquidity()).to.be.equal(initSettings.gasFeeLiq);
-    await run('vault_set_gas_fee_liq', { contract, liquidity });
-    expect(await vault.gasFeeLiquidity()).to.be.equal(liquidity);
-  });
-
   it('vault_set_rebalance_interval', async function () {
     const { vault, contract } = await setupVault();
     const timestamp = random(100_000_000);
@@ -137,7 +128,7 @@ describe.only('Testing vault tasks', () => {
     const { vault, contract, initSettings } = await setupVault();
     const fee = random(100);
 
-    expect(await vault.liquidityPerc()).to.be.equal(initSettings.performanceFee);
+    expect(await vault.performanceFee()).to.be.equal(initSettings.performanceFee);
     await run('vault_set_performance_fee', { contract, percentage: fee });
     expect(await vault.performanceFee()).to.be.equal(fee);
   });

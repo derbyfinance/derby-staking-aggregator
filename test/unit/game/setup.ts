@@ -52,6 +52,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address });
   await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
   await run('vault_init', { contract });
+  await run('vault_set_liquidity_perc', { contract, percentage: 10 });
   await run('controller_init');
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
