@@ -3,6 +3,7 @@ import { Contract } from 'ethers';
 import { erc20, parseUSDC } from '@testhelp/helpers';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { setupVault } from './setup';
+import { run } from 'hardhat';
 
 describe.only('Testing VaultWithdraw, unit test', async () => {
   const IUSDc: Contract = erc20(usdc);
@@ -15,7 +16,9 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     const { vault, user } = await setupVault();
     await vault.toggleVaultOnOffTEST(true);
 
-    await expect(vault.connect(user).withdraw(1 * 1e6, user.address, user.address)).to.be.revertedWith('Vault is off');
+    await expect(
+      vault.connect(user).withdraw(1 * 1e6, user.address, user.address),
+    ).to.be.revertedWith('Vault is off');
     await vault.toggleVaultOnOffTEST(false);
   });
 
@@ -23,34 +26,28 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     const { vault, user } = await setupVault();
     // 100k USDC to vault
     await IUSDc.connect(user).transfer(vault.address, 100_000 * 1e6);
-    // deposit 10k USDC
+    // deposit 50k USDC
     await vault.connect(user).deposit(50_000 * 1e6, user.address);
 
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
-      IUSDc,
-      user,
-      10_000 * 1e6,
-    );
+    await expect(() =>
+      vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address),
+    ).to.changeTokenBalance(IUSDc, user, 10_000 * 1e6);
 
     // mocking exchangerate to 1.05
     await vault.setExchangeRateTEST(1.05 * 1e6);
 
     let expectedUSDCReceived = 10_000 * 1.05 * 1e6;
-    await expect(() => vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
-      IUSDc,
-      user,
-      expectedUSDCReceived,
-    );
+    await expect(() =>
+      vault.connect(user).withdraw(10_000 * 1e6, user.address, user.address),
+    ).to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
 
     // mocking exchangerate to 1.05
     await vault.setExchangeRateTEST(1.2 * 1e6);
 
     expectedUSDCReceived = 30_000 * 1.2 * 1e6;
-    await expect(() => vault.connect(user).withdraw(30_000 * 1e6, user.address, user.address)).to.changeTokenBalance(
-      IUSDc,
-      user,
-      expectedUSDCReceived,
-    );
+    await expect(() =>
+      vault.connect(user).withdraw(30_000 * 1e6, user.address, user.address),
+    ).to.changeTokenBalance(IUSDc, user, expectedUSDCReceived);
   });
 
   it('Should be able to withdraw LP tokens from vault balance and protocols', async function () {
@@ -72,7 +69,9 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     await vault.rebalance();
     await vault.setVaultState(0);
 
-    await expect(vault.connect(user).withdraw(20_000 * 1e6, user.address, user.address)).to.be.revertedWith('!funds');
+    await expect(
+      vault.connect(user).withdraw(20_000 * 1e6, user.address, user.address),
+    ).to.be.revertedWith('!funds');
   });
 
   it('Should set withdrawal request and withdraw the allowance later', async function () {
@@ -113,5 +112,49 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
 
     // trying to withdraw allowance again
     await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!allowance');
+  });
+
+  describe('Testing governance fee', async () => {
+    it('Should send governance fee to dao on withdraw function', async function () {
+      const { vault, user, dao, contract } = await setupVault();
+      await run('vault_set_governance_fee', { contract: contract, fee: 10 });
+
+      await vault.connect(user).deposit(parseUSDC(20_000), user.address);
+
+      // 0.1% of 10k withdraw
+      const govFee = 10_000 * 0.001;
+
+      await expect(() =>
+        vault.connect(user).withdraw(parseUSDC(10_000), user.address, user.address),
+      ).to.changeTokenBalance(IUSDc, user, parseUSDC(10_000 - govFee));
+
+      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseUSDC(govFee));
+    });
+
+    it('Should send governance fee to dao on withdraw allowance function', async function () {
+      const { vault, user, dao, contract } = await setupVault();
+      await run('vault_set_governance_fee', { contract: contract, fee: 50 });
+
+      await vault.connect(user).deposit(parseUSDC(20_000), user.address);
+
+      // withdrawal request for 20k LP tokens
+      await expect(() =>
+        vault.connect(user).withdrawalRequest(parseUSDC(20_000)),
+      ).to.changeTokenBalance(vault, user, -parseUSDC(20_000));
+
+      // mocking vault settings
+      await vault.upRebalancingPeriodTEST();
+      await vault.setReservedFundsTEST(parseUSDC(20_000));
+      const govFee = 20_000 * 0.005;
+
+      // withdraw allowance should give 9k USDC
+      await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
+        IUSDc,
+        user,
+        parseUSDC(20_000 - govFee),
+      );
+
+      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseUSDC(govFee));
+    });
   });
 });
