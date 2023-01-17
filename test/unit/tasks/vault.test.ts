@@ -141,4 +141,12 @@ describe.only('Testing vault tasks', () => {
     await run('vault_set_performance_fee', { contract, percentage: fee });
     expect(await vault.performanceFee()).to.be.equal(fee);
   });
+
+  it('vault_set_governance_fee', async function () {
+    const { vault, contract } = await setupVault();
+    const fee = random(10_000);
+
+    await run('vault_set_governance_fee', { contract, fee: fee });
+    expect(await vault.governanceFee()).to.be.equal(fee);
+  });
 });

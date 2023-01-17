@@ -96,57 +96,6 @@ library Swap {
     return balanceAfter - balanceBefore;
   }
 
-  /// @notice Swap tokens on Uniswap
-  /// @param _swap Number of tokens to sell, token to sell, token to receive
-  /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee
-  /// @return Amountout Number of tokens received
-  function swapTokensSingle(
-    SwapInOut memory _swap,
-    IController.UniswapParams memory _uniswap
-  ) public returns (uint256) {
-    IERC20(_swap.tokenIn).safeIncreaseAllowance(_uniswap.router, _swap.amount);
-
-    uint256 amountOutMinimum = amountOutSingleSwap(
-      SwapInOut(_swap.amount, _swap.tokenIn, _swap.tokenOut),
-      _uniswap.quoter,
-      _uniswap.poolFee
-    );
-
-    ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-      tokenIn: _swap.tokenIn,
-      tokenOut: _swap.tokenOut,
-      fee: _uniswap.poolFee,
-      recipient: address(this),
-      deadline: block.timestamp,
-      amountIn: _swap.amount,
-      amountOutMinimum: amountOutMinimum,
-      sqrtPriceLimitX96: 0
-    });
-
-    // The call to `exactInputSingle` executes the swap.
-    return ISwapRouter(_uniswap.router).exactInputSingle(params);
-  }
-
-  /// @notice Swap tokens on Uniswap
-  /// @param _swap Number of tokens to sell, token to sell, token to receive
-  /// @param _uniswapQuoter Address of uniswapQuoter
-  /// @param _poolFee Current uniswap pool fee set in router e.g 3000
-  /// @return amountOutMin minimum amount out of tokens to receive when executing swap
-  function amountOutSingleSwap(
-    SwapInOut memory _swap,
-    address _uniswapQuoter,
-    uint24 _poolFee
-  ) public returns (uint256) {
-    return
-      IQuoter(_uniswapQuoter).quoteExactInputSingle(
-        _swap.tokenIn,
-        _swap.tokenOut,
-        _poolFee,
-        _swap.amount,
-        0
-      );
-  }
-
   /// @notice Swap tokens on Uniswap Multi route
   /// @param _swap Number of tokens to sell, token to sell, token to receive
   /// @param _uniswapQuoter Address of uniswapQuoter
@@ -162,14 +111,5 @@ library Swap {
         abi.encodePacked(_swap.tokenIn, _poolFee, WETH, _poolFee, _swap.tokenOut),
         _swap.amount
       );
-  }
-
-  /// @notice Will unwrap WETH and send to DAO / governed address
-  /// @param _governed DAO / governed address
-  /// @param _amount amount to unwrap and transfer
-  function unWrapWETHtoGov(address payable _governed, uint256 _amount) public {
-    IWETH9(WETH).withdraw(_amount);
-    (bool sent, ) = _governed.call{value: _amount}("");
-    require(sent, "Ether not sent");
   }
 }

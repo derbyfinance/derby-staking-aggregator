@@ -42,5 +42,5 @@ export const setupVault = deployments.createFixture(async (hre) => {
     await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);
   }
 
-  return { vault, controller, dao, user, guardian };
+  return { vault, controller, dao, user, guardian, contract };
 });
