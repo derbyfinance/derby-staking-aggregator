@@ -159,6 +159,18 @@ task(
     await vault.connect(guardian).setLiquidityPerc(percentage);
   });
 
+task(
+  'vault_set_governance_fee',
+  'Fee in basis points',
+)
+  .addParam('contract', 'Name of the contract')
+  .addParam('fee', 'New governance fee', null, types.int)
+  .setAction(async ({ contract, fee }, hre) => {
+    const vault = await getVault(hre, contract);
+    const guardian = await getGuardian(hre);
+    await vault.connect(guardian).setGovernanceFee(fee);
+  });
+
 /*************
 OnlyDao
 **************/

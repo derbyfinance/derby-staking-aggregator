@@ -22,10 +22,11 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-
   uint256 public exchangeRate;
   uint16 public homeChain;
   uint256 public amountToSendXChain;
+  uint256 public governanceFee; // Basis points
+
   string internal stateError = "Wrong state";
 
   // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
@@ -53,6 +54,7 @@ contract MainVault is Vault, VaultToken {
   {
     exchangeRate = _uScale;
     game = _game;
+    governanceFee = 0;
   }
 
   modifier onlyXProvider() {
@@ -122,7 +124,7 @@ contract MainVault is Vault, VaultToken {
     require(getVaultBalance() >= value, "!funds");
 
     _burn(msg.sender, _amount);
-    vaultCurrency.safeTransfer(_receiver, value);
+    transferFunds(_receiver, value);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
@@ -156,7 +158,17 @@ contract MainVault is Vault, VaultToken {
     delete withdrawalAllowance[msg.sender];
     delete withdrawalRequestPeriod[msg.sender];
 
-    vaultCurrency.safeTransfer(msg.sender, value);
+    transferFunds(msg.sender, value);
+  }
+
+  /// @notice Substract governance fee from value
+  /// @param _receiver Receiving adress for the vaultcurrency
+  /// @param _value Amount received by seller in vaultCurrency
+  function transferFunds(address _receiver, uint256 _value) internal {
+    uint256 govFee = _value * governanceFee / 10_000;
+
+    vaultCurrency.safeTransfer(getDao(), govFee);
+    vaultCurrency.safeTransfer(_receiver, _value - govFee);
   }
 
   /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
@@ -382,5 +394,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter for new homeChain Id
   function setHomeChain(uint16 _homeChain) external onlyGuardian {
     homeChain = _homeChain;
+  }
+
+  /// @notice Setter for governance fee
+  /// @param _fee Fee in basis points
+  function setGovernanceFee(uint16 _fee) external onlyGuardian {
+    governanceFee = _fee;
   }
 }
