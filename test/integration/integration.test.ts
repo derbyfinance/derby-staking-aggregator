@@ -287,7 +287,7 @@ describe.only('Testing full integration test', async () => {
     // expected vault balances after rebalance
     before(function () {
       vaults[0].newUnderlying = (3000 / 9000) * 1_110_000; // vault 0 = 370k
-      vaults[1].newUnderlying = (6000 / 9000) * 1_110_000; // vault 0 = 370k
+      vaults[1].newUnderlying = (6000 / 9000) * 1_110_000; // vault 1 = 740k
     });
 
     it('Trigger should emit SentFundsToVault event', async function () {
@@ -357,14 +357,9 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Rebalance Step 7: Vaults rebalance', async function () {
-    // expectedProtocolBalance = (allocation / totalAllocations) * (totalUnderlying - vaultLiquidity)
+    // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
     before(function () {
-      vaults[0].liquidity = vaults[0].newUnderlying! * 0.1; // 10% liquidity
-      vaults[0].newUnderlying = vaults[0].newUnderlying! - vaults[0].liquidity;
       vaults[0].expectedProtocolBalance = (600 / 3000) * vaults[0].newUnderlying!;
-
-      vaults[1].liquidity = vaults[1].newUnderlying! * 0.1; // 10% liquidity
-      vaults[1].newUnderlying = vaults[1].newUnderlying! - vaults[1].liquidity;
       vaults[1].expectedProtocolBalance = (1200 / 6000) * vaults[1].newUnderlying!;
     });
 
@@ -377,12 +372,6 @@ describe.only('Testing full integration test', async () => {
     it('Check savedTotalUnderlying in vaults', async function () {
       for (const { vault, newUnderlying } of vaults) {
         expect(formatUSDC(await vault.savedTotalUnderlying())).to.be.closeTo(newUnderlying, 100);
-      }
-    });
-
-    it('Check liquidity in vaults', async function () {
-      for (const { vault, liquidity } of vaults) {
-        expect(formatUSDC(await vault.getVaultBalance())).to.be.equal(liquidity);
       }
     });
 

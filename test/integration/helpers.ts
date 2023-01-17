@@ -58,6 +58,5 @@ export type IVaults = {
   chainAllocs?: BigNumberish[];
   newUnderlying?: number;
   expectedProtocolBalance?: BigNumberish;
-  liquidity?: BigNumberish;
   rewards?: BigNumberish[];
 };

@@ -57,10 +57,9 @@
       "uScale": 1e6
     },
     "init": {
-      "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
       "marginScale": 1e9,
-      "liquidityPercentage": 10,
+      "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10
     }
@@ -75,10 +74,9 @@
       "uScale": 1e6
     },
     "init": {
-      "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
       "marginScale": 1e9,
-      "liquidityPercentage": 10,
+      "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 100
     }
@@ -93,10 +91,9 @@
       "uScale": 1e6
     },
     "init": {
-      "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
       "marginScale": 1e9,
-      "liquidityPercentage": 10,
+      "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 1000
     }
@@ -111,10 +108,9 @@
       "uScale": 1e6
     },
     "init": {
-      "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
       "marginScale": 1e9,
-      "liquidityPercentage": 10,
+      "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10000
     }

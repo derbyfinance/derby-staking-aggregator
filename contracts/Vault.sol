@@ -49,7 +49,6 @@ contract Vault is ReentrancyGuard {
   // UNIX timestamp
   uint256 public rebalanceInterval;
   uint256 public lastTimeStamp;
-  uint256 public gasFeeLiquidity;
 
   // total underlying of all protocols in vault, excluding vault balance
   uint256 public savedTotalUnderlying;
@@ -142,8 +141,6 @@ contract Vault is ReentrancyGuard {
 
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
-
-    if (getVaultBalance() < gasFeeLiquidity) pullFunds(gasFeeLiquidity);
 
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
@@ -451,12 +448,6 @@ contract Vault is ReentrancyGuard {
   /*
   Only Guardian functions
   */
-
-  /// @notice Set the gasFeeLiquidity, liquidity in vaultcurrency which always should be kept in vault to pay for rebalance gas fee
-  /// @param _gasFeeLiquidity Value at which to set the gasFeeLiquidity in vaultCurrency
-  function setGasFeeLiquidity(uint256 _gasFeeLiquidity) external onlyGuardian {
-    gasFeeLiquidity = _gasFeeLiquidity;
-  }
 
   /// @notice Set minimum interval for the rebalance function
   /// @param _timestampInternal UNIX timestamp
