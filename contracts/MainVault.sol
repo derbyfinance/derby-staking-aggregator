@@ -216,7 +216,10 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
+    console.log("old underlying vault %s", savedTotalUnderlying);
     setTotalUnderlying();
+    console.log("new underlying vault %s", savedTotalUnderlying);
+    console.log("totalSupply vault: %s", totalSupply());
     uint256 underlying = savedTotalUnderlying + getVaultBalance();
 
     IXProvider(xProvider).pushTotalUnderlying(

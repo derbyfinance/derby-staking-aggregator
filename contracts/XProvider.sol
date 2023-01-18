@@ -337,8 +337,13 @@ contract XProvider is ILayerZeroReceiver {
     uint256 _amount,
     address _asset
   ) external onlyController {
-    xTransfer(_vault, _asset, connextChainId[homeChain], connextChainId[_chainId], _amount);
-    pushFeedbackToVault(_chainId, _vault);
+    if (_chainId == homeChain) {
+      IVault(_vault).receiveFunds();
+      IERC20(_asset).transferFrom(msg.sender, _vault, _amount);
+    } else {
+      pushFeedbackToVault(_chainId, _vault);
+      xTransfer(_vault, _asset, connextChainId[homeChain], connextChainId[_chainId], _amount);
+    }
   }
 
   /// @notice Step 5 push; Push funds from xChainController to vaults

@@ -56,7 +56,7 @@ export type IVaults = {
   totalWithdrawalRequests: BigNumberish;
   amountToSend?: BigNumberish;
   chainAllocs?: BigNumberish[];
-  newUnderlying?: number;
+  newUnderlying?: BigNumberish;
   expectedProtocolBalance?: BigNumberish;
   rewards?: BigNumberish[];
 };

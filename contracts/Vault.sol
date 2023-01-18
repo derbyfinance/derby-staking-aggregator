@@ -221,10 +221,17 @@ contract Vault is ReentrancyGuard {
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
+
+    console.log("totalAllocatedTokens %s", uint(totalAllocatedTokens));
+    console.log("totalAllocatedTokens %s", uint(totalAllocatedTokensRounded));
     if (totalAllocatedTokensRounded == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      console.log(
+        "rewards from vault %s",
+        uint(rewardPerLockedToken[rebalancingPeriod][_protocolId])
+      );
     }
     lastPrices[_protocolId] = price;
   }

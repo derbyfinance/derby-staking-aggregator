@@ -2,9 +2,11 @@ import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
 import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
-import { usdc } from '@testhelp/addresses';
+import { compoundDAI, compoundUSDC, usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
+import { setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
+import { hexlify } from 'ethers/lib/utils';
 
 describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
@@ -386,6 +388,155 @@ describe.only('Testing full integration test', async () => {
             100,
           );
         }
+      }
+    });
+
+    it('Should correctly set states', async function () {
+      expect(await vaults[0].vault.state()).to.be.equal(5);
+      expect(await vaults[1].vault.state()).to.be.equal(5);
+    });
+  });
+
+  describe('Rebalance Step 8: Vaults push rewardsPerLockedToken to game', async function () {
+    before(function () {
+      // set expectedRewards
+      vaults[0].rewards = [0, 0, 0, 0, 0];
+      vaults[1].rewards = [0, 0, 0, 0, 0];
+    });
+
+    it('Trigger should emit PushedRewardsToGame event', async function () {
+      for (const { vault, homeChain, rewards } of vaults) {
+        await expect(vault.sendRewardsToGame())
+          .to.emit(vault, 'PushedRewardsToGame')
+          .withArgs(vaultNumber, homeChain, rewards);
+      }
+    });
+
+    it('Check rewards for every protocolId', async function () {
+      const id = await controller.latestProtocolId(vaultNumber);
+
+      for (let i = 0; i < Number(id); i++) {
+        // rewards are 0 because it is the first rebalance
+        expect(
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, 0, i),
+        ).to.be.equal(0);
+        expect(
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, 0, i),
+        ).to.be.equal(0);
+      }
+    });
+
+    it('Should correctly set states', async function () {
+      expect(await vaults[0].vault.state()).to.be.equal(0);
+      expect(await vaults[1].vault.state()).to.be.equal(0);
+    });
+  });
+
+  describe('Rebalance Step 1: Increasing compound prices to create rewards', async function () {
+    before(async function () {
+      console.log(await vaults[0].vault.price(0));
+      console.log(await vaults[0].vault.price(3));
+
+      // increasing storage slots in compound vault contract to create higher exchangerate
+      // compoundUSDC from 226726673612584 to 229386134864566
+      // compoundDAI from 220965316727684151707364749 to 229256697662279164306358261
+      await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
+      await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
+
+      console.log(await vaults[0].vault.price(0));
+      console.log(await vaults[0].vault.price(3));
+    });
+
+    it('Rebalance Step 1: 0 deltas', async function () {
+      await expect(game.pushAllocationsToController(vaultNumber))
+        .to.emit(game, 'PushedAllocationsToController')
+        .withArgs(vaultNumber, [0, 0]);
+    });
+  });
+
+  describe('Rebalance Step 2: Vault underlyings should have increased', async function () {
+    before(function () {
+      // cause of the compound price increase
+      vaults[0].newUnderlying = parseUSDC(373679.89685); // old 370k
+      vaults[1].newUnderlying = parseUSDC(747359.127833); // old 740k
+    });
+
+    it('Trigger should emit PushTotalUnderlying event', async function () {
+      for (const { vault, homeChain, newUnderlying, totalSupply } of vaults) {
+        console.log('total supply ' + (await vault.totalSupply()));
+        await expect(vault.pushTotalUnderlyingToController())
+          .to.emit(vault, 'PushTotalUnderlying')
+          .withArgs(vaultNumber, homeChain, newUnderlying, totalSupply, 0);
+      }
+    });
+  });
+
+  describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+    const exchangeRate = 1_009_945; // 1.009945
+
+    // setting expected amountToSend
+    before(function () {
+      vaults[0].amountToSend = parseUSDC(0.221956);
+      vaults[1].amountToSend = parseUSDC(0);
+    });
+
+    it('Trigger should emit SendXChainAmount event', async function () {
+      await expect(xChainController.pushVaultAmounts(vaultNumber))
+        .to.emit(xChainController, 'SendXChainAmount')
+        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate)
+        .to.emit(xChainController, 'SendXChainAmount')
+        .withArgs(vaults[1].vault.address, chains[1].id, vaults[1].amountToSend, exchangeRate);
+    });
+  });
+
+  describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
+    const vaultCurrency = usdc;
+
+    it('Vault 0 should revert because they will receive funds', async function () {
+      await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+    });
+
+    it('Trigger should emit RebalanceXChain event', async function () {
+      await expect(vaults[0].vault.rebalanceXChain())
+        .to.emit(vaults[0].vault, 'RebalanceXChain')
+        .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
+    });
+  });
+
+  describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
+    const underlying = usdc;
+    const amountToReceiveVault1 = 221955;
+
+    before(function () {
+      vaults[0].chainAllocs = [0, 0, 0, 0, 0];
+      vaults[1].chainAllocs = [0, 0, 0, 0, 0];
+    });
+
+    it('Trigger should emit SentFundsToVault event', async function () {
+      // only vault 1 will receive funds
+      await expect(xChainController.sendFundsToVault(vaultNumber))
+        .to.emit(xChainController, 'SentFundsToVault')
+        .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
+    });
+  });
+
+  describe('Rebalance Step 6: Game pushes deltaAllocations to vaults', async function () {
+    it('Trigger should emit PushProtocolAllocations event', async function () {
+      await expect(game.pushAllocationsToVaults(vaultNumber))
+        .to.emit(game, 'PushProtocolAllocations')
+        .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs)
+        .to.emit(game, 'PushProtocolAllocations')
+        .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
+    });
+  });
+
+  describe('Rebalance Step 7: Vaults rebalance', async function () {
+    // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
+    before(function () {});
+
+    it('Trigger rebalance vaults', async function () {
+      for (const { vault } of vaults) {
+        await vault.rebalance();
       }
     });
   });
