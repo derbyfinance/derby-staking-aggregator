@@ -201,7 +201,6 @@ contract XChainController {
     uint256 activeVaults;
 
     for (uint256 i = 0; i < chainIds.length; i++) {
-      console.log("deltas %s", uint(_deltas[i]));
       uint16 chain = chainIds[i];
       activeVaults += settleCurrentAllocation(_vaultNumber, chain, _deltas[i]);
       resetVaultUnderlyingForChain(_vaultNumber, chain);
@@ -295,10 +294,6 @@ contract XChainController {
 
     uint256 decimals = xProvider.getDecimals(getVaultAddress(_vaultNumber, homeChain));
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
-    console.log("totalUnderlying %s", totalUnderlying);
-    console.log("decimals %s", decimals);
-    console.log("totalSupply %s", totalSupply);
-    console.log("_exchangeRate %s", newExchangeRate);
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
@@ -375,13 +370,11 @@ contract XChainController {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
       vaultStage[_vaultNumber].fundsReceived++;
-      console.log("_amountDeposit %s", uint(_amountDeposit));
       emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
     }
 
     if (_amountToWithdraw > 0) {
       xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
-      console.log("_amountToWithdraw %s", uint(_amountToWithdraw));
       emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
   }

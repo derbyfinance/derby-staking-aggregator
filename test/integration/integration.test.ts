@@ -433,7 +433,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 1: Increasing compound prices to create rewards', async function () {
+  describe('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
     before(async function () {
       // increasing storage slots in compound vault contract to create higher exchangerate
       // compoundUSDC from 226726673612584 to 229386134864566
@@ -449,16 +449,15 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 2: Vault underlyings should have increased', async function () {
+  describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
     before(function () {
       // cause of the compound price increase
-      vaults[0].newUnderlying = 373679.89685; // old 370k
-      vaults[1].newUnderlying = 747359.127833; // old 740k
+      vaults[0].newUnderlying = 373682.097673; // old 370k
+      vaults[1].newUnderlying = 747363.52948; // old 740k
     });
 
     it('Trigger should emit PushTotalUnderlying event', async function () {
       for (const { vault, homeChain, newUnderlying, totalSupply } of vaults) {
-        console.log('total supply ' + (await vault.totalSupply()));
         await expect(vault.pushTotalUnderlyingToController())
           .to.emit(vault, 'PushTotalUnderlying')
           .withArgs(vaultNumber, homeChain, parseUSDC(newUnderlying!), totalSupply, 0);
@@ -466,9 +465,9 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+  describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     // expected
-    const exchangeRate = 1_009_945; // 1.009945
+    const exchangeRate = 1_009_951; // 1.009951
 
     // setting expected amountToSend
     before(function () {
@@ -485,7 +484,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
+  describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
 
     it('Vault 0 should revert because they will receive funds', async function () {
@@ -499,7 +498,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
+  describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
     const amountToReceiveVault1 = 221955;
 
@@ -516,7 +515,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 6: Game pushes deltaAllocations to vaults', async function () {
+  describe('Rebalance 2 Step 6: Game pushes deltaAllocations to vaults', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
       await expect(game.pushAllocationsToVaults(vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
@@ -526,7 +525,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 7: Vaults rebalance', async function () {
+  describe('Rebalance 2 Step 7: Vaults rebalance', async function () {
     // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
     before(function () {});
 
@@ -537,12 +536,12 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 8: Vaults push rewardsPerLockedToken to game', async function () {
+  describe('Rebalance 2 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
       // only compound vaults made rewards
-      vaults[0].rewards = [146035, 0, 0, 467801, 0];
-      vaults[1].rewards = [145621, 0, 0, 467280, 0];
+      vaults[0].rewards = [146068, 0, 0, 467226, 0];
+      vaults[1].rewards = [146061, 0, 0, 467214, 0];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
@@ -569,7 +568,7 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
-    const expectedRewards = 146035 * 100 + 467801 * 100 + 145621 * 200 + 467280 * 200;
+    const expectedRewards = 146068 * 100 + 467226 * 100 + 146061 * 200 + 467214 * 200;
 
     before(function () {
       gameUsers[0].allocations = [
@@ -603,6 +602,43 @@ describe.only('Testing full integration test', async () => {
       const { user } = gameUsers[0];
       await expect(vaults[0].vault.connect(user).withdrawRewards()).to.be.revertedWith(
         'Funds not arrived',
+      );
+    });
+  });
+
+  describe('Set withdrawal request for vault 0 and 2', async function () {
+    const exchangeRate = 1.009951;
+
+    it('Vault 0: Should set withdrawal request for all LP tokens (10k)', async function () {
+      const { user, vault } = vaultUsers[0];
+      const initialDeposit = 10_000;
+      const expectedUserUSDCBalance = initialDeposit * exchangeRate; // 100k deposit in vault 0
+
+      const userBalance = await vault.balanceOf(user.address);
+
+      expect(userBalance).to.be.equal(parseUSDC(initialDeposit));
+      await expect(() => vault.connect(user).withdrawalRequest(userBalance)).to.changeTokenBalance(
+        vault,
+        user,
+        parseUSDC(-initialDeposit),
+      );
+
+      expect(formatUSDC(await vault.connect(user).getWithdrawalAllowance())).to.be.equal(
+        expectedUserUSDCBalance,
+      );
+    });
+
+    it('Vault 2: Should set withdrawal request for LP tokens (500k)', async function () {
+      const { user, vault } = vaultUsers[2];
+      const withdrawAmount = 500_000;
+      const expectedUserUSDCBalance = withdrawAmount * exchangeRate; // 100k deposit in vault 0
+
+      await expect(() =>
+        vault.connect(user).withdrawalRequest(parseUSDC(withdrawAmount)),
+      ).to.changeTokenBalance(vault, user, parseUSDC(-withdrawAmount));
+
+      expect(formatUSDC(await vault.connect(user).getWithdrawalAllowance())).to.be.equal(
+        expectedUserUSDCBalance,
       );
     });
   });
