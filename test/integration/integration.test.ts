@@ -414,14 +414,15 @@ describe.only('Testing full integration test', async () => {
 
     it('Check rewards for every protocolId', async function () {
       const id = await controller.latestProtocolId(vaultNumber);
+      const rebalancingPeriod = 1;
 
       for (let i = 0; i < Number(id); i++) {
         // rewards are 0 because it is the first rebalance
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, 0, i),
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, rebalancingPeriod, i),
         ).to.be.equal(0);
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, 0, i),
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, rebalancingPeriod, i),
         ).to.be.equal(0);
       }
     });
@@ -544,8 +545,9 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      vaults[0].rewards = [0, 0, 0, 0, 0];
-      vaults[1].rewards = [0, 0, 0, 0, 0];
+      // only compound vaults made rewards
+      vaults[0].rewards = [146035, 0, 0, 467801, 0];
+      vaults[1].rewards = [145621, 0, 0, 467280, 0];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
@@ -558,16 +560,55 @@ describe.only('Testing full integration test', async () => {
 
     it('Check rewards for every protocolId', async function () {
       const id = await controller.latestProtocolId(vaultNumber);
+      const rebalancingPeriod = 2;
 
       for (let i = 0; i < Number(id); i++) {
-        // rewards are 0 because it is the first rebalance
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, 0, i),
-        ).to.be.equal(0);
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, rebalancingPeriod, i),
+        ).to.be.equal(vaults[0].rewards![i]);
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, 0, i),
-        ).to.be.equal(0);
+          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, rebalancingPeriod, i),
+        ).to.be.equal(vaults[1].rewards![i]);
       }
+    });
+  });
+
+  describe('Game user 0 rebalance to all zero for rewards', async function () {
+    const expectedRewards = 146035 * 100 + 467801 * 100 + 145621 * 200 + 467280 * 200;
+
+    before(function () {
+      gameUsers[0].allocations = [
+        [parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100)],
+        [parseDRB(-200), parseDRB(-200), parseDRB(-200), parseDRB(-200), parseDRB(-200)],
+      ];
+      vaults[0].totalWithdrawalRequests = expectedRewards;
+    });
+
+    it('Rebalance basket should give unredeemedRewards', async function () {
+      const { user, basketId, allocations } = gameUsers[0];
+
+      await game.connect(user).rebalanceBasket(basketId, allocations);
+      expect(await game.connect(user).basketUnredeemedRewards(basketId)).to.be.equal(
+        expectedRewards,
+      );
+    });
+
+    it('Should redeem rewards a.k.a set withdrawalRequest in vault', async function () {
+      const { user, basketId } = gameUsers[0];
+      await game.connect(user).redeemRewards(basketId);
+
+      expect(await game.connect(user).basketRedeemedRewards(basketId)).to.be.equal(expectedRewards);
+      expect(await vaults[0].vault.getRewardAllowanceTEST(user.address)).to.be.equal(
+        expectedRewards,
+      );
+      expect(await vaults[0].vault.getTotalWithdrawalRequestsTEST()).to.be.equal(expectedRewards);
+    });
+
+    it('Should not be able to withdraw rewards from vault before next rebalance', async function () {
+      const { user } = gameUsers[0];
+      await expect(vaults[0].vault.connect(user).withdrawRewards()).to.be.revertedWith(
+        'Funds not arrived',
+      );
     });
   });
 });

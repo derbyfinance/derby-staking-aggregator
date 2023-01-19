@@ -482,10 +482,7 @@ contract Game is ERC721, ReentrancyGuard {
 
     for (uint256 i = 0; i < latestId; i++) {
       deltas[i] = getDeltaAllocationProtocol(_vaultNumber, _chainId, i);
-      // allocation to zero
-      console.log("deltas from game %s", uint(deltas[i]));
       vaults[_vaultNumber].deltaAllocationProtocol[_chainId][i] = 0;
-      //setDeltaAllocationProtocol(_vaultNumber, _chainId, i, 0);
     }
   }
 
