@@ -216,8 +216,6 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     uint256 price = price(_protocolId);
-    console.log("price      %s", price);
-    console.log("last price %s", lastPrices[_protocolId]);
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = price;
       return;
@@ -231,10 +229,6 @@ contract Vault is ReentrancyGuard {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
-      console.log(
-        "rewards from vault %s",
-        uint(rewardPerLockedToken[rebalancingPeriod][_protocolId])
-      );
     }
   }
 
@@ -265,7 +259,6 @@ contract Vault is ReentrancyGuard {
     for (uint i = 0; i < latestID; i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
-      // console.log("protocol: %s, deposit: %s", i, amount);
       depositInProtocol(i, amount);
     }
   }

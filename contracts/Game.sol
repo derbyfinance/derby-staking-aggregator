@@ -129,7 +129,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber number of vault
   /// @param _chainId number of chainId
   /// @param _deltaAllocation delta allocation
-  function setDeltaAllocationChain(
+  function addDeltaAllocationChain(
     uint256 _vaultNumber,
     uint256 _chainId,
     int256 _deltaAllocation
@@ -154,7 +154,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _chainId number of chainId
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   /// @param _deltaAllocation Delta allocation in tokens
-  function setDeltaAllocationProtocol(
+  function addDeltaAllocationProtocol(
     uint256 _vaultNumber,
     uint256 _chainId,
     uint256 _protocolNum,
@@ -355,12 +355,12 @@ contract Game is ERC721, ReentrancyGuard {
         int256 allocation = _deltaAllocations[i][j];
         if (allocation == 0) continue;
         chainTotal += allocation;
-        setDeltaAllocationProtocol(_vaultNumber, chain, j, allocation);
+        addDeltaAllocationProtocol(_vaultNumber, chain, j, allocation);
         setBasketAllocationInProtocol(_basketId, chain, j, allocation);
       }
 
       totalDelta += chainTotal;
-      setDeltaAllocationChain(_vaultNumber, chain, chainTotal);
+      addDeltaAllocationChain(_vaultNumber, chain, chainTotal);
     }
   }
 

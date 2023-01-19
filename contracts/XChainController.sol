@@ -403,7 +403,6 @@ contract XChainController {
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);
         setAmountToDeposit(_vaultNumber, chain, 0);
-        console.log("amountToDepsoit sent %s", amountToDeposit);
         emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }
     }

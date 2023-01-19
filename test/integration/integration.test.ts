@@ -435,17 +435,11 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance Step 1: Increasing compound prices to create rewards', async function () {
     before(async function () {
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(3));
-
       // increasing storage slots in compound vault contract to create higher exchangerate
       // compoundUSDC from 226726673612584 to 229386134864566
       // compoundDAI from 220965316727684151707364749 to 229256697662279164306358261
       await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
       await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
-
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(3));
     });
 
     it('Rebalance Step 1: 0 deltas', async function () {
@@ -458,8 +452,8 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance Step 2: Vault underlyings should have increased', async function () {
     before(function () {
       // cause of the compound price increase
-      vaults[0].newUnderlying = parseUSDC(373679.89685); // old 370k
-      vaults[1].newUnderlying = parseUSDC(747359.127833); // old 740k
+      vaults[0].newUnderlying = 373679.89685; // old 370k
+      vaults[1].newUnderlying = 747359.127833; // old 740k
     });
 
     it('Trigger should emit PushTotalUnderlying event', async function () {
@@ -467,12 +461,13 @@ describe.only('Testing full integration test', async () => {
         console.log('total supply ' + (await vault.totalSupply()));
         await expect(vault.pushTotalUnderlyingToController())
           .to.emit(vault, 'PushTotalUnderlying')
-          .withArgs(vaultNumber, homeChain, newUnderlying, totalSupply, 0);
+          .withArgs(vaultNumber, homeChain, parseUSDC(newUnderlying!), totalSupply, 0);
       }
     });
   });
 
   describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+    // expected
     const exchangeRate = 1_009_945; // 1.009945
 
     // setting expected amountToSend

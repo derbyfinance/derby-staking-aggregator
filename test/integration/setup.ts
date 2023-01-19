@@ -4,7 +4,6 @@ import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@ty
 import {
   aave_usdc_01,
   aave_usdt_01,
-  allProtocols,
   compound_dai_01,
   compound_usdc_01,
   usdc,
@@ -22,7 +21,6 @@ import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContract
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 import { allNamedAccountsToSigners } from './helpers';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
-import { mine } from '@nomicfoundation/hardhat-network-helpers';
 
 const chainids = [10, 100];
 
@@ -81,8 +79,6 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
 
     run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address }),
   ]);
-
-  await mine(10_000);
 
   await Promise.all([
     setWhitelistVaults(hre, allXProviders, dao),

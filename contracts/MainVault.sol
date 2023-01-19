@@ -165,7 +165,7 @@ contract MainVault is Vault, VaultToken {
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
   function transferFunds(address _receiver, uint256 _value) internal {
-    uint256 govFee = _value * governanceFee / 10_000;
+    uint256 govFee = (_value * governanceFee) / 10_000;
 
     vaultCurrency.safeTransfer(getDao(), govFee);
     vaultCurrency.safeTransfer(_receiver, _value - govFee);
@@ -216,10 +216,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
-    console.log("old underlying vault %s", savedTotalUnderlying);
     setTotalUnderlying();
-    console.log("new underlying vault %s", savedTotalUnderlying);
-    console.log("totalSupply vault: %s", totalSupply());
     uint256 underlying = savedTotalUnderlying + getVaultBalance();
 
     IXProvider(xProvider).pushTotalUnderlying(
