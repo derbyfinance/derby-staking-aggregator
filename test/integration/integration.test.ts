@@ -527,7 +527,6 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 7: Vaults rebalance', async function () {
     // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
-    before(function () {});
 
     it('Trigger rebalance vaults', async function () {
       for (const { vault } of vaults) {
