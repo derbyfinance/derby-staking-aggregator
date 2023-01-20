@@ -109,6 +109,8 @@ describe.only('Testing full integration test', async () => {
         totalAllocations: 7500, // * 10^18
       },
     ];
+    // A hacky way to always set the same storage values for compound vaults for this test
+    await setCompoundVaultStorage();
   });
 
   describe('Create and rebalance basket for 2 game users', async function () {
@@ -373,9 +375,6 @@ describe.only('Testing full integration test', async () => {
     });
 
     it('Trigger rebalance vaults', async function () {
-      // A hacky way to always set the same storage values for compound vaults for this test
-      await setCompoundVaultStorage();
-
       for (const { vault } of vaults) {
         await vault.rebalance();
       }
