@@ -4,8 +4,15 @@ import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/he
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { compoundDAI, compoundUSDC, usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
-import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
-import { setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
+import {
+  IGameUser,
+  IChainId,
+  mintBasket,
+  IVaultUser,
+  IVaults,
+  setCompoundVaultStorage,
+} from './helpers';
+import { getStorageAt, mineUpTo, setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
 import { hexlify } from 'ethers/lib/utils';
 
 describe.only('Testing full integration test', async () => {
@@ -366,6 +373,9 @@ describe.only('Testing full integration test', async () => {
     });
 
     it('Trigger rebalance vaults', async function () {
+      // A hacky way to always set the same storage values for compound vaults for this test
+      await setCompoundVaultStorage();
+
       for (const { vault } of vaults) {
         await vault.rebalance();
       }
@@ -435,11 +445,16 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
     before(async function () {
+      console.log(await vaults[0].vault.price(0));
+      console.log(await vaults[0].vault.price(3));
       // increasing storage slots in compound vault contract to create higher exchangerate
       // compoundUSDC from 226726673612584 to 229386134864566
       // compoundDAI from 220965316727684151707364749 to 229256697662279164306358261
       await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
       await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
+
+      console.log(await vaults[0].vault.price(0));
+      console.log(await vaults[0].vault.price(3));
     });
 
     it('Rebalance Step 1: 0 deltas', async function () {
@@ -641,28 +656,4 @@ describe.only('Testing full integration test', async () => {
       );
     });
   });
-
-  describe.only('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
-    before(async function () {
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(3));
-      // increasing storage slots in compound vault contract to create higher exchangerate
-      // compoundUSDC from 226726673612584 to 229386134864566
-      // compoundDAI from 220965316727684151707364749 to 229256697662279164306358261
-      await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
-      await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
-
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(3));
-    });
-
-    it('Should not', async function () {});
-  });
 });
-
-/*
-BigNumber { value: "226726673612584" }
-BigNumber { value: "220965316727684151707364749" }
-BigNumber { value: "229386134864566" }
-BigNumber { value: "229256697662279164306358261" }
-*/

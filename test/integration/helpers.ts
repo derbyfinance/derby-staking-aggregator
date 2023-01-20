@@ -1,33 +1,9 @@
+import { setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
+import { compoundDAI, compoundUSDC } from '@testhelp/addresses';
 import { GameMock, MainVaultMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
-import { Result } from 'ethers/lib/utils';
+import { hexlify, Result } from 'ethers/lib/utils';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-
-export async function mintBasket(game: GameMock, user: Signer, vaultNumber: BigNumberish) {
-  const tx = await game.connect(user).mintNewBasket(vaultNumber);
-  const receipt = await tx.wait();
-  const { basketId } = receipt.events![1].args as Result;
-  return Number(basketId);
-}
-
-export async function allNamedAccountsToSigners({
-  getNamedAccounts,
-  ethers,
-}: HardhatRuntimeEnvironment) {
-  const accounts = await getNamedAccounts();
-  const signers = await Promise.all([
-    ethers.getSigner(accounts.dao),
-    ethers.getSigner(accounts.guardian),
-    ethers.getSigner(accounts.user),
-    ethers.getSigner(accounts.user2),
-    ethers.getSigner(accounts.user3),
-    ethers.getSigner(accounts.gameUser1),
-    ethers.getSigner(accounts.gameUser2),
-    ethers.getSigner(accounts.gameUser3),
-  ]);
-
-  return [...signers];
-}
 
 export type IVaultUser = {
   user: Signer;
@@ -60,3 +36,90 @@ export type IVaults = {
   expectedProtocolBalance?: BigNumberish;
   rewards?: BigNumberish[];
 };
+
+export async function mintBasket(game: GameMock, user: Signer, vaultNumber: BigNumberish) {
+  const tx = await game.connect(user).mintNewBasket(vaultNumber);
+  const receipt = await tx.wait();
+  const { basketId } = receipt.events![1].args as Result;
+  return Number(basketId);
+}
+
+export async function allNamedAccountsToSigners({
+  getNamedAccounts,
+  ethers,
+}: HardhatRuntimeEnvironment) {
+  const accounts = await getNamedAccounts();
+  const signers = await Promise.all([
+    ethers.getSigner(accounts.dao),
+    ethers.getSigner(accounts.guardian),
+    ethers.getSigner(accounts.user),
+    ethers.getSigner(accounts.user2),
+    ethers.getSigner(accounts.user3),
+    ethers.getSigner(accounts.gameUser1),
+    ethers.getSigner(accounts.gameUser2),
+    ethers.getSigner(accounts.gameUser3),
+  ]);
+
+  return [...signers];
+}
+
+// A hacky way to always set the same storage values for compound vaults for testing
+export async function setCompoundVaultStorage() {
+  const storageUSDC = [
+    '0x00000000000000000000000000000000000000000000000000000000000bf223',
+    '0x436f6d706f756e642055534420436f696e000000000000000000000000000022',
+    '0x635553444300000000000000000000000000000000000000000000000000000a',
+    '0x0000000000000000000000000000000000000000000000000000000000000008',
+    '0x0000000000000000000000006d903f6003cca6255d85cca4d3b5e5146dc33925',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000003d9819210a31b4961b30ef54be2aed79b9c9cd3b',
+    '0x000000000000000000000000d8ec56013ea119e7181d231e5048f90fbbe753c0',
+    '0x0000000000000000000000000000000000000000000000000000b5e620f48000',
+    '0x000000000000000000000000000000000000000000000000010a741a46278000',
+    '0x0000000000000000000000000000000000000000000000000000000000f31a95',
+    '0x000000000000000000000000000000000000000000000000115825220909da6b',
+    '0x000000000000000000000000000000000000000000000000000128cf1661085d',
+    '0x00000000000000000000000000000000000000000000000000000c3e709c17ff',
+    '0x000000000000000000000000000000000000000000000000342ec5a8b0c7d905',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  ];
+
+  const storageDAI = [
+    '0x0000000000000000000000000000000000000000000000000000000000000001',
+    '0x436f6d706f756e64204461690000000000000000000000000000000000000018',
+    '0x6344414900000000000000000000000000000000000000000000000000000008',
+    '0x00000000000000000000006d903f6003cca6255d85cca4d3b5e5146dc3392508',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000003d9819210a31b4961b30ef54be2aed79b9c9cd3b',
+    '0x000000000000000000000000fb564da37b41b2f6b6edcc3e56fbf523bd9f2012',
+    '0x000000000000000000000000000000000000000000a56fa5b99019a5c8000000',
+    '0x0000000000000000000000000000000000000000000000000214e8348c4f0000',
+    '0x0000000000000000000000000000000000000000000000000000000000f31a62',
+    '0x0000000000000000000000000000000000000000000000001000b425914c5bd4',
+    '0x000000000000000000000000000000000000000000d016ddd514a5f3eb2f6b60',
+    '0x00000000000000000000000000000000000000000011ae2d3d7aef32a043253b',
+    '0x00000000000000000000000000000000000000000000000023c680fe565b8f3b',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000000000000000000000000000',
+    '0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f',
+    '0x0000000000000000000000003363bae2fc44da742df13cd3ee94b6bb868ea376',
+    '0x0000000000000000000000009759a6ac90977b93b58547b4a71c78317f391a28',
+    '0x000000000000000000000000197e90f9fad81970ba7976f33cbd77088e5d7cf7',
+    '0x00000000000000000000000035d1b3f3d7966a1dfe207aa4514c12a259a0492b',
+  ];
+
+  await Promise.all([
+    storageUSDC.map((hex: string, i: number) => {
+      setStorageAt(compoundUSDC, i, hexlify(hex));
+    }),
+  ]);
+  await Promise.all([
+    storageDAI.map((hex: string, i: number) => {
+      setStorageAt(compoundDAI, i, hexlify(hex));
+    }),
+  ]);
+}
