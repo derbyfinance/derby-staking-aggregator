@@ -63,7 +63,6 @@ export async function allNamedAccountsToSigners({
   return [...signers];
 }
 
-// A hacky way to always set the same storage values for compound vaults for testing
 export async function setCompoundVaultStorage() {
   const storageUSDC = [
     '0x00000000000000000000000000000000000000000000000000000000000bf223',

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
+import { cToken, erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
-import { compoundDAI, compoundUSDC, usdc } from '@testhelp/addresses';
+import { compoundDAI, compoundUSDC, usdc, yearnUSDC } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import {
   IGameUser,
@@ -12,7 +12,7 @@ import {
   IVaults,
   setCompoundVaultStorage,
 } from './helpers';
-import { getStorageAt, mineUpTo, setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
+import { getStorageAt, setStorageAt, time } from '@nomicfoundation/hardhat-network-helpers';
 import { hexlify } from 'ethers/lib/utils';
 
 describe.only('Testing full integration test', async () => {
@@ -30,6 +30,7 @@ describe.only('Testing full integration test', async () => {
     chains: IChainId[];
 
   before(async function () {
+    console.log(await time.latestBlock());
     const setup = await setupIntegration();
     game = setup.game;
     xChainController = setup.xChainController;
@@ -109,8 +110,6 @@ describe.only('Testing full integration test', async () => {
         totalAllocations: 7500, // * 10^18
       },
     ];
-    // A hacky way to always set the same storage values for compound vaults for this test
-    await setCompoundVaultStorage();
   });
 
   describe('Create and rebalance basket for 2 game users', async function () {
@@ -444,6 +443,7 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
     before(async function () {
+      console.log(await time.latestBlock());
       console.log(await vaults[0].vault.price(0));
       console.log(await vaults[0].vault.price(3));
       // increasing storage slots in compound vault contract to create higher exchangerate
@@ -655,4 +655,26 @@ describe.only('Testing full integration test', async () => {
       );
     });
   });
+
+  describe('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
+    before(async function () {
+      console.log(await time.latestBlock());
+      console.log(await vaults[0].vault.price(0));
+      console.log(await vaults[0].vault.price(3));
+    });
+
+    it('Rebalance Step 1: 0 deltas', async function () {});
+  });
 });
+
+// "373682100242" to be equal 37368209767
+// "373682100242" to be equal 373682097673
+// 373682100144
+/*
+15932058
+15932248
+15932262
+*/
+15932058;
+15932248;
+15932265;

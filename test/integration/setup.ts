@@ -1,4 +1,4 @@
-import { deployments } from 'hardhat';
+import hre, { network } from 'hardhat';
 import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import {
@@ -24,8 +24,20 @@ import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 
 const chainids = [10, 100];
 
-export const setupIntegration = deployments.createFixture(async (hre) => {
-  const { run } = hre;
+export const setupIntegration = async () => {
+  await network.provider.request({
+    method: 'hardhat_reset',
+    params: [
+      {
+        forking: {
+          jsonRpcUrl: `${process.env.PROVIDER_FORKING}`,
+          blockNumber: 15932058,
+        },
+      },
+    ],
+  });
+
+  const { run, deployments } = hre;
   await deployments.fixture([
     'XChainControllerMock',
     'YearnProvider',
@@ -129,4 +141,4 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     gameUsers,
     guardian,
   };
-});
+};
