@@ -647,4 +647,12 @@ describe.only('Testing full integration test', async () => {
       );
     });
   });
+
+  describe.only('Testing', async function () {
+    before(async function () {
+      console.log(await vaults[0].vault.price(5));
+    });
+
+    it('Rebalance Step 1: 0 deltas', async function () {});
+  });
 });

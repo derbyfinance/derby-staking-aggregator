@@ -1,12 +1,19 @@
 import hre, { network } from 'hardhat';
 import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
+import type {
+  Controller,
+  DerbyToken,
+  GameMock,
+  XChainControllerMock,
+  YearnVaultMock,
+} from '@typechain';
 import {
   aave_usdc_01,
   aave_usdt_01,
   compound_dai_01,
   compound_usdc_01,
   usdc,
+  yearn,
   yearn_usdc_01,
 } from '@testhelp/addresses';
 import {
@@ -56,6 +63,7 @@ export const setupIntegration = async () => {
     'XProviderArbi',
     'XProviderOpti',
     'XProviderBnb',
+    'YearnVaultMock',
   ]);
 
   const IUSDc = erc20(usdc);
@@ -68,6 +76,8 @@ export const setupIntegration = async () => {
   const controller = (await getContract('Controller', hre)) as Controller;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
+
+  const yearnVaultMock = (await getContract('YearnVaultMock', hre)) as YearnVaultMock;
 
   const [vault1, vault2] = await getTestVaults(hre);
   const vaults = [vault1, vault2];
@@ -123,10 +133,21 @@ export const setupIntegration = async () => {
   const compoundDAIVault = protocols.get('compound_dai_01')!;
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
+  const yearn_mock_vault = new ProtocolVault({
+    name: 'yearn_mock_vault',
+    protocolToken: yearnVaultMock.address,
+    underlyingToken: usdc,
+    govToken: yearn,
+    decimals: 6,
+    chainId: 1,
+  });
+
   // add all protocol vaults to controller
   for (const protocol of protocols.values()) {
     await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   }
+
+  await yearn_mock_vault.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
 
   return {
     vaults,
