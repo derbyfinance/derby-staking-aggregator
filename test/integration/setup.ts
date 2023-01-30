@@ -25,6 +25,7 @@ import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 const chainids = [10, 100];
 
 export const setupIntegration = async () => {
+  // reset fork so it will mine the same blocks every test
   await network.provider.request({
     method: 'hardhat_reset',
     params: [
@@ -58,9 +59,6 @@ export const setupIntegration = async () => {
   ]);
 
   const IUSDc = erc20(usdc);
-  // const [dao, user, user2, user3, gameUser1, gameUser2, gameUser3, guardian] = await getAllSigners(
-  //   hre,
-  // );
   const [dao, guardian, user, user1, user2, gameUser0, gameUser1] = await allNamedAccountsToSigners(
     hre,
   );
@@ -105,9 +103,9 @@ export const setupIntegration = async () => {
     derbyToken.transfer(gameUser0.address, parseDRB(10_000)),
     derbyToken.transfer(gameUser1.address, parseDRB(10_000)),
 
-    transferAndApproveUSDC(vault1.address, user, 1_000_000 * 1e6),
-    transferAndApproveUSDC(vault1.address, user1, 1_000_000 * 1e6),
-    transferAndApproveUSDC(vault2.address, user2, 1_000_000 * 1e6),
+    transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
+    transferAndApproveUSDC(vault1.address, user1, 10_000_000 * 1e6),
+    transferAndApproveUSDC(vault2.address, user2, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),
   ]);

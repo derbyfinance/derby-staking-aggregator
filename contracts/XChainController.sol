@@ -294,6 +294,7 @@ contract XChainController {
 
     uint256 decimals = xProvider.getDecimals(getVaultAddress(_vaultNumber, homeChain));
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
+    console.log("exchangerate %s", newExchangeRate);
 
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
@@ -375,6 +376,7 @@ contract XChainController {
 
     if (_amountToWithdraw > 0) {
       xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
+      console.log("amoutntowithdarw %s", _amountToWithdraw);
       emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
   }

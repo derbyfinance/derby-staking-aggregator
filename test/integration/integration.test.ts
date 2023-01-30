@@ -2,18 +2,10 @@ import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
 import { cToken, erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
-import { compoundDAI, compoundUSDC, usdc, yearnUSDC } from '@testhelp/addresses';
+import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
-import {
-  IGameUser,
-  IChainId,
-  mintBasket,
-  IVaultUser,
-  IVaults,
-  setCompoundVaultStorage,
-} from './helpers';
-import { getStorageAt, setStorageAt, time } from '@nomicfoundation/hardhat-network-helpers';
-import { hexlify } from 'ethers/lib/utils';
+import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults } from './helpers';
+import { mine, time } from '@nomicfoundation/hardhat-network-helpers';
 
 describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
@@ -30,7 +22,6 @@ describe.only('Testing full integration test', async () => {
     chains: IChainId[];
 
   before(async function () {
-    console.log(await time.latestBlock());
     const setup = await setupIntegration();
     game = setup.game;
     xChainController = setup.xChainController;
@@ -449,14 +440,16 @@ describe.only('Testing full integration test', async () => {
       // increasing storage slots in compound vault contract to create higher exchangerate
       // compoundUSDC from 226726673612584 to 229386134864566
       // compoundDAI from 220965316727684151707364749 to 229256697662279164306358261
-      await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
-      await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
+      //await setStorageAt(compoundUSDC, 12, hexlify(336344875509853)); // original 326344875509853
+      //await setStorageAt(compoundDAI, 12, hexlify(2137426523506751)); // original 2.1374265235067517e+25
 
       console.log(await vaults[0].vault.price(0));
       console.log(await vaults[0].vault.price(3));
     });
 
     it('Rebalance Step 1: 0 deltas', async function () {
+      // mine to simulate rewards
+      await mine(200_000);
       await expect(game.pushAllocationsToController(vaultNumber))
         .to.emit(game, 'PushedAllocationsToController')
         .withArgs(vaultNumber, [0, 0]);
@@ -466,8 +459,8 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
     before(function () {
       // cause of the compound price increase
-      vaults[0].newUnderlying = 373682.097673; // old 370k
-      vaults[1].newUnderlying = 747363.52948; // old 740k
+      vaults[0].newUnderlying = 370058.800188; // old 370k
+      vaults[1].newUnderlying = 740116.946389; // old 740k
     });
 
     it('Trigger should emit PushTotalUnderlying event', async function () {
@@ -481,11 +474,11 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     // expected
-    const exchangeRate = 1_009_951; // 1.009951
+    const exchangeRate = 1_000_158; // 1.000104
 
     // setting expected amountToSend
     before(function () {
-      vaults[0].amountToSend = parseUSDC(0.221956);
+      vaults[0].amountToSend = parseUSDC(0.217996);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -514,7 +507,7 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
-    const amountToReceiveVault1 = 221955;
+    const amountToReceiveVault1 = 217995;
 
     before(function () {
       vaults[0].chainAllocs = [0, 0, 0, 0, 0];
@@ -553,8 +546,8 @@ describe.only('Testing full integration test', async () => {
     before(function () {
       // set expectedRewards
       // only compound vaults made rewards
-      vaults[0].rewards = [146068, 0, 0, 467226, 0];
-      vaults[1].rewards = [146061, 0, 0, 467214, 0];
+      vaults[0].rewards = [7956, 0, 0, 11, 0];
+      vaults[1].rewards = [7948, 0, 0, 0, 0];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
@@ -581,7 +574,7 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
-    const expectedRewards = 146068 * 100 + 467226 * 100 + 146061 * 200 + 467214 * 200;
+    const expectedRewards = 7956 * 100 + 11 * 100 + 7948 * 200;
 
     before(function () {
       gameUsers[0].allocations = [
@@ -620,12 +613,12 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Set withdrawal request for vault 0 and 2', async function () {
-    const exchangeRate = 1.009951;
+    const exchangeRate = 1_000_158; // 1.000158
 
-    it('Vault 0: Should set withdrawal request for all LP tokens (10k)', async function () {
+    it('Vault 0 (user 0): Should set withdrawal request for all LP tokens (10k)', async function () {
       const { user, vault } = vaultUsers[0];
       const initialDeposit = 10_000;
-      const expectedUserUSDCBalance = initialDeposit * exchangeRate; // 100k deposit in vault 0
+      const expectedUserUSDCBalance = initialDeposit * exchangeRate;
 
       const userBalance = await vault.balanceOf(user.address);
 
@@ -635,46 +628,23 @@ describe.only('Testing full integration test', async () => {
         user,
         parseUSDC(-initialDeposit),
       );
-
-      expect(formatUSDC(await vault.connect(user).getWithdrawalAllowance())).to.be.equal(
+      expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(
         expectedUserUSDCBalance,
       );
     });
 
-    it('Vault 2: Should set withdrawal request for LP tokens (500k)', async function () {
+    it('Vault 2 (user 2): Should set withdrawal request for LP tokens (500k)', async function () {
       const { user, vault } = vaultUsers[2];
       const withdrawAmount = 500_000;
-      const expectedUserUSDCBalance = withdrawAmount * exchangeRate; // 100k deposit in vault 0
+      const expectedUserUSDCBalance = withdrawAmount * exchangeRate;
 
       await expect(() =>
         vault.connect(user).withdrawalRequest(parseUSDC(withdrawAmount)),
       ).to.changeTokenBalance(vault, user, parseUSDC(-withdrawAmount));
 
-      expect(formatUSDC(await vault.connect(user).getWithdrawalAllowance())).to.be.equal(
+      expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(
         expectedUserUSDCBalance,
       );
     });
   });
-
-  describe('Rebalance 2 Step 1: Increasing compound prices to create rewards', async function () {
-    before(async function () {
-      console.log(await time.latestBlock());
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(3));
-    });
-
-    it('Rebalance Step 1: 0 deltas', async function () {});
-  });
 });
-
-// "373682100242" to be equal 37368209767
-// "373682100242" to be equal 373682097673
-// 373682100144
-/*
-15932058
-15932248
-15932262
-*/
-15932058;
-15932248;
-15932265;
