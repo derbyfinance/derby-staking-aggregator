@@ -20,7 +20,11 @@ describe('Testing Compound provider', async () => {
   const setupProvider = deployments.createFixture(async (hre) => {
     await deployments.fixture(['CompoundVaultMockUSDC', 'CompoundProvider']);
     const provider = (await getContract('CompoundProvider', hre)) as CompoundProviderMock;
-    const compoundVaultMock = (await getContract('CompoundVaultMock', hre)) as CompoundVaultMock;
+    const vaultMock = await deployments.get('CompoundVaultMockUSDC');
+    const compoundVaultMock = await hre.ethers.getContractAt(
+      'CompoundVaultMock',
+      vaultMock.address,
+    );
 
     const [dao, user] = await getAllSigners(hre);
 

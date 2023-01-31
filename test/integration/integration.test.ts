@@ -23,6 +23,7 @@ describe.only('Testing full integration test', async () => {
 
   before(async function () {
     const setup = await setupIntegration();
+    console.log(' setup');
     game = setup.game;
     xChainController = setup.xChainController;
     controller = setup.controller;
@@ -646,16 +647,5 @@ describe.only('Testing full integration test', async () => {
         expectedUserUSDCBalance,
       );
     });
-  });
-
-  describe.only('Testing', async function () {
-    before(async function () {
-      console.log(await vaults[0].vault.price(5));
-      console.log(await vaults[0].vault.price(6));
-      console.log(await vaults[0].vault.price(7));
-      console.log(await vaults[0].vault.price(8));
-    });
-
-    it('Rebalance Step 1: 0 deltas', async function () {});
   });
 });

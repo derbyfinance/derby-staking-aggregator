@@ -220,10 +220,15 @@ contract Vault is ReentrancyGuard {
       lastPrices[_protocolId] = price;
       return;
     }
+
     int256 priceDiff = int256(price - lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
+    console.log("price %s", price);
+    console.log("priceDiff %s", uint(priceDiff));
+    console.log("lastPrices %s", lastPrices[_protocolId]);
+    console.log("denominator %s", uint(denominator));
 
     if (totalAllocatedTokensRounded == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
@@ -342,7 +347,9 @@ contract Vault is ReentrancyGuard {
       address(this),
       protocol.LPToken
     ) * uScale) / protocol.uScale;
-
+    console.log("balance underlying vault: %s", underlyingBalance);
+    console.log("protocol.uScale %s", protocol.uScale);
+    console.log("protocol.LPToken %s", protocol.LPToken);
     return underlyingBalance;
   }
 

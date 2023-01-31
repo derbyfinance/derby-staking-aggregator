@@ -10,7 +10,7 @@ contract CompoundVaultMock is VaultToken {
   using SafeERC20 for IERC20;
 
   uint256 public exchangeRate;
-  address public vaultCurrencyAddr;
+  address public underlying;
 
   constructor(
     string memory _name,
@@ -20,12 +20,12 @@ contract CompoundVaultMock is VaultToken {
     uint256 _exchangeRate
   ) VaultToken(_name, _symbol, _decimals) {
     exchangeRate = _exchangeRate;
-    vaultCurrencyAddr = _vaultCurrency;
+    underlying = _vaultCurrency;
   }
 
   function mint(uint256 _amount) external returns (uint256) {
     uint256 balanceBefore = getVaultBalance();
-    IERC20(vaultCurrencyAddr).safeTransferFrom(msg.sender, address(this), _amount);
+    IERC20(underlying).safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
@@ -43,7 +43,7 @@ contract CompoundVaultMock is VaultToken {
     require(getVaultBalance() >= value, "Not enough funds");
 
     _burn(msg.sender, _amount);
-    IERC20(vaultCurrencyAddr).safeTransfer(msg.sender, value);
+    IERC20(underlying).safeTransfer(msg.sender, value);
 
     return 0;
   }
@@ -53,7 +53,7 @@ contract CompoundVaultMock is VaultToken {
   }
 
   function getVaultBalance() public view virtual returns (uint256) {
-    return IERC20(vaultCurrencyAddr).balanceOf(address(this));
+    return IERC20(underlying).balanceOf(address(this));
   }
 
   function setExchangeRate(uint256 _exchangeRate) external {

@@ -14,7 +14,9 @@ import {
   compound_dai_01,
   compound_usdc_01,
   compToken,
+  dai,
   usdc,
+  usdt,
   yearn,
   yearn_usdc_01,
 } from '@testhelp/addresses';
@@ -70,7 +72,8 @@ export const setupIntegration = async () => {
     'XProviderArbi',
     'XProviderOpti',
     'XProviderBnb',
-    'YearnVaultMock',
+    'YearnVaultMock1',
+    'YearnVaultMock2',
     'CompoundVaultMockUSDC',
     'CompoundVaultMockDAI',
     'CompoundVaultMockUSDT',
@@ -87,8 +90,7 @@ export const setupIntegration = async () => {
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
-  const yearnVaultMock = (await getContract('YearnVaultMock', hre)) as YearnVaultMock;
-  const [compUSDC, compDai, compUSDT] = await deployCompoundMockVaults(hre);
+  const [yearn1, yearn2, compUSDC, compDai, compUSDT] = await deployCompoundMockVaults(hre);
 
   const [vault1, vault2] = await getTestVaults(hre);
   const vaults = [vault1, vault2];
@@ -131,16 +133,17 @@ export const setupIntegration = async () => {
     allProvidersClass.setProviders(hre),
   ]);
 
-  const protocols = new Map<string, ProtocolVault>()
-    .set('compound_usdc_01', compound_usdc_01)
-    .set('aave_usdc_01', aave_usdc_01)
-    .set('yearn_usdc_01', yearn_usdc_01)
-    .set('compound_dai_01', compound_dai_01)
-    .set('aave_usdt_01', aave_usdt_01);
-
-  const yearn_mock_vault = new ProtocolVault({
+  const yearn_mock_vault1 = new ProtocolVault({
     name: 'yearn_mock_vault',
-    protocolToken: yearnVaultMock.address,
+    protocolToken: yearn1.address,
+    underlyingToken: usdc,
+    govToken: yearn,
+    decimals: 6,
+    chainId: 1,
+  });
+  const yearn_mock_vault2 = new ProtocolVault({
+    name: 'yearn_mock_vault2',
+    protocolToken: yearn2.address,
     underlyingToken: usdc,
     govToken: yearn,
     decimals: 6,
@@ -158,7 +161,7 @@ export const setupIntegration = async () => {
   const compound_dai = new ProtocolVault({
     name: 'compound_mock_vault',
     protocolToken: compDai.address,
-    underlyingToken: usdc,
+    underlyingToken: dai,
     govToken: compToken,
     decimals: 8,
     chainId: 1,
@@ -166,18 +169,19 @@ export const setupIntegration = async () => {
   const compound_usdt = new ProtocolVault({
     name: 'compound_mock_vault',
     protocolToken: compUSDT.address,
-    underlyingToken: usdc,
+    underlyingToken: usdt,
     govToken: compToken,
     decimals: 8,
     chainId: 1,
   });
 
   // add all protocol vaults to controller
-  for (const protocol of protocols.values()) {
-    await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  }
+  // for (const protocol of protocols.values()) {
+  //   await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  // }
 
-  await yearn_mock_vault.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_mock_vault1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_mock_vault2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   await compound_usdc.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   await compound_dai.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   await compound_usdt.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
