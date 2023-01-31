@@ -1,31 +1,33 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { usdt } from '@testhelp/addresses';
+import { dai } from '@testhelp/addresses';
+
+const name: string = 'YearnMockDAI2';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
+  ethers,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
   const deploySettings = {
-    name: 'CompoundVaultMockUSDT',
-    symbol: 'CVM',
-    decimals: 6,
-    vaultCurrency: usdt,
-    exchangeRate: 223000000000000,
+    symbol: 'YVM',
+    decimals: 18,
+    vaultCurrency: dai,
+    exchangeRate: ethers.utils.parseEther('1.090'),
   };
-  const { name, symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
+  const { symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
 
-  await deploy('CompoundVaultMockUSDT', {
+  await deploy(name, {
     from: deployer,
-    contract: 'CompoundVaultMock',
+    contract: 'YearnVaultMock',
     args: [name, symbol, decimals, vaultCurrency, exchangeRate],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['CompoundVaultMockUSDT'];
+func.tags = [name];
 func.dependencies = [];
