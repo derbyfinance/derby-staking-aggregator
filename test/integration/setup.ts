@@ -8,18 +8,7 @@ import type {
   XChainControllerMock,
   YearnVaultMock,
 } from '@typechain';
-import {
-  aave_usdc_01,
-  aave_usdt_01,
-  compound_dai_01,
-  compound_usdc_01,
-  compToken,
-  dai,
-  usdc,
-  usdt,
-  yearn,
-  yearn_usdc_01,
-} from '@testhelp/addresses';
+import { compToken, dai, usdc, usdt, yearn, yearn_usdc_01 } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
@@ -41,19 +30,6 @@ import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 const chainids = [10, 100];
 
 export const setupIntegration = async () => {
-  // reset fork so it will mine the same blocks every test
-  await network.provider.request({
-    method: 'hardhat_reset',
-    params: [
-      {
-        forking: {
-          jsonRpcUrl: `${process.env.PROVIDER_FORKING}`,
-          blockNumber: 15932058,
-        },
-      },
-    ],
-  });
-
   const { run, deployments } = hre;
   await deployments.fixture([
     'XChainControllerMock',
@@ -155,7 +131,7 @@ export const setupIntegration = async () => {
     protocolToken: compUSDC.address,
     underlyingToken: usdc,
     govToken: compToken,
-    decimals: 8,
+    decimals: 6,
     chainId: 1,
   });
   const compound_dai = new ProtocolVault({
@@ -163,7 +139,7 @@ export const setupIntegration = async () => {
     protocolToken: compDai.address,
     underlyingToken: dai,
     govToken: compToken,
-    decimals: 8,
+    decimals: 18,
     chainId: 1,
   });
   const compound_usdt = new ProtocolVault({
@@ -171,7 +147,7 @@ export const setupIntegration = async () => {
     protocolToken: compUSDT.address,
     underlyingToken: usdt,
     govToken: compToken,
-    decimals: 8,
+    decimals: 6,
     chainId: 1,
   });
 

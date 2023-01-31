@@ -13,7 +13,7 @@ const func: DeployFunction = async function ({
   const deploySettings = {
     name: 'CompoundVaultMockDAI',
     symbol: 'CVM',
-    decimals: 8,
+    decimals: 18,
     vaultCurrency: dai,
     exchangeRate: ethers.utils.parseEther('222000000'),
   };

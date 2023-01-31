@@ -12,7 +12,7 @@ const func: DeployFunction = async function ({
   const deploySettings = {
     name: 'CompoundVaultMockUSDT',
     symbol: 'CVM',
-    decimals: 8,
+    decimals: 6,
     vaultCurrency: usdt,
     exchangeRate: 223000000000000,
   };

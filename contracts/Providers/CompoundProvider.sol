@@ -93,15 +93,10 @@ contract CompoundProvider is IProvider {
     address _address,
     address _cToken
   ) public view override returns (uint256) {
-    console.log("balanceunderlying");
     uint256 balanceShares = balance(_address, _cToken);
     // The returned exchange rate from comp is scaled by 1 * 10^(18 - 8 + Underlying Token Decimals).
     uint256 price = exchangeRate(_cToken);
     uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
-
-    console.log("balanceShares %s", balanceShares);
-    console.log("price %s", price);
-    console.log("decimals %s", decimals);
 
     return (balanceShares * price) / 10 ** (10 + decimals);
   }
@@ -122,9 +117,7 @@ contract CompoundProvider is IProvider {
   /// @param _cToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _cToken) public view override returns (uint256) {
-    console.log(" _cToken %s", _cToken);
     uint256 _balanceShares = ICToken(_cToken).balanceOf(_address);
-    console.log(" balance shares %s", _balanceShares);
     return _balanceShares;
   }
 
