@@ -1,20 +1,13 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { cToken, erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
-import type {
-  Controller,
-  DerbyToken,
-  GameMock,
-  XChainControllerMock,
-  YearnVaultMock,
-} from '@typechain';
+import { erc20, formatUSDC, parseDRB, parseUnits, parseUSDC } from '@testhelp/helpers';
+import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault } from './helpers';
 
 describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
-    dao: Signer,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
     vaults: IVaults[],
@@ -33,7 +26,6 @@ describe.only('Testing full integration test', async () => {
     xChainController = setup.xChainController;
     controller = setup.controller;
     derbyToken = setup.derbyToken;
-    dao = setup.dao;
     guardian = setup.guardian;
 
     chains = [
@@ -503,7 +495,7 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
-    // expected
+    // expected exchangeRate
     const exchangeRate = 1_027_688; // 1.027688
 
     // setting expected amountToSend
@@ -575,7 +567,6 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 2 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      // only compound vaults made rewards
       vaults[0].rewards = [248_525, 603_563, 576_128, 110_215, 211_247];
       vaults[1].rewards = [248_525, 603_563, 576_128, 110_215, 211_247];
     });
@@ -604,7 +595,7 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
-    // rewards * allocations
+    // rewardsPerLockedToken * allocations
     const expectedRewardsVault1 =
       248_525 * 100 + 603_563 * 100 + 576_128 * 100 + 110_215 * 100 + 211_247 * 100;
     const expectedRewardsVault2 =
