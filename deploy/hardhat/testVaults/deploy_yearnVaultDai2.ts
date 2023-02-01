@@ -16,7 +16,7 @@ const func: DeployFunction = async function ({
     symbol: 'YVM',
     decimals: 18,
     vaultCurrency: dai,
-    exchangeRate: ethers.utils.parseEther('1.090'),
+    exchangeRate: ethers.utils.parseEther('1.150'),
   };
   const { symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
 

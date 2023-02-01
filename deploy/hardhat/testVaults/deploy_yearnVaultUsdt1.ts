@@ -15,7 +15,7 @@ const func: DeployFunction = async function ({
     symbol: 'YVM',
     decimals: 6,
     vaultCurrency: usdt,
-    exchangeRate: 1100000,
+    exchangeRate: 1200000,
   };
   const { symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
 

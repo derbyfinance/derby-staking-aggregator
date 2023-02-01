@@ -1,8 +1,6 @@
-import { setStorageAt } from '@nomicfoundation/hardhat-network-helpers';
-import { compoundDAI, compoundUSDC } from '@testhelp/addresses';
-import { GameMock, MainVaultMock } from '@typechain';
+import { GameMock, MainVaultMock, YearnVaultMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
-import { hexlify, Result } from 'ethers/lib/utils';
+import { Result } from 'ethers/lib/utils';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 export type IVaultUser = {
@@ -10,6 +8,12 @@ export type IVaultUser = {
   chain: number;
   vault: MainVaultMock;
   depositAmount: BigNumberish;
+};
+
+export type IUnderlyingVault = {
+  name: string;
+  vault: YearnVaultMock;
+  price: BigNumberish;
 };
 
 export type IGameUser = {

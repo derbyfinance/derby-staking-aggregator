@@ -18,7 +18,7 @@ import {
   setWhitelistVaults,
 } from '@testhelp/InitialiseContracts';
 import {
-  deployCompoundMockVaults,
+  deployYearnMockVaults,
   getAllSigners,
   getContract,
   getTestVaults,
@@ -66,7 +66,8 @@ export const setupIntegration = async () => {
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
-  const [yearn1, yearn2, yearn3, yearn4, yearn5] = await deployCompoundMockVaults(hre);
+  const underlyingVaults = await deployYearnMockVaults(hre);
+  const [yearn1, yearn2, yearn3, yearn4, yearn5] = underlyingVaults;
 
   const [vault1, vault2] = await getTestVaults(hre);
   const vaults = [vault1, vault2];
@@ -109,8 +110,9 @@ export const setupIntegration = async () => {
     allProvidersClass.setProviders(hre),
   ]);
 
+  // Adding mock yearn vaults
   const yearn_vault_usdc1 = new ProtocolVault({
-    name: 'yearn_mock_vault',
+    name: 'yearn_mock_usdc1',
     protocolToken: yearn1.address,
     underlyingToken: usdc,
     govToken: yearn,
@@ -118,7 +120,7 @@ export const setupIntegration = async () => {
     chainId: 1,
   });
   const yearn_vault_usdc2 = new ProtocolVault({
-    name: 'yearn_mock_vault2',
+    name: 'yearn_mock_usdc2',
     protocolToken: yearn2.address,
     underlyingToken: usdc,
     govToken: yearn,
@@ -126,7 +128,7 @@ export const setupIntegration = async () => {
     chainId: 1,
   });
   const yearn_vault_dai1 = new ProtocolVault({
-    name: 'yearn_mock_vault2',
+    name: 'yearn_mock_dai1',
     protocolToken: yearn3.address,
     underlyingToken: dai,
     govToken: yearn,
@@ -134,7 +136,7 @@ export const setupIntegration = async () => {
     chainId: 1,
   });
   const yearn_vault_dai2 = new ProtocolVault({
-    name: 'yearn_mock_vault2',
+    name: 'yearn_mock_dai2',
     protocolToken: yearn4.address,
     underlyingToken: dai,
     govToken: yearn,
@@ -142,18 +144,13 @@ export const setupIntegration = async () => {
     chainId: 1,
   });
   const yearn_vault_usdt = new ProtocolVault({
-    name: 'yearn_mock_vault2',
+    name: 'yearn_mock_usdt1',
     protocolToken: yearn5.address,
     underlyingToken: usdt,
     govToken: yearn,
     decimals: 6,
     chainId: 1,
   });
-
-  // add all protocol vaults to controller
-  // for (const protocol of protocols.values()) {
-  //   await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  // }
 
   await yearn_vault_usdc1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
   await yearn_vault_usdc2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
@@ -163,6 +160,7 @@ export const setupIntegration = async () => {
 
   return {
     vaults,
+    underlyingVaults,
     controller,
     game,
     xChainController,

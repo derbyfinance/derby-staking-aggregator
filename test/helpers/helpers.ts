@@ -140,7 +140,7 @@ export const cToken = (tokenAddress: string) => {
 };
 
 // FORMATTING
-export const parseEther = (amount: string) => ethers.utils.parseEther(amount);
+export const parseEther = (amount: string | number) => ethers.utils.parseEther(amount.toString());
 export const formatEther = (amount: string | BigNumber) => ethers.utils.formatEther(amount);
 export const parseUnits = (amount: string | number, number: number) =>
   ethers.utils.parseUnits(amount.toString(), number);

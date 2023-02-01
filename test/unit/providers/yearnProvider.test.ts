@@ -1,85 +1,125 @@
 import { expect } from 'chai';
 import { Contract, Signer } from 'ethers';
 import { deployments } from 'hardhat';
-import { erc20, transferAndApproveUSDC } from '@testhelp/helpers';
+import { erc20, getDAISigner, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { YearnProvider, YearnVaultMock } from '@typechain';
-import { usdc, yearn } from '@testhelp/addresses';
-import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { dai, usdc, yearn } from '@testhelp/addresses';
+import { deployYearnMockVaults, getAllSigners, getContract } from '@testhelp/getContracts';
 
-describe('Testing Yearn provider', async () => {
-  const IUSDc: Contract = erc20(usdc);
-  let provider: YearnProvider, yearnVaultMock: YearnVaultMock, user: Signer;
-
+describe('Testing Yearn provider for Mock vaults', async () => {
   const setupProvider = deployments.createFixture(async (hre) => {
-    await deployments.fixture(['YearnVaultMock', 'YearnProvider']);
+    await deployments.fixture([
+      'YearnMockUSDC1',
+      'YearnMockUSDC2',
+      'YearnMockDAI1',
+      'YearnMockDAI2',
+      'YearnMockUSDT1',
+      'YearnProvider',
+    ]);
     const provider = (await getContract('YearnProvider', hre)) as YearnProvider;
-    const yearnVaultMock = (await getContract('YearnVaultMock', hre)) as YearnVaultMock;
+    const [yearnUSDC, , yearnDAI, , yearnUSDT] = await deployYearnMockVaults(hre);
 
     const [dao, user] = await getAllSigners(hre);
 
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-    return { provider, yearnVaultMock, user };
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
+
+    return { provider, yearnUSDC, yearnDAI, yearnUSDT, user };
   });
 
-  before(async () => {
-    const setup = await setupProvider();
-    provider = setup.provider;
-    yearnVaultMock = setup.yearnVaultMock;
-    user = setup.user;
-  });
+  describe('Testing YearnMockVault USDC', () => {
+    const IUSDc: Contract = erc20(usdc);
+    let provider: YearnProvider, yearnUSDC: YearnVaultMock, user: Signer;
 
-  // it.skip('Should deposit and withdraw to Yearn through controller', async function () {
-  //   console.log(`-------------------------Deposit-------------------------`);
-  //   const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      yearnUSDC = setup.yearnUSDC;
+      user = setup.user;
+    });
 
-  //   await yearnProvider.connect(vault).deposit(amountUSDC, yusdc, usdc);
-  //   const balanceShares = Number(await yearnProvider.balance(vaultAddr, yusdc));
-  //   const price = Number(await yearnProvider.exchangeRate(yusdc));
-  //   const amount = (balanceShares * price) / 1e12;
-
-  //   expect(amount).to.be.closeTo(Number(formatUSDC(amountUSDC)), 2);
-
-  //   const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-
-  //   expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
-
-  //   console.log(`-------------------------Withdraw-------------------------`);
-  //   await yToken.connect(vault).approve(yearnProvider.address, balanceShares);
-  //   await yearnProvider.connect(vault).withdraw(balanceShares, yusdc, usdc);
-
-  //   const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-  //   expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10);
-  // });
-
-  // it.skip('Should get exchangeRate', async function () {
-  //   const exchangeRate = await yearnProvider.connect(vault).exchangeRate(yusdc);
-  //   console.log(`Exchange rate ${exchangeRate}`);
-  // });
-
-  describe('Testing YearnMockVault', () => {
     it('Should have exchangeRate', async function () {
-      await yearnVaultMock.setExchangeRate(1.2 * 1e6);
-      expect(await yearnVaultMock.exchangeRate()).to.be.equal(1.2 * 1e6);
+      await yearnUSDC.setExchangeRate(1.2 * 1e6);
+      expect(await yearnUSDC.exchangeRate()).to.be.equal(1.2 * 1e6);
     });
 
     it('Should deposit in VaultMock', async () => {
       // set exchangeRate to 2
-      await yearnVaultMock.setExchangeRate(2 * 1e6);
+      await yearnUSDC.setExchangeRate(2 * 1e6);
 
       await expect(() =>
-        provider.connect(user).deposit(100_000 * 1e6, yearnVaultMock.address, usdc),
-      ).to.changeTokenBalance(yearnVaultMock, user, (100_000 * 1e6) / 2);
+        provider.connect(user).deposit(100_000 * 1e6, yearnUSDC.address, usdc),
+      ).to.changeTokenBalance(yearnUSDC, user, (100_000 * 1e6) / 2);
     });
 
     it('Should withdraw from VaultMock', async () => {
       // set exchangeRate to 2.5
-      await yearnVaultMock.setExchangeRate(2.5 * 1e6);
+      await yearnUSDC.setExchangeRate(2.5 * 1e6);
 
-      await yearnVaultMock.connect(user).approve(provider.address, 20_000 * 1e6);
+      await yearnUSDC.connect(user).approve(provider.address, 20_000 * 1e6);
       await expect(() =>
-        provider.connect(user).withdraw(20_000 * 1e6, yearnVaultMock.address, usdc),
+        provider.connect(user).withdraw(20_000 * 1e6, yearnUSDC.address, usdc),
       ).to.changeTokenBalance(IUSDc, user, 20_000 * 1e6 * 2.5);
+    });
+  });
+
+  describe('Testing YearnMockVault DAI', () => {
+    const IDAI: Contract = erc20(dai);
+    let provider: YearnProvider, yearnDAI: YearnVaultMock, user: Signer;
+
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      yearnDAI = setup.yearnDAI;
+      user = setup.user;
+    });
+
+    it('Should have exchangeRate', async function () {
+      await yearnDAI.setExchangeRate(parseEther(1.2));
+      expect(await yearnDAI.exchangeRate()).to.be.equal(parseEther(1.2));
+    });
+
+    it('Should deposit in VaultMock', async () => {
+      // set exchangeRate to 1.5
+      await yearnDAI.setExchangeRate(parseEther(2));
+
+      await expect(() =>
+        provider.connect(user).deposit(parseEther(100_000), yearnDAI.address, dai),
+      ).to.changeTokenBalance(yearnDAI, user, parseEther(100_000 / 2));
+    });
+
+    it('Should calc balance correctly', async function () {
+      expect(await provider.connect(user).balance(user.address, yearnDAI.address)).to.be.equal(
+        parseEther(100_000 / 2),
+      );
+    });
+
+    it('Should calc shares correctly', async function () {
+      expect(
+        await provider.connect(user).calcShares(parseEther(100_000), yearnDAI.address),
+      ).to.be.equal(parseEther(100_000 / 2));
+    });
+
+    it('Should calc balanceUnderlying correctly', async function () {
+      expect(
+        await provider.connect(user).balanceUnderlying(user.address, yearnDAI.address),
+      ).to.be.equal(parseEther(100_000));
+    });
+
+    it('Should withdraw from VaultMock', async () => {
+      // set exchangeRate to 2.5
+      await yearnDAI.setExchangeRate(parseEther(2.5));
+
+      await yearnDAI.connect(user).approve(provider.address, parseEther(20_000));
+      await expect(() =>
+        provider.connect(user).withdraw(parseEther(20_000), yearnDAI.address, dai),
+      ).to.changeTokenBalance(IDAI, user, parseEther(20_000 * 2.5));
     });
   });
 });

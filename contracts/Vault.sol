@@ -302,6 +302,7 @@ contract Vault is ReentrancyGuard {
 
     _amount = (_amount * protocol.uScale) / uScale;
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
+    if (shares == 0) shares = 1;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     uint256 amountReceived = IProvider(protocol.provider).withdraw(
