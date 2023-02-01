@@ -29,7 +29,6 @@ describe.only('Testing full integration test', async () => {
 
   before(async function () {
     const setup = await setupIntegration();
-    console.log(' setup');
     game = setup.game;
     xChainController = setup.xChainController;
     controller = setup.controller;
@@ -139,19 +138,6 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Create and rebalance basket for 2 game users', async function () {
-    it('Logging prices', async function () {
-      console.log(await vaults[0].vault.price(0));
-      console.log(await vaults[0].vault.price(1));
-      console.log(await vaults[0].vault.price(2));
-      console.log(await vaults[0].vault.price(3));
-      console.log(await vaults[0].vault.price(4));
-      console.log(await vaults[1].vault.price(0));
-      console.log(await vaults[1].vault.price(1));
-      console.log(await vaults[1].vault.price(2));
-      console.log(await vaults[1].vault.price(3));
-      console.log(await vaults[1].vault.price(4));
-    });
-
     it('Rebalance basket allocation array for both game users', async function () {
       for (const { basketId, user, totalAllocations, allocations } of gameUsers) {
         await mintBasket(game, user, vaultNumber);

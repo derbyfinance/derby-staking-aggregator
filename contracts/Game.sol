@@ -348,8 +348,6 @@ contract Game is ERC721, ReentrancyGuard {
       int256 chainTotal;
       uint16 chain = chainIds[i];
       uint256 latestProtocol = latestProtocolId[chain];
-
-      console.log("latestprotocol %s", latestProtocol);
       require(_deltaAllocations[i].length == latestProtocol, "Invalid allocation length");
 
       for (uint256 j = 0; j < latestProtocol; j++) {
