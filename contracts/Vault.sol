@@ -107,9 +107,10 @@ contract Vault is ReentrancyGuard {
   function pullFunds(uint256 _value) internal {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
+      console.log("pull");
       if (currentAllocations[i] == 0) continue;
 
-      uint256 shortage = _value - getVaultBalance();
+      uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
@@ -117,7 +118,7 @@ contract Vault is ReentrancyGuard {
 
       withdrawFromProtocol(i, amountToWithdraw);
 
-      if (_value <= getVaultBalance()) break;
+      if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
   }
 
@@ -136,6 +137,8 @@ contract Vault is ReentrancyGuard {
     claimTokens();
     settleDeltaAllocation();
 
+    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
+
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
 
@@ -149,6 +152,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
   /// @return underlying totalUnderlying - liquidityVault
   function calcUnderlyingIncBalance() internal view returns (uint256) {
+    console.log("getVaultBalance() %s", getVaultBalance());
     uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + getVaultBalance();
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
@@ -405,6 +409,8 @@ contract Vault is ReentrancyGuard {
   }
 
   function getVaultBalance() public view returns (uint256) {
+    console.log("reservedFunds %s", reservedFunds);
+    console.log("balanceOf", vaultCurrency.balanceOf(address(this)));
     return vaultCurrency.balanceOf(address(this)) - reservedFunds;
   }
 

@@ -267,6 +267,7 @@ contract MainVault is Vault, VaultToken {
     require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
+    if (amountToSendXChain > getVaultBalance()) amountToSendXChain = getVaultBalance();
 
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
     IXProvider(xProvider).xTransferToController(
