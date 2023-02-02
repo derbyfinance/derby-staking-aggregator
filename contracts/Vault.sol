@@ -107,7 +107,6 @@ contract Vault is ReentrancyGuard {
   function pullFunds(uint256 _value) internal {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
-      console.log("pull");
       if (currentAllocations[i] == 0) continue;
 
       uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
@@ -116,7 +115,10 @@ contract Vault is ReentrancyGuard {
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
+      console.log("pull %s", amountToWithdraw);
+
       withdrawFromProtocol(i, amountToWithdraw);
+      console.log("balance left %s", balanceUnderlying(i));
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
@@ -152,7 +154,6 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
   /// @return underlying totalUnderlying - liquidityVault
   function calcUnderlyingIncBalance() internal view returns (uint256) {
-    console.log("getVaultBalance() %s", getVaultBalance());
     uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + getVaultBalance();
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
@@ -304,8 +305,11 @@ contract Vault is ReentrancyGuard {
       _protocolNum
     );
 
+    console.log("with amount %s", _amount);
     _amount = (_amount * protocol.uScale) / uScale;
+    console.log("with amount %s", _amount);
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
+    console.log("with shares %s", shares);
     if (shares == 0) shares = 1;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
