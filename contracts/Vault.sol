@@ -42,7 +42,7 @@ contract Vault is ReentrancyGuard {
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
   uint256 public performanceFee;
-  uint256 public rebalancingPeriod = 1;
+  uint256 public rebalancingPeriod;
   uint256 public uScale;
   int256 public marginScale;
 
@@ -219,6 +219,10 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     uint256 price = price(_protocolId);
+    console.log("_protocolId %s", uint(_protocolId));
+    console.log("lastPrices %s", uint(lastPrices[_protocolId]));
+    console.log("price %s", uint(price));
+    console.log("rebalancingPeriod %s", uint(rebalancingPeriod));
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = price;
       return;
@@ -234,14 +238,16 @@ contract Vault is ReentrancyGuard {
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
+
+    lastPrices[_protocolId] = price;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
   /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function rewardsToArray() internal view returns (int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
-    rewards = new int[](latestId);
 
+    rewards = new int[](latestId);
     for (uint256 i = 0; i < latestId; i++) {
       rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
       console.log("rewards %s", uint(rewards[i]));
