@@ -139,7 +139,6 @@ contract Vault is ReentrancyGuard {
     if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
 
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
-    console.log("underlyingIncBalance %s", underlyingIncBalance);
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
@@ -219,10 +218,6 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     uint256 price = price(_protocolId);
-    console.log("_protocolId %s", uint(_protocolId));
-    console.log("lastPrices %s", uint(lastPrices[_protocolId]));
-    console.log("price %s", uint(price));
-    console.log("rebalancingPeriod %s", uint(rebalancingPeriod));
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = price;
       return;

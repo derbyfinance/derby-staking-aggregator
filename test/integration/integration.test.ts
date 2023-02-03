@@ -832,21 +832,18 @@ describe.only('Testing full integration test', async () => {
   });
 
   describe('Rebalance 3 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
-    before(function () {
-      // set expectedRewards
-      vaults[0].rewards = [0, 0, 0, 0, 0];
-      vaults[1].rewards = [0, 0, 0, 0, 0];
-    });
-
     it('Trigger should emit PushedRewardsToGame event', async function () {
-      for (const { vault, homeChain, rewards } of vaults) {
+      // 0 rewards made
+      const rewards = [0, 0, 0, 0, 0];
+
+      for (const { vault, homeChain } of vaults) {
         await expect(vault.sendRewardsToGame())
           .to.emit(vault, 'PushedRewardsToGame')
           .withArgs(vaultNumber, homeChain, rewards);
       }
     });
 
-    it('Check rewards for every protocolId', async function () {
+    it('Rewards should be the same because they are accumulated', async function () {
       const id = await controller.latestProtocolId(vaultNumber);
       const rebalancingPeriod = 3;
 
