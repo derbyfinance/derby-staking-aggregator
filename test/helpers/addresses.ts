@@ -54,6 +54,8 @@ export const idleUSDT = '0xF34842d05A1c888Ca02769A633DF37177415C2f8'; // 18
 export const betaUSDC = '0xC02392336420bb54CE2Da8a8aa4B118F2dceeB04'; // 6
 export const betaDAI = '0x70540A3178290498B0C6d843Fa7ED97cAe69B86c'; // 18
 export const betaUSDT = '0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC'; // 6
+// beefy
+export const beefyUSDC = '0x66F5263d51174bab17Ac2bda31E51F5bcF05a69A'; // 18
 
 // Gov Tokens
 export const aave = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9';
@@ -63,6 +65,7 @@ export const alpha = '0xa1faa113cbE53436Df28FF0aEe54275c13B40975';
 export const idle = '0x875773784Af8135eA0ef43b5a374AaD105c5D39e';
 export const beta = '0xBe1a001FE942f96Eea22bA08783140B9Dcc09D28';
 export const compToken = '0xc00e94Cb662C3520282E6f5717214004A7f26888';
+export const beefy = '0x5870700f1272a1AdbB87C3140bD770880a95e55D';
 
 // Uniswap
 export const uniswapFactory = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
