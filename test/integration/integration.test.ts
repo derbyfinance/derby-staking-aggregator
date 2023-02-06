@@ -643,7 +643,7 @@ describe.only('Testing full integration test', async () => {
     });
   });
 
-  describe('Set withdrawal request for vault 0 and 2', async function () {
+  describe('Set withdrawal requests', async function () {
     exchangeRate = 1_027_688; // 1.027688
 
     it('Vault 0 (user 0): Should set withdrawal request for all LP tokens (10k)', async function () {
@@ -855,6 +855,63 @@ describe.only('Testing full integration test', async () => {
           await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, rebalancingPeriod, i),
         ).to.be.equal(vaults[1].rewards![i]);
       }
+    });
+  });
+
+  describe('Redeem withdraw allowance for users to receive funds', async function () {
+    before(function () {
+      exchangeRate = 1_027_688; // Created allowance with old exchangeRate
+    });
+
+    it('Vault 0 (user 0): Withdraw allowance', async function () {
+      const { user, vault } = vaultUsers[0];
+      const initialDeposit = 10_000;
+      const expectedUserUSDCBalance = initialDeposit * exchangeRate;
+
+      expect(await vault.connect(user).balanceOf(user.address)).to.be.equal(0);
+      await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
+        IUSDc,
+        user,
+        expectedUserUSDCBalance,
+      );
+      expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(0);
+    });
+
+    it('Vault 2 (user 2): Withdraw allowance', async function () {
+      const { user, vault } = vaultUsers[2];
+      const withdrawAmount = 500_000;
+      const expectedUserUSDCBalance = withdrawAmount * exchangeRate;
+
+      await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
+        IUSDc,
+        user,
+        expectedUserUSDCBalance,
+      );
+
+      expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(0);
+    });
+
+    it('Should redeem rewards for game user 0', async function () {
+      const expectedRewardsVault1 =
+        248_525 * 100 + 603_563 * 100 + 576_128 * 100 + 110_215 * 100 + 211_247 * 100;
+      const expectedRewardsVault2 =
+        248_525 * 200 + 603_563 * 200 + 576_128 * 200 + 110_215 * 200 + 211_247 * 200;
+      const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
+
+      const { user, basketId } = gameUsers[0];
+      const { vault } = vaults[0];
+
+      await expect(() => vault.connect(user).withdrawRewards()).to.changeTokenBalance(
+        IUSDc,
+        user,
+        totalExpectedRewards,
+      );
+
+      expect(await game.connect(user).basketRedeemedRewards(basketId)).to.be.equal(
+        totalExpectedRewards,
+      );
+      expect(await vault.getRewardAllowanceTEST(user.address)).to.be.equal(0);
+      expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(0);
     });
   });
 });
