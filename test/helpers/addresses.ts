@@ -54,8 +54,6 @@ export const idleUSDT = '0xF34842d05A1c888Ca02769A633DF37177415C2f8'; // 18
 export const betaUSDC = '0xC02392336420bb54CE2Da8a8aa4B118F2dceeB04'; // 6
 export const betaDAI = '0x70540A3178290498B0C6d843Fa7ED97cAe69B86c'; // 18
 export const betaUSDT = '0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC'; // 6
-// beefy
-export const beefyUSDC = '0x66F5263d51174bab17Ac2bda31E51F5bcF05a69A'; // 18
 
 // Gov Tokens
 export const aave = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9';
