@@ -1,163 +1,131 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
 import {
-  getUSDCSigner,
   erc20,
   formatUSDC,
-  parseUSDC,
-  controllerAddProtocol,
   getDAISigner,
-  getUSDTSigner,
-  parseDAI,
-  formatDAI,
+  parseEther,
   formatEther,
+  transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type { BetaProvider } from '@typechain';
-import { deployBetaProvider } from '@testhelp/deploy';
-import {
-  usdc,
-  betaUSDC as busdc,
-  betaDAI as bdai,
-  betaUSDT as iusdt,
-  dai,
-  usdt,
-  betaUSDC,
-  betaDAI,
-  betaUSDT,
-} from '@testhelp/addresses';
+import type { BetaProvider, YearnProvider } from '@typechain';
+import { dai, usdc, betaUSDC as bUSDC, betaDAI as bDAI } from '@testhelp/addresses';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-// const amount = 100_000;
-const amount = Math.floor(Math.random() * 1000000);
-const amountUSDC = parseUSDC(amount.toString());
-const amountDAI = parseDAI(amount.toString());
-const amountUSDT = parseUSDC(amount.toString());
+describe('Testing Beta provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['BetaProvider']);
+    const provider = (await getContract('BetaProvider', hre)) as BetaProvider;
+    const [dao, user] = await getAllSigners(hre);
 
-describe.skip('Testing Beta provider', async () => {
-  let betaProvider: BetaProvider,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    DAISigner: Signer,
-    USDTSigner: Signer,
-    IUSDc: Contract,
-    IDai: Contract,
-    IUSDt: Contract,
-    bToken: Contract,
-    daoAddr: string,
-    vaultAddr: string;
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
 
-    [vaultAddr, betaProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] =
-      await Promise.all([
-        vault.getAddress(),
-        deployBetaProvider(dao),
-        getUSDCSigner(),
-        getDAISigner(),
-        getUSDTSigner(),
-        erc20(usdc),
-        erc20(dai),
-        erc20(usdt),
-      ]);
-
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IDai.connect(DAISigner).transfer(vaultAddr, amountDAI),
-      IUSDt.connect(USDTSigner).transfer(vaultAddr, amountUSDT),
-      IUSDc.connect(vault).approve(betaProvider.address, amountUSDC),
-      IDai.connect(vault).approve(betaProvider.address, amountDAI),
-      IUSDt.connect(vault).approve(betaProvider.address, amountUSDT),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw USDC to beta', async function () {
-    bToken = erc20(busdc);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe('Testing betaUSDC', () => {
+    let provider: BetaProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IbUSDC: Contract = erc20(bUSDC);
+    const amount = 100_000 * 1e6;
 
-    await betaProvider.connect(vault).deposit(amountUSDC, busdc, usdc);
-    const balanceShares = await betaProvider.balance(vaultAddr, busdc);
-    const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, busdc);
-    const calcShares = await betaProvider.calcShares(balanceUnderlying, busdc);
-    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 5);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+    it('Should deposit in bUSDC', async () => {
+      const expectedShares = formatUSDC(await provider.calcShares(amount, bUSDC));
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await betaProvider.connect(vault).withdraw(balanceShares, busdc, usdc);
+      await expect(() => provider.connect(user).deposit(amount, bUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
+      const yUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-    console.log({ vaultBalanceEnd });
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatUSDC(vaultBalanceStart)),
-      2,
-    );
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, bUSDC);
+
+      const yUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, bUSDC);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const yUSDCBalance = await provider.balance(user.address, bUSDC);
+
+      await IbUSDC.connect(user).approve(provider.address, yUSDCBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(yUSDCBalance, bUSDC, usdc),
+      ).to.changeTokenBalance(IUSDc, user, amount);
+    });
   });
 
-  it('Should deposit and withdraw DAI to beta', async function () {
-    bToken = erc20(bdai);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
+  describe('Testing betaDAI', () => {
+    let provider: BetaProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IbDAI: Contract = erc20(bDAI);
+    const amount = parseEther(100_000);
 
-    await betaProvider.connect(vault).deposit(amountDAI, bdai, dai);
-    const balanceShares = await betaProvider.balance(vaultAddr, bdai);
-    const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, bdai);
-    const calcShares = await betaProvider.calcShares(balanceUnderlying, bdai);
-    const vaultBalance = await IDai.balanceOf(vaultAddr);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountDAI, 5);
-    expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountDAI);
+    it('Should deposit in bDAI', async () => {
+      const expectedShares = formatEther(await provider.calcShares(amount, bDAI));
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await betaProvider.connect(vault).withdraw(balanceShares, bdai, dai);
+      await expect(() => provider.connect(user).deposit(amount, bDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
 
-    const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
+      const bDAIBalance = await provider.balance(user.address, bDAI);
+      expect(formatEther(bDAIBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
-  });
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, bDAI);
 
-  it('Should deposit and withdraw USDT to beta', async function () {
-    bToken = erc20(iusdt);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
+      const bDAIBalance = await provider.balance(user.address, bDAI);
+      expect(formatEther(bDAIBalance)).to.be.closeTo(formatEther(shares), 1);
+    });
 
-    await betaProvider.connect(vault).deposit(amountUSDT, betaUSDT, usdt);
-    const balanceShares = await betaProvider.balance(vaultAddr, iusdt);
-    const balanceUnderlying = await betaProvider.balanceUnderlying(vaultAddr, iusdt);
-    const calcShares = await betaProvider.calcShares(balanceUnderlying, iusdt);
-    const vaultBalance = await IUSDt.balanceOf(vaultAddr);
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, bDAI);
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDT, 5);
-    expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountUSDT);
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(formatEther(amount), 1);
+    });
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await bToken.connect(vault).approve(betaProvider.address, balanceShares);
-    await betaProvider.connect(vault).withdraw(balanceShares, betaUSDT, usdt);
+    it('Should be able to withdraw', async () => {
+      const bDAIBalance = await provider.balance(user.address, bDAI);
 
-    const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
+      await IbDAI.connect(user).approve(provider.address, bDAIBalance);
+      await provider.connect(user).withdraw(bDAIBalance, bDAI, dai);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
-  });
-
-  it('Should get exchangeRate', async function () {
-    const exchangeRate = await betaProvider.connect(vault).exchangeRate(betaUSDC);
-    console.log(`Exchange rate ${exchangeRate}`);
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatEther(await IDAI.balanceOf(user.address))).to.be.closeTo(1_000_000, 1);
+    });
   });
 });
