@@ -9,9 +9,9 @@ import {
   formatEther,
   transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type { IdleProvider, YearnProvider, YearnVaultMock } from '@typechain';
+import type { IdleProvider } from '@typechain';
 import { dai, usdc, idleUSDC as iUSDC, idleDAI as iDAI } from '@testhelp/addresses';
-import { deployYearnMockVaults, getAllSigners, getContract } from '@testhelp/getContracts';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 describe('Testing Idle provider', async () => {
   const setupProvider = deployments.createFixture(async (hre) => {
