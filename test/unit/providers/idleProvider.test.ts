@@ -1,173 +1,141 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
 import {
-  getUSDCSigner,
   erc20,
   formatUSDC,
-  parseUSDC,
   getDAISigner,
-  getUSDTSigner,
-  parseDAI,
-  formatDAI,
+  parseEther,
   formatEther,
+  transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type { IdleProvider, Controller } from '@typechain';
-import { deployIdleProvider, deployController } from '@testhelp/deploy';
-import {
-  usdc,
-  idleUSDC as iusdc,
-  idleDAI as idai,
-  idleUSDT as iusdt,
-  yearn,
-  dai,
-  usdt,
-} from '@testhelp/addresses';
+import type { IdleProvider, YearnProvider, YearnVaultMock } from '@typechain';
+import { dai, usdc, idleUSDC as iUSDC, idleDAI as iDAI } from '@testhelp/addresses';
+import { deployYearnMockVaults, getAllSigners, getContract } from '@testhelp/getContracts';
 
-// const amount = 100_000;
-const amount = Math.floor(Math.random() * 1000000);
-const amountUSDC = parseUSDC(amount.toString());
-const amountDAI = parseDAI(amount.toString());
-const amountUSDT = parseUSDC(amount.toString());
-const uScale = ethers.BigNumber.from((1e6).toString());
-const protocolUScale = ethers.BigNumber.from((1e18).toString());
+describe('Testing Idle provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['IdleProvider']);
+    const provider = (await getContract('IdleProvider', hre)) as IdleProvider;
+    const [dao, user] = await getAllSigners(hre);
 
-const ETFnumber = 0;
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-describe.skip('Testing Idle provider', async () => {
-  let idleProvider: IdleProvider,
-    controller: Controller,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    DAISigner: Signer,
-    USDTSigner: Signer,
-    IUSDc: Contract,
-    IDai: Contract,
-    IUSDt: Contract,
-    iToken: Contract,
-    daoAddr: string,
-    vaultAddr: string,
-    protocolNumberUSDC: number;
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    controller = await deployController(dao, daoAddr);
-
-    [vaultAddr, idleProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] =
-      await Promise.all([
-        vault.getAddress(),
-        deployIdleProvider(dao),
-        getUSDCSigner(),
-        getDAISigner(),
-        getUSDTSigner(),
-        erc20(usdc),
-        erc20(dai),
-        erc20(usdt),
-      ]);
-
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      controller.addVault(vaultAddr),
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IDai.connect(DAISigner).transfer(vaultAddr, amountDAI),
-      IUSDt.connect(USDTSigner).transfer(vaultAddr, amountUSDT),
-      IUSDc.connect(vault).approve(idleProvider.address, amountUSDC),
-      IDai.connect(vault).approve(idleProvider.address, amountDAI),
-      IUSDt.connect(vault).approve(idleProvider.address, amountUSDT),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw USDC to idle through controller', async function () {
-    iToken = await erc20(iusdc);
-    console.log(`-------------------------Deposit-------------------  ------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe('Testing idleUSDC', () => {
+    let provider: IdleProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IiUSDC: Contract = erc20(iUSDC);
+    const amount = 100_000 * 1e6;
 
-    await idleProvider.connect(vault).deposit(amountUSDC, iusdc, usdc);
-    const balanceShares = await idleProvider.balance(vaultAddr, iusdc);
-    const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, iusdc);
-    const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdc);
-    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    console.log({ balanceShares });
-    console.log({ balanceUnderlying });
-    console.log(Number(formatEther(calcShares)));
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(iUSDC);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 6);
-    expect(balanceUnderlying.mul(uScale).div(protocolUScale)).to.be.closeTo(amountUSDC, 5);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+    it('Should deposit in iUSDC', async () => {
+      const expectedShares = Math.round(amount / Number(exchangeRate));
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await idleProvider.connect(vault).withdraw(balanceShares, iusdc, usdc);
+      await expect(() => provider.connect(user).deposit(amount, iUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
+      const iUSDCBalance = await provider.balance(user.address, iUSDC);
+      expect(formatEther(iUSDCBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatUSDC(vaultBalanceStart)),
-      2,
-    );
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, iUSDC);
+
+      const iUSDCBalance = await provider.balance(user.address, iUSDC);
+      expect(formatEther(iUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, iUSDC);
+
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const iUSDCBalance = await provider.balance(user.address, iUSDC);
+
+      await IiUSDC.connect(user).approve(provider.address, iUSDCBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(iUSDCBalance, iUSDC, usdc),
+      ).to.changeTokenBalance(IUSDc, user, amount - 1);
+    });
   });
 
-  it('Should deposit and withdraw DAI to idle through controller', async function () {
-    iToken = await erc20(idai);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
+  describe('Testing idleDAI', () => {
+    let provider: IdleProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IiDAI: Contract = erc20(iDAI);
+    const amount = parseEther(100_000);
 
-    await idleProvider.connect(vault).deposit(amountDAI, idai, dai);
-    const balanceShares = await idleProvider.balance(vaultAddr, idai);
-    const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, idai);
-    const calcShares = await idleProvider.calcShares(balanceUnderlying, idai);
-    const vaultBalance = await IDai.balanceOf(vaultAddr);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying).to.be.closeTo(amountDAI, 5);
-    expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountDAI);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(iDAI);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await idleProvider.connect(vault).withdraw(balanceShares, idai, dai);
+    it('Should deposit in iDAI', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
 
-    const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
+      await expect(() => provider.connect(user).deposit(amount, iDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
-  });
+      const iDAIBalance = await provider.balance(user.address, iDAI);
+      expect(formatEther(iDAIBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-  it('Should deposit and withdraw USDT to idle through controller', async function () {
-    iToken = await erc20(iusdt);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, iDAI);
 
-    await idleProvider.connect(vault).deposit(amountUSDT, iusdt, usdt);
-    const balanceShares = await idleProvider.balance(vaultAddr, iusdt);
-    const balanceUnderlying = await idleProvider.balanceUnderlying(vaultAddr, iusdt);
-    const calcShares = await idleProvider.calcShares(balanceUnderlying, iusdt);
-    const vaultBalance = await IUSDt.balanceOf(vaultAddr);
+      const iDAIBalance = await provider.balance(user.address, iDAI);
+      expect(formatEther(iDAIBalance)).to.be.closeTo(formatEther(shares), 1);
+    });
 
-    expect(Number(formatEther(calcShares))).to.be.closeTo(Number(formatEther(balanceShares)), 5);
-    expect(balanceUnderlying.mul(uScale).div(protocolUScale)).to.be.closeTo(amountUSDT, 5);
-    expect(vaultBalanceStart.sub(vaultBalance)).to.equal(amountUSDT);
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, iDAI);
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await iToken.connect(vault).approve(idleProvider.address, balanceShares);
-    await idleProvider.connect(vault).withdraw(balanceShares, iusdt, usdt);
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(formatEther(amount), 1);
+    });
 
-    const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
+    it('Should be able to withdraw', async () => {
+      const iDAIBalance = await provider.balance(user.address, iDAI);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
-  });
+      await IiDAI.connect(user).approve(provider.address, iDAIBalance);
 
-  it('Should get exchangeRate through controller', async function () {
-    const exchangeRate = await controller
-      .connect(vault)
-      .exchangeRate(ETFnumber, protocolNumberUSDC);
-    console.log(`Exchange rate ${exchangeRate}`);
+      await expect(() =>
+        provider.connect(user).withdraw(iDAIBalance, iDAI, dai),
+      ).to.changeTokenBalance(IDAI, user, amount.sub(1)); // close to, 1
+    });
   });
 });
