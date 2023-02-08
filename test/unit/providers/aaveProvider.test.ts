@@ -1,65 +1,142 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { ethers } from 'hardhat';
-import { getUSDCSigner, erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
-import type { AaveProvider } from '@typechain';
-import { deployAaveProvider } from '@testhelp/deploy';
-import { usdc, aaveUSDC as ausdc, aave } from '@testhelp/addresses';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
+import {
+  erc20,
+  formatUSDC,
+  getDAISigner,
+  parseEther,
+  formatEther,
+  transferAndApproveUSDC,
+  formatUnits,
+} from '@testhelp/helpers';
+import type { AaveProvider, CompoundProvider } from '@typechain';
+import { dai, usdc, aaveUSDC as aUSDC, aaveDAI as aDAI } from '@testhelp/addresses';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-const amount = Math.floor(Math.random() * 100000);
-const amountUSDC = parseUSDC(amount.toString());
+describe('Testing Aave provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['AaveProvider']);
+    const provider = (await getContract('AaveProvider', hre)) as AaveProvider;
+    const [dao, user] = await getAllSigners(hre);
 
-describe.skip('Testing Aave provider', async () => {
-  let aaveProvider: AaveProvider,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    aToken: Contract,
-    daoAddr: string,
-    vaultAddr: string;
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
 
-    [vaultAddr, aaveProvider, USDCSigner, IUSDc, aToken] = await Promise.all([
-      vault.getAddress(),
-      deployAaveProvider(dao),
-      getUSDCSigner(),
-      erc20(usdc),
-      erc20(ausdc),
-    ]);
-
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(aaveProvider.address, amountUSDC),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw to Aave through controller', async function () {
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe('Testing aaveUSDC', () => {
+    let provider: AaveProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IaUSDC: Contract = erc20(aUSDC);
+    const amount = 100_000 * 1e6;
 
-    await aaveProvider.connect(vault).deposit(amountUSDC, ausdc, usdc);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    const aTokenbalance = await aaveProvider.balance(vaultAddr, ausdc);
-    expect(Number(formatUSDC(aTokenbalance))).to.be.closeTo(amount, 1);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(aUSDC);
+      expect(exchangeRate).to.be.equal(1);
+    });
 
-    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.be.closeTo(aTokenbalance, 1e6);
+    it('Should deposit in aUSDC', async () => {
+      const expectedShares = Math.round(amount / Number(exchangeRate));
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await aToken.connect(vault).approve(aaveProvider.address, aTokenbalance);
-    await aaveProvider.connect(vault).withdraw(aTokenbalance, ausdc, usdc);
+      await expect(() => provider.connect(user).deposit(amount, aUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    expect(vaultBalanceEnd).to.be.closeTo(vaultBalanceStart, 10);
+      const aUSDCBalance = await provider.balance(user.address, aUSDC);
+      expect(formatUSDC(aUSDCBalance)).to.be.closeTo(expectedShares / 1e6, 50);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, aUSDC);
+
+      const aUSDCBalance = await provider.balance(user.address, aUSDC);
+      expect(formatUSDC(aUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, aUSDC);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const aUSDCBalance = await provider.balance(user.address, aUSDC);
+
+      await IaUSDC.connect(user).approve(provider.address, aUSDCBalance);
+      await provider.connect(user).withdraw(aUSDCBalance, aUSDC, usdc);
+
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatUSDC(await IUSDc.balanceOf(user.address))).to.be.closeTo(10_000_000, 250);
+    });
   });
 
-  it('Should get exchangeRate through controller', async function () {
-    const exchangeRate = await aaveProvider.connect(vault).exchangeRate(ausdc);
-    console.log(`Exchange rate ${exchangeRate}`);
+  describe('Testing aaveDAI', () => {
+    let provider: AaveProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IaDAI: Contract = erc20(aDAI);
+    const amount = parseEther(100_000);
+
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
+
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(aDAI);
+      expect(exchangeRate).to.be.equal(1);
+    });
+
+    it('Should deposit in aDAI', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
+
+      await expect(() => provider.connect(user).deposit(amount, aDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
+
+      const aDAIBalance = await provider.balance(user.address, aDAI);
+      expect(formatEther(aDAIBalance)).to.be.closeTo(expectedShares / 1e18, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, aDAI);
+
+      const aDAIBalance = await provider.balance(user.address, aDAI);
+      expect(formatEther(aDAIBalance)).to.be.closeTo(formatEther(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, aDAI);
+
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(formatEther(amount), 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const aDAIBalance = await provider.balance(user.address, aDAI);
+
+      await IaDAI.connect(user).approve(provider.address, aDAIBalance);
+      await provider.connect(user).withdraw(aDAIBalance, aDAI, dai);
+
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatEther(await IDAI.balanceOf(user.address))).to.be.closeTo(1_000_000, 250);
+    });
   });
 });

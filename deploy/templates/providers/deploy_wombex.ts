@@ -8,7 +8,7 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('BeefyProvider', {
+  await deploy('WombexProvider', {
     from: deployer,
     args: [],
     log: true,
@@ -16,4 +16,4 @@ const func: DeployFunction = async function ({
   });
 };
 export default func;
-func.tags = ['BeefyProvider'];
+func.tags = ['WombexProvider'];

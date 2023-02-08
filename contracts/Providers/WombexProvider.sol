@@ -9,7 +9,7 @@ import "../Interfaces/IProvider.sol";
 
 import "hardhat/console.sol";
 
-contract BeefyProvider is IProvider {
+contract WombexProvider is IProvider {
   using SafeERC20 for IERC20;
 
   /// @notice Deposit the underlying asset in Yearn

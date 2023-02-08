@@ -9,7 +9,7 @@ import {
   formatEther,
   transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type { BetaProvider, YearnProvider } from '@typechain';
+import type { BetaProvider } from '@typechain';
 import { dai, usdc, betaUSDC as bUSDC, betaDAI as bDAI } from '@testhelp/addresses';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 
