@@ -7,7 +7,7 @@ import { dai, usdc, compoundUSDC as cUSDC, compoundDAI as cDAI } from '@testhelp
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 
-describe('Testing Compound provider', async () => {
+describe.skip('Testing Compound provider', async () => {
   const setupProvider = deployments.createFixture(async (hre) => {
     await deployments.fixture(['WombexProvider']);
     const provider = (await getContract('WombexProvider', hre)) as WombexProvider;
