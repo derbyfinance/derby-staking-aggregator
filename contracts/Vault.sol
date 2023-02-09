@@ -231,6 +231,8 @@ contract Vault is ReentrancyGuard {
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
+
+    lastPrices[_protocolId] = price;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
