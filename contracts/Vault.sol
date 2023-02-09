@@ -216,16 +216,22 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     uint256 price = price(_protocolId);
-    if (lastPrices[_protocolId] == 0) return;
+    if (lastPrices[_protocolId] == 0) {
+      lastPrices[_protocolId] = price;
+      return;
+    }
+
     int256 priceDiff = int256(price - lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
+
     if (totalAllocatedTokensRounded == 0) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
+
     lastPrices[_protocolId] = price;
   }
 
@@ -256,7 +262,6 @@ contract Vault is ReentrancyGuard {
     for (uint i = 0; i < latestID; i++) {
       uint256 amount = protocolToDeposit[i];
       if (amount == 0) continue;
-      // console.log("protocol: %s, deposit: %s", i, amount);
       depositInProtocol(i, amount);
     }
   }
@@ -299,6 +304,7 @@ contract Vault is ReentrancyGuard {
 
     _amount = (_amount * protocol.uScale) / uScale;
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
+    if (shares == 0) shares = 1;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     uint256 amountReceived = IProvider(protocol.provider).withdraw(
@@ -340,7 +346,6 @@ contract Vault is ReentrancyGuard {
       address(this),
       protocol.LPToken
     ) * uScale) / protocol.uScale;
-
     return underlyingBalance;
   }
 

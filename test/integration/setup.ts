@@ -1,15 +1,14 @@
-import { deployments } from 'hardhat';
+import hre, { network } from 'hardhat';
 import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
-import {
-  aave_usdc_01,
-  aave_usdt_01,
-  allProtocols,
-  compound_dai_01,
-  compound_usdc_01,
-  usdc,
-  yearn_usdc_01,
-} from '@testhelp/addresses';
+import type {
+  CompoundVaultMock,
+  Controller,
+  DerbyToken,
+  GameMock,
+  XChainControllerMock,
+  YearnVaultMock,
+} from '@typechain';
+import { compToken, dai, usdc, usdt, yearn, yearn_usdc_01 } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
@@ -18,15 +17,20 @@ import {
   addVaultsToXController,
   setWhitelistVaults,
 } from '@testhelp/InitialiseContracts';
-import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
+import {
+  deployYearnMockVaults,
+  getAllSigners,
+  getContract,
+  getTestVaults,
+} from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 import { allNamedAccountsToSigners } from './helpers';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 
 const chainids = [10, 100];
 
-export const setupIntegration = deployments.createFixture(async (hre) => {
-  const { run } = hre;
+export const setupIntegration = async () => {
+  const { run, deployments } = hre;
   await deployments.fixture([
     'XChainControllerMock',
     'YearnProvider',
@@ -44,12 +48,14 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     'XProviderArbi',
     'XProviderOpti',
     'XProviderBnb',
+    'YearnMockUSDC1',
+    'YearnMockUSDC2',
+    'YearnMockDAI1',
+    'YearnMockDAI2',
+    'YearnMockUSDT1',
   ]);
 
   const IUSDc = erc20(usdc);
-  // const [dao, user, user2, user3, gameUser1, gameUser2, gameUser3, guardian] = await getAllSigners(
-  //   hre,
-  // );
   const [dao, guardian, user, user1, user2, gameUser0, gameUser1] = await allNamedAccountsToSigners(
     hre,
   );
@@ -59,6 +65,9 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
   const controller = (await getContract('Controller', hre)) as Controller;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
+
+  const underlyingVaults = await deployYearnMockVaults(hre);
+  const [yearn1, yearn2, yearn3, yearn4, yearn5] = underlyingVaults;
 
   const [vault1, vault2] = await getTestVaults(hre);
   const vaults = [vault1, vault2];
@@ -94,33 +103,64 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     derbyToken.transfer(gameUser0.address, parseDRB(10_000)),
     derbyToken.transfer(gameUser1.address, parseDRB(10_000)),
 
-    transferAndApproveUSDC(vault1.address, user, 1_000_000 * 1e6),
-    transferAndApproveUSDC(vault1.address, user1, 1_000_000 * 1e6),
-    transferAndApproveUSDC(vault2.address, user2, 1_000_000 * 1e6),
+    transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
+    transferAndApproveUSDC(vault1.address, user1, 10_000_000 * 1e6),
+    transferAndApproveUSDC(vault2.address, user2, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),
   ]);
 
-  const protocols = new Map<string, ProtocolVault>()
-    .set('compound_usdc_01', compound_usdc_01)
-    .set('aave_usdc_01', aave_usdc_01)
-    .set('yearn_usdc_01', yearn_usdc_01)
-    .set('compound_dai_01', compound_dai_01)
-    .set('aave_usdt_01', aave_usdt_01);
+  // Adding mock yearn vaults
+  const yearn_vault_usdc1 = new ProtocolVault({
+    name: 'yearn_mock_usdc1',
+    protocolToken: yearn1.address,
+    underlyingToken: usdc,
+    govToken: yearn,
+    decimals: 6,
+    chainId: 1,
+  });
+  const yearn_vault_usdc2 = new ProtocolVault({
+    name: 'yearn_mock_usdc2',
+    protocolToken: yearn2.address,
+    underlyingToken: usdc,
+    govToken: yearn,
+    decimals: 6,
+    chainId: 1,
+  });
+  const yearn_vault_dai1 = new ProtocolVault({
+    name: 'yearn_mock_dai1',
+    protocolToken: yearn3.address,
+    underlyingToken: dai,
+    govToken: yearn,
+    decimals: 18,
+    chainId: 1,
+  });
+  const yearn_vault_dai2 = new ProtocolVault({
+    name: 'yearn_mock_dai2',
+    protocolToken: yearn4.address,
+    underlyingToken: dai,
+    govToken: yearn,
+    decimals: 18,
+    chainId: 1,
+  });
+  const yearn_vault_usdt = new ProtocolVault({
+    name: 'yearn_mock_usdt1',
+    protocolToken: yearn5.address,
+    underlyingToken: usdt,
+    govToken: yearn,
+    decimals: 6,
+    chainId: 1,
+  });
 
-  const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
-  const yearnVault = protocols.get('yearn_usdc_01')!;
-  const compoundDAIVault = protocols.get('compound_dai_01')!;
-  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
-
-  // add all protocol vaults to controller
-  for (const protocol of protocols.values()) {
-    await protocol.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  }
+  await yearn_vault_usdc1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_vault_usdc2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_vault_dai1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_vault_dai2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await yearn_vault_usdt.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
 
   return {
     vaults,
+    underlyingVaults,
     controller,
     game,
     xChainController,
@@ -130,4 +170,4 @@ export const setupIntegration = deployments.createFixture(async (hre) => {
     gameUsers,
     guardian,
   };
-});
+};

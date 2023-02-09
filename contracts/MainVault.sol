@@ -165,7 +165,7 @@ contract MainVault is Vault, VaultToken {
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
   function transferFunds(address _receiver, uint256 _value) internal {
-    uint256 govFee = _value * governanceFee / 10_000;
+    uint256 govFee = (_value * governanceFee) / 10_000;
 
     vaultCurrency.safeTransfer(getDao(), govFee);
     vaultCurrency.safeTransfer(_receiver, _value - govFee);

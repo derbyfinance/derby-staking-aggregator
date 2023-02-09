@@ -97,6 +97,7 @@ contract CompoundProvider is IProvider {
     // The returned exchange rate from comp is scaled by 1 * 10^(18 - 8 + Underlying Token Decimals).
     uint256 price = exchangeRate(_cToken);
     uint256 decimals = IERC20Metadata(ICToken(_cToken).underlying()).decimals();
+
     return (balanceShares * price) / 10 ** (10 + decimals);
   }
 

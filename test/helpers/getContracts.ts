@@ -75,3 +75,23 @@ export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntime
     ethers.getSigner(accounts.deployer),
   ]);
 }
+
+export async function deployYearnMockVaults({ ethers, deployments }: HardhatRuntimeEnvironment) {
+  const [vault1, vault2, vault3, vault4, vault5] = await Promise.all([
+    deployments.get('YearnMockUSDC1'),
+    deployments.get('YearnMockUSDC2'),
+    deployments.get('YearnMockDAI1'),
+    deployments.get('YearnMockDAI2'),
+    deployments.get('YearnMockUSDT1'),
+  ]);
+
+  const deployedVaults = await Promise.all([
+    ethers.getContractAt('YearnVaultMock', vault1.address),
+    ethers.getContractAt('YearnVaultMock', vault2.address),
+    ethers.getContractAt('YearnVaultMock', vault3.address),
+    ethers.getContractAt('YearnVaultMock', vault4.address),
+    ethers.getContractAt('YearnVaultMock', vault5.address),
+  ]);
+
+  return deployedVaults;
+}

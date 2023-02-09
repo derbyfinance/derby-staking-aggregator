@@ -176,6 +176,7 @@ contract XChainController {
   function resetVaultUnderlying(uint256 _vaultNumber) internal {
     vaults[_vaultNumber].totalUnderlying = 0;
     vaultStage[_vaultNumber].underlyingReceived = 0;
+    vaults[_vaultNumber].totalSupply = 0;
   }
 
   /// @notice Resets underlying for a vaultNumber per chainId at the start of a rebalancing period
@@ -395,7 +396,6 @@ contract XChainController {
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);
         setAmountToDeposit(_vaultNumber, chain, 0);
-
         emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }
     }
