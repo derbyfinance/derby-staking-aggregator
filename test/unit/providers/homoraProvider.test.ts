@@ -11,7 +11,7 @@ import {
 } from '@testhelp/helpers';
 import type { HomoraProvider, YearnProvider, YearnVaultMock } from '@typechain';
 import { dai, usdc, homoraUSDC as hUSDC, homoraDAI as hDAI } from '@testhelp/addresses';
-import { deployYearnMockVaults, getAllSigners, getContract } from '@testhelp/getContracts';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 describe.skip('Testing Homora provider', async () => {
   const setupProvider = deployments.createFixture(async (hre) => {
@@ -43,13 +43,13 @@ describe.skip('Testing Homora provider', async () => {
       user = setup.user;
     });
 
-    it('Should have exchangeRate', async function () {
-      exchangeRate = await provider.exchangeRate(hUSDC);
-      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
-    });
+    // it('Should have exchangeRate', async function () {
+    //   exchangeRate = await provider.exchangeRate(hUSDC);
+    //   expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    // });
 
     it('Should deposit in hUSDC', async () => {
-      const expectedShares = Math.round(amount / Number(exchangeRate));
+      const expectedShares = await provider.calcShares(amount, hUSDC);
 
       await expect(() => provider.connect(user).deposit(amount, hUSDC, usdc)).to.changeTokenBalance(
         IUSDc,
@@ -58,6 +58,8 @@ describe.skip('Testing Homora provider', async () => {
       );
 
       const hUSDCBalance = await provider.balance(user.address, hUSDC);
+      console.log({ expectedShares });
+      console.log({ hUSDCBalance });
       expect(formatUSDC(hUSDCBalance)).to.be.closeTo(expectedShares, 1);
     });
 

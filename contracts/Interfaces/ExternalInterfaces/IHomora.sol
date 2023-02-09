@@ -6,15 +6,15 @@ interface IHomora {
 
   function withdraw(uint _amount) external;
 
+  function totalSupply() external returns (uint);
+
+  function poolValue() external returns (uint);
+
   // function pricePerShare() external view returns(uint);
 
   function balanceOf(address _address) external view returns (uint);
 
   function transfer(address _receiver, uint _amount) external returns (bool);
 
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
