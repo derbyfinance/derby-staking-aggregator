@@ -346,6 +346,11 @@ contract MainVault is Vault, VaultToken {
     return userInfo[msg.sender].withdrawalAllowance;
   }
 
+  /// @notice Returns the rewards the user is able to withdraw
+  function getRewardAllowance() external view returns (uint256) {
+    return userInfo[msg.sender].rewardAllowance;
+  }
+
   /*
   Only Dao functions
   */
