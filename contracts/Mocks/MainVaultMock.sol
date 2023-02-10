@@ -72,11 +72,11 @@ contract MainVaultMock is MainVault {
   }
 
   function getWithdrawalAllowanceTEST(address _address) external view returns (uint256) {
-    return withdrawalAllowance[_address];
+    return userInfo[_address].withdrawalAllowance;
   }
 
   function getRewardAllowanceTEST(address _address) external view returns (uint256) {
-    return rewardAllowance[_address];
+    return userInfo[_address].rewardAllowance;
   }
 
   function getTotalWithdrawalRequestsTEST() external view returns (uint256) {
