@@ -64,15 +64,15 @@ describe.only('Testing Game', async () => {
       game.connect(user).rebalanceBasket(basketId, allocationArray),
     ).to.changeTokenBalance(derbyToken, user, -1900);
 
-    expect(
-      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[0]),
-    ).to.be.equal(300);
-    expect(
-      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[1]),
-    ).to.be.equal(600);
-    expect(
-      await game.connect(user).getDeltaAllocationChainTEST(vaultNumber, chainIds[2]),
-    ).to.be.equal(1000);
+    expect(await game.connect(user).getDeltaAllocationChain(vaultNumber, chainIds[0])).to.be.equal(
+      300,
+    );
+    expect(await game.connect(user).getDeltaAllocationChain(vaultNumber, chainIds[1])).to.be.equal(
+      600,
+    );
+    expect(await game.connect(user).getDeltaAllocationChain(vaultNumber, chainIds[2])).to.be.equal(
+      1000,
+    );
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId)).to.be.equal(
       totalAllocations,
     );
@@ -116,9 +116,9 @@ describe.only('Testing Game', async () => {
       game.connect(user).rebalanceBasket(basketId, allocationArray),
     ).to.changeTokenBalance(derbyToken, user, 1000);
 
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(200);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(200);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(500);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[0])).to.be.equal(200);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[1])).to.be.equal(200);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[2])).to.be.equal(500);
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId)).to.be.equal(1900 - 1000);
 
     // looping through all of the allocationArray
@@ -163,9 +163,9 @@ describe.only('Testing Game', async () => {
     );
 
     // delta allocations for chain in game should be resetted
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[0])).to.be.equal(0);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[1])).to.be.equal(0);
-    expect(await game.getDeltaAllocationChainTEST(vaultNumber, chainIds[2])).to.be.equal(0);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[0])).to.be.equal(0);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[1])).to.be.equal(0);
+    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[2])).to.be.equal(0);
 
     // checking vaultStages
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(false);

@@ -34,7 +34,7 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   struct vaultInfo {
-    // rebalance period of ETF, upped at vault rebalance
+    // rebalance period of vault, upped at vault rebalance
     uint256 rebalancingPeriod;
     // (chainId => vaultAddress)
     mapping(uint16 => address) vaultAddress;
@@ -144,7 +144,7 @@ contract Game is ERC721, ReentrancyGuard {
   function getDeltaAllocationChain(
     uint256 _vaultNumber,
     uint256 _chainId
-  ) internal view returns (int256) {
+  ) public view returns (int256) {
     return vaults[_vaultNumber].deltaAllocationChain[_chainId];
   }
 
@@ -172,7 +172,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _vaultNumber,
     uint256 _chainId,
     uint256 _protocolNum
-  ) internal view returns (int256) {
+  ) public view returns (int256) {
     return vaults[_vaultNumber].deltaAllocationProtocol[_chainId][_protocolNum];
   }
 

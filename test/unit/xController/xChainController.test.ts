@@ -247,19 +247,19 @@ describe.only('Testing XChainController, integration test', async () => {
 
     // vault 1
     allocationArray[0].forEach(async (_, i) =>
-      expect(await vault1.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[0][i]),
+      expect(await vault1.getDeltaAllocation(i)).to.be.equal(allocationArray[0][i]),
     );
     // vault 2
     allocationArray[1].forEach(async (_, i) =>
-      expect(await vault2.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[1][i]),
+      expect(await vault2.getDeltaAllocation(i)).to.be.equal(allocationArray[1][i]),
     );
     // vault 3
     allocationArray[2].forEach(async (_, i) =>
-      expect(await vault3.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[2][i]),
+      expect(await vault3.getDeltaAllocation(i)).to.be.equal(allocationArray[2][i]),
     );
     // vault 4
     allocationArray[3].forEach(async (_, i) =>
-      expect(await vault4.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[3][i]),
+      expect(await vault4.getDeltaAllocation(i)).to.be.equal(allocationArray[3][i]),
     );
 
     expect(await vault1.deltaAllocationsReceived()).to.be.true;

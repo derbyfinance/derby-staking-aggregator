@@ -163,7 +163,7 @@ describe.only('Testing full integration test', async () => {
 
     it('Should set chain allocations correctly in game contract', async function () {
       for (const chain of chains) {
-        expect(await game.getDeltaAllocationChainTEST(vaultNumber, chain.id)).to.be.equal(
+        expect(await game.getDeltaAllocationChain(vaultNumber, chain.id)).to.be.equal(
           parseDRB(chain.totalAllocations),
         );
       }
@@ -176,10 +176,10 @@ describe.only('Testing full integration test', async () => {
         [parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200)],
       ];
       for (let i = 0; i < expectedAllocations[0].length; i++) {
-        expect(await game.getDeltaAllocationProtocolTEST(vaultNumber, chains[0].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[0].id, i)).to.be.equal(
           expectedAllocations[0][i],
         );
-        expect(await game.getDeltaAllocationProtocolTEST(vaultNumber, chains[1].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[1].id, i)).to.be.equal(
           expectedAllocations[1][i],
         );
       }
@@ -220,7 +220,7 @@ describe.only('Testing full integration test', async () => {
 
     it('Should have moved delta allocations from game to xChainController', async function () {
       for (const chain of chains) {
-        expect(await game.getDeltaAllocationChainTEST(vaultNumber, chain.id)).to.be.equal(0);
+        expect(await game.getDeltaAllocationChain(vaultNumber, chain.id)).to.be.equal(0);
         expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chain.id)).to.be.equal(
           parseDRB(chain.totalAllocations),
         );
