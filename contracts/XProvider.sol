@@ -118,6 +118,7 @@ contract XProvider is ILayerZeroReceiver {
       IERC20(_asset).allowance(msg.sender, address(this)) >= _amount,
       "LZXProvider: Not approved"
     );
+    console.log("x transfer %s", _amount);
 
     IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
     IERC20(_asset).approve(address(connext), _amount);

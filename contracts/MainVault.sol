@@ -27,8 +27,6 @@ contract MainVault is Vault, VaultToken {
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
 
-  string internal stateError = "Wrong state";
-
   // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
   mapping(address => uint256) internal withdrawalAllowance;
   // (userAddress => requestPeriod): rebalancing period the withdrawal request is made
@@ -97,9 +95,9 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount,
     address _receiver
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
-    uint256 balanceBefore = getVaultBalance();
+    uint256 balanceBefore = getVaultBalance() - reservedFunds;
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
-    uint256 balanceAfter = getVaultBalance();
+    uint256 balanceAfter = getVaultBalance() - reservedFunds;
 
     uint256 amount = balanceAfter - balanceBefore;
     shares = (amount * (10 ** decimals())) / exchangeRate;
@@ -121,7 +119,7 @@ contract MainVault is Vault, VaultToken {
 
     require(value > 0, "!value");
 
-    require(getVaultBalance() >= value, "!funds");
+    require(getVaultBalance() - reservedFunds >= value, "!funds");
 
     _burn(msg.sender, _amount);
     transferFunds(_receiver, value);
@@ -161,6 +159,8 @@ contract MainVault is Vault, VaultToken {
     transferFunds(msg.sender, value);
   }
 
+  // 513844
+  // 513777
   /// @notice Substract governance fee from value
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
@@ -217,7 +217,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalanceNeeded(), "!rebalance needed");
 
     setTotalUnderlying();
-    uint256 underlying = savedTotalUnderlying + getVaultBalance();
+    uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
     IXProvider(xProvider).pushTotalUnderlying(
       vaultNumber,

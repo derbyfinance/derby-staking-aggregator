@@ -44,6 +44,7 @@ contract Vault is ReentrancyGuard {
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
   uint256 public uScale;
+  uint256 public minimumPull = 1_000_000;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -60,6 +61,8 @@ contract Vault is ReentrancyGuard {
   int256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
+
+  string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => int256) internal currentAllocations;
@@ -115,7 +118,9 @@ contract Vault is ReentrancyGuard {
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
-      amountToWithdraw = (amountToWithdraw * 10001) / 10000;
+      if (amountToWithdraw < minimumPull) break;
+
+      // amountToWithdraw = (amountToWithdraw * 10001) / 10000;
 
       withdrawFromProtocol(i, amountToWithdraw);
 
@@ -130,7 +135,7 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalance() external nonReentrant {
-    require(state == State.RebalanceVault, "Wrong state");
+    require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
 
     rebalancingPeriod++;
@@ -138,13 +143,13 @@ contract Vault is ReentrancyGuard {
     claimTokens();
     settleDeltaAllocation();
 
-    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
-
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
+
+    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
 
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
@@ -153,7 +158,9 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
   /// @return underlying totalUnderlying - liquidityVault
   function calcUnderlyingIncBalance() internal view returns (uint256) {
-    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + getVaultBalance();
+    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying +
+      getVaultBalance() -
+      reservedFunds;
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
   }
@@ -397,26 +404,26 @@ contract Vault is ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    uint256 latestID = controller.latestProtocolId(vaultNumber);
-    for (uint i = 0; i < latestID; i++) {
-      if (currentAllocations[i] == 0) continue;
-      bool claim = controller.claim(vaultNumber, i);
-      if (claim) {
-        address govToken = controller.getGovToken(vaultNumber, i);
-        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
-        Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
-          controller.getUniswapParams(),
-          false
-        );
-      }
-    }
+    // uint256 latestID = controller.latestProtocolId(vaultNumber);
+    // for (uint i = 0; i < latestID; i++) {
+    //   if (currentAllocations[i] == 0) continue;
+    //   bool claim = controller.claim(vaultNumber, i);
+    //   if (claim) {
+    //     address govToken = controller.getGovToken(vaultNumber, i);
+    //     uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+    //     Swap.swapTokensMulti(
+    //       Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
+    //       controller.getUniswapParams(),
+    //       false
+    //     );
+    //   }
+    // }
   }
 
   function getVaultBalance() public view returns (uint256) {
     // console.log("reservedFunds %s", reservedFunds);
     // console.log("balanceOf", vaultCurrency.balanceOf(address(this)));
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+    return vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval

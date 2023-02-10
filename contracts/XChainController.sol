@@ -54,6 +54,7 @@ contract XChainController {
 
   uint16[] public chainIds;
   uint16 public homeChain;
+  uint256 public minimumAmount = 1_000_000;
 
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
@@ -385,9 +386,15 @@ contract XChainController {
   function sendFundsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
+      console.log(
+        "chainId %s balance %s",
+        chain,
+        IERC20(getUnderlyingAddress(_vaultNumber, chain)).balanceOf(address(this))
+      );
       if (getVaultChainIdOff(_vaultNumber, chain)) continue;
 
       uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, chain);
+      console.log("amountToDeposit %s", amountToDeposit);
 
       if (amountToDeposit > 0) {
         address underlying = getUnderlyingAddress(_vaultNumber, chain);
@@ -398,6 +405,7 @@ contract XChainController {
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);
+        console.log("xTransfer %s %s", chain, amountToDeposit);
         setAmountToDeposit(_vaultNumber, chain, 0);
         emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }
