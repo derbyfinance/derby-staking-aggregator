@@ -115,6 +115,8 @@ contract Vault is ReentrancyGuard {
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
+      amountToWithdraw = (amountToWithdraw * 10001) / 10000;
+
       withdrawFromProtocol(i, amountToWithdraw);
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
@@ -304,10 +306,7 @@ contract Vault is ReentrancyGuard {
       _protocolNum
     );
 
-    if (protocol.uScale != uScale) {
-      _amount = ((_amount * protocol.uScale * 10001) / 10000) / uScale;
-    }
-
+    _amount = (_amount * protocol.uScale) / uScale;
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
 
