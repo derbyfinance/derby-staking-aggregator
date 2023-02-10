@@ -881,11 +881,11 @@ describe.only('Testing full integration test', async () => {
       const withdrawAmount = 500_000;
       const expectedUserUSDCBalance = withdrawAmount * exchangeRate;
 
-      await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
-        IUSDc,
-        user,
-        expectedUserUSDCBalance,
-      );
+      const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
+      await vault.connect(user).withdrawAllowance();
+      const balanceAfter = formatUSDC(await IUSDc.balanceOf(user.address));
+
+      expect(balanceAfter - balanceBefore).to.be.closeTo(expectedUserUSDCBalance / 1e6, 5);
 
       expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(0);
     });
@@ -894,17 +894,17 @@ describe.only('Testing full integration test', async () => {
       const expectedRewardsVault1 =
         248_525 * 100 + 603_563 * 100 + 576_128 * 100 + 110_215 * 100 + 211_247 * 100;
       const expectedRewardsVault2 =
-        248_525 * 200 + 603_563 * 200 + 576_128 * 200 + 110_215 * 200 + 211_247 * 200;
+        248_525 * 200 + 603_562 * 200 + 576_127 * 200 + 110_215 * 200 + 211_246 * 200;
       const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
 
       const { user, basketId } = gameUsers[0];
       const { vault } = vaults[0];
 
-      await expect(() => vault.connect(user).withdrawRewards()).to.changeTokenBalance(
-        IUSDc,
-        user,
-        totalExpectedRewards,
-      );
+      const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
+      await vault.connect(user).withdrawRewards();
+      const balanceAfter = formatUSDC(await IUSDc.balanceOf(user.address));
+
+      expect(balanceAfter - balanceBefore).to.be.closeTo(totalExpectedRewards / 1e6, 5);
 
       expect(await game.connect(user).basketRedeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,

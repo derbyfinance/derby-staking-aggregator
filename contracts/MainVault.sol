@@ -150,9 +150,9 @@ contract MainVault is Vault, VaultToken {
 
     value = withdrawalAllowance[msg.sender];
 
-    require(vaultCurrency.balanceOf(address(this)) >= value, "!funds");
+    if (value > getVaultBalance()) value = getVaultBalance();
 
-    reservedFunds -= value;
+    reservedFunds -= withdrawalAllowance[msg.sender];
     delete withdrawalAllowance[msg.sender];
     delete withdrawalRequestPeriod[msg.sender];
 
@@ -193,9 +193,9 @@ contract MainVault is Vault, VaultToken {
 
     value = rewardAllowance[msg.sender];
 
-    require(vaultCurrency.balanceOf(address(this)) >= value, "!funds");
+    if (value > getVaultBalance()) value = getVaultBalance();
 
-    reservedFunds -= value;
+    reservedFunds -= rewardAllowance[msg.sender];
     delete rewardAllowance[msg.sender];
     delete rewardRequestPeriod[msg.sender];
 

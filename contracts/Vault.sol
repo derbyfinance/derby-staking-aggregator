@@ -404,25 +404,23 @@ contract Vault is ReentrancyGuard {
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
   function claimTokens() public {
-    // uint256 latestID = controller.latestProtocolId(vaultNumber);
-    // for (uint i = 0; i < latestID; i++) {
-    //   if (currentAllocations[i] == 0) continue;
-    //   bool claim = controller.claim(vaultNumber, i);
-    //   if (claim) {
-    //     address govToken = controller.getGovToken(vaultNumber, i);
-    //     uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
-    //     Swap.swapTokensMulti(
-    //       Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
-    //       controller.getUniswapParams(),
-    //       false
-    //     );
-    //   }
-    // }
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    for (uint i = 0; i < latestID; i++) {
+      if (currentAllocations[i] == 0) continue;
+      bool claim = controller.claim(vaultNumber, i);
+      if (claim) {
+        address govToken = controller.getGovToken(vaultNumber, i);
+        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+        Swap.swapTokensMulti(
+          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
+          controller.getUniswapParams(),
+          false
+        );
+      }
+    }
   }
 
   function getVaultBalance() public view returns (uint256) {
-    // console.log("reservedFunds %s", reservedFunds);
-    // console.log("balanceOf", vaultCurrency.balanceOf(address(this)));
     return vaultCurrency.balanceOf(address(this));
   }
 
