@@ -11,6 +11,17 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
+  struct UserInfo {
+    // amount in vaultCurrency the vault owes to the user
+    uint256 withdrawalAllowance;
+    // rebalancing period the withdrawal request is made
+    uint256 withdrawRequestPeriod;
+    // amount in vaultCurrency the vault owes to the user
+    uint256 rewardAllowance;
+    // rebalancing period the reward request is made
+    uint256 rewardRequestPeriod;
+  }
+
   address public derbyToken;
   address public game;
   address public xProvider;
@@ -29,14 +40,8 @@ contract MainVault is Vault, VaultToken {
 
   string internal stateError = "Wrong state";
 
-  // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
-  mapping(address => uint256) internal withdrawalAllowance;
-  // (userAddress => requestPeriod): rebalancing period the withdrawal request is made
-  mapping(address => uint256) internal withdrawalRequestPeriod;
-  // (userAddress => rewardAllowance): amount in vaultCurrency the vault owes to the user
-  mapping(address => uint256) internal rewardAllowance;
-  // (userAddress => requestPeriod): rebalancing period the reward request is made
-  mapping(address => uint256) internal rewardRequestPeriod;
+  // (userAddress => userInfo struct)
+  mapping(address => UserInfo) internal user;
 
   constructor(
     string memory _name,
@@ -133,7 +138,7 @@ contract MainVault is Vault, VaultToken {
   function withdrawalRequest(
     uint256 _amount
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
+    require(user[msg.sender].withdrawalRequestPeriod == 0, "Already a request");
 
     value = (_amount * exchangeRate) / (10 ** decimals());
 
