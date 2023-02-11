@@ -44,7 +44,7 @@ contract Vault is ReentrancyGuard {
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
   uint256 public uScale;
-  uint256 public minimumPull = 1_000_000;
+  uint256 public minimumPull;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -101,6 +101,7 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
+    minimumPull = 1_000_000;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
