@@ -54,7 +54,6 @@ contract XChainController {
 
   uint16[] public chainIds;
   uint16 public homeChain;
-  uint256 public minimumAmount = 1_000_000;
 
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
@@ -366,7 +365,6 @@ contract XChainController {
     uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
-
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);

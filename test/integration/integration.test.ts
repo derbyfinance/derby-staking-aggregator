@@ -501,7 +501,7 @@ describe.only('Testing full integration test', async () => {
 
     // setting expected amountToSend
     before(function () {
-      vaults[0].amountToSend = parseUSDC(0); // 54 cents
+      vaults[0].amountToSend = parseUSDC(0.546458); // 54 cents
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -524,7 +524,7 @@ describe.only('Testing full integration test', async () => {
     it('Trigger should emit RebalanceXChain event', async function () {
       await expect(vaults[0].vault.rebalanceXChain())
         .to.emit(vaults[0].vault, 'RebalanceXChain')
-        .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
+        .withArgs(vaultNumber, 0, vaultCurrency);
     });
   });
 
@@ -723,7 +723,7 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     before(function () {
       exchangeRate = 1_026_814; // dropped slightly cause of the rewards
-      vaults[0].amountToSend = parseUSDC(164079.593966);
+      vaults[0].amountToSend = parseUSDC(164080.360371);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -738,6 +738,11 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
+
+    before(function () {
+      vaults[0].amountToSend = parseUSDC(164079.593966);
+      vaults[1].amountToSend = parseUSDC(0);
+    });
 
     it('Vault 0 should revert because they will receive funds', async function () {
       await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
