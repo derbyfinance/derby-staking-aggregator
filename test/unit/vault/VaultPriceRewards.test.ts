@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { Signer, BigNumberish } from 'ethers';
-import { parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
-import type { Controller, GameMock, MainVaultMock } from '@typechain';
+import { parseEther, parseUnits, transferAndApproveUSDC } from '@testhelp/helpers';
+import type { Controller, MainVaultMock } from '@typechain';
 import {
   compound_dai_01,
   aave_usdt_01,
@@ -16,18 +15,11 @@ import {
 } from '@testhelp/addresses';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
-import { setupXChain } from '../xController/setup';
+import { deployments, run } from 'hardhat';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-const amount = 1_000_000;
-const homeChain = 10;
-const amountUSDC = parseUSDC(amount.toString());
-
-describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
-  let vault: MainVaultMock,
-    user: Signer,
-    controller: Controller,
-    vaultNumber: BigNumberish = 10,
-    game: GameMock;
+describe.only('Testing Vault Store Price and Rewards, unit test', async () => {
+  let vault: MainVaultMock;
 
   const protocols = new Map<string, ProtocolVault>()
     .set('compound_usdc_01', compound_usdc_01)
@@ -42,25 +34,45 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
   const compoundDAIVault = protocols.get('compound_dai_01')!;
   const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
+  const setupVault = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['TestVault1']);
+
+    const vaultNumber = 10;
+    const contract = 'TestVault1';
+    const [dao, user, guardian] = await getAllSigners(hre);
+
+    const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
+    const controller = (await getContract('Controller', hre)) as Controller;
+
+    await AllMockProviders.deployAllMockProviders(dao);
+    await transferAndApproveUSDC(vault.address, user, 10_000_000 * 1e6);
+
+    await run('vault_init', { contract });
+    await run('controller_init');
+    await run('controller_add_vault', { vault: vault.address });
+    await run('vault_set_liquidity_perc', { contract, percentage: 10 });
+
+    // add all protocol vaults to controller with mocked providers
+    for (const protocol of protocols.values()) {
+      await protocol.addProtocolToController(controller, dao, vaultNumber, AllMockProviders);
+    }
+
+    return { vault, controller, dao, user, guardian };
+  });
+
   before(async function () {
-    const setup = await setupXChain();
-    vault = setup.vault1;
-    controller = setup.controller;
-    user = setup.user;
-    game = setup.game;
+    const setup = await setupVault();
+    vault = setup.vault;
   });
 
   it('Should store historical prices and rewards, rebalance: 1', async function () {
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
 
-    await vault.setTotalAllocatedTokensTest(parseEther('10000')); // 10k
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
-
-    compoundVault.setPrice(parseUnits('1000', compoundVault.decimals));
-    aaveVault.setPrice(parseUnits('2000', aaveVault.decimals));
-    yearnVault.setPrice(parseUnits('3000', aaveVault.decimals));
-    compoundDAIVault.setPrice(parseUnits('4000', aaveVault.decimals));
-    aaveUSDTVault.setPrice(parseUnits('5000', aaveVault.decimals));
+    compoundVault.setPrice(parseUnits('1000', 8));
+    aaveVault.setPrice(parseUnits('2000', 6));
+    yearnVault.setPrice(parseUnits('3000', 6));
+    compoundDAIVault.setPrice(parseUnits('4000', 8));
+    aaveUSDTVault.setPrice(parseUnits('5000', 6));
 
     await Promise.all([
       compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(compoundVault.price),
@@ -70,30 +82,28 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
       aaveProvider.mock.exchangeRate.withArgs(aaveUSDT).returns(aaveUSDTVault.price),
     ]);
 
-    await vault.setVaultState(3);
-    await vault.setDeltaAllocationsReceivedTEST(true);
+    await vault.setTotalAllocatedTokensTest(parseEther('10000')); // 10k
+    const rebalancePeriod = await vault.rebalancingPeriod();
+    const totalUnderlying = 100_000 * 1e6;
 
-    await vault.rebalance();
+    // first time it will only store the last price
+    for (const { number, price } of protocols.values()) {
+      await vault.storePriceAndRewardsTest(totalUnderlying, number);
 
-    await game.upRebalancingPeriod(vaultNumber);
-    await vault.sendRewardsToGame();
-
-    for (const protocol of protocols.values()) {
-      //expect(await vault.getHistoricalPriceTEST(1, protocol.number)).to.be.equal(protocol.price);
-      expect(
-        await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 1, protocol.number),
-      ).to.be.equal(0);
+      expect(await vault.lastPrices(number)).to.be.equal(price);
+      expect(await vault.rewardPerLockedToken(rebalancePeriod, number)).to.be.equal(0);
     }
   });
 
   it('Should store historical prices and rewards, rebalance: 2', async function () {
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
 
-    compoundVault.setPrice(parseUnits('1100', compoundVault.decimals)); // 10%
-    aaveVault.setPrice(parseUnits('2100', aaveVault.decimals)); // 5%
-    yearnVault.setPrice(parseUnits('3030', aaveVault.decimals)); // 1%
-    compoundDAIVault.setPrice(parseUnits('4004', aaveVault.decimals)); // 0.1%
-    aaveUSDTVault.setPrice(parseUnits('5010', aaveVault.decimals)); // 0.2%
+    // expectedRewards = (totalUnderlying * performanceFee * priceDiff) / (totalAllocatedTokens * lastPrice)
+    compoundVault.setPrice(parseUnits('1100', 8)).setExpectedReward(100_000); // 10%
+    aaveVault.setPrice(parseUnits('2100', 6)).setExpectedReward(50000); // 5%
+    yearnVault.setPrice(parseUnits('3030', 6)).setExpectedReward(10_000); // 1%
+    compoundDAIVault.setPrice(parseUnits('4004', 8)).setExpectedReward(1_000); // 0.1%
+    aaveUSDTVault.setPrice(parseUnits('5010', 6)).setExpectedReward(2_000); // 0.2%
 
     await Promise.all([
       compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(compoundVault.price),
@@ -103,32 +113,15 @@ describe.skip('Testing Vault Store Price and Rewards, unit test', async () => {
       aaveProvider.mock.exchangeRate.withArgs(aaveUSDT).returns(aaveUSDTVault.price),
     ]);
 
-    await vault.setVaultState(3);
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await vault.rebalance();
+    await vault.upRebalancingPeriodTEST();
+    const rebalancePeriod = await vault.rebalancingPeriod();
+    const totalUnderlying = 100_000 * 1e6;
 
-    await game.upRebalancingPeriod(vaultNumber);
-    await vault.sendRewardsToGame();
+    for (const { number, price, expectedReward } of protocols.values()) {
+      await vault.storePriceAndRewardsTest(totalUnderlying, number);
 
-    for (const protocol of protocols.values()) {
-      //expect(await vault.getHistoricalPriceTEST(2, protocol.number)).to.be.equal(protocol.price);
+      expect(await vault.lastPrices(number)).to.be.equal(price);
+      expect(await vault.rewardPerLockedToken(rebalancePeriod, number)).to.be.equal(expectedReward);
     }
-
-    // 1_000_000 - 100_000 (liq) * percentage gain
-    expect(
-      await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, compoundVault.number),
-    ).to.be.equal(899953);
-    expect(
-      await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, aaveVault.number),
-    ).to.be.equal(449976);
-    expect(
-      await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, yearnVault.number),
-    ).to.be.equal(89995);
-    expect(
-      await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, compoundDAIVault.number),
-    ).to.be.equal(8999);
-    expect(
-      await game.getRewardsPerLockedTokenTEST(vaultNumber, homeChain, 2, aaveUSDTVault.number),
-    ).to.be.equal(17999);
   });
 });

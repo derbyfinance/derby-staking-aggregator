@@ -21,6 +21,7 @@ export class ProtocolVault {
   number: number = 0;
   allocation: number = 0;
   expectedBalance: number = 0;
+  expectedReward: number = 0;
   price: BigNumber = utils.parseEther('0');
   reward: BigNumber = utils.parseEther('0');
   scale: number;
@@ -46,9 +47,14 @@ export class ProtocolVault {
     this.expectedBalance = balance;
     return this;
   }
+  setExpectedReward(reward: number) {
+    this.expectedReward = reward;
+    return this;
+  }
 
   setPrice(price: BigNumber) {
     this.price = price;
+    return this;
   }
 
   setReward(reward: BigNumber) {

@@ -243,7 +243,10 @@ contract Vault is ReentrancyGuard {
     } else {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
-
+    console.log(
+      "rewardPerLockedTOken %s",
+      uint(rewardPerLockedToken[rebalancingPeriod][_protocolId])
+    );
     lastPrices[_protocolId] = price;
   }
 
