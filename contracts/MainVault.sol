@@ -150,6 +150,8 @@ contract MainVault is Vault, VaultToken {
 
     value = withdrawalAllowance[msg.sender];
 
+    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+    // This is to make sure the vault doesnt get stuck
     if (value > getVaultBalance()) value = getVaultBalance();
 
     reservedFunds -= withdrawalAllowance[msg.sender];
@@ -193,6 +195,8 @@ contract MainVault is Vault, VaultToken {
 
     value = rewardAllowance[msg.sender];
 
+    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+    // This is to make sure the vault doesnt get stuck
     if (value > getVaultBalance()) value = getVaultBalance();
 
     reservedFunds -= rewardAllowance[msg.sender];
