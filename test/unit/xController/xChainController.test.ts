@@ -227,7 +227,7 @@ describe.only('Testing XChainController, integration test', async () => {
     expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
 
     expect(formatUSDC(await vault1.getVaultBalance())).to.be.equal(expectedAmounts[0]);
-    expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1] - 60_000);
+    expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.getVaultBalance())).to.be.equal(expectedAmounts[2]);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now

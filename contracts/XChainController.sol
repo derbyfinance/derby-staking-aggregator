@@ -365,7 +365,6 @@ contract XChainController {
     uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
-
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);

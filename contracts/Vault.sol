@@ -44,6 +44,7 @@ contract Vault is ReentrancyGuard {
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
   uint256 public uScale;
+  uint256 public minimumPull;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -60,6 +61,8 @@ contract Vault is ReentrancyGuard {
   int256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
+
+  string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => int256) internal currentAllocations;
@@ -98,6 +101,7 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
+    minimumPull = 1_000_000;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -115,7 +119,9 @@ contract Vault is ReentrancyGuard {
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
-      amountToWithdraw = (amountToWithdraw * 10001) / 10000;
+      if (amountToWithdraw < minimumPull) break;
+
+      // amountToWithdraw = (amountToWithdraw * 10001) / 10000;
 
       withdrawFromProtocol(i, amountToWithdraw);
 
@@ -130,7 +136,7 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalance() external nonReentrant {
-    require(state == State.RebalanceVault, "Wrong state");
+    require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
 
     rebalancingPeriod++;
@@ -138,13 +144,13 @@ contract Vault is ReentrancyGuard {
     claimTokens();
     settleDeltaAllocation();
 
-    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
-
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
+
+    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
 
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
@@ -153,7 +159,9 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
   /// @return underlying totalUnderlying - liquidityVault
   function calcUnderlyingIncBalance() internal view returns (uint256) {
-    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + getVaultBalance();
+    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying +
+      getVaultBalance() -
+      reservedFunds;
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
   }
@@ -414,9 +422,7 @@ contract Vault is ReentrancyGuard {
   }
 
   function getVaultBalance() public view returns (uint256) {
-    // console.log("reservedFunds %s", reservedFunds);
-    // console.log("balanceOf", vaultCurrency.balanceOf(address(this)));
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+    return vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
