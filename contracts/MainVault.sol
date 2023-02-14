@@ -11,6 +11,17 @@ import "hardhat/console.sol";
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 
+  struct UserInfo {
+    // amount in vaultCurrency the vault owes to the user
+    uint256 withdrawalAllowance;
+    // rebalancing period the withdrawal request is made
+    uint256 withdrawalRequestPeriod;
+    // amount in vaultCurrency the vault owes to the user
+    uint256 rewardAllowance;
+    // rebalancing period the reward request is made
+    uint256 rewardRequestPeriod;
+  }
+
   address public derbyToken;
   address public game;
   address public xProvider;
@@ -27,14 +38,8 @@ contract MainVault is Vault, VaultToken {
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
 
-  // (userAddress => withdrawalAllowance): amount in vaultCurrency the vault owes to the user
-  mapping(address => uint256) internal withdrawalAllowance;
-  // (userAddress => requestPeriod): rebalancing period the withdrawal request is made
-  mapping(address => uint256) internal withdrawalRequestPeriod;
-  // (userAddress => rewardAllowance): amount in vaultCurrency the vault owes to the user
-  mapping(address => uint256) internal rewardAllowance;
-  // (userAddress => requestPeriod): rebalancing period the reward request is made
-  mapping(address => uint256) internal rewardRequestPeriod;
+  // (userAddress => userInfo struct)
+  mapping(address => UserInfo) internal userInfo;
 
   constructor(
     string memory _name,
@@ -131,32 +136,34 @@ contract MainVault is Vault, VaultToken {
   function withdrawalRequest(
     uint256 _amount
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
-    require(withdrawalRequestPeriod[msg.sender] == 0, "Already a request");
+    UserInfo storage user = userInfo[msg.sender];
+    require(user.withdrawalRequestPeriod == 0, "Already a request");
 
     value = (_amount * exchangeRate) / (10 ** decimals());
 
     _burn(msg.sender, _amount);
 
-    withdrawalAllowance[msg.sender] = value;
-    withdrawalRequestPeriod[msg.sender] = rebalancingPeriod;
+    user.withdrawalAllowance = value;
+    user.withdrawalRequestPeriod = rebalancingPeriod;
     totalWithdrawalRequests += value;
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
-    require(withdrawalAllowance[msg.sender] > 0, "!allowance");
-    require(rebalancingPeriod > withdrawalRequestPeriod[msg.sender], "Funds not arrived");
+    UserInfo storage user = userInfo[msg.sender];
+    require(user.withdrawalAllowance > 0, "!allowance");
+    require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
-    value = withdrawalAllowance[msg.sender];
+    value = user.withdrawalAllowance;
 
     // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
     // This is to make sure the vault doesnt get stuck
     if (value > getVaultBalance()) value = getVaultBalance();
 
-    reservedFunds -= withdrawalAllowance[msg.sender];
-    delete withdrawalAllowance[msg.sender];
-    delete withdrawalRequestPeriod[msg.sender];
+    reservedFunds -= value;
+    delete user.withdrawalAllowance;
+    delete user.withdrawalRequestPeriod;
 
     transferFunds(msg.sender, value);
   }
@@ -180,28 +187,30 @@ contract MainVault is Vault, VaultToken {
     uint256 _value,
     address _user
   ) external onlyGame nonReentrant onlyWhenVaultIsOn {
-    require(rewardAllowance[_user] == 0, "!allowance");
+    UserInfo storage user = userInfo[_user];
+    require(user.rewardAllowance == 0, "!allowance");
 
-    rewardAllowance[_user] = _value;
-    rewardRequestPeriod[_user] = rebalancingPeriod;
+    user.rewardAllowance = _value;
+    user.rewardRequestPeriod = rebalancingPeriod;
     totalWithdrawalRequests += _value;
   }
 
   /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
   function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
-    require(rewardAllowance[msg.sender] > 0, "!allowance");
-    require(rebalancingPeriod > rewardRequestPeriod[msg.sender], "Funds not arrived");
+    UserInfo storage user = userInfo[msg.sender];
+    require(user.rewardAllowance > 0, "!allowance");
+    require(rebalancingPeriod > user.rewardRequestPeriod, "Funds not arrived");
 
-    value = rewardAllowance[msg.sender];
+    value = user.rewardAllowance;
 
     // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
     // This is to make sure the vault doesnt get stuck
     if (value > getVaultBalance()) value = getVaultBalance();
 
-    reservedFunds -= rewardAllowance[msg.sender];
-    delete rewardAllowance[msg.sender];
-    delete rewardRequestPeriod[msg.sender];
+    reservedFunds -= value;
+    delete user.rewardAllowance;
+    delete user.rewardRequestPeriod;
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
@@ -338,7 +347,12 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
   function getWithdrawalAllowance() external view returns (uint256) {
-    return withdrawalAllowance[msg.sender];
+    return userInfo[msg.sender].withdrawalAllowance;
+  }
+
+  /// @notice Returns the rewards the user is able to withdraw
+  function getRewardAllowance() external view returns (uint256) {
+    return userInfo[msg.sender].rewardAllowance;
   }
 
   /*
