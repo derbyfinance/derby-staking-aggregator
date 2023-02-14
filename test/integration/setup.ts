@@ -1,14 +1,7 @@
-import hre, { network } from 'hardhat';
+import hre from 'hardhat';
 import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type {
-  CompoundVaultMock,
-  Controller,
-  DerbyToken,
-  GameMock,
-  XChainControllerMock,
-  YearnVaultMock,
-} from '@typechain';
-import { compToken, dai, usdc, usdt, yearn, yearn_usdc_01 } from '@testhelp/addresses';
+import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
+import { dai, usdc, usdt, yearn } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
@@ -108,6 +101,7 @@ export const setupIntegration = async () => {
     transferAndApproveUSDC(vault2.address, user2, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),
+    vault1.connect(dao).setSwapRewards(false),
   ]);
 
   // Adding mock yearn vaults

@@ -42,8 +42,9 @@ contract Vault is ReentrancyGuard {
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
   uint256 public performanceFee;
-  uint256 public rebalancingPeriod = 1;
+  uint256 public rebalancingPeriod;
   uint256 public uScale;
+  uint256 public minimumPull;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -60,6 +61,8 @@ contract Vault is ReentrancyGuard {
   int256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
+
+  string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => int256) internal currentAllocations;
@@ -98,6 +101,7 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
+    minimumPull = 1_000_000;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -109,15 +113,19 @@ contract Vault is ReentrancyGuard {
     for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
 
-      uint256 shortage = _value - getVaultBalance();
+      uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
       uint256 balanceProtocol = balanceUnderlying(i);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
+      if (amountToWithdraw < minimumPull) break;
+
+      // amountToWithdraw = (amountToWithdraw * 10001) / 10000;
+
       withdrawFromProtocol(i, amountToWithdraw);
 
-      if (_value <= getVaultBalance()) break;
+      if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
   }
 
@@ -128,7 +136,7 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalance() external nonReentrant {
-    require(state == State.RebalanceVault, "Wrong state");
+    require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
 
     rebalancingPeriod++;
@@ -142,6 +150,8 @@ contract Vault is ReentrancyGuard {
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
 
+    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
+
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
   }
@@ -149,7 +159,9 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
   /// @return underlying totalUnderlying - liquidityVault
   function calcUnderlyingIncBalance() internal view returns (uint256) {
-    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying + getVaultBalance();
+    uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying +
+      getVaultBalance() -
+      reservedFunds;
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
   }
@@ -239,8 +251,8 @@ contract Vault is ReentrancyGuard {
   /// @return rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function rewardsToArray() internal view returns (int256[] memory rewards) {
     uint256 latestId = controller.latestProtocolId(vaultNumber);
-    rewards = new int[](latestId);
 
+    rewards = new int[](latestId);
     for (uint256 i = 0; i < latestId; i++) {
       rewards[i] = rewardPerLockedToken[rebalancingPeriod][i];
     }
@@ -304,7 +316,10 @@ contract Vault is ReentrancyGuard {
 
     _amount = (_amount * protocol.uScale) / uScale;
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
-    if (shares == 0) shares = 1;
+    uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
+
+    if (shares == 0) return;
+    if (balance < shares) shares = balance;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     uint256 amountReceived = IProvider(protocol.provider).withdraw(
@@ -407,7 +422,7 @@ contract Vault is ReentrancyGuard {
   }
 
   function getVaultBalance() public view returns (uint256) {
-    return vaultCurrency.balanceOf(address(this)) - reservedFunds;
+    return vaultCurrency.balanceOf(address(this));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval

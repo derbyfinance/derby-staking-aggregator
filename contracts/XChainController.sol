@@ -365,7 +365,6 @@ contract XChainController {
     uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
-
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
@@ -392,6 +391,9 @@ contract XChainController {
       if (amountToDeposit > 0) {
         address underlying = getUnderlyingAddress(_vaultNumber, chain);
         address vault = getVaultAddress(_vaultNumber, chain);
+
+        uint256 balance = IERC20(underlying).balanceOf(address(this));
+        if (amountToDeposit > balance) amountToDeposit = balance;
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
         xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);

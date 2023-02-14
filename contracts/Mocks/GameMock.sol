@@ -23,11 +23,7 @@ contract GameMock is Game {
     addToTotalRewards(_basketId);
   }
 
-  function setDeltaAllocations(
-    address _vault,
-    uint256 _protocolNum,
-    int256 _allocation
-  ) external {
+  function setDeltaAllocations(address _vault, uint256 _protocolNum, int256 _allocation) external {
     IVault(_vault).setDeltaAllocations(_protocolNum, _allocation);
   }
 
@@ -35,11 +31,7 @@ contract GameMock is Game {
     isXChainRebalancing[_vaultNumber] = _state;
   }
 
-  function triggerRedeemedRewardsVault(
-    address _vault,
-    address user,
-    uint256 amount
-  ) external {
+  function triggerRedeemedRewardsVault(address _vault, address user, uint256 amount) external {
     IVault(_vault).redeemRewardsGame(amount, user);
   }
 
@@ -47,11 +39,10 @@ contract GameMock is Game {
     vaults[_vaultNumber].rebalancingPeriod++;
   }
 
-  function getDeltaAllocationChainTEST(uint256 _ETFNumber, uint256 _chainId)
-    external
-    view
-    returns (int256)
-  {
+  function getDeltaAllocationChainTEST(
+    uint256 _ETFNumber,
+    uint256 _chainId
+  ) external view returns (int256) {
     return getDeltaAllocationChain(_ETFNumber, _chainId);
   }
 
@@ -63,11 +54,7 @@ contract GameMock is Game {
     return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
   }
 
-  function mockRewards(
-    uint256 _vaultNumber,
-    uint16 _chainId,
-    int256[] memory _rewards
-  ) external {
+  function mockRewards(uint256 _vaultNumber, uint16 _chainId, int256[] memory _rewards) external {
     uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
     for (uint256 i = 0; i < _rewards.length; i++) {
@@ -100,11 +87,10 @@ contract GameMock is Game {
     return negativeRewardThreshold;
   }
 
-  function getVaultAddressTest(uint256 _vaultNumber, uint16 _chainId)
-    external
-    view
-    returns (address)
-  {
+  function getVaultAddressTest(
+    uint256 _vaultNumber,
+    uint16 _chainId
+  ) external view returns (address) {
     return getVaultAddress(_vaultNumber, _chainId);
   }
 }

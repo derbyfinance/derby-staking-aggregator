@@ -466,6 +466,7 @@ contract Game is ERC721, ReentrancyGuard {
     }
 
     vaults[_vaultNumber].rebalancingPeriod++;
+
     isXChainRebalancing[_vaultNumber] = false;
   }
 
