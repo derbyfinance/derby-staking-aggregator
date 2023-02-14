@@ -247,7 +247,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     await vault1.connect(guardian).receiveProtocolAllocationsGuard(allocationArray);
 
     for (let i = 0; i < allocationArray.length; i++) {
-      expect(await vault1.getDeltaAllocation(i)).to.be.equal(allocationArray[i]);
+      expect(await vault1.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[i]);
     }
 
     expect(await vault1.deltaAllocationsReceived()).to.be.true;

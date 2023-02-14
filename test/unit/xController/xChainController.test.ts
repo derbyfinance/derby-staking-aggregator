@@ -5,8 +5,6 @@ import { erc20, formatUSDC } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupXChain } from './setup';
-import { string } from 'hardhat/internal/core/params/argumentTypes';
-import { getAddress } from 'ethers/lib/utils';
 
 const chainIds = [10, 100, 1000, 10000];
 
