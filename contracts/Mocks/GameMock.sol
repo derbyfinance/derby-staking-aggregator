@@ -39,21 +39,6 @@ contract GameMock is Game {
     vaults[_vaultNumber].rebalancingPeriod++;
   }
 
-  function getDeltaAllocationChainTEST(
-    uint256 _ETFNumber,
-    uint256 _chainId
-  ) external view returns (int256) {
-    return getDeltaAllocationChain(_ETFNumber, _chainId);
-  }
-
-  function getDeltaAllocationProtocolTEST(
-    uint256 _ETFNumber,
-    uint256 _chainId,
-    uint256 _protocolNum
-  ) external view returns (int256) {
-    return getDeltaAllocationProtocol(_ETFNumber, _chainId, _protocolNum);
-  }
-
   function mockRewards(uint256 _vaultNumber, uint16 _chainId, int256[] memory _rewards) external {
     uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
