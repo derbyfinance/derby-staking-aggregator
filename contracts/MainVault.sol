@@ -38,8 +38,6 @@ contract MainVault is Vault, VaultToken {
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
 
-  string internal stateError = "Wrong state";
-
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
 
