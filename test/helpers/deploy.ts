@@ -222,6 +222,8 @@ export const deployXChainControllerMock = (
 export const deployXProvider = (
   deployerSign: Signer,
   endpointAddress: string,
+  originDomain: number,
+  source: string,
   connextHandler: string,
   dao: string,
   game: string,
@@ -230,6 +232,8 @@ export const deployXProvider = (
 ): Promise<XProvider> => {
   return deployContract(deployerSign, XProviderArtifact, [
     endpointAddress,
+    originDomain,
+    source,
     connextHandler,
     dao,
     game,

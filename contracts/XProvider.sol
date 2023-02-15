@@ -13,14 +13,16 @@ import "./Interfaces/IGame.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
 import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
+import "./Interfaces/ExternalInterfaces/IConnext.sol";
+import "./Interfaces/ExternalInterfaces/IReceiver.sol";
 
 import "hardhat/console.sol";
 
-contract XProvider is ILayerZeroReceiver {
+contract XProvider is ILayerZeroReceiver, IXReceiver {
   using SafeERC20 for IERC20;
 
   ILayerZeroEndpoint public immutable endpoint;
-  IConnextHandler public immutable connext;
+  address public immutable connext;
 
   address private dao;
   address public xController;
@@ -35,6 +37,7 @@ contract XProvider is ILayerZeroReceiver {
   mapping(uint16 => uint32) public connextChainId;
   // (layerZeroChainId => trustedChainIds): used for whitelisting chains
   mapping(uint16 => bytes) public trustedRemoteLookup;
+  mapping(uint32 => address) public trustedRemoteConnext;
   // (vaultAddress => bool): used for whitelisting vaults
   mapping(address => bool) public vaultWhitelist;
 
@@ -74,6 +77,18 @@ contract XProvider is ILayerZeroReceiver {
     _;
   }
 
+  /** @notice A modifier for authenticated calls.
+   * This is an important security consideration. If the target contract
+   * function should be authenticated, it must check three things:
+   *    1) The originating call comes from the expected origin domain.
+   *    2) The originating call comes from the expected source contract.
+   *    3) The call to this contract comes from Connext.
+   */
+  modifier onlySource(address _originSender, uint32 _origin) {
+    require(_originSender == trustedRemoteConnext[_origin] && msg.sender == connext, "Not trusted");
+    _;
+  }
+
   constructor(
     address _endpoint,
     address _connextHandler,
@@ -83,7 +98,7 @@ contract XProvider is ILayerZeroReceiver {
     uint16 _homeChain
   ) {
     endpoint = ILayerZeroEndpoint(_endpoint);
-    connext = IConnextHandler(_connextHandler);
+    connext = _connextHandler;
     dao = _dao;
     game = _game;
     xController = _xController;
@@ -143,7 +158,7 @@ contract XProvider is ILayerZeroReceiver {
       amount: _amount
     });
 
-    connext.xcall(xcallArgs);
+    IConnextHandler(connext).xcall(xcallArgs);
   }
 
   function lzReceive(
@@ -162,6 +177,15 @@ contract XProvider is ILayerZeroReceiver {
     (bool success, ) = address(this).call(_payload);
     require(success, "LZReceive: No success");
   }
+
+  function xReceive(
+    bytes32 _transferId,
+    uint256 _amount,
+    address _asset,
+    address _originSender,
+    uint32 _origin,
+    bytes memory _callData
+  ) external onlySource(_originSender, _origin) returns (bytes memory) {}
 
   /// @notice Step 1 push; Game pushes totalDeltaAllocations to xChainController
   /// @notice Pushes the delta allocations from the game to the xChainController
