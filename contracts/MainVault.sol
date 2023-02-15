@@ -37,6 +37,7 @@ contract MainVault is Vault, VaultToken {
   uint16 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
+  uint256 public maxDivergenceWithdraws;
 
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
@@ -58,6 +59,7 @@ contract MainVault is Vault, VaultToken {
     exchangeRate = _uScale;
     game = _game;
     governanceFee = 0;
+    maxDivergenceWithdraws = 1_000_000;
   }
 
   modifier onlyXProvider() {
@@ -156,10 +158,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.withdrawalAllowance;
@@ -203,10 +202,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.rewardRequestPeriod, "Funds not arrived");
 
     value = user.rewardAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.rewardAllowance;
@@ -222,6 +218,17 @@ contract MainVault is Vault, VaultToken {
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
+  }
+
+  // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+  // This is to make sure the vault doesnt get stuck
+  function checkForBalance(uint256 value) internal view returns (uint256) {
+    if (value > getVaultBalance()) {
+      uint256 oldValue = value;
+      value = getVaultBalance();
+      require(oldValue - value <= maxDivergenceWithdraws, "Max divergence");
+    }
+    return value;
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
