@@ -167,8 +167,6 @@ contract MainVault is Vault, VaultToken {
     transferFunds(msg.sender, value);
   }
 
-  // 513844
-  // 513777
   /// @notice Substract governance fee from value
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
@@ -220,15 +218,19 @@ contract MainVault is Vault, VaultToken {
     }
   }
 
-  // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-  // This is to make sure the vault doesnt get stuck
-  function checkForBalance(uint256 value) internal view returns (uint256) {
-    if (value > getVaultBalance()) {
-      uint256 oldValue = value;
-      value = getVaultBalance();
-      require(oldValue - value <= maxDivergenceWithdraws, "Max divergence");
+  /// @notice Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+  /// @notice This is to make sure the vault doesnt get stuck
+  /// @notice Value will be set to the vaultBalance
+  /// @notice When divergence is greater then maxDivergenceWithdraws it will revert
+  /// @param _value Value the user wants to withdraw
+  /// @return value Value - divergence
+  function checkForBalance(uint256 _value) internal view returns (uint256) {
+    if (_value > getVaultBalance()) {
+      uint256 oldValue = _value;
+      _value = getVaultBalance();
+      require(oldValue - _value <= maxDivergenceWithdraws, "Max divergence");
     }
-    return value;
+    return _value;
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
@@ -388,6 +390,12 @@ contract MainVault is Vault, VaultToken {
   /// @param _state True when rewards should be swapped to derby tokens
   function setSwapRewards(bool _state) external onlyDao {
     swapRewards = _state;
+  }
+
+  /// @notice Setter for maximum divergence a user can get during a withdraw
+  /// @param _maxDivergence New maximum divergence in vaultCurrency
+  function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
+    maxDivergenceWithdraws = _maxDivergence;
   }
 
   /*
