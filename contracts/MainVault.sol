@@ -255,10 +255,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice See setXChainAllocationInt below
   function setXChainAllocation(
     uint256 _amountToSend,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlyXProvider {
     require(state == State.PushedUnderlying, stateError);
-    setXChainAllocationInt(_amountToSend, _exchangeRate);
+    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
@@ -266,11 +267,16 @@ contract MainVault is Vault, VaultToken {
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
   /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocationInt(uint256 _amountToSend, uint256 _exchangeRate) internal {
+  function setXChainAllocationInt(
+    uint256 _amountToSend,
+    uint256 _exchangeRate,
+    bool _receivingFunds
+  ) internal {
     amountToSendXChain = _amountToSend;
     exchangeRate = _exchangeRate;
 
-    if (_amountToSend == 0) state = State.WaitingForFunds;
+    if (_amountToSend == 0 && !_receivingFunds) settleReservedFunds();
+    else if (_amountToSend == 0 && _receivingFunds) state = State.WaitingForFunds;
     else state = State.SendingFundsXChain;
   }
 
@@ -390,9 +396,10 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 3: Guardian function
   function setXChainAllocationGuard(
     uint256 _amountToSend,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlyGuardian {
-    setXChainAllocationInt(_amountToSend, _exchangeRate);
+    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 5: Guardian function

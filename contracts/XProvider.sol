@@ -255,17 +255,21 @@ contract XProvider is ILayerZeroReceiver {
     address _vault,
     uint16 _chainId,
     uint256 _amountToSendBack,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlyController {
     if (_chainId == homeChain) {
-      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
+      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
     } else {
-      bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256,uint256)"));
+      bytes4 selector = bytes4(
+        keccak256("receiveSetXChainAllocation(address,uint256,uint256,bool)")
+      );
       bytes memory callData = abi.encodeWithSelector(
         selector,
         _vault,
         _amountToSendBack,
-        _exchangeRate
+        _exchangeRate,
+        _receivingFunds
       );
 
       xSend(_chainId, callData);
@@ -279,9 +283,10 @@ contract XProvider is ILayerZeroReceiver {
   function receiveSetXChainAllocation(
     address _vault,
     uint256 _amountToSendBack,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlySelf {
-    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
+    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 4 push; Push funds from vaults to xChainController

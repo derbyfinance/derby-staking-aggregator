@@ -43,10 +43,10 @@ describe.only('Testing XChainController, integration test', async () => {
     basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
 
     const allocationArray = [
-      [200, 0, 0, 200, 0], // 400
+      [200, 0, 0, 198, 0], // 400
       [100, 0, 200, 100, 200], // 600
       [0, 100, 200, 300, 400], // 1000
-      [0, 0, 0, 0, 0], // 0
+      [2, 0, 0, 0, 0], // 10
     ];
     const totalAllocations = 2000;
 
@@ -100,12 +100,12 @@ describe.only('Testing XChainController, integration test', async () => {
     // chainIds = [10, 100, 1000, 2000];
     await expect(game.pushAllocationsToController(vaultNumber))
       .to.emit(game, 'PushedAllocationsToController')
-      .withArgs(vaultNumber, [400, 600, 1000]);
+      .withArgs(vaultNumber, [398, 600, 1000]);
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(2000);
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
-      400,
+      398,
     );
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(
       600,
@@ -114,16 +114,14 @@ describe.only('Testing XChainController, integration test', async () => {
       1000,
     );
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[3])).to.be.equal(
-      0,
+      2,
     );
 
     // chainId on or off
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 1000)).to.be.false;
-    expect(await xChainController.getVaultChainIdOff(vaultNumber, 10000)).to.be.true;
-
-    expect(await vault4.vaultOff()).to.be.true;
+    expect(await xChainController.getVaultChainIdOff(vaultNumber, 10000)).to.be.false;
   });
 
   it('3) Trigger vaults to push totalUnderlyings to xChainController', async function () {
@@ -136,6 +134,7 @@ describe.only('Testing XChainController, integration test', async () => {
     await vault1.pushTotalUnderlyingToController();
     await vault2.pushTotalUnderlyingToController();
     await vault3.pushTotalUnderlyingToController();
+    await vault4.pushTotalUnderlyingToController();
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1e6);
     expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(
@@ -165,7 +164,7 @@ describe.only('Testing XChainController, integration test', async () => {
 
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
     const expectedAmounts = [
-      100_000 - (400 / 2000) * 240_000 - 0, // vault 1 = 52_000
+      100_000 - (398 / 2000) * 240_000 - 0, // vault 1 = 52_000
       200_000 - (600 / 2000) * 240_000 - 60_000, // vault 2 = 68_000
       0, // vault 3 = Receiving 120_000
       0, // vault 4
@@ -185,7 +184,7 @@ describe.only('Testing XChainController, integration test', async () => {
     expect(await vault1.state()).to.be.equal(2);
     expect(await vault2.state()).to.be.equal(2);
     expect(await vault3.state()).to.be.equal(3); // dont have to send any funds
-    expect(await vault4.state()).to.be.equal(0); // chainId off
+    expect(await vault4.state()).to.be.equal(4); // not reaching cap so should go to rebalanceVault
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
@@ -194,24 +193,25 @@ describe.only('Testing XChainController, integration test', async () => {
     await expect(vault3.rebalanceXChain()).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
-    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_000) * 1e6);
-    expect(await IUSDc.balanceOf(vault1.address)).to.be.equal(48_000 * 1e6); // 100k - 52k
+    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_240) * 1e6);
+    expect(await IUSDc.balanceOf(vault1.address)).to.be.equal(47_760 * 1e6); // 100k - 52k
     expect(await IUSDc.balanceOf(vault2.address)).to.be.equal(132_000 * 1e6); // 200k - 68k
     expect(await IUSDc.balanceOf(vault3.address)).to.be.equal(0);
 
     expect(await vault1.state()).to.be.equal(4); // should have upped after sending funds
     expect(await vault2.state()).to.be.equal(4); // should have upped after sending funds
     expect(await vault3.state()).to.be.equal(3); // have to receive funds
+    expect(await vault4.state()).to.be.equal(4);
 
-    // all 3 vaults are ready
-    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(3);
+    // all 4 vaults are ready
+    expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(4);
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
     await xChainController.sendFundsToVault(vaultNumber);
 
     const expectedAmounts = [
-      (400 / 2000) * 240_000, // vault 1
+      (398 / 2000) * 240_000, // vault 1
       (600 / 2000) * 240_000 + 60_000, // vault 2 should have the request of 60k
       (1000 / 2000) * 240_000, // vault 3 should have received 150k from controller
     ];
@@ -237,28 +237,25 @@ describe.only('Testing XChainController, integration test', async () => {
     expect(await game.isXChainRebalancing(vaultNumber)).to.be.false;
 
     const allocationArray = [
-      [200, 0, 0, 200, 0], // 400
+      [200, 0, 0, 198, 0], // 400
       [100, 0, 200, 100, 200], // 600
       [0, 100, 200, 300, 400], // 1000
-      [0, 0, 0, 0, 0], // 0
+      [2, 0, 0, 0, 0], // 0
     ];
 
     // vault 1
-    allocationArray[0].forEach(async (_, i) =>
-      expect(await vault1.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[0][i]),
-    );
-    // vault 2
-    allocationArray[1].forEach(async (_, i) =>
-      expect(await vault2.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[1][i]),
-    );
-    // vault 3
-    allocationArray[2].forEach(async (_, i) =>
-      expect(await vault3.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[2][i]),
-    );
-    // vault 4
-    allocationArray[3].forEach(async (_, i) =>
-      expect(await vault4.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[3][i]),
-    );
+    for (let i = 0; i < allocationArray[0].length; i++) {
+      expect(await vault1.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[0][i]);
+    }
+    for (let i = 0; i < allocationArray[1].length; i++) {
+      expect(await vault2.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[1][i]);
+    }
+    for (let i = 0; i < allocationArray[2].length; i++) {
+      expect(await vault3.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[2][i]);
+    }
+    for (let i = 0; i < allocationArray[3].length; i++) {
+      expect(await vault4.getDeltaAllocationTEST(i)).to.be.equal(allocationArray[3][i]);
+    }
 
     expect(await vault1.deltaAllocationsReceived()).to.be.true;
     expect(await vault2.deltaAllocationsReceived()).to.be.true;

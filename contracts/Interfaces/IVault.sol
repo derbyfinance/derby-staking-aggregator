@@ -11,15 +11,15 @@ interface IVault {
 
   function setDeltaAllocations(uint256 _protocolNum, int256 _allocation) external;
 
-  function historicalPrices(uint256 _rebalancingPeriod, uint256 _protocolNum)
-    external
-    view
-    returns (uint256);
+  function historicalPrices(
+    uint256 _rebalancingPeriod,
+    uint256 _protocolNum
+  ) external view returns (uint256);
 
-  function rewardPerLockedToken(uint256 _rebalancingPeriod, uint256 _protocolNum)
-    external
-    view
-    returns (int256);
+  function rewardPerLockedToken(
+    uint256 _rebalancingPeriod,
+    uint256 _protocolNum
+  ) external view returns (int256);
 
   function performanceFee() external view returns (uint256);
 
@@ -29,7 +29,11 @@ interface IVault {
 
   function vaultCurrencyAddress() external view returns (address);
 
-  function setXChainAllocation(uint256 _amountToSend, uint256 _exchangeRate) external;
+  function setXChainAllocation(
+    uint256 _amountToSend,
+    uint256 _exchangeRate,
+    bool _receivingFunds
+  ) external;
 
   function setVaultState(uint256 _state) external;
 

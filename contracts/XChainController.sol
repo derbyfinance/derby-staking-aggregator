@@ -64,7 +64,8 @@ contract XChainController {
     address _vault,
     uint16 _chainId,
     uint256 _amountToSendXChain,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   );
 
   event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
@@ -311,6 +312,10 @@ contract XChainController {
         amountToChain
       );
 
+      console.log("amountToChain %s", uint(amountToChain));
+      console.log("amountToWithdraw %s", uint(amountToWithdraw));
+      console.log("amountToDeposit %s", uint(amountToDeposit));
+
       sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);
     }
   }
@@ -325,6 +330,7 @@ contract XChainController {
     int256 _amountToChain
   ) internal view returns (int256, uint256) {
     uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
+    console.log("currentUnderlying %s", uint(currentUnderlying));
 
     int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
     uint256 amountToWithdraw = amountToDeposit < 0
@@ -365,17 +371,25 @@ contract XChainController {
     uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
-    if (_amountDeposit > 0) {
-      setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
-      xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
+    bool receivingFunds;
+    uint256 amountToSend = 0;
+
+    if (_amountDeposit > 0 && _amountDeposit < 1000e6) {
       vaultStage[_vaultNumber].fundsReceived++;
-      emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
+    } else if (_amountDeposit > 1000e6) {
+      receivingFunds = true;
+      setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
+      vaultStage[_vaultNumber].fundsReceived++;
     }
 
-    if (_amountToWithdraw > 0) {
-      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
-      emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
+    if (_amountToWithdraw > 0 && _amountToWithdraw < 1000e6) {
+      vaultStage[_vaultNumber].fundsReceived++;
+    } else if (_amountToWithdraw > 1000e6) {
+      amountToSend = _amountToWithdraw;
     }
+
+    xProvider.pushSetXChainAllocation(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
+    emit SendXChainAmount(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
   }
 
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
