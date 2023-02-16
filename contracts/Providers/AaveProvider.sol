@@ -104,8 +104,7 @@ contract AaveProvider is IProvider {
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _aToken) external view override returns (uint256) {
-    uint256 shares = _amount / exchangeRate(_aToken);
-    return shares;
+    return _amount;
   }
 
   /// @notice Get balance of aToken from address
@@ -121,8 +120,8 @@ contract AaveProvider is IProvider {
   /// @dev Aave exchangeRate is always 1
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return price of LP token
-  function exchangeRate(address _aToken) public pure override returns (uint256) {
-    return 1;
+  function exchangeRate(address _aToken) public view override returns (uint256) {
+    return IAToken(_aToken).scaledTotalSupply();
   }
 
   function claim(address _aToken, address _claimer) public override returns (bool) {}
