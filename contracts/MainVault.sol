@@ -276,14 +276,14 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
-  function rebalanceXChain() external {
+  function rebalanceXChain() external payable {
     require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
     if (amountToSendXChain > getVaultBalance()) amountToSendXChain = getVaultBalance();
 
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController(
+    IXProvider(xProvider).xTransferToController{value: msg.value}(
       vaultNumber,
       amountToSendXChain,
       address(vaultCurrency)

@@ -381,7 +381,9 @@ contract XChainController {
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
-  function sendFundsToVault(uint256 _vaultNumber) external onlyWhenFundsReceived(_vaultNumber) {
+  function sendFundsToVault(
+    uint256 _vaultNumber
+  ) external payable onlyWhenFundsReceived(_vaultNumber) {
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
       if (getVaultChainIdOff(_vaultNumber, chain)) continue;
@@ -396,7 +398,7 @@ contract XChainController {
         if (amountToDeposit > balance) amountToDeposit = balance;
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults(vault, chain, amountToDeposit, underlying);
+        xProvider.xTransferToVaults{value: msg.value}(vault, chain, amountToDeposit, underlying);
         setAmountToDeposit(_vaultNumber, chain, 0);
         emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }

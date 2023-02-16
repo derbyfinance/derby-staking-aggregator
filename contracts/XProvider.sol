@@ -33,6 +33,8 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   uint16 public xControllerChain;
   uint16 public gameChain;
 
+  uint256 public slippage = 30; // for token transfer in BPS (i.e. 30 bps = 0.3%)
+
   // (layerZeroChainId => connextChainId): layerZeroChainId is the main ID we use
   mapping(uint16 => uint32) public connextChainId;
   // (layerZeroChainId => trustedChainIds): used for whitelisting chains
@@ -122,43 +124,35 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     );
   }
 
+  /// @notice Transfers funds from one chain to another.
+  /// @param token Address of the token on this domain.
+  /// @param amount The amount to transfer.
+  /// @param recipient The destination address (e.g. a wallet).
+  /// @param destinationDomain The destination domain ID.
   function xTransfer(
-    address _to,
-    address _asset,
-    uint32 _originDomain,
-    uint32 _destinationDomain,
-    uint256 _amount
+    address token,
+    uint256 amount,
+    address recipient,
+    uint32 destinationDomain
   ) internal {
-    require(
-      IERC20(_asset).allowance(msg.sender, address(this)) >= _amount,
-      "LZXProvider: Not approved"
+    IERC20 _token = IERC20(token);
+    require(_token.allowance(msg.sender, address(this)) >= amount, "User must approve amount");
+
+    // User sends funds to this contract
+    _token.transferFrom(msg.sender, address(this), amount);
+
+    // This contract approves transfer to Connext
+    _token.approve(address(connext), amount);
+
+    IConnext(connext).xcall{value: msg.value}(
+      destinationDomain, // _destination: Domain ID of the destination chain
+      recipient, // _to: address receiving the funds on the destination
+      token, // _asset: address of the token contract
+      msg.sender, // _delegate: address that can revert or forceLocal on destination
+      amount, // _amount: amount of tokens to transfer
+      slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
+      bytes("") // _callData: empty bytes because we're only sending funds
     );
-
-    IERC20(_asset).transferFrom(msg.sender, address(this), _amount);
-    IERC20(_asset).approve(address(connext), _amount);
-
-    CallParams memory callParams = CallParams({
-      to: _to,
-      callData: "",
-      originDomain: _originDomain,
-      destinationDomain: _destinationDomain,
-      agent: _to,
-      recovery: _to,
-      forceSlow: false,
-      receiveLocal: false,
-      callback: address(0),
-      callbackFee: 0,
-      relayerFee: 0,
-      slippageTol: 9995
-    });
-
-    XCallArgs memory xcallArgs = XCallArgs({
-      params: callParams,
-      transactingAssetId: _asset,
-      amount: _amount
-    });
-
-    IConnextHandler(connext).xcall(xcallArgs);
   }
 
   function lzReceive(
@@ -178,6 +172,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     require(success, "LZReceive: No success");
   }
 
+  // new connext function
   function xReceive(
     bytes32 _transferId,
     uint256 _amount,
@@ -317,18 +312,12 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint256 _vaultNumber,
     uint256 _amount,
     address _asset
-  ) external onlyVaults {
+  ) external payable onlyVaults {
     if (homeChain == xControllerChain) {
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {
-      xTransfer(
-        xController,
-        _asset,
-        connextChainId[homeChain],
-        connextChainId[xControllerChain],
-        _amount
-      );
+      xTransfer(_asset, _amount, xController, connextChainId[xControllerChain]);
       pushFeedbackToXController(_vaultNumber);
     }
   }
@@ -360,13 +349,13 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint16 _chainId,
     uint256 _amount,
     address _asset
-  ) external onlyController {
+  ) external payable onlyController {
     if (_chainId == homeChain) {
       IVault(_vault).receiveFunds();
       IERC20(_asset).transferFrom(msg.sender, _vault, _amount);
     } else {
       pushFeedbackToVault(_chainId, _vault);
-      xTransfer(_vault, _asset, connextChainId[homeChain], connextChainId[_chainId], _amount);
+      xTransfer(_asset, _amount, _vault, connextChainId[_chainId]);
     }
   }
 
@@ -547,5 +536,9 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  function setSlippage(uint256 _slippage) external onlyDao {
+    slippage = _slippage;
   }
 }

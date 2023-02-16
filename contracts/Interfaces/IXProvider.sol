@@ -3,11 +3,7 @@
 pragma solidity ^0.8.11;
 
 interface IXProvider {
-  function xCall(
-    address _xProvider,
-    uint16 _chainId,
-    bytes memory _callData
-  ) external;
+  function xCall(address _xProvider, uint16 _chainId, bytes memory _callData) external;
 
   function xSend(uint256 _value) external; // sending a (permissioned) value crosschain.
 
@@ -33,7 +29,7 @@ interface IXProvider {
     uint256 _vaultNumber,
     uint256 _amount,
     address _asset
-  ) external;
+  ) external payable;
 
   function receiveFeedbackToXController(uint256 _vaultNumber) external;
 
@@ -42,7 +38,7 @@ interface IXProvider {
     uint16 _chainId,
     uint256 _amount,
     address _asset
-  ) external;
+  ) external payable;
 
   function pushProtocolAllocationsToVault(
     uint16 _chainId,
@@ -60,11 +56,7 @@ interface IXProvider {
     uint256 _withdrawalRequests
   ) external;
 
-  function pushStateFeedbackToVault(
-    address _vault,
-    uint16 _chainId,
-    bool _state
-  ) external;
+  function pushStateFeedbackToVault(address _vault, uint16 _chainId, bool _state) external;
 
   function pushRewardsToGame(
     uint256 _vaultNumber,
