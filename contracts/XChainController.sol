@@ -54,6 +54,7 @@ contract XChainController {
 
   uint16[] public chainIds;
   uint16 public homeChain;
+  int256 public minimumAmount;
 
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
@@ -125,6 +126,7 @@ contract XChainController {
     dao = _dao;
     guardian = _guardian;
     homeChain = _homeChain;
+    minimumAmount = 1000e6;
   }
 
   /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
@@ -312,10 +314,6 @@ contract XChainController {
         amountToChain
       );
 
-      console.log("amountToChain %s", uint(amountToChain));
-      console.log("amountToWithdraw %s", uint(amountToWithdraw));
-      console.log("amountToDeposit %s", uint(amountToDeposit));
-
       sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);
     }
   }
@@ -330,7 +328,6 @@ contract XChainController {
     int256 _amountToChain
   ) internal view returns (int256, uint256) {
     uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
-    console.log("currentUnderlying %s", uint(currentUnderlying));
 
     int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
     uint256 amountToWithdraw = amountToDeposit < 0
@@ -374,17 +371,17 @@ contract XChainController {
     bool receivingFunds;
     uint256 amountToSend = 0;
 
-    if (_amountDeposit > 0 && _amountDeposit < 1000e6) {
+    if (_amountDeposit > 0 && _amountDeposit < minimumAmount) {
       vaultStage[_vaultNumber].fundsReceived++;
-    } else if (_amountDeposit > 1000e6) {
+    } else if (_amountDeposit >= minimumAmount) {
       receivingFunds = true;
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
       vaultStage[_vaultNumber].fundsReceived++;
     }
 
-    if (_amountToWithdraw > 0 && _amountToWithdraw < 1000e6) {
+    if (_amountToWithdraw > 0 && _amountToWithdraw < uint(minimumAmount)) {
       vaultStage[_vaultNumber].fundsReceived++;
-    } else if (_amountToWithdraw > 1000e6) {
+    } else if (_amountToWithdraw >= uint(minimumAmount)) {
       amountToSend = _amountToWithdraw;
     }
 
@@ -562,6 +559,12 @@ contract XChainController {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  /// @notice Setter for minumum amount to send xchain
+  /// @param _amount New minimum amount
+  function setMinimumAmount(int256 _amount) external onlyDao {
+    minimumAmount = _amount;
   }
 
   /*
