@@ -55,7 +55,7 @@ contract XProvider is IXReceiver {
     _;
   }
 
-  /// @notice Solution for the low-level call in lzReceive that is seen as an external call
+  /// @notice Solution for the low-level call in xReceive that is seen as an external call
   modifier onlySelf() {
     require(msg.sender == address(this), "xProvider: only Self");
     _;
