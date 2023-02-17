@@ -420,13 +420,13 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Step 1 trigger; Game pushes totalDeltaAllocations to xChainController
   /// @notice Trigger for Dao to push delta allocations to the xChainController
   /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external {
+  function pushAllocationsToController(uint256 _vaultNumber) external payable {
     require(rebalanceNeeded(), "No rebalance needed");
     require(!isXChainRebalancing[_vaultNumber], "Vault is already rebalancing");
     isXChainRebalancing[_vaultNumber] = true;
 
     int256[] memory deltas = allocationsToArray(_vaultNumber);
-    IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+    IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
 
     lastTimeStamp = block.timestamp;
 
@@ -449,14 +449,14 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(uint256 _vaultNumber) external {
+  function pushAllocationsToVaults(uint256 _vaultNumber) external payable {
     require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
 
     for (uint256 i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
       int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chain);
 
-      IXProvider(xProvider).pushProtocolAllocationsToVault(
+      IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(
         chain,
         getVaultAddress(_vaultNumber, chain),
         deltas

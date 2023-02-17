@@ -197,7 +197,10 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @notice Pushes the delta allocations from the game to the xChainController
   /// @param _vaultNumber number of the vault
   /// @param _deltas Array with delta Allocations for all chainIds
-  function pushAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlyGame {
+  function pushAllocations(
+    uint256 _vaultNumber,
+    int256[] memory _deltas
+  ) external payable onlyGame {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
@@ -225,7 +228,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
-  ) external onlyVaults {
+  ) external payable onlyVaults {
     if (_chainId == xControllerChain) {
       return
         IXChainController(xController).setTotalUnderlying(
@@ -286,7 +289,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint16 _chainId,
     uint256 _amountToSendBack,
     uint256 _exchangeRate
-  ) external onlyController {
+  ) external payable onlyController {
     if (_chainId == homeChain) {
       return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
     } else {
@@ -396,7 +399,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint16 _chainId,
     address _vault,
     int256[] memory _deltas
-  ) external onlyGame {
+  ) external payable onlyGame {
     if (_chainId == homeChain) return IVault(_vault).receiveProtocolAllocations(_deltas);
     else {
       bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address,int256[])"));
@@ -426,7 +429,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     uint256 _vaultNumber,
     uint16 _chainId,
     int256[] memory _rewards
-  ) external onlyVaults {
+  ) external payable onlyVaults {
     if (_chainId == gameChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     } else {
@@ -458,7 +461,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     address _vault,
     uint16 _chainId,
     bool _state
-  ) external onlyController {
+  ) external payable onlyController {
     if (_chainId == homeChain) {
       return IVault(_vault).toggleVaultOnOff(_state);
     } else {

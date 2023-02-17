@@ -241,7 +241,11 @@ contract XChainController {
   /// @param _state Bool if vault is turned on or off
   function sendFeedbackToVault(uint256 _vaultNumber, uint16 _chainId, bool _state) internal {
     if (getVaultChainIdOff(_vaultNumber, _chainId) != _state) {
-      xProvider.pushStateFeedbackToVault(getVaultAddress(_vaultNumber, _chainId), _chainId, _state);
+      xProvider.pushStateFeedbackToVault{value: msg.value}(
+        getVaultAddress(_vaultNumber, _chainId),
+        _chainId,
+        _state
+      );
 
       vaults[_vaultNumber].chainIdOff[_chainId] = _state;
     }
@@ -286,7 +290,7 @@ contract XChainController {
   /// @param _vaultNumber Number of vault
   function pushVaultAmounts(
     uint256 _vaultNumber
-  ) external onlyWhenUnderlyingsReceived(_vaultNumber) {
+  ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
@@ -367,13 +371,18 @@ contract XChainController {
     address vault = getVaultAddress(_vaultNumber, _chainId);
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
-      xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
+      xProvider.pushSetXChainAllocation{value: msg.value}(vault, _chainId, 0, _exchangeRate);
       vaultStage[_vaultNumber].fundsReceived++;
       emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
     }
 
     if (_amountToWithdraw > 0) {
-      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
+      xProvider.pushSetXChainAllocation{value: msg.value}(
+        vault,
+        _chainId,
+        _amountToWithdraw,
+        _exchangeRate
+      );
       emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
     }
   }

@@ -226,13 +226,13 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
-  function pushTotalUnderlyingToController() external onlyWhenIdle {
+  function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
-    IXProvider(xProvider).pushTotalUnderlying(
+    IXProvider(xProvider).pushTotalUnderlying{value: msg.value}(
       vaultNumber,
       homeChain,
       underlying,
@@ -328,11 +328,11 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
-  function sendRewardsToGame() external {
+  function sendRewardsToGame() external payable {
     require(state == State.SendRewardsPerToken, stateError);
 
     int256[] memory rewards = rewardsToArray();
-    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
+    IXProvider(xProvider).pushRewardsToGame{value: msg.value}(vaultNumber, homeChain, rewards);
 
     state = State.Idle;
 
