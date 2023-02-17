@@ -90,12 +90,10 @@ contract AaveProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _aToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _aToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }

@@ -63,6 +63,7 @@ export const alpha = '0xa1faa113cbE53436Df28FF0aEe54275c13B40975';
 export const idle = '0x875773784Af8135eA0ef43b5a374AaD105c5D39e';
 export const beta = '0xBe1a001FE942f96Eea22bA08783140B9Dcc09D28';
 export const compToken = '0xc00e94Cb662C3520282E6f5717214004A7f26888';
+export const beefy = '0x5870700f1272a1AdbB87C3140bD770880a95e55D';
 
 // Uniswap
 export const uniswapFactory = '0x1F98431c8aD98523631AE4a59f267346ea31F984';

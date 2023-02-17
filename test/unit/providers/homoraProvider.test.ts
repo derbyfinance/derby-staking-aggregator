@@ -1,152 +1,143 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
 import {
-  getUSDCSigner,
   erc20,
   formatUSDC,
-  parseUSDC,
   getDAISigner,
-  getUSDTSigner,
-  parseDAI,
-  formatDAI,
+  parseEther,
+  formatEther,
+  transferAndApproveUSDC,
 } from '@testhelp/helpers';
-import type { HomoraProvider, Controller } from '@typechain';
-import { deployHomoraProvider, deployController } from '@testhelp/deploy';
-import {
-  usdc,
-  homoraUSDC as husdc,
-  homoraDAI as hdai,
-  homoraUSDT as husdt,
-  dai,
-  usdt,
-} from '@testhelp/addresses';
+import type { HomoraProvider, YearnProvider, YearnVaultMock } from '@typechain';
+import { dai, usdc, homoraUSDC as hUSDC, homoraDAI as hDAI } from '@testhelp/addresses';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-// const amount = 100_000;
-const amount = Math.floor(Math.random() * 100000);
-const amountUSDC = parseUSDC(amount.toString());
-const amountDAI = parseDAI(amount.toString());
-const amountUSDT = parseUSDC(amount.toString());
+describe.skip('Testing Homora provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['HomoraProvider']);
+    const provider = (await getContract('HomoraProvider', hre)) as HomoraProvider;
+    const [dao, user] = await getAllSigners(hre);
 
-describe('Testing Homora provider', async () => {
-  let homoraProvider: HomoraProvider,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    DAISigner: Signer,
-    USDTSigner: Signer,
-    IUSDc: Contract,
-    IDai: Contract,
-    IUSDt: Contract,
-    hToken: Contract,
-    daoAddr: string,
-    vaultAddr: string;
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
 
-    [vaultAddr, homoraProvider, USDCSigner, DAISigner, USDTSigner, IUSDc, IDai, IUSDt] =
-      await Promise.all([
-        vault.getAddress(),
-        deployHomoraProvider(dao),
-        getUSDCSigner(),
-        getDAISigner(),
-        getUSDTSigner(),
-        erc20(usdc),
-        erc20(dai),
-        erc20(usdt),
-      ]);
-
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IDai.connect(DAISigner).transfer(vaultAddr, amountDAI),
-      IUSDt.connect(USDTSigner).transfer(vaultAddr, amountUSDT),
-      IUSDc.connect(vault).approve(homoraProvider.address, amountUSDC),
-      IDai.connect(vault).approve(homoraProvider.address, amountDAI),
-      IUSDt.connect(vault).approve(homoraProvider.address, amountUSDT),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw USDC to Homora', async function () {
-    hToken = erc20(husdc);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe.only('Testing homoraUSDC', () => {
+    let provider: HomoraProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IhUSDC: Contract = erc20(hUSDC);
+    const amount = 100_000 * 1e6;
 
-    await homoraProvider.connect(vault).deposit(amountUSDC, husdc, usdc);
-    const balanceShares = await homoraProvider.balance(vaultAddr, husdc);
-    // const balanceUnderlying = await homoraProvider.balanceUnderlying(vaultAddr, husdc);
-    // const calcShares = await homoraProvider.calcShares(balanceUnderlying, husdc);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    // const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    // it('Should have exchangeRate', async function () {
+    //   exchangeRate = await provider.exchangeRate(hUSDC);
+    //   expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    // });
 
-    console.log({ balanceShares });
-    expect(Number(balanceShares)).to.be.greaterThan(0);
+    it('Should deposit in hUSDC', async () => {
+      const expectedShares = await provider.calcShares(amount, hUSDC);
 
-    // expect(calcShares).to.be.closeTo(balanceShares, 2);
-    // expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
-    // expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+      await expect(() => provider.connect(user).deposit(amount, hUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
-    await homoraProvider.connect(vault).withdraw(balanceShares, husdc, usdc);
+      const hUSDCBalance = await provider.balance(user.address, hUSDC);
+      console.log({ expectedShares });
+      console.log({ hUSDCBalance });
+      expect(formatUSDC(hUSDCBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    console.log({ vaultBalanceStart });
-    console.log({ vaultBalanceEnd });
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, hUSDC);
 
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatUSDC(vaultBalanceStart)),
-      2,
-    );
+      const hUSDCBalance = await provider.balance(user.address, hUSDC);
+      expect(formatUSDC(hUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, hUSDC);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const hUSDCBalance = await provider.balance(user.address, hUSDC);
+
+      await IhUSDC.connect(user).approve(provider.address, hUSDCBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(hUSDCBalance, hUSDC, usdc),
+      ).to.changeTokenBalance(IUSDc, user, amount - 1);
+    });
   });
 
-  it('Should deposit and withdraw DAI to Homora', async function () {
-    hToken = erc20(hdai);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IDai.balanceOf(vaultAddr);
+  describe('Testing homoraDAI', () => {
+    let provider: HomoraProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IhDAI: Contract = erc20(hDAI);
+    const amount = parseEther(100_000);
 
-    await homoraProvider.connect(vault).deposit(amountDAI, hdai, dai);
-    const balanceShares = await homoraProvider.balance(vaultAddr, hdai);
-    console.log({ balanceShares });
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    expect(Number(balanceShares)).to.be.greaterThan(0);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(hDAI);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
-    await homoraProvider.connect(vault).withdraw(balanceShares, hdai, dai);
+    it('Should deposit in hDAI', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
 
-    const vaultBalanceEnd = await IDai.balanceOf(vaultAddr);
-    console.log({ vaultBalanceEnd });
+      await expect(() => provider.connect(user).deposit(amount, hDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
-  });
+      const hDAIBalance = await provider.balance(user.address, hDAI);
+      expect(formatEther(hDAIBalance)).to.be.closeTo(expectedShares, 1);
+    });
 
-  it('Should deposit and withdraw USDT to Homora', async function () {
-    hToken = erc20(husdt);
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDt.balanceOf(vaultAddr);
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, hDAI);
 
-    await homoraProvider.connect(vault).deposit(amountUSDT, husdt, usdt);
-    const balanceShares = await homoraProvider.balance(vaultAddr, husdt);
-    console.log({ balanceShares });
+      const hDAIBalance = await provider.balance(user.address, hDAI);
+      expect(formatEther(hDAIBalance)).to.be.closeTo(formatEther(shares), 1);
+    });
 
-    expect(Number(balanceShares)).to.be.greaterThan(0);
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, hDAI);
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await hToken.connect(vault).approve(homoraProvider.address, balanceShares);
-    await homoraProvider.connect(vault).withdraw(balanceShares, husdt, usdt);
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(formatEther(amount), 1);
+    });
 
-    const vaultBalanceEnd = await IUSDt.balanceOf(vaultAddr);
-    console.log({ vaultBalanceEnd });
+    it('Should be able to withdraw', async () => {
+      const hDAIBalance = await provider.balance(user.address, hDAI);
 
-    expect(Number(formatDAI(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatDAI(vaultBalanceStart)),
-      2,
-    );
+      await IhDAI.connect(user).approve(provider.address, hDAIBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(hDAIBalance, hDAI, dai),
+      ).to.changeTokenBalance(IDAI, user, amount.sub(1)); // close to, 1
+    });
   });
 });

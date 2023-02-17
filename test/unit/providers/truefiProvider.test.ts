@@ -1,77 +1,142 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { ethers } from 'hardhat';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
 import {
-  getUSDCSigner,
   erc20,
   formatUSDC,
+  transferAndApproveUSDC,
+  getUSDTSigner,
+  parseUnits,
   parseUSDC,
-  controllerAddProtocol,
 } from '@testhelp/helpers';
-import type { TruefiProvider, Controller } from '@typechain';
-import { deployTruefiProvider, deployController } from '@testhelp/deploy';
-import { usdc, truefiUSDC as tusdc, truefi } from '@testhelp/addresses';
+import type { TruefiProvider } from '@typechain';
+import { usdc, truefiUSDC as tUSDC, usdt, truefiUSDT as tUSDT } from '@testhelp/addresses';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-const amount = Math.floor(Math.random() * 100000);
-// const amount = 100_000;
-const amountUSDC = parseUSDC(amount.toString());
-const ETFnumber = 0;
+describe('Testing Truefi provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['TruefiProvider']);
+    const provider = (await getContract('TruefiProvider', hre)) as TruefiProvider;
 
-describe.skip('Testing TrueFi provider', async () => {
-  let truefiProvider: TruefiProvider,
-    controller: Controller,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    tToken: Contract,
-    daoAddr: string,
-    vaultAddr: string;
+    const [dao, user] = await getAllSigners(hre);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
-    controller = await deployController(dao, daoAddr);
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-    [vaultAddr, truefiProvider, USDCSigner, IUSDc, tToken] = await Promise.all([
-      vault.getAddress(),
-      deployTruefiProvider(dao),
-      getUSDCSigner(),
-      erc20(usdc),
-      erc20(tusdc),
-    ]);
+    // approve and send USDT to user
+    const usdtAmount = parseUnits(1_000_000, 6);
+    const usdtSigner = await getUSDTSigner();
+    const IUSDT = erc20(usdt);
+    await IUSDT.connect(usdtSigner).transfer(user.getAddress(), usdtAmount);
+    await IUSDT.connect(user).approve(provider.address, usdtAmount);
 
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      controller.addVault(vaultAddr),
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(truefiProvider.address, amountUSDC),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw to Truefi through controller', async function () {
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe('Testing truefiUSDC', () => {
+    let provider: TruefiProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const ItUSDC: Contract = erc20(tUSDC);
+    const amount = 100_000 * 1e6;
 
-    await truefiProvider.connect(vault).deposit(amountUSDC, tusdc, usdc);
-    const balanceShares = await truefiProvider.balance(vaultAddr, tusdc);
-    const balanceUnderlying = await truefiProvider.balanceUnderlying(vaultAddr, tusdc);
-    const calcShares = await truefiProvider.calcShares(balanceUnderlying, tusdc);
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(tUSDC);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    expect(calcShares).to.be.closeTo(balanceShares, 2);
-    expect(balanceUnderlying).to.be.closeTo(amountUSDC, 2);
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(amountUSDC);
+    it('Should deposit in tUSDC', async () => {
+      const expectedShares = Math.round(amount / Number(exchangeRate));
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    await tToken.connect(vault).approve(truefiProvider.address, balanceShares);
-    await truefiProvider.connect(vault).withdraw(balanceShares, tusdc, usdc);
+      await expect(() => provider.connect(user).deposit(amount, tUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
-    expect(Number(formatUSDC(vaultBalanceEnd))).to.be.closeTo(
-      Number(formatUSDC(vaultBalanceStart)),
-      amount * 0.022,
-    ); // 2% fee on withdraw Truefi
+      const tUSDCBalance = await provider.balance(user.address, tUSDC);
+      expect(formatUSDC(tUSDCBalance)).to.be.closeTo(expectedShares, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, tUSDC);
+
+      const tUSDCBalance = await provider.balance(user.address, tUSDC);
+      expect(formatUSDC(tUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, tUSDC);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const tUSDCBalance = await provider.balance(user.address, tUSDC);
+
+      await ItUSDC.connect(user).approve(provider.address, tUSDCBalance);
+      await provider.connect(user).withdraw(tUSDCBalance, tUSDC, usdc);
+
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatUSDC(await IUSDc.balanceOf(user.address))).to.be.closeTo(10_000_000, 250); // truefi takes fees
+    });
+  });
+
+  describe('Testing truefiUSDT', () => {
+    let provider: TruefiProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDT: Contract = erc20(usdt);
+    const ItUSDT: Contract = erc20(tUSDT);
+    const amount = parseUSDC(100_000);
+
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
+
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(tUSDT);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
+
+    it('Should deposit in tUSDT', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
+
+      await expect(() => provider.connect(user).deposit(amount, tUSDT, usdt)).to.changeTokenBalance(
+        IUSDT,
+        user,
+        parseUSDC(-100_000),
+      );
+
+      const tUSDTBalance = await provider.balance(user.address, tUSDT);
+      expect(formatUSDC(tUSDTBalance)).to.be.closeTo(expectedShares, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, tUSDT);
+
+      const tUSDTBalance = await provider.balance(user.address, tUSDT);
+      expect(formatUSDC(tUSDTBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, tUSDT);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(formatUSDC(amount), 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const tUSDTBalance = await provider.balance(user.address, tUSDT);
+
+      await ItUSDT.connect(user).approve(provider.address, tUSDTBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(tUSDTBalance, tUSDT, usdt),
+      ).to.changeTokenBalance(IUSDT, user, amount.sub(2)); // close to, 2
+    });
   });
 });

@@ -1,9 +1,16 @@
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
+import { BigNumber, Contract, Signer } from 'ethers';
 import { deployments } from 'hardhat';
-import { erc20, getDAISigner, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
+import {
+  erc20,
+  formatUSDC,
+  getDAISigner,
+  parseEther,
+  formatEther,
+  transferAndApproveUSDC,
+} from '@testhelp/helpers';
 import type { YearnProvider, YearnVaultMock } from '@typechain';
-import { dai, usdc, yearn } from '@testhelp/addresses';
+import { dai, usdc, yearnUSDC as yUSDC, yearnDAI as yDAI } from '@testhelp/addresses';
 import { deployYearnMockVaults, getAllSigners, getContract } from '@testhelp/getContracts';
 
 describe('Testing Yearn provider for Mock vaults', async () => {
@@ -31,6 +38,114 @@ describe('Testing Yearn provider for Mock vaults', async () => {
     await IDAI.connect(user).approve(provider.address, daiAmount);
 
     return { provider, yearnUSDC, yearnDAI, yearnUSDT, user };
+  });
+
+  describe('Testing yearnUSDC', () => {
+    let provider: YearnProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IyUSDC: Contract = erc20(yUSDC);
+    const amount = 100_000 * 1e6;
+
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
+
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(yUSDC);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
+
+    it('Should deposit in yUSDC', async () => {
+      const expectedShares = Math.round(amount / Number(exchangeRate));
+
+      await expect(() => provider.connect(user).deposit(amount, yUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
+
+      const yUSDCBalance = await provider.balance(user.address, yUSDC);
+      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(expectedShares, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, yUSDC);
+
+      const yUSDCBalance = await provider.balance(user.address, yUSDC);
+      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, yUSDC);
+
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const yUSDCBalance = await provider.balance(user.address, yUSDC);
+
+      await IyUSDC.connect(user).approve(provider.address, yUSDCBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(yUSDCBalance, yUSDC, usdc),
+      ).to.changeTokenBalance(IUSDc, user, amount - 1);
+    });
+  });
+
+  describe('Testing yearnDAI', () => {
+    let provider: YearnProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IyDAI: Contract = erc20(yDAI);
+    const amount = parseEther(100_000);
+
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
+
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(yDAI);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
+
+    it('Should deposit in yDAI', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
+
+      await expect(() => provider.connect(user).deposit(amount, yDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
+
+      const yDAIBalance = await provider.balance(user.address, yDAI);
+      expect(formatEther(yDAIBalance)).to.be.closeTo(expectedShares, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, yDAI);
+
+      const yDAIBalance = await provider.balance(user.address, yDAI);
+      expect(formatEther(yDAIBalance)).to.be.closeTo(formatEther(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, yDAI);
+
+      expect(formatEther(balanceUnderlying)).to.be.closeTo(formatEther(amount), 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const yDAIBalance = await provider.balance(user.address, yDAI);
+
+      await IyDAI.connect(user).approve(provider.address, yDAIBalance);
+
+      await expect(() =>
+        provider.connect(user).withdraw(yDAIBalance, yDAI, dai),
+      ).to.changeTokenBalance(IDAI, user, amount.sub(1)); // close to, 1
+    });
   });
 
   describe('Testing YearnMockVault USDC', () => {
