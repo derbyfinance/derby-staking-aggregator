@@ -36,35 +36,35 @@ contract XProvider is IXReceiver {
   event SetTrustedRemoteConnext(uint32 _srcChainId, address _srcAddress);
 
   modifier onlyDao() {
-    require(msg.sender == dao, "LZProvider: only DAO");
+    require(msg.sender == dao, "xProvider: only DAO");
     _;
   }
 
   modifier onlyController() {
-    require(msg.sender == xController, "LZProvider: only Controller");
+    require(msg.sender == xController, "xProvider: only Controller");
     _;
   }
 
   modifier onlyVaults() {
-    require(vaultWhitelist[msg.sender], "LZProvider: only vault");
+    require(vaultWhitelist[msg.sender], "xProvider: only vault");
     _;
   }
 
   modifier onlyGame() {
-    require(msg.sender == game, "LZProvider: only Game");
+    require(msg.sender == game, "xProvider: only Game");
     _;
   }
 
   /// @notice Solution for the low-level call in lzReceive that is seen as an external call
   modifier onlySelf() {
-    require(msg.sender == address(this), "LZProvider: only Self");
+    require(msg.sender == address(this), "xProvider: only Self");
     _;
   }
 
   modifier onlySelfOrVault() {
     require(
       msg.sender == address(this) || vaultWhitelist[msg.sender],
-      "LZProvider: only Self or Vault"
+      "xProvider: only Self or Vault"
     );
     _;
   }
