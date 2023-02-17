@@ -1,4 +1,4 @@
-import { Controller, LZEndpointMock, MainVaultMock } from '@typechain';
+import { Controller, MainVaultMock } from '@typechain';
 import { Contract } from 'ethers';
 import { Deployment, DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -43,26 +43,6 @@ export async function getTestVaults(hre: HardhatRuntimeEnvironment): Promise<Mai
   ]);
 
   return vaults;
-}
-
-export async function getEndpoints(hre: HardhatRuntimeEnvironment): Promise<LZEndpointMock[]> {
-  const { deployments, ethers } = hre;
-
-  const [main, arbitrum, optimism, bnb] = await Promise.all([
-    deployments.get('LZEndpointMain'),
-    deployments.get('LZEndpointArbi'),
-    deployments.get('LZEndpointOpti'),
-    deployments.get('LZEndpointBnb'),
-  ]);
-
-  const endpoints = await Promise.all([
-    ethers.getContractAt('LZEndpointMock', main.address),
-    ethers.getContractAt('LZEndpointMock', arbitrum.address),
-    ethers.getContractAt('LZEndpointMock', optimism.address),
-    ethers.getContractAt('LZEndpointMock', bnb.address),
-  ]);
-
-  return endpoints;
 }
 
 export async function getAllSigners({ getNamedAccounts, ethers }: HardhatRuntimeEnvironment) {

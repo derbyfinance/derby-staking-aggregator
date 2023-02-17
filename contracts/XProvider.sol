@@ -5,23 +5,17 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {XCallArgs, CallParams} from "./libraries/LibConnextStorage.sol";
-
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXChainController.sol";
 import "./Interfaces/IGame.sol";
-import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
-import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
-import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
 import "./Interfaces/ExternalInterfaces/IConnext.sol";
 import "./Interfaces/ExternalInterfaces/IXReceiver.sol";
 
 import "hardhat/console.sol";
 
-contract XProvider is ILayerZeroReceiver, IXReceiver {
+contract XProvider is IXReceiver {
   using SafeERC20 for IERC20;
 
-  ILayerZeroEndpoint public immutable endpoint;
   address public immutable connext;
 
   address private dao;
@@ -29,19 +23,16 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   address public xControllerProvider;
   address public game;
 
-  uint16 public homeChain;
-  uint16 public xControllerChain;
-  uint16 public gameChain;
+  uint32 public homeChain;
+  uint32 public xControllerChain;
+  uint32 public gameChain;
 
-  // (layerZeroChainId => connextChainId): layerZeroChainId is the main ID we use
-  mapping(uint16 => uint32) public connextChainId;
-  // (layerZeroChainId => trustedChainIds): used for whitelisting chains
-  mapping(uint16 => bytes) public trustedRemoteLookup;
+  // (domainID => contract address) mapping domainIDs to trusted remote xProvider on that specific domain
   mapping(uint32 => address) public trustedRemoteConnext;
   // (vaultAddress => bool): used for whitelisting vaults
   mapping(address => bool) public vaultWhitelist;
 
-  event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
+  event SetTrustedRemote(uint32 _srcChainId, bytes _srcAddress);
   event SetTrustedRemoteConnext(uint32 _srcChainId, address _srcAddress);
 
   modifier onlyDao() {
@@ -91,14 +82,12 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   }
 
   constructor(
-    address _endpoint,
     address _connext,
     address _dao,
     address _game,
     address _xController,
-    uint16 _homeChain
+    uint32 _homeChain
   ) {
-    endpoint = ILayerZeroEndpoint(_endpoint);
     connext = _connext;
     dao = _dao;
     game = _game;
@@ -159,23 +148,6 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     );
   }
 
-  function lzReceive(
-    uint16 _srcChainId,
-    bytes calldata _srcAddress,
-    uint64 _nonce,
-    bytes calldata _payload
-  ) external {
-    require(msg.sender == address(endpoint), "Not an endpoint");
-    require(
-      _srcAddress.length == trustedRemoteLookup[_srcChainId].length &&
-        keccak256(_srcAddress) == keccak256(trustedRemoteLookup[_srcChainId]),
-      "Not trusted"
-    );
-
-    (bool success, ) = address(this).call(_payload);
-    require(success, "LZReceive: No success");
-  }
-
   /// @notice function implemented from IXReceive from connext, standard way to receive messages with connext.
   /// @param _transferId not used here because only relevant in case of a value transfer. Still in the signature to comply with IXReceive.
   /// @param _amount not used here because only relevant in case of a value transfer. Still in the signature to comply with IXReceive.
@@ -226,7 +198,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function pushTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
@@ -242,7 +214,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
         );
     } else {
       bytes4 selector = bytes4(
-        keccak256("receiveTotalUnderlying(uint256,uint16,uint256,uint256,uint256)")
+        keccak256("receiveTotalUnderlying(uint256,uint32,uint256,uint256,uint256)")
       );
       bytes memory callData = abi.encodeWithSelector(
         selector,
@@ -266,7 +238,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
   function receiveTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
@@ -288,7 +260,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _exchangeRate New exchangerate for vaults
   function pushSetXChainAllocation(
     address _vault,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _amountToSendBack,
     uint256 _exchangeRate
   ) external payable onlyController {
@@ -335,7 +307,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {
-      xTransfer(_asset, _amount, xController, connextChainId[xControllerChain], _slippage);
+      xTransfer(_asset, _amount, xController, xControllerChain, _slippage);
       pushFeedbackToXController(_vaultNumber);
     }
   }
@@ -365,7 +337,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   function xTransferToVaults(
     address _vault,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _amount,
     address _asset,
     uint256 _slippage
@@ -375,7 +347,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
       IERC20(_asset).transferFrom(msg.sender, _vault, _amount);
     } else {
       pushFeedbackToVault(_chainId, _vault);
-      xTransfer(_asset, _amount, _vault, connextChainId[_chainId], _slippage);
+      xTransfer(_asset, _amount, _vault, _chainId, _slippage);
     }
   }
 
@@ -383,7 +355,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @notice Push feedback message so the vault knows it has received funds and is ready to rebalance
   /// @param _chainId Number of chainId
   /// @param _vault Address of the vault on given chainId
-  function pushFeedbackToVault(uint16 _chainId, address _vault) internal {
+  function pushFeedbackToVault(uint32 _chainId, address _vault) internal {
     bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vault);
 
@@ -402,7 +374,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function pushProtocolAllocationsToVault(
-    uint16 _chainId,
+    uint32 _chainId,
     address _vault,
     int256[] memory _deltas
   ) external payable onlyGame {
@@ -433,13 +405,13 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function pushRewardsToGame(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) external payable onlyVaults {
     if (_chainId == gameChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     } else {
-      bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint16,int256[])"));
+      bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint32,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
       xSend(gameChain, callData);
@@ -453,7 +425,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function receiveRewardsToGame(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) external onlySelf {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
@@ -465,7 +437,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _state bool for chainId on or off
   function pushStateFeedbackToVault(
     address _vault,
-    uint16 _chainId,
+    uint32 _chainId,
     bool _state
   ) external payable onlyController {
     if (_chainId == homeChain) {
@@ -498,15 +470,6 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /*
   Only Dao functions
   */
-
-  /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
-  /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
-  /// @param _srcAddress Address of remote xprovider
-  function setTrustedRemote(uint16 _srcChainId, bytes calldata _srcAddress) external onlyDao {
-    trustedRemoteLookup[_srcChainId] = _srcAddress;
-    emit SetTrustedRemote(_srcChainId, _srcAddress);
-  }
-
   /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
   /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
   /// @param _srcAddress Address of remote xprovider
@@ -529,25 +492,20 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
 
   /// @notice Setter for xController chain id
   /// @param _xControllerChain new xController chainId
-  function setXControllerChainId(uint16 _xControllerChain) external onlyDao {
+  function setXControllerChainId(uint32 _xControllerChain) external onlyDao {
     xControllerChain = _xControllerChain;
   }
 
   /// @notice Setter for homeChain Id
   /// @param _homeChain New home chainId
-  function setHomeChain(uint16 _homeChain) external onlyDao {
+  function setHomeChain(uint32 _homeChain) external onlyDao {
     homeChain = _homeChain;
   }
 
   /// @notice Setter for gameChain Id
   /// @param _gameChain New chainId for game contract
-  function setGameChainId(uint16 _gameChain) external onlyDao {
+  function setGameChainId(uint32 _gameChain) external onlyDao {
     gameChain = _gameChain;
-  }
-
-  /// @notice links layerZero chain id to a connext chain id for transfers
-  function setConnextChainId(uint16 _layerzeroChainId, uint32 _connextChainId) external onlyDao {
-    connextChainId[_layerzeroChainId] = _connextChainId;
   }
 
   /// @notice Whitelists vault address for onlyVault modifier

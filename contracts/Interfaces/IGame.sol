@@ -16,7 +16,7 @@ interface IGame {
 
   function settleRewards(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory rewards
   ) external;
 }

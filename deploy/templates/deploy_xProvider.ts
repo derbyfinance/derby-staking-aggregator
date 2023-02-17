@@ -12,14 +12,14 @@ const func: DeployFunction = async function ({
 
   const deployConfig = await getDeployConfigXProvider(network.name);
   if (!deployConfig) throw 'Unknown contract name';
-  const { layerZeroEndpoint, connextHandler, mainnet } = deployConfig;
+  const { connextHandler, mainnet } = deployConfig;
 
   const game = await deployments.get('Game');
   const xChainController = await deployments.get('XChainController');
 
   await deploy('XProvider', {
     from: deployer,
-    args: [layerZeroEndpoint, connextHandler, dao, game.address, xChainController.address, mainnet],
+    args: [connextHandler, dao, game.address, xChainController.address, mainnet],
     log: true,
     autoMine: true,
   });

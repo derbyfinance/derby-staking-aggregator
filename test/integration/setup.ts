@@ -6,7 +6,6 @@ import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
   InitConnextMock,
-  InitEndpoints,
   setGameLatestProtocolIds,
   addVaultsToXController,
   setWhitelistVaults,
@@ -87,7 +86,6 @@ export const setupIntegration = async () => {
   await Promise.all([
     setWhitelistVaults(hre, allXProviders, dao),
     InitConnextMock(hre, allXProviders),
-    InitEndpoints(hre, allXProviders),
     addVaultsToController(hre),
     addVaultsToXController(hre, xChainController, dao, vaultNumber),
     setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),

@@ -15,13 +15,13 @@ describe.only('Testing xProvider tasks', () => {
   Only Dao
   **************/
 
-  it('xprovider_set_trusted_remote', async function () {
+  it('xprovider_set_trusted_connext', async function () {
     const { xProvider } = await setupXProvider();
     const chainId = random(10_000);
     const address = '0xa354f35829ae975e850e23e9615b11da1b3dc4de';
 
-    await run('xprovider_set_trusted_remote', { chainid: chainId, address });
-    expect(await xProvider.trustedRemoteLookup(chainId)).to.be.equal(address);
+    await run('xprovider_set_trusted_connext', { chainid: chainId, address });
+    expect(await (await xProvider.trustedRemoteConnext(chainId)).toLowerCase()).to.be.equal(address.toLowerCase());
   });
 
   it('xprovider_set_xcontroller', async function () {
@@ -62,15 +62,6 @@ describe.only('Testing xProvider tasks', () => {
 
     await run('xprovider_set_game_chain', { chainid });
     expect(await xProvider.gameChain()).to.be.equal(chainid);
-  });
-
-  it('xprovider_set_connext_chain', async function () {
-    const { xProvider } = await setupXProvider();
-    const layerzero = random(10_000);
-    const connext = random(10_000);
-
-    await run('xprovider_set_connext_chain', { layerzerochain: layerzero, connextchain: connext });
-    expect(await xProvider.connextChainId(layerzero)).to.be.equal(connext);
   });
 
   it('xprovider_vault_whitelist', async function () {

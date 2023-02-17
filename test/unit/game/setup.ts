@@ -5,7 +5,6 @@ import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '
 import {
   getAndInitXProviders,
   InitConnextMock,
-  InitEndpoints,
   setGameLatestProtocolIds,
 } from '@testhelp/InitialiseContracts';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
@@ -43,7 +42,6 @@ export const setupGame = deployments.createFixture(async (hre) => {
     },
   );
   await InitConnextMock(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
-  await InitEndpoints(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
 
   const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
   await run('game_init', {

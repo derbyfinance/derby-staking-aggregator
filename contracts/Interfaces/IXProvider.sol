@@ -10,13 +10,13 @@ interface IXProvider {
 
   function receiveTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying
   ) external;
 
   function pushSetXChainAllocation(
     address _vault,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _amountToWithdraw,
     uint256 _exchangeRate
   ) external payable;
@@ -32,14 +32,14 @@ interface IXProvider {
 
   function xTransferToVaults(
     address _vault,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _amount,
     address _asset,
     uint256 _slippage
   ) external payable;
 
   function pushProtocolAllocationsToVault(
-    uint16 _chainId,
+    uint32 _chainId,
     address _vault,
     int256[] memory _deltas
   ) external payable;
@@ -48,19 +48,19 @@ interface IXProvider {
 
   function pushTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   ) external payable;
 
-  function pushStateFeedbackToVault(address _vault, uint16 _chainId, bool _state) external payable;
+  function pushStateFeedbackToVault(address _vault, uint32 _chainId, bool _state) external payable;
 
   function pushRewardsToGame(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) external payable;
 
-  function homeChain() external returns (uint16);
+  function homeChain() external returns (uint32);
 }

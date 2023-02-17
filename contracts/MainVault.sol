@@ -34,7 +34,7 @@ contract MainVault is Vault, VaultToken {
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
   uint256 public exchangeRate;
-  uint16 public homeChain;
+  uint32 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
 
@@ -83,13 +83,13 @@ contract MainVault is Vault, VaultToken {
 
   event PushTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   );
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
-  event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
+  event PushedRewardsToGame(uint256 _vaultNumber, uint32 _chain, int256[] _rewards);
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -413,7 +413,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Setter for new homeChain Id
-  function setHomeChain(uint16 _homeChain) external onlyGuardian {
+  function setHomeChain(uint32 _homeChain) external onlyGuardian {
     homeChain = _homeChain;
   }
 
