@@ -14,7 +14,7 @@ import "./Mocks/LayerZero/interfaces/ILayerZeroEndpoint.sol";
 import "./Mocks/LayerZero/interfaces/ILayerZeroReceiver.sol";
 import "./Interfaces/ExternalInterfaces/IConnextHandler.sol";
 import "./Interfaces/ExternalInterfaces/IConnext.sol";
-import "./Interfaces/ExternalInterfaces/IReceiver.sol";
+import "./Interfaces/ExternalInterfaces/IXReceiver.sol";
 
 import "hardhat/console.sol";
 
@@ -44,6 +44,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   mapping(address => bool) public vaultWhitelist;
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
+  event SetTrustedRemoteConnext(uint32 _srcChainId, address _srcAddress);
 
   modifier onlyDao() {
     require(msg.sender == dao, "LZProvider: only DAO");
@@ -93,14 +94,14 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
 
   constructor(
     address _endpoint,
-    address _connextHandler,
+    address _connext,
     address _dao,
     address _game,
     address _xController,
     uint16 _homeChain
   ) {
     endpoint = ILayerZeroEndpoint(_endpoint);
-    connext = _connextHandler;
+    connext = _connext;
     dao = _dao;
     game = _game;
     xController = _xController;
@@ -110,17 +111,18 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @notice Function to send function selectors crossChain
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
-  function xSend(uint16 _destinationDomain, bytes memory _callData) internal {
-    bytes memory trustedRemote = trustedRemoteLookup[_destinationDomain]; // same chainID as the provider on the receiverChain
-    require(trustedRemote.length != 0, "LZProvider: destination chain not trusted");
+  function xSend(uint32 _destinationDomain, bytes memory _callData) internal {
+    address target = trustedRemoteConnext[_destinationDomain];
+    require(target != address(0), "XProvider: destination chain not trusted");
 
-    endpoint.send(
-      _destinationDomain,
-      trustedRemote,
-      _callData,
-      payable(msg.sender),
-      address(0x0),
-      bytes("")
+    IConnext(connext).xcall{value: msg.value}(
+      _destinationDomain, // _destination: Domain ID of the destination chain
+      target, // _to: address of the target contract
+      address(0), // _asset: use address zero for 0-value transfers
+      msg.sender, // _delegate: address that can revert or forceLocal on destination
+      0, // _amount: 0 because no funds are being transferred
+      0, // _slippage: can be anything between 0-10000 because no funds are being transferred
+      _callData // _callData: the encoded calldata to send
     );
   }
 
@@ -172,7 +174,13 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     require(success, "LZReceive: No success");
   }
 
-  // new connext function
+  /// @notice function implemented from IXReceive from connext, standard way to receive messages with connext.
+  /// @param _transferId not used here because only relevant in case of a value transfer. Still in the signature to comply with IXReceive.
+  /// @param _amount not used here because only relevant in case of a value transfer. Still in the signature to comply with IXReceive.
+  /// @param _asset not used here because only relevant in case of a value transfer. Still in the signature to comply with IXReceive.
+  /// @param _originSender sender contract.
+  /// @param _origin sender domain id.
+  /// @param _callData calldata, contains function signature which has to be called in this contract as well as the values, hashed and encoded.
   function xReceive(
     bytes32 _transferId,
     uint256 _amount,
@@ -180,7 +188,10 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
     address _originSender,
     uint32 _origin,
     bytes memory _callData
-  ) external onlySource(_originSender, _origin) returns (bytes memory) {}
+  ) external onlySource(_originSender, _origin) returns (bytes memory) {
+    (bool success, ) = address(this).call(_callData);
+    require(success, "xReceive: No success");
+  }
 
   /// @notice Step 1 push; Game pushes totalDeltaAllocations to xChainController
   /// @notice Pushes the delta allocations from the game to the xChainController
@@ -485,6 +496,14 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   function setTrustedRemote(uint16 _srcChainId, bytes calldata _srcAddress) external onlyDao {
     trustedRemoteLookup[_srcChainId] = _srcAddress;
     emit SetTrustedRemote(_srcChainId, _srcAddress);
+  }
+
+  /// @notice set trusted provider on remote chains, allow owner to set it multiple times.
+  /// @param _srcChainId Chain is for remote xprovider, some as the remote receiving contract chain id (xReceive)
+  /// @param _srcAddress Address of remote xprovider
+  function setTrustedRemoteConnext(uint32 _srcChainId, address _srcAddress) external onlyDao {
+    trustedRemoteConnext[_srcChainId] = _srcAddress;
+    emit SetTrustedRemoteConnext(_srcChainId, _srcAddress);
   }
 
   /// @notice Setter for xControlleraddress

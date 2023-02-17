@@ -25,6 +25,15 @@ task('xprovider_set_trusted_remote', 'Set trusted provider on remote chains')
     await xProvider.connect(dao).setTrustedRemote(chainid, address);
   });
 
+  task('xprovider_set_trusted_connext', 'Set trusted provider on remote chains')
+  .addParam('chainid', 'Chain is for remote xprovider', null, types.int)
+  .addParam('address', 'Address of remote xprovider')
+  .setAction(async ({ chainid, address }, hre) => {
+    const xProvider = await getXProvider(hre);
+    const dao = await getDao(hre);
+    await xProvider.connect(dao).setTrustedRemoteConnext(chainid, address);
+  });
+
 task('xprovider_set_xcontroller', 'Setter for xController address')
   .addParam('address', 'New xController address')
   .setAction(async ({ address }, hre) => {

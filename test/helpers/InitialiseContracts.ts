@@ -1,8 +1,9 @@
-import { XChainController, XProvider } from '@typechain';
+import { XChainController, XProvider, ConnextMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
-import { getEndpoints, getTestVaultDeployments } from './getContracts';
+import { getEndpoints, getTestVaultDeployments, getContract } from './getContracts';
+import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
 
 export async function getAndInitXProviders(
   hre: HardhatRuntimeEnvironment,
@@ -37,6 +38,10 @@ export async function getAndInitXProviders(
       xProvider.connect(dao).setTrustedRemote(100, arbitrum.address),
       xProvider.connect(dao).setTrustedRemote(1000, optimism.address),
       xProvider.connect(dao).setTrustedRemote(10000, bnb.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(10, main.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(100, arbitrum.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(1000, optimism.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(10000, bnb.address),
       xProvider.connect(dao).setConnextChainId(10, testConnextChainIds.goerli),
       xProvider.connect(dao).setConnextChainId(100, testConnextChainIds.mumbai),
       xProvider.connect(dao).setConnextChainId(1000, testConnextChainIds.optimismGoerli),
@@ -98,6 +103,25 @@ export async function setGameLatestProtocolIds(
       address: vaults[i].address,
     });
   }
+}
+
+export async function InitConnextMock(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
+  const connext = (await getContract('ConnextMock', hre)) as ConnextMock;
+  const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = xProviders;
+
+  // const [mainnetDomain, arbitrumDomain, optimismDomain, bnbDomain] = await Promise.all([
+  //   getDeployConfigXProvider("mainnet"),
+  //   getDeployConfigXProvider("arbitrum"),
+  //   getDeployConfigXProvider("optimism"),
+  //   getDeployConfigXProvider("bnb")
+  // ]);
+
+  await Promise.all([ 
+    connext.setDomainLookup(xProviderMain.address, 10),
+    connext.setDomainLookup(xProviderArbi.address, 100),
+    connext.setDomainLookup(xProviderOpti.address, 1000),
+    connext.setDomainLookup(xProviderBnb.address, 10000)
+  ]);
 }
 
 export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
