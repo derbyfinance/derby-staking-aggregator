@@ -44,9 +44,7 @@ describe('Testing Aave provider', async () => {
       user = setup.user;
     });
 
-    it.only('Should have exchangeRate', async function () {
-      // exchange rate in aave is set to totalsupply
-      console.log(await provider.exchangeRate(aUSDC));
+    it('Should have exchangeRate', async function () {
       exchangeRate = await provider.exchangeRate(aUSDC);
       expect(exchangeRate).to.be.equal(1);
     });
