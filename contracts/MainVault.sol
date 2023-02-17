@@ -276,7 +276,8 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
-  function rebalanceXChain() external payable {
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  function rebalanceXChain(uint256 _slippage) external payable {
     require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
@@ -286,7 +287,8 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).xTransferToController{value: msg.value}(
       vaultNumber,
       amountToSendXChain,
-      address(vaultCurrency)
+      address(vaultCurrency),
+      _slippage
     );
 
     emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));

@@ -23,6 +23,7 @@ describe.only('Testing XChainController, integration test', async () => {
     derbyToken: DerbyToken,
     game: GameMock,
     userAddr: string;
+  const slippage = 30;
 
   before(async function () {
     const setup = await setupXChain();
@@ -189,9 +190,9 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain();
-    await vault2.rebalanceXChain();
-    await expect(vault3.rebalanceXChain()).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage);
+    await vault2.rebalanceXChain(slippage);
+    await expect(vault3.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
     expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_000) * 1e6);
@@ -208,7 +209,7 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
-    await xChainController.sendFundsToVault(vaultNumber);
+    await xChainController.sendFundsToVault(vaultNumber, slippage);
 
     const expectedAmounts = [
       (400 / 2000) * 240_000, // vault 1

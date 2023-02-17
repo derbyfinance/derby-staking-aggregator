@@ -17,6 +17,7 @@ describe.only('Testing XChainController, unit test', async () => {
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
+  const slippage = 30;
 
   before(async function () {
     const setup = await setupXChain();
@@ -43,7 +44,7 @@ describe.only('Testing XChainController, unit test', async () => {
     await vault.setVaultState(1);
     await vault.setAmountToSendXChainTEST(amountUSDC.div(2)); // 50k
 
-    await vault.rebalanceXChain();
+    await vault.rebalanceXChain(slippage);
 
     const balance = await IUSDc.balanceOf(xChainController.address);
     expect(balance).to.be.equal(amountUSDC.div(2)); // 50k

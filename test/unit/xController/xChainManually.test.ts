@@ -24,6 +24,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     derbyToken: DerbyToken,
     game: GameMock,
     vaultNumber: BigNumberish = 10;
+  const slippage = 30;
 
   const setupXChainExtended = deployments.createFixture(async (hre) => {
     const [dao, guardian] = await getAllSigners(hre);
@@ -222,8 +223,8 @@ describe.only('Testing XChainController, unit test for manual execution', async 
   });
 
   it('Step 4: Push funds from vaults to xChainControlle', async function () {
-    await vault1.rebalanceXChain();
-    await expect(vault2.rebalanceXChain()).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage);
+    await expect(vault2.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
 
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
     // Manually up funds received because feedback is sent to DUMMY controller

@@ -283,13 +283,14 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
     const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
+    const slippage = 30;
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+      await expect(vaults[0].vault.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
     });
 
     it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[1].vault.rebalanceXChain())
+      await expect(vaults[1].vault.rebalanceXChain(slippage))
         .to.emit(vaults[1].vault, 'RebalanceXChain')
         .withArgs(vaultNumber, vaults[1].amountToSend, vaultCurrency);
     });
@@ -311,6 +312,7 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
+    const slippage = 30;
 
     // expected vault balances after rebalance
     before(function () {
@@ -320,7 +322,7 @@ describe.only('Testing full integration test', async () => {
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 0 will receive funds
-      await expect(xChainController.sendFundsToVault(vaultNumber))
+      await expect(xChainController.sendFundsToVault(vaultNumber, slippage))
         .to.emit(xChainController, 'SentFundsToVault')
         .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
     });
@@ -516,13 +518,14 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
+    const slippage = 30;
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+      await expect(vaults[1].vault.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
     });
 
     it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[0].vault.rebalanceXChain())
+      await expect(vaults[0].vault.rebalanceXChain(slippage))
         .to.emit(vaults[0].vault, 'RebalanceXChain')
         .withArgs(vaultNumber, 0, vaultCurrency);
     });
@@ -531,6 +534,7 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
     const amountToReceiveVault1 = 0;
+    const slippage = 30;
 
     before(function () {
       vaults[0].chainAllocs = [0, 0, 0, 0, 0];
@@ -539,7 +543,7 @@ describe.only('Testing full integration test', async () => {
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 1 will receive funds
-      await expect(xChainController.sendFundsToVault(vaultNumber))
+      await expect(xChainController.sendFundsToVault(vaultNumber, slippage))
         .to.emit(xChainController, 'SentFundsToVault')
         .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
     });
@@ -738,6 +742,7 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
+    const slippage = 30;
 
     before(function () {
       vaults[0].amountToSend = parseUSDC(164079.593966);
@@ -745,11 +750,11 @@ describe.only('Testing full integration test', async () => {
     });
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+      await expect(vaults[1].vault.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
     });
 
     it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[0].vault.rebalanceXChain())
+      await expect(vaults[0].vault.rebalanceXChain(slippage))
         .to.emit(vaults[0].vault, 'RebalanceXChain')
         .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
     });
@@ -757,10 +762,11 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
+    const slippage = 30;
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 1 will receive funds
-      await xChainController.sendFundsToVault(vaultNumber);
+      await xChainController.sendFundsToVault(vaultNumber, slippage);
       // await expect(xChainController.sendFundsToVault(vaultNumber))
       //   .to.emit(xChainController, 'SentFundsToVault')
       //   .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);

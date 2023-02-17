@@ -33,8 +33,6 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   uint16 public xControllerChain;
   uint16 public gameChain;
 
-  uint256 public slippage = 30; // for token transfer in BPS (i.e. 30 bps = 0.3%)
-
   // (layerZeroChainId => connextChainId): layerZeroChainId is the main ID we use
   mapping(uint16 => uint32) public connextChainId;
   // (layerZeroChainId => trustedChainIds): used for whitelisting chains
@@ -127,32 +125,36 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   }
 
   /// @notice Transfers funds from one chain to another.
-  /// @param token Address of the token on this domain.
-  /// @param amount The amount to transfer.
-  /// @param recipient The destination address (e.g. a wallet).
-  /// @param destinationDomain The destination domain ID.
+  /// @param _token Address of the token on this domain.
+  /// @param _amount The amount to transfer.
+  /// @param _recipient The destination address (e.g. a wallet).
+  /// @param _destinationDomain The destination domain ID.
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   function xTransfer(
-    address token,
-    uint256 amount,
-    address recipient,
-    uint32 destinationDomain
+    address _token,
+    uint256 _amount,
+    address _recipient,
+    uint32 _destinationDomain,
+    uint256 _slippage
   ) internal {
-    IERC20 _token = IERC20(token);
-    require(_token.allowance(msg.sender, address(this)) >= amount, "User must approve amount");
+    require(
+      IERC20(_token).allowance(msg.sender, address(this)) >= _amount,
+      "User must approve amount"
+    );
 
     // User sends funds to this contract
-    _token.transferFrom(msg.sender, address(this), amount);
+    IERC20(_token).transferFrom(msg.sender, address(this), _amount);
 
     // This contract approves transfer to Connext
-    _token.approve(address(connext), amount);
+    IERC20(_token).approve(address(connext), _amount);
 
     IConnext(connext).xcall{value: msg.value}(
-      destinationDomain, // _destination: Domain ID of the destination chain
-      recipient, // _to: address receiving the funds on the destination
-      token, // _asset: address of the token contract
+      _destinationDomain, // _destination: Domain ID of the destination chain
+      _recipient, // _to: address receiving the funds on the destination
+      _token, // _asset: address of the token contract
       msg.sender, // _delegate: address that can revert or forceLocal on destination
-      amount, // _amount: amount of tokens to transfer
-      slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
+      _amount, // _amount: amount of tokens to transfer
+      _slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
       bytes("") // _callData: empty bytes because we're only sending funds
     );
   }
@@ -322,16 +324,18 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _vaultNumber Address of the Derby Vault on given chainId
   /// @param _amount Number of the vault
   /// @param _asset Address of the token to send e.g USDC
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   function xTransferToController(
     uint256 _vaultNumber,
     uint256 _amount,
-    address _asset
+    address _asset,
+    uint256 _slippage
   ) external payable onlyVaults {
     if (homeChain == xControllerChain) {
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {
-      xTransfer(_asset, _amount, xController, connextChainId[xControllerChain]);
+      xTransfer(_asset, _amount, xController, connextChainId[xControllerChain], _slippage);
       pushFeedbackToXController(_vaultNumber);
     }
   }
@@ -358,18 +362,20 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _chainId Number of chainId
   /// @param _amount Amount to send to vault in vaultcurrency
   /// @param _asset Addres of underlying e.g USDC
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   function xTransferToVaults(
     address _vault,
     uint16 _chainId,
     uint256 _amount,
-    address _asset
+    address _asset,
+    uint256 _slippage
   ) external payable onlyController {
     if (_chainId == homeChain) {
       IVault(_vault).receiveFunds();
       IERC20(_asset).transferFrom(msg.sender, _vault, _amount);
     } else {
       pushFeedbackToVault(_chainId, _vault);
-      xTransfer(_asset, _amount, _vault, connextChainId[_chainId]);
+      xTransfer(_asset, _amount, _vault, connextChainId[_chainId], _slippage);
     }
   }
 
@@ -558,9 +564,5 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
-  }
-
-  function setSlippage(uint256 _slippage) external onlyDao {
-    slippage = _slippage;
   }
 }

@@ -419,6 +419,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Step 1 trigger; Game pushes totalDeltaAllocations to xChainController
   /// @notice Trigger for Dao to push delta allocations to the xChainController
+  /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
   function pushAllocationsToController(uint256 _vaultNumber) external payable {
     require(rebalanceNeeded(), "No rebalance needed");
@@ -448,6 +449,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
+  /// @param _vaultNumber Number of vault
   /// @dev Sends over an array where the index is the protocolId
   function pushAllocationsToVaults(uint256 _vaultNumber) external payable {
     require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");

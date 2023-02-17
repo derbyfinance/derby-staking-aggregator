@@ -390,8 +390,10 @@ contract XChainController {
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   function sendFundsToVault(
-    uint256 _vaultNumber
+    uint256 _vaultNumber,
+    uint256 _slippage
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
     for (uint i = 0; i < chainIds.length; i++) {
       uint16 chain = chainIds[i];
@@ -407,7 +409,7 @@ contract XChainController {
         if (amountToDeposit > balance) amountToDeposit = balance;
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults{value: msg.value}(vault, chain, amountToDeposit, underlying);
+        xProvider.xTransferToVaults{value: msg.value}(vault, chain, amountToDeposit, underlying, _slippage);
         setAmountToDeposit(_vaultNumber, chain, 0);
         emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
       }
