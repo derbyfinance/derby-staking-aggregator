@@ -534,6 +534,12 @@ contract XProvider is ILayerZeroReceiver {
     dao = _dao;
   }
 
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
+  }
+
   /// @notice Setter for new game address
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
@@ -549,17 +555,21 @@ contract XProvider is ILayerZeroReceiver {
   Only Guardian functions
   */
 
+  /// @notice Guardian function to send funds back to xController when xCall fails
   function sendFundsToXController(address _token) external onlyGuardian {
-    require(xController != address(0), "No xController on this chain");
+    require(xControllerChain == homeChain, "No xController on this chain");
+    require(xController != address(0), "Zero address");
+
     uint256 balance = IERC20(_token).balanceOf(address(this));
     IERC20(_token).transfer(xController, balance);
   }
 
+  /// @notice Guardian function to send funds back to vault when xCall fails
   function sendFundsToVault(uint256 _vaultNumber, address _token) external onlyGuardian {
-    address receiver = vaults[_vaultNumber];
-    require(receiver != address(0), "Zero address");
+    address vault = vaults[_vaultNumber];
+    require(vault != address(0), "Zero address");
 
     uint256 balance = IERC20(_token).balanceOf(address(this));
-    IERC20(_token).transfer(receiver, balance);
+    IERC20(_token).transfer(vault, balance);
   }
 }

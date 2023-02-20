@@ -1,7 +1,7 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC } from '@testhelp/helpers';
+import { erc20, formatUSDC, random } from '@testhelp/helpers';
 import type {
   DerbyToken,
   GameMock,
@@ -293,8 +293,32 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     );
   });
 
-  it.only('Guardian functions to send funds back when xCall fails', async function () {
-    await IUSDc.connect(user).transfer(xProviderMain.address, 1000);
-    console.log(await IUSDc.balanceOf(xProviderMain.address));
+  it('Guardian sendFundsToXController to send funds back when xCall fails', async function () {
+    await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
+
+    await expect(xProviderMain.connect(guardian).sendFundsToXController(usdc)).to.be.revertedWith(
+      'No xController on this chain',
+    );
+
+    await xProviderMain.connect(dao).setXControllerChainId(10);
+
+    await expect(() =>
+      xProviderMain.connect(guardian).sendFundsToXController(usdc),
+    ).to.changeTokenBalance(IUSDc, xChainControllerDUMMY, 10_000);
+  });
+
+  it('Guardian sendFundsToVault to send funds back when xCall fails', async function () {
+    const vaultNumber = random(100);
+
+    await expect(
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+    ).to.be.revertedWith('Zero address');
+
+    await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
+    await xProviderMain.connect(dao).setVaultAddress(vaultNumber, vault1.address);
+
+    await expect(() =>
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+    ).to.changeTokenBalance(IUSDc, vault1, 10_000);
   });
 });
