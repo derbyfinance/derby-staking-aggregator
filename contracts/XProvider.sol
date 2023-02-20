@@ -23,6 +23,7 @@ contract XProvider is ILayerZeroReceiver {
   IConnextHandler public immutable connext;
 
   address private dao;
+  address private guardian;
   address public xController;
   address public xControllerProvider;
   address public game;
@@ -37,11 +38,18 @@ contract XProvider is ILayerZeroReceiver {
   mapping(uint16 => bytes) public trustedRemoteLookup;
   // (vaultAddress => bool): used for whitelisting vaults
   mapping(address => bool) public vaultWhitelist;
+  // (vaultNumber => vaultAddress): used for guardian when xCall fails
+  mapping(uint256 => address) public vaults;
 
   event SetTrustedRemote(uint16 _srcChainId, bytes _srcAddress);
 
   modifier onlyDao() {
     require(msg.sender == dao, "LZProvider: only DAO");
+    _;
+  }
+
+  modifier onlyGuardian() {
+    require(msg.sender == guardian, "only Guardian");
     _;
   }
 
@@ -78,6 +86,7 @@ contract XProvider is ILayerZeroReceiver {
     address _endpoint,
     address _connextHandler,
     address _dao,
+    address _guardian,
     address _game,
     address _xController,
     uint16 _homeChain
@@ -85,6 +94,7 @@ contract XProvider is ILayerZeroReceiver {
     endpoint = ILayerZeroEndpoint(_endpoint);
     connext = IConnextHandler(_connextHandler);
     dao = _dao;
+    guardian = _guardian;
     game = _game;
     xController = _xController;
     homeChain = _homeChain;
@@ -528,5 +538,28 @@ contract XProvider is ILayerZeroReceiver {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  /// @notice Setter for vault address to vaultNumber for guardian
+  function setVaultAddress(uint256 _vaultNumber, address _vault) external onlyDao {
+    vaults[_vaultNumber] = _vault;
+  }
+
+  /*
+  Only Guardian functions
+  */
+
+  function sendFundsToXController(address _token) external onlyGuardian {
+    require(xController != address(0), "No xController on this chain");
+    uint256 balance = IERC20(_token).balanceOf(address(this));
+    IERC20(_token).transfer(xController, balance);
+  }
+
+  function sendFundsToVault(uint256 _vaultNumber, address _token) external onlyGuardian {
+    address receiver = vaults[_vaultNumber];
+    require(receiver != address(0), "Zero address");
+
+    uint256 balance = IERC20(_token).balanceOf(address(this));
+    IERC20(_token).transfer(receiver, balance);
   }
 }

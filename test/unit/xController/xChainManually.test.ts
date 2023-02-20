@@ -2,7 +2,13 @@ import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
 import { erc20, formatUSDC } from '@testhelp/helpers';
-import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
+import type {
+  DerbyToken,
+  GameMock,
+  MainVaultMock,
+  XChainControllerMock,
+  XProvider,
+} from '@typechain';
 import { deployXChainControllerMock } from '@testhelp/deploy';
 import { usdc } from '@testhelp/addresses';
 import { getAndInitXProviders, addVaultsToXController } from '@testhelp/InitialiseContracts';
@@ -16,6 +22,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     vault2: MainVaultMock,
     xChainController: XChainControllerMock,
     xChainControllerDUMMY: XChainControllerMock,
+    xProviderMain: XProvider,
     dao: Signer,
     user: Signer,
     userAddr: string,
@@ -58,6 +65,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
     vault1 = setup.vault1;
     vault2 = setup.vault2;
+    xProviderMain = setup.xProviderMain;
     game = setup.game;
     xChainController = setup.xChainController;
     derbyToken = setup.derbyToken;
@@ -283,5 +291,10 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     await expect(game.pushAllocationsToController(vaultNumber)).to.be.revertedWith(
       'No rebalance needed',
     );
+  });
+
+  it.only('Guardian functions to send funds back when xCall fails', async function () {
+    await IUSDc.connect(user).transfer(xProviderMain.address, 1000);
+    console.log(await IUSDc.balanceOf(xProviderMain.address));
   });
 });
