@@ -37,6 +37,7 @@ contract MainVault is Vault, VaultToken {
   uint16 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
+  uint256 public maxDivergenceWithdraws;
 
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
@@ -58,6 +59,7 @@ contract MainVault is Vault, VaultToken {
     exchangeRate = _uScale;
     game = _game;
     governanceFee = 0;
+    maxDivergenceWithdraws = 1_000_000;
   }
 
   modifier onlyXProvider() {
@@ -156,10 +158,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.withdrawalAllowance;
@@ -168,8 +167,6 @@ contract MainVault is Vault, VaultToken {
     transferFunds(msg.sender, value);
   }
 
-  // 513844
-  // 513777
   /// @notice Substract governance fee from value
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
@@ -203,10 +200,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.rewardRequestPeriod, "Funds not arrived");
 
     value = user.rewardAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.rewardAllowance;
@@ -222,6 +216,21 @@ contract MainVault is Vault, VaultToken {
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
+  }
+
+  /// @notice Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+  /// @notice This is to make sure the vault doesnt get stuck
+  /// @notice Value will be set to the vaultBalance
+  /// @notice When divergence is greater then maxDivergenceWithdraws it will revert
+  /// @param _value Value the user wants to withdraw
+  /// @return value Value - divergence
+  function checkForBalance(uint256 _value) internal view returns (uint256) {
+    if (_value > getVaultBalance()) {
+      uint256 oldValue = _value;
+      _value = getVaultBalance();
+      require(oldValue - _value <= maxDivergenceWithdraws, "Max divergence");
+    }
+    return _value;
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
@@ -387,6 +396,12 @@ contract MainVault is Vault, VaultToken {
   /// @param _state True when rewards should be swapped to derby tokens
   function setSwapRewards(bool _state) external onlyDao {
     swapRewards = _state;
+  }
+
+  /// @notice Setter for maximum divergence a user can get during a withdraw
+  /// @param _maxDivergence New maximum divergence in vaultCurrency
+  function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
+    maxDivergenceWithdraws = _maxDivergence;
   }
 
   /*

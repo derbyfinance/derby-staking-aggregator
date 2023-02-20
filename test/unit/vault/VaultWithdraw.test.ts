@@ -114,6 +114,28 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!allowance');
   });
 
+  it('Withdrawal request and withdraw when the divergence in checkForBalance too big', async function () {
+    const { vault, user } = await setupVault();
+    await vault.connect(user).deposit(parseUSDC(10_000), user.address); // 10k
+    expect(await vault.totalSupply()).to.be.equal(parseUSDC(10_000)); // 10k
+
+    // withdrawal request for 10k LP tokens
+    await expect(() =>
+      vault.connect(user).withdrawalRequest(parseUSDC(10_000)),
+    ).to.changeTokenBalance(vault, user, -parseUSDC(10_000));
+
+    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC(10_000));
+
+    // mocking vault settings
+    await vault.upRebalancingPeriodTEST();
+    await vault.setReservedFundsTEST(parseUSDC(10_000));
+
+    // removing vault balance so the divergence will be greater than maxDivergenceWithdraws
+    await vault.clearCurrencyBalance(parseUSDC(10));
+
+    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('Max divergence');
+  });
+
   describe('Testing governance fee', async () => {
     it('Should send governance fee to dao on withdraw function', async function () {
       const { vault, user, dao, contract } = await setupVault();
