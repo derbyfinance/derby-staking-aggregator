@@ -54,6 +54,7 @@ contract XChainController {
 
   uint16[] public chainIds;
   uint16 public homeChain;
+  int256 public minimumAmount;
 
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
@@ -64,7 +65,8 @@ contract XChainController {
     address _vault,
     uint16 _chainId,
     uint256 _amountToSendXChain,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   );
 
   event SentFundsToVault(address _vault, uint16 _chainId, uint256 _amount, address _asset);
@@ -124,6 +126,7 @@ contract XChainController {
     dao = _dao;
     guardian = _guardian;
     homeChain = _homeChain;
+    minimumAmount = 1000e6;
   }
 
   /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
@@ -365,17 +368,25 @@ contract XChainController {
     uint256 _exchangeRate
   ) internal {
     address vault = getVaultAddress(_vaultNumber, _chainId);
-    if (_amountDeposit > 0) {
-      setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
-      xProvider.pushSetXChainAllocation(vault, _chainId, 0, _exchangeRate);
+    bool receivingFunds;
+    uint256 amountToSend = 0;
+
+    if (_amountDeposit > 0 && _amountDeposit < minimumAmount) {
       vaultStage[_vaultNumber].fundsReceived++;
-      emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
+    } else if (_amountDeposit >= minimumAmount) {
+      receivingFunds = true;
+      setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
+      vaultStage[_vaultNumber].fundsReceived++;
     }
 
-    if (_amountToWithdraw > 0) {
-      xProvider.pushSetXChainAllocation(vault, _chainId, _amountToWithdraw, _exchangeRate);
-      emit SendXChainAmount(vault, _chainId, _amountToWithdraw, _exchangeRate);
+    if (_amountToWithdraw > 0 && _amountToWithdraw < uint(minimumAmount)) {
+      vaultStage[_vaultNumber].fundsReceived++;
+    } else if (_amountToWithdraw >= uint(minimumAmount)) {
+      amountToSend = _amountToWithdraw;
     }
+
+    xProvider.pushSetXChainAllocation(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
+    emit SendXChainAmount(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
   }
 
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
@@ -548,6 +559,12 @@ contract XChainController {
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  /// @notice Setter for minumum amount to send xchain
+  /// @param _amount New minimum amount
+  function setMinimumAmount(int256 _amount) external onlyDao {
+    minimumAmount = _amount;
   }
 
   /*

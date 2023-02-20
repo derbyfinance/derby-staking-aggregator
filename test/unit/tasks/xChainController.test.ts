@@ -64,7 +64,7 @@ describe.only('Testing xController tasks', () => {
 
   it('xcontroller_receive_allocations', async function () {
     const { xController } = await setupXController();
-    const  chainIds  = [10, 100, 1000];
+    const chainIds = [10, 100, 1000];
     const vaultnumber = random(100);
     const deltas = [random(100_000 * 1e6), random(100_000 * 1e6), random(100_000 * 1e6)];
 
@@ -189,6 +189,14 @@ describe.only('Testing xController tasks', () => {
 
     await run('xcontroller_set_game', { address });
     expect(await xController.game()).to.be.equal(address);
+  });
+
+  it('xcontroller_set_minimum_amount', async function () {
+    const { xController } = await setupXController();
+    const amount = random(10_00) * 1e6;
+
+    await run('xcontroller_set_minimum_amount', { amount });
+    expect(await xController.minimumAmount()).to.be.equal(amount);
   });
 
   const random = (max: number) => Math.floor(Math.random() * max);

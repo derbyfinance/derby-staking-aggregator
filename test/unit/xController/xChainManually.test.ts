@@ -202,14 +202,14 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     // Sending values to dummy vaults
     await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber))
       .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
-      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
+      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6, false);
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
 
     // Test guardian function
-    await vault1.connect(guardian).setXChainAllocationGuard(2000, 1.5 * 1e6);
-    await vault2.connect(guardian).setXChainAllocationGuard(1000, 1.5 * 1e6);
+    await vault1.connect(guardian).setXChainAllocationGuard(2000, 1.5 * 1e6, false);
+    await vault2.connect(guardian).setXChainAllocationGuard(1000, 1.5 * 1e6, true);
 
     expect(await vault1.amountToSendXChain()).to.be.equal(2000);
     expect(await vault2.amountToSendXChain()).to.be.equal(1000);
@@ -217,8 +217,10 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     expect(await vault2.exchangeRate()).to.be.equal(1.5 * 1e6);
 
     // set state back for next step
-    await vault1.connect(guardian).setXChainAllocationGuard(expectedAmounts[0] * 1e6, 1 * 1e6);
-    await vault2.connect(guardian).setXChainAllocationGuard(0, 1 * 1e6);
+    await vault1
+      .connect(guardian)
+      .setXChainAllocationGuard(expectedAmounts[0] * 1e6, 1 * 1e6, false);
+    await vault2.connect(guardian).setXChainAllocationGuard(0, 1 * 1e6, true);
   });
 
   it('Step 4: Push funds from vaults to xChainControlle', async function () {

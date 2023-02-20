@@ -262,9 +262,15 @@ describe.only('Testing full integration test', async () => {
     it('Trigger should emit SendXChainAmount event', async function () {
       await expect(xChainController.pushVaultAmounts(vaultNumber))
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate)
+        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate, true)
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[1].vault.address, chains[1].id, vaults[1].amountToSend, exchangeRate);
+        .withArgs(
+          vaults[1].vault.address,
+          chains[1].id,
+          vaults[1].amountToSend,
+          exchangeRate,
+          false,
+        );
     });
 
     it('Should set amount to deposit or withdraw in vault', async function () {
@@ -501,30 +507,37 @@ describe.only('Testing full integration test', async () => {
 
     // setting expected amountToSend
     before(function () {
-      vaults[0].amountToSend = parseUSDC(0.546458); // 54 cents
+      vaults[0].amountToSend = parseUSDC(0);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
     it('Trigger should emit SendXChainAmount event', async function () {
       await expect(xChainController.pushVaultAmounts(vaultNumber))
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate)
+        .withArgs(
+          vaults[0].vault.address,
+          chains[0].id,
+          vaults[0].amountToSend,
+          exchangeRate,
+          false,
+        )
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[1].vault.address, chains[1].id, vaults[1].amountToSend, exchangeRate);
+        .withArgs(
+          vaults[1].vault.address,
+          chains[1].id,
+          vaults[1].amountToSend,
+          exchangeRate,
+          false,
+        );
     });
   });
 
   describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
 
-    it('Vault 0 should revert because they will receive funds', async function () {
+    it('Vaults should revert because they will receive funds or do nothing', async function () {
+      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
       await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
-    });
-
-    it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[0].vault.rebalanceXChain())
-        .to.emit(vaults[0].vault, 'RebalanceXChain')
-        .withArgs(vaultNumber, 0, vaultCurrency);
     });
   });
 
@@ -538,10 +551,8 @@ describe.only('Testing full integration test', async () => {
     });
 
     it('Trigger should emit SentFundsToVault event', async function () {
-      // only vault 1 will receive funds
-      await expect(xChainController.sendFundsToVault(vaultNumber))
-        .to.emit(xChainController, 'SentFundsToVault')
-        .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
+      // both vault wont receive funds
+      await xChainController.sendFundsToVault(vaultNumber);
     });
   });
 
@@ -568,7 +579,7 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 2 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      vaults[0].rewards = [248_525, 603_563, 576_128, 110_215, 211_247];
+      vaults[0].rewards = [248_526, 603_563, 576_129, 110_216, 211_247];
       vaults[1].rewards = [248_525, 603_562, 576_127, 110_215, 211_246];
     });
 
@@ -598,7 +609,7 @@ describe.only('Testing full integration test', async () => {
   describe('Game user 0 rebalance to all zero for rewards', async function () {
     // rewardsPerLockedToken * allocations
     const expectedRewardsVault1 =
-      248_525 * 100 + 603_563 * 100 + 576_128 * 100 + 110_215 * 100 + 211_247 * 100;
+      248_526 * 100 + 603_563 * 100 + 576_129 * 100 + 110_216 * 100 + 211_247 * 100;
     const expectedRewardsVault2 =
       248_525 * 200 + 603_562 * 200 + 576_127 * 200 + 110_215 * 200 + 211_246 * 200;
     const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
@@ -689,7 +700,7 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 2: Vault underlyings should have increased', async function () {
     before(function () {
-      vaults[0].newUnderlying = 380245.014124; //
+      vaults[0].newUnderlying = 380245.014117; //
       vaults[0].totalSupply = parseUnits(110_000 - 10_000, 6); // 10k User withdraw
       vaults[0].totalWithdrawalRequests =
         Number(vaults[0].totalWithdrawalRequests) + 10_000 * exchangeRate; // 10k User withdraw
@@ -723,16 +734,28 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     before(function () {
       exchangeRate = 1_026_814; // dropped slightly cause of the rewards
-      vaults[0].amountToSend = parseUSDC(164080.360371);
+      vaults[0].amountToSend = parseUSDC(164080.360166);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
     it('Trigger should emit SendXChainAmount event', async function () {
       await expect(xChainController.pushVaultAmounts(vaultNumber))
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[0].vault.address, chains[0].id, vaults[0].amountToSend, exchangeRate)
+        .withArgs(
+          vaults[0].vault.address,
+          chains[0].id,
+          vaults[0].amountToSend,
+          exchangeRate,
+          false,
+        )
         .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(vaults[1].vault.address, chains[1].id, vaults[1].amountToSend, exchangeRate);
+        .withArgs(
+          vaults[1].vault.address,
+          chains[1].id,
+          vaults[1].amountToSend,
+          exchangeRate,
+          true,
+        );
     });
   });
 
@@ -740,7 +763,7 @@ describe.only('Testing full integration test', async () => {
     const vaultCurrency = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(164079.593966);
+      vaults[0].amountToSend = parseUSDC(164079.593746);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -897,7 +920,7 @@ describe.only('Testing full integration test', async () => {
 
     it('Should redeem rewards for game user 0', async function () {
       const expectedRewardsVault1 =
-        248_525 * 100 + 603_563 * 100 + 576_128 * 100 + 110_215 * 100 + 211_247 * 100;
+        248_526 * 100 + 603_563 * 100 + 576_129 * 100 + 110_216 * 100 + 211_247 * 100;
       const expectedRewardsVault2 =
         248_525 * 200 + 603_562 * 200 + 576_127 * 200 + 110_215 * 200 + 211_246 * 200;
       const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
