@@ -99,5 +99,6 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     dao,
     user,
     guardian,
+    xProviderMain,
   };
 });
