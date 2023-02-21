@@ -42,6 +42,11 @@ contract MainVault is Vault, VaultToken {
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
 
+  // training
+  bool private training;
+  uint256 private maxTrainingDeposit;
+  mapping(address => bool) private whitelist;
+
   constructor(
     string memory _name,
     string memory _symbol,
@@ -102,6 +107,12 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount,
     address _receiver
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
+    if (training) {
+      require(whitelist[msg.sender]);
+      uint256 balanceSender = (balanceOf(msg.sender) * exchangeRate) / (10 ** decimals());
+      require(_amount + balanceSender <= maxTrainingDeposit);
+    }
+
     uint256 balanceBefore = getVaultBalance() - reservedFunds;
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance() - reservedFunds;
@@ -441,5 +452,20 @@ contract MainVault is Vault, VaultToken {
   /// @param _fee Fee in basis points
   function setGovernanceFee(uint16 _fee) external onlyGuardian {
     governanceFee = _fee;
+  }
+
+  /// @notice Setter to control the training state in de deposit function
+  function setTraining(bool _state) external onlyGuardian {
+    training = _state;
+  }
+
+  /// @notice Setter for maximum amount to be able to deposit in training state
+  function setTrainingDeposit(uint256 _maxDeposit) external onlyGuardian {
+    maxTrainingDeposit = _maxDeposit;
+  }
+
+  /// @notice Setter to add an address to the whitelist
+  function addToWhitelist(address _address) external onlyGuardian {
+    whitelist[_address] = true;
   }
 }

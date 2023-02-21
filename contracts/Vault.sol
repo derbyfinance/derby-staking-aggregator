@@ -28,8 +28,8 @@ contract Vault is ReentrancyGuard {
     SendRewardsPerToken
   }
 
-  IERC20 public vaultCurrency;
-  IController public controller;
+  IERC20 internal vaultCurrency;
+  IController internal controller;
   State public state;
 
   bool public deltaAllocationsReceived;
@@ -120,9 +120,6 @@ contract Vault is ReentrancyGuard {
       savedTotalUnderlying -= amountToWithdraw;
 
       if (amountToWithdraw < minimumPull) break;
-
-      // amountToWithdraw = (amountToWithdraw * 10001) / 10000;
-
       withdrawFromProtocol(i, amountToWithdraw);
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
