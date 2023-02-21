@@ -170,4 +170,13 @@ describe.only('Testing game tasks', () => {
     await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
     expect(await game.getNegativeRewardFactor()).to.be.equal(negativeRewardFactor);
   });
+
+  it('game_set_rebalancing_period', async function () {
+    const { game } = await setupGame();
+    const vaultnumber = random(1000);
+    const period = random(1000);
+
+    await run('game_set_rebalancing_period', { vaultnumber, period });
+    expect(await game.getRebalancingPeriod(vaultnumber)).to.be.equal(period);
+  });
 });
