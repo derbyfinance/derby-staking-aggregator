@@ -11,7 +11,7 @@ interface IXChainController {
 
   function setTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests

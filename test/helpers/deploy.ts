@@ -21,14 +21,7 @@ import type {
   TokenTimelock,
   XChainController,
   XProvider,
-  ConnextXProviderMock,
-  ConnextExecutorMock,
-  ConnextHandlerMock,
-  XReceiveMock,
-  XSendMock,
   XChainControllerMock,
-  LZEndpointMock,
-  LZXProviderMock,
 } from '@typechain';
 
 import YearnProviderArtifact from '@artifacts/Providers/YearnProvider.sol/YearnProvider.json';
@@ -52,13 +45,6 @@ import SwapArtifact from '@artifacts/libraries/Swap.sol/Swap.json';
 import XChainControllerArtifact from '@artifacts/XChainController.sol/XChainController.json';
 import XChainControllerMockArtifact from '@artifacts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import XProviderArtifact from '@artifacts/XProvider.sol/XProvider.json';
-import ConnextXProviderMockArtifact from '@artifacts/Mocks/Connext/ConnextXProviderMock.sol/ConnextXProviderMock.json';
-import ConnextExecutorMockArtifact from '@artifacts/Mocks/Connext/ConnextExecutorMock.sol/ConnextExecutorMock.json';
-import ConnextHandlerMockArtifact from '@artifacts/Mocks/Connext/ConnextHandlerMock.sol/ConnextHandlerMock.json';
-import LZEndpointMockArtifact from '@artifacts/Mocks/LayerZero/LZEndpointMock.sol/LZEndpointMock.json';
-import LZXProviderMockArtifact from '@artifacts/Mocks/LayerZero/LZXProviderMock.sol/LZXProviderMock.json';
-import XReceiveMockArtifact from '@artifacts/Mocks/XReceiveMock.sol/XReceiveMock.json';
-import XSendMockArtifact from '@artifacts/Mocks/XSendMock.sol/XSendMock.json';
 import { ChainlinkGasPrice, curve3Pool, uniswapQuoter, uniswapRouter } from './addresses';
 
 export const deployTokenTimeLock = (
@@ -302,66 +288,4 @@ export const deployGameMock = (
     guardianAddress,
     controllerAddress,
   ]) as Promise<GameMock>;
-};
-
-export const deployConnextXProviderMock = (
-  deployerSign: Signer,
-  executorAddress: string,
-  daoAddress: string,
-  connextAddress: string,
-): Promise<ConnextXProviderMock> => {
-  return deployContract(deployerSign, ConnextXProviderMockArtifact, [
-    executorAddress,
-    daoAddress,
-    connextAddress,
-  ]) as Promise<ConnextXProviderMock>;
-};
-
-export const deployConnextExecutorMock = (
-  deployerSign: Signer,
-  handlerAddress: string,
-): Promise<ConnextExecutorMock> => {
-  return deployContract(deployerSign, ConnextExecutorMockArtifact, [
-    handlerAddress,
-  ]) as Promise<ConnextExecutorMock>;
-};
-
-export const deployConnextHandlerMock = (
-  deployerSign: Signer,
-  daoAddress: string,
-): Promise<ConnextHandlerMock> => {
-  return deployContract(deployerSign, ConnextHandlerMockArtifact, [
-    daoAddress,
-  ]) as Promise<ConnextHandlerMock>;
-};
-
-export const deployLZEndpointMock = (
-  deployerSign: Signer,
-  chainID: number,
-): Promise<LZEndpointMock> => {
-  return deployContract(deployerSign, LZEndpointMockArtifact, [chainID]) as Promise<LZEndpointMock>;
-};
-
-export const deployLZXProviderMock = (
-  deployerSign: Signer,
-  endpointAddress: string,
-  daoAddress: string,
-  connextAddress: string,
-): Promise<LZXProviderMock> => {
-  return deployContract(deployerSign, LZXProviderMockArtifact, [
-    endpointAddress,
-    daoAddress,
-    connextAddress,
-  ]) as Promise<LZXProviderMock>;
-};
-
-export const deployXReceiveMock = (
-  deployerSign: Signer,
-  daoAddress: string,
-): Promise<XReceiveMock> => {
-  return deployContract(deployerSign, XReceiveMockArtifact, [daoAddress]) as Promise<XReceiveMock>;
-};
-
-export const deployXSendMock = (deployerSign: Signer, daoAddress: string): Promise<XSendMock> => {
-  return deployContract(deployerSign, XSendMockArtifact, [daoAddress]) as Promise<XSendMock>;
 };
