@@ -5,6 +5,7 @@ import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
 import { getTokenConfig } from '@testhelp/deployHelpers';
+import { ethers } from 'hardhat';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
@@ -148,7 +149,7 @@ describe.only('Testing Game', async () => {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
-    await game.pushAllocationsToController(vaultNumber);
+    await game.pushAllocationsToController(vaultNumber, {value: ethers.utils.parseEther("0.1")});
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
@@ -177,7 +178,9 @@ describe.only('Testing Game', async () => {
     );
 
     // reset allocations and state for testing
-    await game.setXChainRebalanceState(vaultNumber, false);
+    for (let chain of chainIds) {
+      await game.setXChainRebalanceState(vaultNumber, chain, false);
+    }
     await game.connect(user).rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200

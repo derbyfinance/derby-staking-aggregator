@@ -109,13 +109,6 @@ export async function InitConnextMock(hre: HardhatRuntimeEnvironment, xProviders
   const connext = (await getContract('ConnextMock', hre)) as ConnextMock;
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = xProviders;
 
-  // const [mainnetDomain, arbitrumDomain, optimismDomain, bnbDomain] = await Promise.all([
-  //   getDeployConfigXProvider("mainnet"),
-  //   getDeployConfigXProvider("arbitrum"),
-  //   getDeployConfigXProvider("optimism"),
-  //   getDeployConfigXProvider("bnb")
-  // ]);
-
   await Promise.all([ 
     connext.setDomainLookup(xProviderMain.address, 10),
     connext.setDomainLookup(xProviderArbi.address, 100),

@@ -8,6 +8,7 @@ import { usdc } from '@testhelp/addresses';
 import { getAndInitXProviders, addVaultsToXController } from '@testhelp/InitialiseContracts';
 import { getAllSigners } from '@testhelp/getContracts';
 import { setupXChain } from './setup';
+import { ethers } from 'hardhat';
 
 const chainIds = [10, 100];
 
@@ -90,9 +91,11 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
   it('Only be called by Guardian', async function () {
     await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith('only Guardian');
-    await expect(game.connect(user).setRebalancingState(vaultNumber, true)).to.be.revertedWith(
-      'Game: only Guardian',
-    );
+    const chainIds = await xChainController.getChainIds();
+    for (let chain of chainIds) {
+      await expect(game.connect(user).setRebalancingState(vaultNumber, chain, true)).to.be.revertedWith(
+        'Game: only Guardian');
+    }
     await expect(
       xChainController.connect(user).setReadyGuard(vaultNumber, true),
     ).to.be.revertedWith('xController: only Guardian');
@@ -201,9 +204,12 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     const expectedAmounts = [400_000 - (400 / 500) * 401_000, 0];
 
     // Sending values to dummy vaults
-    await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber))
-      .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
-      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
+    const chainIds = await xChainController.getChainIds();
+    for (let chain of chainIds) {
+      await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chain, {value: ethers.utils.parseEther("0.1")}))
+        .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
+        .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
+    }
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);

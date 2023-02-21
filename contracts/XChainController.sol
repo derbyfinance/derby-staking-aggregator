@@ -288,8 +288,10 @@ contract XChainController {
   /// @notice Step 3 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
+  /// @param _chain Chain id of the vault where the funds need to be sent
   function pushVaultAmounts(
-    uint256 _vaultNumber
+    uint256 _vaultNumber,
+    uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
     int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
@@ -299,23 +301,20 @@ contract XChainController {
     uint256 decimals = xProvider.getDecimals(getVaultAddress(_vaultNumber, homeChain));
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
-    for (uint i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
-      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
-
+    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
       int256 amountToChain = calcAmountToChain(
         _vaultNumber,
-        chain,
+        _chain,
         totalUnderlying,
         totalAllocation
       );
       (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
         _vaultNumber,
-        chain,
+        _chain,
         amountToChain
       );
 
-      sendXChainAmount(_vaultNumber, chain, amountToDeposit, amountToWithdraw, newExchangeRate);
+      sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
     }
   }
 
@@ -391,27 +390,32 @@ contract XChainController {
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  /// @param _chain Chain id of the vault where the funds need to be sent
   function sendFundsToVault(
     uint256 _vaultNumber,
-    uint256 _slippage
+    uint256 _slippage,
+    uint16 _chain
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
-    for (uint i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
-      if (getVaultChainIdOff(_vaultNumber, chain)) continue;
-
-      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, chain);
+    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
+      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
       if (amountToDeposit > 0) {
-        address underlying = getUnderlyingAddress(_vaultNumber, chain);
-        address vault = getVaultAddress(_vaultNumber, chain);
+        address underlying = getUnderlyingAddress(_vaultNumber, _chain);
+        address vault = getVaultAddress(_vaultNumber, _chain);
 
         uint256 balance = IERC20(underlying).balanceOf(address(this));
         if (amountToDeposit > balance) amountToDeposit = balance;
 
         IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults{value: msg.value}(vault, chain, amountToDeposit, underlying, _slippage);
-        setAmountToDeposit(_vaultNumber, chain, 0);
-        emit SentFundsToVault(vault, chain, amountToDeposit, underlying);
+        xProvider.xTransferToVaults{value: msg.value}(
+          vault,
+          _chain,
+          amountToDeposit,
+          underlying,
+          _slippage
+        );
+        setAmountToDeposit(_vaultNumber, _chain, 0);
+        emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
       }
     }
 

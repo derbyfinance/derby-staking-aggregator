@@ -81,8 +81,8 @@ contract Game is ERC721, ReentrancyGuard {
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
 
-  // (vaultNumber => bool): true when vault is cross-chain rebalancing
-  mapping(uint256 => bool) public isXChainRebalancing;
+  // (vaultNumber => chainid => bool): true when vault/ chainid is cross-chain rebalancing
+  mapping(uint256 => mapping(uint16 => bool)) public isXChainRebalancing;
 
   event PushProtocolAllocations(uint16 chain, address vault, int256[] deltas);
 
@@ -322,7 +322,9 @@ contract Game is ERC721, ReentrancyGuard {
     int256[][] memory _deltaAllocations
   ) external onlyBasketOwner(_basketId) nonReentrant {
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
-    require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
+    for (uint k = 0; k < chainIds.length; k++) {
+      require(!isXChainRebalancing[vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
+    }
 
     addToTotalRewards(_basketId);
     int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
@@ -423,8 +425,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev Sends over an array that should match the IDs in chainIds array
   function pushAllocationsToController(uint256 _vaultNumber) external payable {
     require(rebalanceNeeded(), "No rebalance needed");
-    require(!isXChainRebalancing[_vaultNumber], "Vault is already rebalancing");
-    isXChainRebalancing[_vaultNumber] = true;
+    for (uint k = 0; k < chainIds.length; k++) {
+      require(!isXChainRebalancing[_vaultNumber][chainIds[k]], "Vault is already rebalancing");
+      isXChainRebalancing[_vaultNumber][chainIds[k]] = true;
+    }
 
     int256[] memory deltas = allocationsToArray(_vaultNumber);
     IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
@@ -450,26 +454,24 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
   /// @param _vaultNumber Number of vault
+  /// @param _chain Chain id of the vault where the allocations need to be sent
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(uint256 _vaultNumber) external payable {
-    require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
+  function pushAllocationsToVaults(uint256 _vaultNumber, uint16 _chain) external payable {
+    require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
 
-    for (uint256 i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
-      int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chain);
+    int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, _chain);
 
-      IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(
-        chain,
-        getVaultAddress(_vaultNumber, chain),
-        deltas
-      );
+    IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(
+      _chain,
+      getVaultAddress(_vaultNumber, _chain),
+      deltas
+    );
 
-      emit PushProtocolAllocations(chain, getVaultAddress(_vaultNumber, chain), deltas);
-    }
+    emit PushProtocolAllocations(_chain, getVaultAddress(_vaultNumber, _chain), deltas);
 
     vaults[_vaultNumber].rebalancingPeriod++;
 
-    isXChainRebalancing[_vaultNumber] = false;
+    isXChainRebalancing[_vaultNumber][_chain] = false;
   }
 
   /// @notice Creates array with delta allocations in protocols for given chainId
@@ -650,8 +652,12 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Guardian function to set state when vault gets stuck for whatever reason
-  function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
-    isXChainRebalancing[_vaultNumber] = _state;
+  function setRebalancingState(
+    uint256 _vaultNumber,
+    uint16 _chain,
+    bool _state
+  ) external onlyGuardian {
+    isXChainRebalancing[_vaultNumber][_chain] = _state;
   }
 
   /// @notice Step 8: Guardian function

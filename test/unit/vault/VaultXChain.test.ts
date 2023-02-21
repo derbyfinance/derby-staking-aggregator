@@ -4,6 +4,7 @@ import { erc20, parseUSDC } from '@testhelp/helpers';
 import type { MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { setupXChain } from '../xController/setup';
+import { ethers } from 'hardhat';
 
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
@@ -44,7 +45,7 @@ describe.only('Testing XChainController, unit test', async () => {
     await vault.setVaultState(1);
     await vault.setAmountToSendXChainTEST(amountUSDC.div(2)); // 50k
 
-    await vault.rebalanceXChain(slippage);
+    await vault.rebalanceXChain(slippage, {value: ethers.utils.parseEther("0.1")});
 
     const balance = await IUSDc.balanceOf(xChainController.address);
     expect(balance).to.be.equal(amountUSDC.div(2)); // 50k

@@ -72,10 +72,12 @@ describe.only('Testing game tasks', () => {
     const { game } = await setupGame();
     const vaultnumber = random(100);
     const state = true;
-
-    expect(await game.isXChainRebalancing(vaultnumber)).to.be.equal(false);
-    await run('game_set_rebalancing_state', { vaultnumber, state });
-    expect(await game.isXChainRebalancing(vaultnumber)).to.be.equal(state);
+    const chainIds = await game.getChainIds();
+    for (let chain of chainIds){
+      expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(false);
+      await run('game_set_rebalancing_state', { vaultnumber, state });
+      expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(state);
+    }
   });
 
   it('game_settle_rewards_guard', async function () {

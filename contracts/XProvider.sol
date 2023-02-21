@@ -109,7 +109,7 @@ contract XProvider is ILayerZeroReceiver, IXReceiver {
   /// @notice Function to send function selectors crossChain
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
-  function xSend(uint32 _destinationDomain, bytes memory _callData) internal {
+  function xSend(uint16 _destinationDomain, bytes memory _callData) internal {
     address target = trustedRemoteConnext[_destinationDomain];
     require(target != address(0), "XProvider: destination chain not trusted");
 
