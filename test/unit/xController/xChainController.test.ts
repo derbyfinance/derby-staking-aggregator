@@ -25,6 +25,7 @@ describe.only('Testing XChainController, integration test', async () => {
     game: GameMock,
     userAddr: string;
   const slippage = 30;
+  const relayerFee = 100;
 
   before(async function () {
     const setup = await setupXChain();
@@ -119,6 +120,12 @@ describe.only('Testing XChainController, integration test', async () => {
       0,
     );
 
+    // perform step 1.5 manually
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[0]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[1]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[2]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[3]);
+
     // chainId on or off
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
@@ -194,9 +201,9 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain(slippage, {value: ethers.utils.parseEther("0.1")});
-    await vault2.rebalanceXChain(slippage, {value: ethers.utils.parseEther("0.1")});
-    await expect(vault3.rebalanceXChain(slippage, {value: ethers.utils.parseEther("0.1")})).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")});
+    await vault2.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")});
+    await expect(vault3.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")})).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
     expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_000) * 1e6);
@@ -215,7 +222,7 @@ describe.only('Testing XChainController, integration test', async () => {
   it('5) Trigger xChainController to send funds to vaults', async function () {
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chain, {value: ethers.utils.parseEther("0.1")});
+      await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {value: ethers.utils.parseEther("0.1")});
     }
 
     const expectedAmounts = [

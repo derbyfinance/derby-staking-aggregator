@@ -464,21 +464,14 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the allocations need to be sent
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(
-    uint256 _vaultNumber,
-    uint32 _chain
-  ) external payable {
+  function pushAllocationsToVaults(uint256 _vaultNumber, uint32 _chain) external payable {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "Game: not a valid vaultnumber");
     require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
 
     int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, _chain);
 
-    IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(
-      _chain,
-      vault,
-      deltas
-    );
+    IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(_chain, vault, deltas);
 
     emit PushProtocolAllocations(_chain, getVaultAddress(_vaultNumber, _chain), deltas);
 

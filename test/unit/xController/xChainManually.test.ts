@@ -26,6 +26,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     game: GameMock,
     vaultNumber: BigNumberish = 10;
   const slippage = 30;
+  const relayerFee = 100;
 
   const setupXChainExtended = deployments.createFixture(async (hre) => {
     const [dao, guardian] = await getAllSigners(hre);
@@ -161,6 +162,10 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
       400 * 1e6,
     );
+
+    // perform step 1.5 manually
+    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[0]);
+    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[1]); 
   });
 
   it('Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController', async function () {
@@ -204,12 +209,11 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     const expectedAmounts = [400_000 - (400 / 500) * 401_000, 0];
 
     // Sending values to dummy vaults
-    const chainIds = await xChainController.getChainIds();
-    for (let chain of chainIds) {
-      await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chain, {value: ethers.utils.parseEther("0.1")}))
-        .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
-        .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
-    }
+    const chainIds = await xChainControllerDUMMY.getChainIds();
+
+    await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chainIds[0], {value: ethers.utils.parseEther("0.1")}))
+      .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
+      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
@@ -229,8 +233,8 @@ describe.only('Testing XChainController, unit test for manual execution', async 
   });
 
   it('Step 4: Push funds from vaults to xChainControlle', async function () {
-    await vault1.rebalanceXChain(slippage);
-    await expect(vault2.rebalanceXChain(slippage)).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")});
+    await expect(vault2.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")})).to.be.revertedWith('Wrong state');
 
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
     // Manually up funds received because feedback is sent to DUMMY controller
@@ -270,10 +274,10 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     await game.connect(guardian).settleRewardsGuard(vaultNumber, 100, vault2Rewards);
 
     for (let i = 0; i < vault1Rewards.length; i++) {
-      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, 10, 1, i)).to.be.equal(
+      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, 10, 2, i)).to.be.equal(
         vault1Rewards[i],
       );
-      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, 100, 1, i)).to.be.equal(
+      expect(await game.getRewardsPerLockedTokenTEST(vaultNumber, 100, 2, i)).to.be.equal(
         vault2Rewards[i],
       );
     }

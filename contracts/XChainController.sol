@@ -44,6 +44,7 @@ contract XChainController {
     bool allocationsReceived; // stage 1
     uint256 underlyingReceived; // stage 2
     uint256 fundsReceived; // stage 3
+    uint256 fundsSent; // stage 4
   }
 
   address private dao;
@@ -170,6 +171,7 @@ contract XChainController {
     vaultStage[_vaultNumber].allocationsReceived = false;
     vaultStage[_vaultNumber].underlyingReceived = 0;
     vaultStage[_vaultNumber].fundsReceived = 0;
+    vaultStage[_vaultNumber].fundsSent = 0;
   }
 
   /// @notice Resets underlying for a vaultNumber at the start of a rebalancing period
@@ -241,17 +243,14 @@ contract XChainController {
   /// @notice Step 1.5, toggle vault on or off
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
-  function sendFeedbackToVault(
-    uint256 _vaultNumber,
-    uint32 _chainId
-  ) external payable {
-    if (getVaultChainIdOff(_vaultNumber, _chainId) != vaults[_vaultNumber].chainIdOff[_chainId]) {
-      xProvider.pushStateFeedbackToVault{value: msg.value}(
-        getVaultAddress(_vaultNumber, _chainId),
-        _chainId,
-        vaults[_vaultNumber].chainIdOff[_chainId]
-      );
-    }
+  function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
+    address vault = getVaultAddress(_vaultNumber, _chainId);
+    require(vault != address(0), "xChainController: not a valid vaultnumber");
+    xProvider.pushStateFeedbackToVault{value: msg.value}(
+      vault,
+      _chainId,
+      vaults[_vaultNumber].chainIdOff[_chainId]
+    );
   }
 
   /// @notice See setTotalUnderlyingInt below
@@ -375,12 +374,7 @@ contract XChainController {
     address vault = getVaultAddress(_vaultNumber, _chainId);
     if (_amountDeposit > 0) {
       setAmountToDeposit(_vaultNumber, _chainId, _amountDeposit);
-      xProvider.pushSetXChainAllocation{value: msg.value}(
-        vault,
-        _chainId,
-        0,
-        _exchangeRate
-      );
+      xProvider.pushSetXChainAllocation{value: msg.value}(vault, _chainId, 0, _exchangeRate);
       vaultStage[_vaultNumber].fundsReceived++;
       emit SendXChainAmount(vault, _chainId, 0, _exchangeRate);
     }
@@ -432,8 +426,8 @@ contract XChainController {
         emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
       }
     }
-
-    resetVaultStages(_vaultNumber);
+    vaultStage[_vaultNumber].fundsSent++;
+    if (vaultStage[_vaultNumber].fundsSent == chainIds.length) resetVaultStages(_vaultNumber);
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
