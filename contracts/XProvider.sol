@@ -98,11 +98,13 @@ contract XProvider is IXReceiver {
   /// @notice Function to send function selectors crossChain
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
-  function xSend(uint16 _destinationDomain, bytes memory _callData) internal {
+  /// @param _relayerFee The fee offered to the relayers, if 0 use the complete msg.value
+  function xSend(uint32 _destinationDomain, bytes memory _callData, uint256 _relayerFee) internal {
     address target = trustedRemoteConnext[_destinationDomain];
     require(target != address(0), "XProvider: destination chain not trusted");
+    uint256 relayerFee = _relayerFee != 0 ? _relayerFee : msg.value;
 
-    IConnext(connext).xcall{value: msg.value}(
+    IConnext(connext).xcall{value: relayerFee}(
       _destinationDomain, // _destination: Domain ID of the destination chain
       target, // _to: address of the target contract
       address(0), // _asset: use address zero for 0-value transfers
@@ -119,12 +121,14 @@ contract XProvider is IXReceiver {
   /// @param _recipient The destination address (e.g. a wallet).
   /// @param _destinationDomain The destination domain ID.
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  /// @param _relayerFee The fee offered to the relayers for confirmation message, msg.value - _relayerFee is what goes to the routers
   function xTransfer(
     address _token,
     uint256 _amount,
     address _recipient,
     uint32 _destinationDomain,
-    uint256 _slippage
+    uint256 _slippage,
+    uint256 _relayerFee
   ) internal {
     require(
       IERC20(_token).allowance(msg.sender, address(this)) >= _amount,
@@ -137,7 +141,7 @@ contract XProvider is IXReceiver {
     // This contract approves transfer to Connext
     IERC20(_token).approve(address(connext), _amount);
 
-    IConnext(connext).xcall{value: msg.value}(
+    IConnext(connext).xcall{value: (msg.value - _relayerFee)}(
       _destinationDomain, // _destination: Domain ID of the destination chain
       _recipient, // _to: address receiving the funds on the destination
       _token, // _asset: address of the token contract
@@ -178,7 +182,7 @@ contract XProvider is IXReceiver {
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
-    xSend(xControllerChain, callData);
+    xSend(xControllerChain, callData, 0);
   }
 
   /// @notice Step 1 receive; Game pushes totalDeltaAllocations to xChainController
@@ -225,7 +229,7 @@ contract XProvider is IXReceiver {
         _withdrawalRequests
       );
 
-      xSend(xControllerChain, callData);
+      xSend(xControllerChain, callData, 0);
     }
   }
 
@@ -275,7 +279,7 @@ contract XProvider is IXReceiver {
         _exchangeRate
       );
 
-      xSend(_chainId, callData);
+      xSend(_chainId, callData, 0);
     }
   }
 
@@ -297,29 +301,32 @@ contract XProvider is IXReceiver {
   /// @param _amount Number of the vault
   /// @param _asset Address of the token to send e.g USDC
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  /// @param _relayerFee The fee offered to the relayers
   function xTransferToController(
     uint256 _vaultNumber,
     uint256 _amount,
     address _asset,
-    uint256 _slippage
+    uint256 _slippage,
+    uint256 _relayerFee
   ) external payable onlyVaults {
     if (homeChain == xControllerChain) {
       IERC20(_asset).transferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {
-      xTransfer(_asset, _amount, xController, xControllerChain, _slippage);
-      pushFeedbackToXController(_vaultNumber);
+      xTransfer(_asset, _amount, xController, xControllerChain, _slippage, _relayerFee);
+      pushFeedbackToXController(_vaultNumber, _relayerFee);
     }
   }
 
   /// @notice Step 4 push; Push funds from vaults to xChainController
   /// @notice Push crosschain feedback to xController to know when the vaultNumber has sent funds
   /// @param _vaultNumber Number of the vault
-  function pushFeedbackToXController(uint256 _vaultNumber) internal {
+  /// @param _relayerFee The fee offered to the relayers
+  function pushFeedbackToXController(uint256 _vaultNumber, uint256 _relayerFee) internal {
     bytes4 selector = bytes4(keccak256("receiveFeedbackToXController(uint256)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber);
 
-    xSend(xControllerChain, callData);
+    xSend(xControllerChain, callData, _relayerFee);
   }
 
   /// @notice Step 4 receive; Push funds from vaults to xChainController
@@ -335,19 +342,21 @@ contract XProvider is IXReceiver {
   /// @param _amount Amount to send to vault in vaultcurrency
   /// @param _asset Addres of underlying e.g USDC
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  /// @param _relayerFee The fee offered to the relayers
   function xTransferToVaults(
     address _vault,
     uint32 _chainId,
     uint256 _amount,
     address _asset,
-    uint256 _slippage
+    uint256 _slippage,
+    uint256 _relayerFee
   ) external payable onlyController {
     if (_chainId == homeChain) {
       IVault(_vault).receiveFunds();
       IERC20(_asset).transferFrom(msg.sender, _vault, _amount);
     } else {
-      pushFeedbackToVault(_chainId, _vault);
-      xTransfer(_asset, _amount, _vault, _chainId, _slippage);
+      pushFeedbackToVault(_chainId, _vault, _relayerFee);
+      xTransfer(_asset, _amount, _vault, _chainId, _slippage, _relayerFee);
     }
   }
 
@@ -355,11 +364,12 @@ contract XProvider is IXReceiver {
   /// @notice Push feedback message so the vault knows it has received funds and is ready to rebalance
   /// @param _chainId Number of chainId
   /// @param _vault Address of the vault on given chainId
-  function pushFeedbackToVault(uint32 _chainId, address _vault) internal {
+  /// @param _relayerFee The fee offered to the relayers
+  function pushFeedbackToVault(uint32 _chainId, address _vault, uint256 _relayerFee) internal {
     bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address)"));
     bytes memory callData = abi.encodeWithSelector(selector, _vault);
 
-    xSend(_chainId, callData);
+    xSend(_chainId, callData, _relayerFee);
   }
 
   /// @notice Step 5 receive; Push funds from xChainController to vaults
@@ -383,7 +393,7 @@ contract XProvider is IXReceiver {
       bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _deltas);
 
-      xSend(_chainId, callData);
+      xSend(_chainId, callData, 0);
     }
   }
 
@@ -414,7 +424,7 @@ contract XProvider is IXReceiver {
       bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint32,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
-      xSend(gameChain, callData);
+      xSend(gameChain, callData, 0);
     }
   }
 
@@ -446,7 +456,7 @@ contract XProvider is IXReceiver {
       bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
 
-      xSend(_chainId, callData);
+      xSend(_chainId, callData, 0);
     }
   }
 

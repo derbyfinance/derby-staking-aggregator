@@ -9,7 +9,7 @@ contract XChainControllerMock is XChainController {
     address _game,
     address _dao,
     address _guardian,
-    uint16 _homeChain
+    uint32 _homeChain
   ) XChainController(_game, _dao, _guardian, _homeChain) {}
 
   function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
@@ -58,14 +58,14 @@ contract XChainControllerMock is XChainController {
 
   function getCurrentAllocationTEST(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (int256) {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
   function getTotalUnderlyingOnChainTEST(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (uint256) {
     return getTotalUnderlyingOnChain(_vaultNumber, _chainId);
   }
@@ -76,7 +76,7 @@ contract XChainControllerMock is XChainController {
 
   function getWithdrawalRequestsTEST(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (uint256) {
     return getWithdrawalRequests(_vaultNumber, _chainId);
   }
@@ -91,14 +91,14 @@ contract XChainControllerMock is XChainController {
 
   function getUnderlyingAddressTEST(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (address) {
     return getUnderlyingAddress(_vaultNumber, _chainId);
   }
 
   function getVaultAddressTEST(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (address) {
     return getVaultAddress(_vaultNumber, _chainId);
   }

@@ -25,7 +25,8 @@ interface IXProvider {
     uint256 _vaultNumber,
     uint256 _amount,
     address _asset,
-    uint256 _slippage
+    uint256 _slippage,
+    uint256 _relayerFee
   ) external payable;
 
   function receiveFeedbackToXController(uint256 _vaultNumber) external;
@@ -35,7 +36,8 @@ interface IXProvider {
     uint32 _chainId,
     uint256 _amount,
     address _asset,
-    uint256 _slippage
+    uint256 _slippage,
+    uint256 _relayerFee
   ) external payable;
 
   function pushProtocolAllocationsToVault(

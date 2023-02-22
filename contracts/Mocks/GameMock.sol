@@ -27,7 +27,7 @@ contract GameMock is Game {
     IVault(_vault).setDeltaAllocations(_protocolNum, _allocation);
   }
 
-  function setXChainRebalanceState(uint256 _vaultNumber, uint16 _chain, bool _state) external {
+  function setXChainRebalanceState(uint256 _vaultNumber, uint32 _chain, bool _state) external {
     isXChainRebalancing[_vaultNumber][_chain] = _state;
   }
 
@@ -39,7 +39,7 @@ contract GameMock is Game {
     vaults[_vaultNumber].rebalancingPeriod++;
   }
 
-  function mockRewards(uint256 _vaultNumber, uint16 _chainId, int256[] memory _rewards) external {
+  function mockRewards(uint256 _vaultNumber, uint32 _chainId, int256[] memory _rewards) external {
     uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
 
     for (uint256 i = 0; i < _rewards.length; i++) {
@@ -57,7 +57,7 @@ contract GameMock is Game {
 
   function getRewardsPerLockedTokenTEST(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _rebalancingPeriod,
     uint256 _protocolId
   ) external view returns (int256) {
@@ -74,7 +74,7 @@ contract GameMock is Game {
 
   function getVaultAddressTest(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) external view returns (address) {
     return getVaultAddress(_vaultNumber, _chainId);
   }

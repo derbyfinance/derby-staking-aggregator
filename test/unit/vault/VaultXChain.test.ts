@@ -45,6 +45,7 @@ describe.only('Testing XChainController, unit test', async () => {
     await vault.setVaultState(1);
     await vault.setAmountToSendXChainTEST(amountUSDC.div(2)); // 50k
 
+    console.log("balance vault: %s", )
     await vault.rebalanceXChain(slippage, {value: ethers.utils.parseEther("0.1")});
 
     const balance = await IUSDc.balanceOf(xChainController.address);
