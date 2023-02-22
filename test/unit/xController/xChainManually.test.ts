@@ -9,11 +9,27 @@ import type {
   XChainControllerMock,
   XProvider,
 } from '@typechain';
-import { deployXChainControllerMock } from '@testhelp/deploy';
+import XChainControllerMockArtifact from '@artifacts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import { usdc } from '@testhelp/addresses';
 import { getAndInitXProviders, addVaultsToXController } from '@testhelp/InitialiseContracts';
 import { getAllSigners } from '@testhelp/getContracts';
 import { setupXChain } from './setup';
+import { deployContract } from 'ethereum-waffle';
+
+const deployXChainControllerMock = (
+  deployerSign: Signer,
+  game: string,
+  dao: string,
+  guardian: string,
+  homeChain: number,
+): Promise<XChainControllerMock> => {
+  return deployContract(deployerSign, XChainControllerMockArtifact, [
+    game,
+    dao,
+    guardian,
+    homeChain,
+  ]) as Promise<XChainControllerMock>;
+};
 
 const chainIds = [10, 100];
 
