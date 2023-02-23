@@ -70,7 +70,7 @@ describe('Testing Beta provider', async () => {
 
       await expect(() =>
         provider.connect(user).withdraw(yUSDCBalance, bUSDC, usdc),
-      ).to.changeTokenBalance(IUSDc, user, amount - 1);
+      ).to.changeTokenBalance(IUSDc, user, amount);
     });
   });
 
