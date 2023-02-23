@@ -130,7 +130,7 @@ describe.only('Testing controller', async () => {
   it('Should reach the claim function in compound Provider', async function () {
     const { controller, vault, compoundProviderMock, compNumber } = await setupController();
 
-    await run('controller_set_claimable', { provider: compoundProviderMock.address, bool: true });
+    await run('controller_set_claimable', { lptoken: compoundUSDC, bool: true });
 
     // Using revert here to make sure the function actually reached the mocked function with arguments
     await compoundProviderMock.mock.claim

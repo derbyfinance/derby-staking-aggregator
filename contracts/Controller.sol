@@ -59,7 +59,7 @@ contract Controller is IController {
     uint256 _vaultNumber,
     uint256 _protocolNumber
   ) external override onlyVault returns (bool) {
-    if (claimable[protocolInfo[_vaultNumber][_protocolNumber].provider]) {
+    if (claimable[protocolInfo[_vaultNumber][_protocolNumber].LPToken]) {
       return
         IProvider(protocolInfo[_vaultNumber][_protocolNumber].provider).claim(
           protocolInfo[_vaultNumber][_protocolNumber].LPToken,
@@ -219,10 +219,10 @@ contract Controller is IController {
   }
 
   /// @notice Set if provider have claimable tokens
-  /// @param _provider Address of the underlying protocol
+  /// @param _LPToken Address of the underlying protocol vault
   /// @param _bool True of the underlying protocol has claimable tokens
-  function setClaimable(address _provider, bool _bool) external onlyDao {
-    claimable[_provider] = _bool;
+  function setClaimable(address _LPToken, bool _bool) external onlyDao {
+    claimable[_LPToken] = _bool;
   }
 
   /// @notice Setter for DAO address

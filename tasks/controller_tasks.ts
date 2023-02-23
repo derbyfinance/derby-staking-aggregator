@@ -130,11 +130,11 @@ task('controller_add_underlying_scale', 'Set the scale for underlying stable coi
   });
 
 task('controller_set_claimable', 'Set if provider have claimable tokens')
-  .addParam('provider', 'Address of Derby provider')
+  .addParam('lptoken', 'Address of protocol lptoken')
   .addParam('bool', 'True of the underlying protocol has claimable tokens', null, types.boolean)
-  .setAction(async ({ provider, bool }, hre) => {
+  .setAction(async ({ lptoken, bool }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setClaimable(provider, bool);
+    await controller.connect(dao).setClaimable(lptoken, bool);
   });
 
 task('controller_set_dao', 'Setter for dao address')
