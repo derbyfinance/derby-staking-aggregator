@@ -18,7 +18,7 @@ import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { deployments, run } from 'hardhat';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-describe.only('Testing Vault Store Price and Rewards, unit test', async () => {
+describe('Testing Vault Store Price and Rewards, unit test', async () => {
   let vault: MainVaultMock;
 
   const protocols = new Map<string, ProtocolVault>()

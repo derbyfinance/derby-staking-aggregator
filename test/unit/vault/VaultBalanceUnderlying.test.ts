@@ -11,7 +11,7 @@ const amountUSDC = parseUSDC(amount.toString());
 
 const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 
-describe.only('Testing balanceUnderlying for every single protocol vault', async () => {
+describe('Testing balanceUnderlying for every single protocol vault', async () => {
   const IUSDc: Contract = erc20(usdc);
 
   it('Should calc balanceUnderlying for all known protocols correctly', async function () {

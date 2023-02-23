@@ -4,7 +4,7 @@ import { XProvider } from '@typechain';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
 
-describe.only('Testing xProvider tasks', () => {
+describe('Testing xProvider tasks', () => {
   const setupXProvider = deployments.createFixture(async ({ ethers, deployments }) => {
     const xProvider = await deployXProvider(deployments, ethers);
 
@@ -21,7 +21,9 @@ describe.only('Testing xProvider tasks', () => {
     const address = '0xa354f35829ae975e850e23e9615b11da1b3dc4de';
 
     await run('xprovider_set_trusted_connext', { chainid: chainId, address });
-    expect(await (await xProvider.trustedRemoteConnext(chainId)).toLowerCase()).to.be.equal(address.toLowerCase());
+    expect(await (await xProvider.trustedRemoteConnext(chainId)).toLowerCase()).to.be.equal(
+      address.toLowerCase(),
+    );
   });
 
   it('xprovider_set_xcontroller', async function () {

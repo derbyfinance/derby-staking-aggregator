@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { setupVault } from './setup';
 
-describe.only('Testing VaultDeposit, unit test', async () => {
+describe('Testing VaultDeposit, unit test', async () => {
   it('Deposit, mint and return Derby LP tokens', async function () {
     const { vault, user } = await setupVault();
     await expect(() =>

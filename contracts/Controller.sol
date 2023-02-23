@@ -4,7 +4,6 @@ pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
 import "./Interfaces/IController.sol";
-import "hardhat/console.sol";
 
 contract Controller is IController {
   UniswapParams public uniswapParams;

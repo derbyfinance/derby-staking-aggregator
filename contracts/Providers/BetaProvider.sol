@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IBeta.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract BetaProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -81,12 +79,10 @@ contract BetaProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _bToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _bToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _bToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _bToken);
     uint256 supply = IBeta(_bToken).totalSupply();
     uint256 totalLoanable = IBeta(_bToken).totalLoanable();

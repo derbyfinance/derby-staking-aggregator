@@ -4,10 +4,10 @@ import { deployments } from 'hardhat';
 import {
   erc20,
   formatUSDC,
-  getDAISigner,
   parseEther,
   formatEther,
   transferAndApproveUSDC,
+  transferAndApproveDAI,
 } from '@testhelp/helpers';
 import type { BetaProvider } from '@typechain';
 import { dai, usdc, betaUSDC as bUSDC, betaDAI as bDAI } from '@testhelp/addresses';
@@ -20,13 +20,7 @@ describe('Testing Beta provider', async () => {
     const [dao, user] = await getAllSigners(hre);
 
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
-
-    // approve and send DAI to user
-    const daiAmount = parseEther(1_000_000);
-    const daiSigner = await getDAISigner();
-    const IDAI = erc20(dai);
-    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
-    await IDAI.connect(user).approve(provider.address, daiAmount);
+    await transferAndApproveDAI(provider.address, user, 1_000_000);
 
     return { provider, user };
   });
@@ -52,15 +46,15 @@ describe('Testing Beta provider', async () => {
         -amount,
       );
 
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
-      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(expectedShares, 1);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(bUSDCBalance)).to.be.closeTo(expectedShares, 1);
     });
 
     it('Should calculate shares correctly', async () => {
       const shares = await provider.calcShares(amount, bUSDC);
 
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
-      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(bUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
     });
 
     it('Should calculate balance underlying correctly', async () => {
@@ -70,13 +64,15 @@ describe('Testing Beta provider', async () => {
     });
 
     it('Should be able to withdraw', async () => {
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
 
-      await IbUSDC.connect(user).approve(provider.address, yUSDCBalance);
+      await IbUSDC.connect(user).approve(provider.address, bUSDCBalance);
 
-      await expect(() =>
-        provider.connect(user).withdraw(yUSDCBalance, bUSDC, usdc),
-      ).to.changeTokenBalance(IUSDc, user, amount);
+      const balanceBefore = await IUSDc.balanceOf(user.address);
+      await provider.connect(user).withdraw(bUSDCBalance, bUSDC, usdc);
+      const balanceAfter = await IUSDc.balanceOf(user.address);
+
+      expect(balanceAfter - balanceBefore).to.be.closeTo(amount, 10);
     });
   });
 

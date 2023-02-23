@@ -4,7 +4,7 @@ import { usdc, yearn, yearnUSDC } from '@testhelp/addresses';
 import { getInitConfigController } from '@testhelp/deployHelpers';
 import { Controller } from '@typechain';
 
-describe.only('Testing controller tasks', () => {
+describe('Testing controller tasks', () => {
   const setupController = deployments.createFixture(async ({ deployments, ethers, network }) => {
     await deployments.fixture(['Controller']);
     const deployment = await deployments.get('Controller');

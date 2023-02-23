@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/ITruefi.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract TruefiProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -82,12 +80,10 @@ contract TruefiProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _tToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _tToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _tToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _tToken);
     uint256 balance = (ITruefi(_tToken).poolValue() * balanceShares) /
       ITruefi(_tToken).totalSupply();

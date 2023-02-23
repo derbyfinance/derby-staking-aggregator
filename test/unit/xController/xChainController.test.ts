@@ -5,11 +5,10 @@ import { erc20, formatUSDC, parseEther } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupXChain } from './setup';
-import { ethers } from 'hardhat';
 
 const chainIds = [10, 100, 1000, 10000];
 
-describe.only('Testing XChainController, integration test', async () => {
+describe('Testing XChainController, integration test', async () => {
   let vaultNumber: BigNumberish = 10,
     basketId: BigNumberish,
     vault1: MainVaultMock,

@@ -20,7 +20,7 @@ import { Controller } from '@typechain';
 
 const vaultNumber = 4;
 
-describe.only('Testing controller', async () => {
+describe('Testing controller', async () => {
   const setupController = deployments.createFixture(async (hre) => {
     await deployments.fixture(['Controller']);
     const controller = (await getContract('Controller', hre)) as Controller;

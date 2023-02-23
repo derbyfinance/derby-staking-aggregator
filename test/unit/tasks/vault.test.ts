@@ -1,11 +1,11 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { MainVaultMock } from '@typechain';
-import { parseUSDC, random, transferAndApproveUSDC } from '@testhelp/helpers';
+import { random, transferAndApproveUSDC } from '@testhelp/helpers';
 import { getContract } from '@testhelp/getContracts';
 import { getInitConfigVault } from '@testhelp/deployHelpers';
 
-describe.only('Testing vault tasks', () => {
+describe('Testing vault tasks', () => {
   const setupVault = deployments.createFixture(async (hre) => {
     const { ethers, deployments, getNamedAccounts, network } = hre;
     const amount = 1_000_000 * 1e6;

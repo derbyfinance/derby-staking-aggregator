@@ -4,7 +4,7 @@ import { XChainControllerMock } from '@typechain';
 import { DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatEthersHelpers } from 'hardhat/types';
 
-describe.only('Testing xController tasks', () => {
+describe('Testing xController tasks', () => {
   const setupXController = deployments.createFixture(
     async ({ ethers, deployments, getNamedAccounts }) => {
       const amount = 1_000_000 * 1e6;

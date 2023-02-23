@@ -12,7 +12,6 @@ export const setupVault = deployments.createFixture(async (hre) => {
     'CompoundProvider',
     'AaveProvider',
     'TruefiProvider',
-    'HomoraProvider',
     'IdleProvider',
     'BetaProvider',
   ]);

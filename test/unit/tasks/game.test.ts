@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { GameMock } from '@typechain';
 import { getInitConfigGame } from '@testhelp/deployHelpers';
 
-describe.only('Testing game tasks', () => {
+describe('Testing game tasks', () => {
   const setupGame = deployments.createFixture(async ({ deployments, ethers, network }) => {
     await deployments.fixture(['GameMock']);
     const deployment = await deployments.get('GameMock');
@@ -73,7 +73,7 @@ describe.only('Testing game tasks', () => {
     const vaultnumber = random(100);
     const state = true;
     const chainIds = await game.getChainIds();
-    for (let chain of chainIds){
+    for (let chain of chainIds) {
       expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(false);
       await run('game_set_rebalancing_state', { vaultnumber, state });
       expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(state);
