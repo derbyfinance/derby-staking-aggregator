@@ -85,9 +85,9 @@ contract TruefiProvider is IProvider {
     address _tToken
   ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _tToken);
-    uint256 balance = (ITruefi(_tToken).poolValue() * balanceShares) /
+    uint256 currentBalance = (ITruefi(_tToken).poolValue() * balanceShares) /
       ITruefi(_tToken).totalSupply();
-    return balance;
+    return currentBalance;
   }
 
   /// @notice Calculates how many shares are equal to the amount
