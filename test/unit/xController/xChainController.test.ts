@@ -1,7 +1,7 @@
 import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC } from '@testhelp/helpers';
+import { erc20, formatUSDC, parseEther } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupXChain } from './setup';
@@ -101,9 +101,7 @@ describe.only('Testing XChainController, integration test', async () => {
     await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000, 2000];
-    await expect(
-      game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') }),
-    )
+    await expect(game.pushAllocationsToController(vaultNumber, { value: parseEther('0.1') }))
       .to.emit(game, 'PushedAllocationsToController')
       .withArgs(vaultNumber, [398, 600, 1000]);
 
@@ -142,10 +140,10 @@ describe.only('Testing XChainController, integration test', async () => {
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
 
-    await vault1.pushTotalUnderlyingToController({ value: ethers.utils.parseEther('0.1') });
-    await vault2.pushTotalUnderlyingToController({ value: ethers.utils.parseEther('0.1') });
-    await vault3.pushTotalUnderlyingToController({ value: ethers.utils.parseEther('0.1') });
-    await vault4.pushTotalUnderlyingToController({ value: ethers.utils.parseEther('0.1') });
+    await vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault2.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault3.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault4.pushTotalUnderlyingToController({ value: parseEther('0.1') });
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1e6);
     expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(
@@ -157,7 +155,7 @@ describe.only('Testing XChainController, integration test', async () => {
 
     // // Should revert if total Underlying is already set
     await expect(
-      vault1.pushTotalUnderlyingToController({ value: ethers.utils.parseEther('0.1') }),
+      vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') }),
     ).to.be.revertedWith('Rebalancing');
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(
@@ -176,7 +174,7 @@ describe.only('Testing XChainController, integration test', async () => {
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
       await xChainController.pushVaultAmounts(vaultNumber, chain, {
-        value: ethers.utils.parseEther('0.1'),
+        value: parseEther('0.1'),
       });
     }
 
@@ -206,10 +204,10 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') });
-    await vault2.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') });
+    await vault1.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
+    await vault2.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
     await expect(
-      vault3.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') }),
+      vault3.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') }),
     ).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
@@ -231,7 +229,7 @@ describe.only('Testing XChainController, integration test', async () => {
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
       await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
-        value: ethers.utils.parseEther('0.1'),
+        value: parseEther('0.1'),
       });
     }
 
@@ -261,7 +259,7 @@ describe.only('Testing XChainController, integration test', async () => {
     for (let chain of chainIds) {
       expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.true;
       await game.pushAllocationsToVaults(vaultNumber, chain, {
-        value: ethers.utils.parseEther('0.1'),
+        value: parseEther('0.1'),
       });
       expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.false;
     }

@@ -8,6 +8,9 @@ import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault 
 import { ethers } from 'hardhat';
 
 describe.only('Testing full integration test', async () => {
+  const slippage = 30;
+  const relayerFee = 100;
+
   let vaultNumber: BigNumberish = 10,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
@@ -309,8 +312,6 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
     const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
-    const slippage = 30;
-    const relayerFee = 100;
 
     it('Vault 0 should revert because they will receive funds', async function () {
       await expect(
@@ -347,8 +348,6 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
-    const slippage = 30;
-    const relayerFee = 100;
 
     // expected vault balances after rebalance
     before(function () {
@@ -592,8 +591,6 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
-    const slippage = 30;
-    const relayerFee = 100;
 
     it('Vault 0 should revert because they will receive funds', async function () {
       await expect(
@@ -612,8 +609,6 @@ describe.only('Testing full integration test', async () => {
   describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
     const amountToReceiveVault1 = 0;
-    const slippage = 30;
-    const relayerFee = 100;
 
     before(function () {
       vaults[0].chainAllocs = [0, 0, 0, 0, 0];
@@ -852,8 +847,6 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 4: Vaults push funds to xChainController', async function () {
     const vaultCurrency = usdc;
-    const slippage = 30;
-    const relayerFee = 100;
 
     before(function () {
       vaults[0].amountToSend = parseUSDC(164079.593746);
@@ -881,8 +874,6 @@ describe.only('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 5: xChainController push funds to vaults', async function () {
     const underlying = usdc;
-    const slippage = 30;
-    const relayerFee = 100;
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 1 will receive funds
