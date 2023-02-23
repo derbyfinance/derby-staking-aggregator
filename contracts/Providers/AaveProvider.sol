@@ -13,17 +13,6 @@ import "hardhat/console.sol";
 contract AaveProvider is IProvider {
   using SafeERC20 for IERC20;
 
-  uint16 private aaveReferral;
-
-  constructor() {
-    aaveReferral = 0;
-  }
-
-  // OnlyDao modifier? referral code for aave. Will not be used in the near future but nice to have.
-  function setAaveReferral(uint16 _code) external {
-    aaveReferral = _code;
-  }
-
   /// @notice Deposit the underlying asset in Aave
   /// @dev Pulls underlying asset from Vault, deposit them in Aave, send aTokens back.
   /// @param _amount Amount to deposit
@@ -47,7 +36,7 @@ contract AaveProvider is IProvider {
       IAToken(_aToken).UNDERLYING_ASSET_ADDRESS(),
       _amount,
       msg.sender,
-      aaveReferral
+      0
     );
 
     return _amount;
@@ -90,12 +79,10 @@ contract AaveProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _aToken Address of protocol LP Token eg aUSDC
   /// @return number of shares i.e LP tokens
-  function balanceUnderlying(address _address, address _aToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _aToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _aToken);
     return balanceShares;
   }

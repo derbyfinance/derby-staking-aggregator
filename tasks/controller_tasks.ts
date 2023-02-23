@@ -31,7 +31,6 @@ task('controller_init', 'Initializes the controller').setAction(async (_, { run,
     uniswapRouter,
     uniswapQouter,
     uniswapPoolFee,
-    chainlinkGasPriceOracle,
     curve3PoolFee,
     curve3Pool,
   } = initConfig;
@@ -44,7 +43,6 @@ task('controller_init', 'Initializes the controller').setAction(async (_, { run,
   await run('controller_set_uniswap_router', { router: uniswapRouter });
   await run('controller_set_uniswap_quoter', { quoter: uniswapQouter });
   await run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee });
-  await run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle });
   await run('controller_add_underlying_scale', { stable: usdc, decimals: 6 });
   await run('controller_add_underlying_scale', { stable: dai, decimals: 18 });
   await run('controller_add_underlying_scale', { stable: usdt, decimals: 6 });
@@ -129,13 +127,6 @@ task('controller_add_underlying_scale', 'Set the scale for underlying stable coi
   .setAction(async ({ stable, decimals }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).addUnderlyingUScale(stable, decimals);
-  });
-
-task('controller_gas_price_oracle', 'Setter for the Chainlink Gas price oracle')
-  .addParam('oracle', 'Contract address')
-  .setAction(async ({ oracle }, hre) => {
-    const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setGasPriceOracle(oracle);
   });
 
 task('controller_set_claimable', 'Set if provider have claimable tokens')

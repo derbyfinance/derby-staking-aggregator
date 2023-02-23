@@ -87,14 +87,6 @@ describe.only('Testing controller tasks', () => {
     expect(await controller.underlyingUScale(usdc)).to.be.equal(10 ** decimals);
   });
 
-  it('controller_gas_price_oracle', async function () {
-    const { controller, controllerInit } = await setupController();
-    const { chainlinkGasPriceOracle } = controllerInit;
-
-    await run('controller_gas_price_oracle', { oracle: chainlinkGasPriceOracle });
-    expect(await controller.chainlinkGasPriceOracle()).to.be.equal(chainlinkGasPriceOracle);
-  });
-
   it('controller_set_claimable', async function () {
     const provider = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const { controller } = await setupController();

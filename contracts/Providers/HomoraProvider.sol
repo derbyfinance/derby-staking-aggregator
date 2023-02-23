@@ -81,12 +81,10 @@ contract HomoraProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _hToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _hToken
+  ) public view override returns (uint256) {
     // uint256 shares = balance(_address, _hToken);
     // uint256 balance = IHomora(_hToken).poolValue() * shares / IHomora(_hToken).totalSupply();
     // return balance;
@@ -98,7 +96,7 @@ contract HomoraProvider is IProvider {
   /// @param _hToken Address of protocol LP Token eg cUSDC
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _hToken) external view override returns (uint256) {
-    // uint256 shares = IHomora(_hToken).totalSupply() * _amount / IHomora(_hToken).poolValue();
+    // uint256 shares = (IHomora(_hToken).totalSupply() * _amount) / IHomora(_hToken).poolValue();
     // return shares;
   }
 

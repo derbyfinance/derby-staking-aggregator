@@ -8,7 +8,7 @@ const func: DeployFunction = async function ({
   network,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer, dao } = await getNamedAccounts();
+  const { deployer, dao, guardian } = await getNamedAccounts();
 
   const deployConfig = await getDeployConfigXProvider(network.name);
   if (!deployConfig) throw 'Unknown contract name';
@@ -24,6 +24,7 @@ const func: DeployFunction = async function ({
     args: [
       connext.address,
       dao,
+      guardian,
       game.address,
       xChainController.address,
       arbitrum,

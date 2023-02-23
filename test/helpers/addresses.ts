@@ -1,19 +1,5 @@
 import { ProtocolVault } from './classes/protocolVaultClass';
 
-// https://layerzero.gitbook.io/docs/technical-reference/testnet/testnet-addresses
-export const testLayerzeroChainIds = {
-  bnbChain: 10102,
-  fuju: 10106,
-  mumbai: 10109,
-  fantom: 10112,
-  goerli: 10121,
-  arbitrumGoerli: 10143,
-  optimismGoerli: 10132,
-  harmony: 10133,
-  moonbeam: 10126,
-  celo: 10125,
-};
-
 // https://docs.connext.network/resources/supported-chains
 export const testConnextChainIds = {
   goerli: 1735353714,
@@ -63,6 +49,7 @@ export const alpha = '0xa1faa113cbE53436Df28FF0aEe54275c13B40975';
 export const idle = '0x875773784Af8135eA0ef43b5a374AaD105c5D39e';
 export const beta = '0xBe1a001FE942f96Eea22bA08783140B9Dcc09D28';
 export const compToken = '0xc00e94Cb662C3520282E6f5717214004A7f26888';
+export const beefy = '0x5870700f1272a1AdbB87C3140bD770880a95e55D';
 
 // Uniswap
 export const uniswapFactory = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
@@ -75,7 +62,6 @@ export const curve3Pool = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'; // DAI /
 // others
 export const comptroller = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
 export const WEth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-export const ChainlinkGasPrice = '0x169e633a2d1e6c10dd91238ba11c4a708dfef37c';
 
 // whales for testing
 export const CompWhale = '0xf977814e90da44bfa03b6295a0616a897441acec';

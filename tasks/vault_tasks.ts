@@ -235,6 +235,15 @@ task('vault_set_performance_fee', 'Setter for performance fee that goes to playe
     await vault.connect(dao).setPerformanceFee(percentage);
   });
 
+task('vault_set_max_divergence', 'Setter for maximum divergence a user can get during a withdraw')
+  .addParam('contract', 'Name of the contract')
+  .addParam('divergence', 'New maximum divergence in vaultCurrency', null, types.int)
+  .setAction(async ({ contract, divergence }, hre) => {
+    const vault = await getVault(hre, contract);
+    const dao = await getDao(hre);
+    await vault.connect(dao).setMaxDivergence(divergence);
+  });
+
 const getVault = async (
   { deployments, ethers, network }: HardhatRuntimeEnvironment,
   contract: string,

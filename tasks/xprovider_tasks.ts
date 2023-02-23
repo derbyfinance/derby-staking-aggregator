@@ -88,7 +88,14 @@ task('xprovider_set_dao', 'Setter for dao address')
     const dao = await getDao(hre);
     await xProvider.connect(dao).setDao(address);
   });
-// not tested yet
+
+task('xprovider_set_guardian', 'Setter for guardian address')
+  .addParam('guardian', 'New guardian address')
+  .setAction(async ({ guardian }, hre) => {
+    const xProvider = await getXProvider(hre);
+    const dao = await getDao(hre);
+    await xProvider.connect(dao).setGuardian(guardian);
+  });
 
 const getXProvider = async ({ deployments, ethers }: HardhatRuntimeEnvironment) => {
   await deployments.all();

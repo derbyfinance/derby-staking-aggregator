@@ -149,7 +149,7 @@ describe.only('Testing Game', async () => {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000];
-    await game.pushAllocationsToController(vaultNumber, {value: ethers.utils.parseEther("0.1")});
+    await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
     // checking of allocations are correctly set in xChainController
     expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
@@ -240,7 +240,7 @@ describe.only('Testing Game', async () => {
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!allowance');
+    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!Allowance');
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);

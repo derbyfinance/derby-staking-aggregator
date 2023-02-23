@@ -18,7 +18,8 @@ interface IXProvider {
     address _vault,
     uint32 _chainId,
     uint256 _amountToWithdraw,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external payable;
 
   function xTransferToController(

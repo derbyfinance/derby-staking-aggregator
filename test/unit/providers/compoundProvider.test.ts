@@ -1,95 +1,156 @@
-import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { Contract, Signer } from 'ethers';
-import { getUSDCSigner, erc20, parseUSDC, getWhale } from '@testhelp/helpers';
-import type { CompoundProviderMock } from '@typechain';
-import { deployCompoundProviderMock } from '@testhelp/deploy';
+import { BigNumber, Contract, Signer } from 'ethers';
+import { deployments } from 'hardhat';
 import {
-  usdc,
-  compoundUSDC as cusdc,
-  comptroller,
-  compToken as compTokenAddr,
-} from '@testhelp/addresses';
+  erc20,
+  formatUSDC,
+  getDAISigner,
+  parseEther,
+  formatEther,
+  transferAndApproveUSDC,
+  formatUnits,
+} from '@testhelp/helpers';
+import type { CompoundProvider } from '@typechain';
+import { dai, usdc, compoundUSDC as cUSDC, compoundDAI as cDAI } from '@testhelp/addresses';
+import { getAllSigners, getContract } from '@testhelp/getContracts';
 
-const amount = Math.floor(Math.random() * 100000);
-const amountUSDC = parseUSDC(amount.toString());
-const cusdcWhaleAddr = '0xabde2f02fe84e083e1920471b54c3612456365ef';
+describe('Testing Compound provider', async () => {
+  const setupProvider = deployments.createFixture(async (hre) => {
+    await deployments.fixture(['CompoundProvider']);
+    const provider = (await getContract('CompoundProvider', hre)) as CompoundProvider;
+    const [dao, user] = await getAllSigners(hre);
 
-describe.skip('Testing Compound provider', async () => {
-  let compoundProviderMock: CompoundProviderMock,
-    dao: Signer,
-    vault: Signer,
-    USDCSigner: Signer,
-    IUSDc: Contract,
-    cToken: Contract,
-    daoAddr: string,
-    vaultAddr: string,
-    cusdcWhale: Signer,
-    compToken: Contract;
+    await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
-  beforeEach(async function () {
-    [dao, vault] = await ethers.getSigners();
-    daoAddr = await dao.getAddress();
+    // approve and send DAI to user
+    const daiAmount = parseEther(1_000_000);
+    const daiSigner = await getDAISigner();
+    const IDAI = erc20(dai);
+    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
+    await IDAI.connect(user).approve(provider.address, daiAmount);
 
-    [vaultAddr, compoundProviderMock, USDCSigner, cusdcWhale, IUSDc, cToken, compToken] =
-      await Promise.all([
-        vault.getAddress(),
-        deployCompoundProviderMock(dao, comptroller),
-        getUSDCSigner(),
-        getWhale(cusdcWhaleAddr),
-        erc20(usdc),
-        erc20(cusdc),
-        erc20(compTokenAddr),
-      ]);
-
-    // Transfer and approve USDC to vault AND add protocol to controller contract
-    await Promise.all([
-      IUSDc.connect(USDCSigner).transfer(vaultAddr, amountUSDC),
-      IUSDc.connect(vault).approve(compoundProviderMock.address, amountUSDC),
-    ]);
+    return { provider, user };
   });
 
-  it('Should deposit and withdraw to Compound', async function () {
-    console.log(`-------------------------Deposit-------------------------`);
-    const vaultBalanceStart = await IUSDc.balanceOf(vaultAddr);
+  describe('Testing compoundUSDC', () => {
+    let provider: CompoundProvider, user: Signer, exchangeRate: BigNumber;
+    const IUSDc: Contract = erc20(usdc);
+    const IcUSDC: Contract = erc20(cUSDC);
+    const amount = 100_000 * 1e6;
+    const decimals = 8;
 
-    await compoundProviderMock.connect(vault).deposit(amountUSDC, cusdc, usdc);
-    const balanceShares = Number(await compoundProviderMock.balance(vaultAddr, cusdc));
-    const price = Number(await compoundProviderMock.exchangeRate(cusdc));
-    const amount = (balanceShares * price) / 1e18;
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    expect(amount).to.be.closeTo(Number(amountUSDC), 2);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(cUSDC);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    const vaultBalance = await IUSDc.balanceOf(vaultAddr);
+    it('Should deposit in cUSDC', async () => {
+      const expectedShares = Math.round((amount * 1e12) / Number(exchangeRate));
 
-    expect(Number(vaultBalanceStart) - Number(vaultBalance)).to.equal(Number(amountUSDC));
+      await expect(() => provider.connect(user).deposit(amount, cUSDC, usdc)).to.changeTokenBalance(
+        IUSDc,
+        user,
+        -amount,
+      );
 
-    console.log(`-------------------------Withdraw-------------------------`);
-    console.log(`balance shares ${balanceShares}`);
+      const cUSDCBalance = await provider.balance(user.address, cUSDC);
+      expect(formatUSDC(cUSDCBalance)).to.be.closeTo(expectedShares, 50);
+    });
 
-    await cToken.connect(vault).approve(compoundProviderMock.address, balanceShares);
-    await compoundProviderMock.connect(vault).withdraw(balanceShares, cusdc, usdc);
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, cUSDC);
 
-    const vaultBalanceEnd = await IUSDc.balanceOf(vaultAddr);
+      const cUSDCBalance = await provider.balance(user.address, cUSDC);
+      expect(formatUnits(cUSDCBalance, 8)).to.be.closeTo(formatUSDC(shares), 1);
+    });
 
-    expect(Number(vaultBalanceEnd) - Number(vaultBalance)).to.be.closeTo(Number(amountUSDC), 800); // not formatted
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, cUSDC);
+
+      expect(formatUnits(balanceUnderlying, 8)).to.be.closeTo(amount / 1e6, 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const cUSDCBalance = await provider.balance(user.address, cUSDC);
+
+      await IcUSDC.connect(user).approve(provider.address, cUSDCBalance);
+      await provider.connect(user).withdraw(cUSDCBalance, cUSDC, usdc);
+
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatUSDC(await IUSDc.balanceOf(user.address))).to.be.closeTo(10_000_000, 250);
+    });
   });
 
-  it('Should claim Comp tokens from Comptroller', async function () {
-    await compoundProviderMock.connect(vault).claim(cusdc, vaultAddr);
+  describe('Testing compoundDAI', () => {
+    let provider: CompoundProvider, user: Signer, exchangeRate: BigNumber;
+    const IDAI: Contract = erc20(dai);
+    const IcDAI: Contract = erc20(cDAI);
+    const amount = parseEther(100_000);
 
-    const compBalanceBefore = Number(await compToken.balanceOf(cusdcWhaleAddr));
-    await compoundProviderMock.connect(cusdcWhale).claimTest(cusdcWhaleAddr, cusdc);
-    const compBalanceAfter = Number(await compToken.balanceOf(cusdcWhaleAddr));
+    before(async () => {
+      const setup = await setupProvider();
+      provider = setup.provider;
+      user = setup.user;
+    });
 
-    console.log(`Balance Before ${compBalanceBefore}`);
-    console.log(`Balance After ${compBalanceAfter}`);
+    it('Should have exchangeRate', async function () {
+      exchangeRate = await provider.exchangeRate(cDAI);
+      expect(exchangeRate).to.be.greaterThan(1 * 1e6);
+    });
 
-    expect(compBalanceAfter).to.be.greaterThan(compBalanceBefore);
+    it('Should deposit in cDAI', async () => {
+      const expectedShares = Math.round(amount.div(exchangeRate));
+
+      await expect(() => provider.connect(user).deposit(amount, cDAI, dai)).to.changeTokenBalance(
+        IDAI,
+        user,
+        parseEther(-100_000),
+      );
+
+      const cDAIBalance = await provider.balance(user.address, cDAI);
+      expect(formatEther(cDAIBalance)).to.be.closeTo(expectedShares, 1);
+    });
+
+    it('Should calculate shares correctly', async () => {
+      const shares = await provider.calcShares(amount, cDAI);
+
+      const cDAIBalance = await provider.balance(user.address, cDAI);
+      expect(formatUnits(cDAIBalance, 8)).to.be.closeTo(formatEther(shares), 1);
+    });
+
+    it('Should calculate balance underlying correctly', async () => {
+      const balanceUnderlying = await provider.balanceUnderlying(user.address, cDAI);
+
+      expect(formatUnits(balanceUnderlying, 8)).to.be.closeTo(formatEther(amount), 1);
+    });
+
+    it('Should be able to withdraw', async () => {
+      const cDAIBalance = await provider.balance(user.address, cDAI);
+
+      await IcDAI.connect(user).approve(provider.address, cDAIBalance);
+      await provider.connect(user).withdraw(cDAIBalance, cDAI, dai);
+
+      // end balance should be close to starting balance of 10m minus fees
+      expect(formatEther(await IDAI.balanceOf(user.address))).to.be.closeTo(1_000_000, 250);
+    });
   });
 
-  it('Should get Compound exchangeRate', async function () {
-    const exchangeRate = await compoundProviderMock.connect(vault).exchangeRate(cusdc);
-    console.log(`Exchange rate ${exchangeRate}`);
-  });
+  // it('Should claim Comp tokens from Comptroller', async function () {
+  //   await compoundProviderMock.connect(vault).claim(cusdc, vaultAddr);
+
+  //   const compBalanceBefore = Number(await compToken.balanceOf(cusdcWhaleAddr));
+  //   await compoundProviderMock.connect(cusdcWhale).claimTest(cusdcWhaleAddr, cusdc);
+  //   const compBalanceAfter = Number(await compToken.balanceOf(cusdcWhaleAddr));
+
+  //   console.log(`Balance Before ${compBalanceBefore}`);
+  //   console.log(`Balance After ${compBalanceAfter}`);
+
+  //   expect(compBalanceAfter).to.be.greaterThan(compBalanceBefore);
+  // });
 });

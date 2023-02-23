@@ -165,6 +165,15 @@ task('xcontroller_set_game', 'Setter for game address')
     await xcontroller.connect(dao).setGame(address);
   });
 
+task('xcontroller_set_minimum_amount', 'Setter for minimum amount to send xChain')
+  .addParam('amount', 'New minimum amount', null, types.int)
+  .setAction(async ({ amount }, hre) => {
+    const xcontroller = await getXController(hre);
+    const dao = await getDao(hre);
+
+    await xcontroller.connect(dao).setMinimumAmount(amount);
+  });
+
 const getXController = async ({ deployments, ethers, network }: HardhatRuntimeEnvironment) => {
   await deployments.all();
   const xControllerContract =

@@ -41,10 +41,10 @@ interface IController {
 
   function curveIndex(address _token) external view returns (int128);
 
-  function getProtocolInfo(uint256 _ETFnumber, uint256 protocolNumber)
-    external
-    view
-    returns (ProtocolInfoS memory);
+  function getProtocolInfo(
+    uint256 _ETFnumber,
+    uint256 protocolNumber
+  ) external view returns (ProtocolInfoS memory);
 
   function getUniswapParams() external view returns (UniswapParams memory);
 
@@ -68,16 +68,12 @@ interface IController {
 
   function getUniswapQuoter() external view returns (address);
 
-  function getProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum)
-    external
-    view
-    returns (bool);
+  function getProtocolBlacklist(
+    uint256 _ETFnumber,
+    uint256 _protocolNum
+  ) external view returns (bool);
 
   function setProtocolBlacklist(uint256 _ETFnumber, uint256 _protocolNum) external;
-
-  function getGasPrice() external returns (uint256);
-
-  function setGasPriceOracle(address _chainlinkGasPriceOracle) external;
 
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address);
 

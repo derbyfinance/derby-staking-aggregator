@@ -4,17 +4,16 @@ import { DeployFunction } from 'hardhat-deploy/types';
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  run,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer, dao } = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
 
-  await deploy('TEMPLATEController', {
+  await deploy('WombexProvider', {
     from: deployer,
-    args: [dao],
+    args: [],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['TEMPLATEController'];
+func.tags = ['WombexProvider'];

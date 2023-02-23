@@ -37,9 +37,17 @@ contract MainVault is Vault, VaultToken {
   uint32 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
+  uint256 public maxDivergenceWithdraws;
+
+  string internal allowanceError = "!Allowance";
 
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
+
+  // training
+  bool private training;
+  uint256 private maxTrainingDeposit;
+  mapping(address => bool) private whitelist;
 
   constructor(
     string memory _name,
@@ -58,6 +66,7 @@ contract MainVault is Vault, VaultToken {
     exchangeRate = _uScale;
     game = _game;
     governanceFee = 0;
+    maxDivergenceWithdraws = 1_000_000;
   }
 
   modifier onlyXProvider() {
@@ -100,6 +109,12 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount,
     address _receiver
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
+    if (training) {
+      require(whitelist[msg.sender]);
+      uint256 balanceSender = (balanceOf(msg.sender) * exchangeRate) / (10 ** decimals());
+      require(_amount + balanceSender <= maxTrainingDeposit);
+    }
+
     uint256 balanceBefore = getVaultBalance() - reservedFunds;
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance() - reservedFunds;
@@ -152,14 +167,11 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.withdrawalAllowance > 0, "!allowance");
+    require(user.withdrawalAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.withdrawalAllowance;
@@ -168,8 +180,6 @@ contract MainVault is Vault, VaultToken {
     transferFunds(msg.sender, value);
   }
 
-  // 513844
-  // 513777
   /// @notice Substract governance fee from value
   /// @param _receiver Receiving adress for the vaultcurrency
   /// @param _value Amount received by seller in vaultCurrency
@@ -188,7 +198,7 @@ contract MainVault is Vault, VaultToken {
     address _user
   ) external onlyGame nonReentrant onlyWhenVaultIsOn {
     UserInfo storage user = userInfo[_user];
-    require(user.rewardAllowance == 0, "!allowance");
+    require(user.rewardAllowance == 0, allowanceError);
 
     user.rewardAllowance = _value;
     user.rewardRequestPeriod = rebalancingPeriod;
@@ -199,14 +209,11 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
   function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.rewardAllowance > 0, "!allowance");
-    require(rebalancingPeriod > user.rewardRequestPeriod, "Funds not arrived");
+    require(user.rewardAllowance > 0, allowanceError);
+    require(rebalancingPeriod > user.rewardRequestPeriod, "!Funds");
 
     value = user.rewardAllowance;
-
-    // Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-    // This is to make sure the vault doesnt get stuck
-    if (value > getVaultBalance()) value = getVaultBalance();
+    value = checkForBalance(value);
 
     reservedFunds -= value;
     delete user.rewardAllowance;
@@ -222,6 +229,21 @@ contract MainVault is Vault, VaultToken {
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
+  }
+
+  /// @notice Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+  /// @notice This is to make sure the vault doesnt get stuck
+  /// @notice Value will be set to the vaultBalance
+  /// @notice When divergence is greater then maxDivergenceWithdraws it will revert
+  /// @param _value Value the user wants to withdraw
+  /// @return value Value - divergence
+  function checkForBalance(uint256 _value) internal view returns (uint256) {
+    if (_value > getVaultBalance()) {
+      uint256 oldValue = _value;
+      _value = getVaultBalance();
+      require(oldValue - _value <= maxDivergenceWithdraws, "Max divergence");
+    }
+    return _value;
   }
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
@@ -255,10 +277,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice See setXChainAllocationInt below
   function setXChainAllocation(
     uint256 _amountToSend,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlyXProvider {
     require(state == State.PushedUnderlying, stateError);
-    setXChainAllocationInt(_amountToSend, _exchangeRate);
+    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
@@ -266,11 +289,16 @@ contract MainVault is Vault, VaultToken {
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
   /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocationInt(uint256 _amountToSend, uint256 _exchangeRate) internal {
+  function setXChainAllocationInt(
+    uint256 _amountToSend,
+    uint256 _exchangeRate,
+    bool _receivingFunds
+  ) internal {
     amountToSendXChain = _amountToSend;
     exchangeRate = _exchangeRate;
 
-    if (_amountToSend == 0) state = State.WaitingForFunds;
+    if (_amountToSend == 0 && !_receivingFunds) settleReservedFunds();
+    else if (_amountToSend == 0 && _receivingFunds) state = State.WaitingForFunds;
     else state = State.SendingFundsXChain;
   }
 
@@ -387,6 +415,12 @@ contract MainVault is Vault, VaultToken {
     swapRewards = _state;
   }
 
+  /// @notice Setter for maximum divergence a user can get during a withdraw
+  /// @param _maxDivergence New maximum divergence in vaultCurrency
+  function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
+    maxDivergenceWithdraws = _maxDivergence;
+  }
+
   /*
   Only Guardian functions
   */
@@ -394,9 +428,10 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 3: Guardian function
   function setXChainAllocationGuard(
     uint256 _amountToSend,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlyGuardian {
-    setXChainAllocationInt(_amountToSend, _exchangeRate);
+    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 5: Guardian function
@@ -423,5 +458,20 @@ contract MainVault is Vault, VaultToken {
   /// @param _fee Fee in basis points
   function setGovernanceFee(uint16 _fee) external onlyGuardian {
     governanceFee = _fee;
+  }
+
+  /// @notice Setter to control the training state in de deposit function
+  function setTraining(bool _state) external onlyGuardian {
+    training = _state;
+  }
+
+  /// @notice Setter for maximum amount to be able to deposit in training state
+  function setTrainingDeposit(uint256 _maxDeposit) external onlyGuardian {
+    maxTrainingDeposit = _maxDeposit;
+  }
+
+  /// @notice Setter to add an address to the whitelist
+  function addToWhitelist(address _address) external onlyGuardian {
+    whitelist[_address] = true;
   }
 }

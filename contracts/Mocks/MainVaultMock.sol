@@ -61,16 +61,6 @@ contract MainVaultMock is MainVault {
     return lastPrices[_protocolId];
   }
 
-  function balanceSharesTEST(
-    uint256 _protocolNum,
-    address _address
-  ) external view returns (uint256) {
-    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
-    uint256 balance = IProvider(p.provider).balance(_address, p.LPToken);
-
-    return balance;
-  }
-
   function getWithdrawalAllowanceTEST(address _address) external view returns (uint256) {
     return userInfo[_address].withdrawalAllowance;
   }
@@ -113,6 +103,16 @@ contract MainVaultMock is MainVault {
 
   function toggleVaultOnOffTEST(bool _state) external {
     vaultOff = _state;
+  }
+
+  function balanceSharesTEST(
+    uint256 _protocolNum,
+    address _address
+  ) external view returns (uint256) {
+    IController.ProtocolInfoS memory p = controller.getProtocolInfo(vaultNumber, _protocolNum);
+    uint256 balance = IProvider(p.provider).balance(_address, p.LPToken);
+
+    return balance;
   }
 
   function swapTokensMultiTest(
@@ -163,6 +163,10 @@ contract MainVaultMock is MainVault {
     if (_state == 1) state = State.SendingFundsXChain;
     if (_state == 2) state = State.WaitingForFunds;
     if (_state == 3) state = State.RebalanceVault;
+  }
+
+  function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {
+    storePriceAndRewards(_totalUnderlying, _protocolId);
   }
 
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {

@@ -19,6 +19,7 @@ contract XProvider is IXReceiver {
   address public immutable connext;
 
   address private dao;
+  address private guardian;
   address public xController;
   address public xControllerProvider;
   address public game;
@@ -31,12 +32,19 @@ contract XProvider is IXReceiver {
   mapping(uint32 => address) public trustedRemoteConnext;
   // (vaultAddress => bool): used for whitelisting vaults
   mapping(address => bool) public vaultWhitelist;
+  // (vaultNumber => vaultAddress): used for guardian when xCall fails
+  mapping(uint256 => address) public vaults;
 
   event SetTrustedRemote(uint32 _srcChainId, bytes _srcAddress);
   event SetTrustedRemoteConnext(uint32 _srcChainId, address _srcAddress);
 
   modifier onlyDao() {
     require(msg.sender == dao, "xProvider: only DAO");
+    _;
+  }
+
+  modifier onlyGuardian() {
+    require(msg.sender == guardian, "only Guardian");
     _;
   }
 
@@ -84,12 +92,14 @@ contract XProvider is IXReceiver {
   constructor(
     address _connext,
     address _dao,
+    address _guardian,
     address _game,
     address _xController,
     uint32 _homeChain
   ) {
     connext = _connext;
     dao = _dao;
+    guardian = _guardian;
     game = _game;
     xController = _xController;
     homeChain = _homeChain;
@@ -179,6 +189,9 @@ contract XProvider is IXReceiver {
     uint256 _vaultNumber,
     int256[] memory _deltas
   ) external payable onlyGame {
+    if (homeChain == xControllerChain) {
+      return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
+    }
     bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
     bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
@@ -266,17 +279,21 @@ contract XProvider is IXReceiver {
     address _vault,
     uint32 _chainId,
     uint256 _amountToSendBack,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external payable onlyController {
     if (_chainId == homeChain) {
-      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
+      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
     } else {
-      bytes4 selector = bytes4(keccak256("receiveSetXChainAllocation(address,uint256,uint256)"));
+      bytes4 selector = bytes4(
+        keccak256("receiveSetXChainAllocation(address,uint256,uint256,bool)")
+      );
       bytes memory callData = abi.encodeWithSelector(
         selector,
         _vault,
         _amountToSendBack,
-        _exchangeRate
+        _exchangeRate,
+        _receivingFunds
       );
 
       xSend(_chainId, callData, 0);
@@ -290,9 +307,10 @@ contract XProvider is IXReceiver {
   function receiveSetXChainAllocation(
     address _vault,
     uint256 _amountToSendBack,
-    uint256 _exchangeRate
+    uint256 _exchangeRate,
+    bool _receivingFunds
   ) external onlySelf {
-    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate);
+    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
   }
 
   /// @notice Step 4 push; Push funds from vaults to xChainController
@@ -528,9 +546,42 @@ contract XProvider is IXReceiver {
     dao = _dao;
   }
 
+  /// @notice Setter for guardian address
+  /// @param _guardian new address of the guardian
+  function setGuardian(address _guardian) external onlyDao {
+    guardian = _guardian;
+  }
+
   /// @notice Setter for new game address
   /// @param _game New address of the game
   function setGame(address _game) external onlyDao {
     game = _game;
+  }
+
+  /// @notice Setter for vault address to vaultNumber for guardian
+  function setVaultAddress(uint256 _vaultNumber, address _vault) external onlyDao {
+    vaults[_vaultNumber] = _vault;
+  }
+
+  /*
+  Only Guardian functions
+  */
+
+  /// @notice Guardian function to send funds back to xController when xCall fails
+  function sendFundsToXController(address _token) external onlyGuardian {
+    require(xControllerChain == homeChain, "No xController on this chain");
+    require(xController != address(0), "Zero address");
+
+    uint256 balance = IERC20(_token).balanceOf(address(this));
+    IERC20(_token).transfer(xController, balance);
+  }
+
+  /// @notice Guardian function to send funds back to vault when xCall fails
+  function sendFundsToVault(uint256 _vaultNumber, address _token) external onlyGuardian {
+    address vault = vaults[_vaultNumber];
+    require(vault != address(0), "Zero address");
+
+    uint256 balance = IERC20(_token).balanceOf(address(this));
+    IERC20(_token).transfer(vault, balance);
   }
 }

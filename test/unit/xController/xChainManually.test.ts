@@ -1,14 +1,35 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC } from '@testhelp/helpers';
-import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
-import { deployXChainControllerMock } from '@testhelp/deploy';
+import { erc20, formatUSDC, random } from '@testhelp/helpers';
+import type {
+  DerbyToken,
+  GameMock,
+  MainVaultMock,
+  XChainControllerMock,
+  XProvider,
+} from '@typechain';
+import XChainControllerMockArtifact from '@artifacts/Mocks/XChainControllerMock.sol/XChainControllerMock.json';
 import { usdc } from '@testhelp/addresses';
 import { getAndInitXProviders, addVaultsToXController } from '@testhelp/InitialiseContracts';
 import { getAllSigners } from '@testhelp/getContracts';
 import { setupXChain } from './setup';
-import { ethers } from 'hardhat';
+import { deployContract } from 'ethereum-waffle';
+
+const deployXChainControllerMock = (
+  deployerSign: Signer,
+  game: string,
+  dao: string,
+  guardian: string,
+  homeChain: number,
+): Promise<XChainControllerMock> => {
+  return deployContract(deployerSign, XChainControllerMockArtifact, [
+    game,
+    dao,
+    guardian,
+    homeChain,
+  ]) as Promise<XChainControllerMock>;
+};
 
 const chainIds = [10, 100];
 
@@ -17,6 +38,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     vault2: MainVaultMock,
     xChainController: XChainControllerMock,
     xChainControllerDUMMY: XChainControllerMock,
+    xProviderMain: XProvider,
     dao: Signer,
     user: Signer,
     userAddr: string,
@@ -61,6 +83,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
     vault1 = setup.vault1;
     vault2 = setup.vault2;
+    xProviderMain = setup.xProviderMain;
     game = setup.game;
     xChainController = setup.xChainController;
     derbyToken = setup.derbyToken;
@@ -94,8 +117,9 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     await expect(vault1.connect(user).setVaultStateGuard(3)).to.be.revertedWith('only Guardian');
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
-      await expect(game.connect(user).setRebalancingState(vaultNumber, chain, true)).to.be.revertedWith(
-        'Game: only Guardian');
+      await expect(
+        game.connect(user).setRebalancingState(vaultNumber, chain, true),
+      ).to.be.revertedWith('Game: only Guardian');
     }
     await expect(
       xChainController.connect(user).setReadyGuard(vaultNumber, true),
@@ -165,7 +189,7 @@ describe.only('Testing XChainController, unit test for manual execution', async 
 
     // perform step 1.5 manually
     await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[0]);
-    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[1]); 
+    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[1]);
   });
 
   it('Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController', async function () {
@@ -211,16 +235,20 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     // Sending values to dummy vaults
     const chainIds = await xChainControllerDUMMY.getChainIds();
 
-    await expect(xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chainIds[0], {value: ethers.utils.parseEther("0.1")}))
+    await expect(
+      xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chainIds[0], {
+        value: ethers.utils.parseEther('0.1'),
+      }),
+    )
       .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
-      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6);
+      .withArgs(vault1.address, 10, expectedAmounts[0] * 1e6, 1 * 1e6, false);
 
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
 
     // Test guardian function
-    await vault1.connect(guardian).setXChainAllocationGuard(2000, 1.5 * 1e6);
-    await vault2.connect(guardian).setXChainAllocationGuard(1000, 1.5 * 1e6);
+    await vault1.connect(guardian).setXChainAllocationGuard(2000, 1.5 * 1e6, false);
+    await vault2.connect(guardian).setXChainAllocationGuard(1000, 1.5 * 1e6, true);
 
     expect(await vault1.amountToSendXChain()).to.be.equal(2000);
     expect(await vault2.amountToSendXChain()).to.be.equal(1000);
@@ -228,13 +256,17 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     expect(await vault2.exchangeRate()).to.be.equal(1.5 * 1e6);
 
     // set state back for next step
-    await vault1.connect(guardian).setXChainAllocationGuard(expectedAmounts[0] * 1e6, 1 * 1e6);
-    await vault2.connect(guardian).setXChainAllocationGuard(0, 1 * 1e6);
+    await vault1
+      .connect(guardian)
+      .setXChainAllocationGuard(expectedAmounts[0] * 1e6, 1 * 1e6, false);
+    await vault2.connect(guardian).setXChainAllocationGuard(0, 1 * 1e6, true);
   });
 
   it('Step 4: Push funds from vaults to xChainControlle', async function () {
-    await vault1.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")});
-    await expect(vault2.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")})).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') });
+    await expect(
+      vault2.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') }),
+    ).to.be.revertedWith('Wrong state');
 
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
     // Manually up funds received because feedback is sent to DUMMY controller
@@ -292,5 +324,34 @@ describe.only('Testing XChainController, unit test for manual execution', async 
     await expect(game.pushAllocationsToController(vaultNumber)).to.be.revertedWith(
       'No rebalance needed',
     );
+  });
+
+  it('Guardian sendFundsToXController to send funds back when xCall fails', async function () {
+    await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
+
+    await expect(xProviderMain.connect(guardian).sendFundsToXController(usdc)).to.be.revertedWith(
+      'No xController on this chain',
+    );
+
+    await xProviderMain.connect(dao).setXControllerChainId(10);
+
+    await expect(() =>
+      xProviderMain.connect(guardian).sendFundsToXController(usdc),
+    ).to.changeTokenBalance(IUSDc, xChainControllerDUMMY, 10_000);
+  });
+
+  it('Guardian sendFundsToVault to send funds back when xCall fails', async function () {
+    const vaultNumber = random(100);
+
+    await expect(
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+    ).to.be.revertedWith('Zero address');
+
+    await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
+    await xProviderMain.connect(dao).setVaultAddress(vaultNumber, vault1.address);
+
+    await expect(() =>
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+    ).to.changeTokenBalance(IUSDc, vault1, 10_000);
   });
 });

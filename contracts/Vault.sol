@@ -28,8 +28,8 @@ contract Vault is ReentrancyGuard {
     SendRewardsPerToken
   }
 
-  IERC20 public vaultCurrency;
-  IController public controller;
+  IERC20 internal vaultCurrency;
+  IController internal controller;
   State public state;
 
   bool public deltaAllocationsReceived;
@@ -120,9 +120,6 @@ contract Vault is ReentrancyGuard {
       savedTotalUnderlying -= amountToWithdraw;
 
       if (amountToWithdraw < minimumPull) break;
-
-      // amountToWithdraw = (amountToWithdraw * 10001) / 10000;
-
       withdrawFromProtocol(i, amountToWithdraw);
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
@@ -227,13 +224,13 @@ contract Vault is ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
-    uint256 price = price(_protocolId);
+    uint256 currentPrice = price(_protocolId);
     if (lastPrices[_protocolId] == 0) {
-      lastPrices[_protocolId] = price;
+      lastPrices[_protocolId] = currentPrice;
       return;
     }
 
-    int256 priceDiff = int256(price - lastPrices[_protocolId]);
+    int256 priceDiff = int256(currentPrice - lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
@@ -244,7 +241,7 @@ contract Vault is ReentrancyGuard {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
     }
 
-    lastPrices[_protocolId] = price;
+    lastPrices[_protocolId] = currentPrice;
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
@@ -449,7 +446,7 @@ contract Vault is ReentrancyGuard {
   /// @dev The actual performanceFee could be a bit more or a bit less than the performanceFee set here due to approximations in the game.
   /// @param _performanceFee Value at which to set the performanceFee.
   function setPerformanceFee(uint256 _performanceFee) external onlyDao {
-    require(_performanceFee <= 100, "Cannot exceed 100%");
+    require(_performanceFee <= 100);
     performanceFee = _performanceFee;
   }
 
