@@ -557,7 +557,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Checks if a rebalance is needed based on the set interval
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns (bool) {
-    return (block.timestamp - lastTimeStamp) > rebalanceInterval || msg.sender == guardian;
+    return (block.timestamp - lastTimeStamp) > rebalanceInterval;
   }
 
   /// @notice getter for vault address linked to a chainId

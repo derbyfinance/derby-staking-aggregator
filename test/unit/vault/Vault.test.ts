@@ -109,14 +109,6 @@ describe.only('Testing Vault, unit test', async () => {
     expect(result).to.be.true;
   });
 
-  it('Should test rebalanceNeeded function', async function () {
-    const { vault, user, guardian } = await setupVault();
-    await vault.connect(guardian).setRebalanceInterval(1_000_000);
-
-    expect(await vault.rebalanceNeeded()).to.be.false;
-    expect(await vault.connect(guardian).rebalanceNeeded()).to.be.true;
-  });
-
   it('Should store prices on rebalance', async function () {
     const { vault, user, dao } = await setupVault();
     await AllMockProviders.deployAllMockProviders(dao);
