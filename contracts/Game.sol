@@ -569,6 +569,11 @@ contract Game is ERC721, ReentrancyGuard {
     return chainIds;
   }
 
+  /// @notice Getter for rebalancing period for a vault
+  function getRebalancingPeriod(uint256 _vaultNumber) public view returns (uint256) {
+    return vaults[_vaultNumber].rebalancingPeriod;
+  }
+
   /*
   Only Dao functions
   */
@@ -650,6 +655,11 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Guardian function to set state when vault gets stuck for whatever reason
   function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
     isXChainRebalancing[_vaultNumber] = _state;
+  }
+
+  /// @notice Guardian function to set rebalancing period for vaultNumber
+  function setRebalancingPeriod(uint256 _vaultNumber, uint256 _period) external onlyGuardian {
+    vaults[_vaultNumber].rebalancingPeriod = _period;
   }
 
   /// @notice Step 8: Guardian function
