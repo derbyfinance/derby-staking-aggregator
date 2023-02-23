@@ -5,7 +5,7 @@ import { allProtocols, usdc } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
-  InitEndpoints,
+  InitConnextMock,
   setGameLatestProtocolIds,
   addVaultsToXController,
   setWhitelistVaults,
@@ -69,7 +69,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
 
   await Promise.all([
     setWhitelistVaults(hre, allXProviders, dao),
-    InitEndpoints(hre, allXProviders),
+    InitConnextMock(hre, allXProviders),
     addVaultsToController(hre),
     addVaultsToXController(hre, xChainController, dao, vaultNumber),
     setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),

@@ -37,13 +37,13 @@ contract Game is ERC721, ReentrancyGuard {
     // rebalance period of vault, upped at vault rebalance
     uint256 rebalancingPeriod;
     // (chainId => vaultAddress)
-    mapping(uint16 => address) vaultAddress;
+    mapping(uint32 => address) vaultAddress;
     // (chainId => deltaAllocation)
     mapping(uint256 => int256) deltaAllocationChain;
     // (chainId => protocolNumber => deltaAllocation)
     mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     // (chainId => rebalancing period => protocol id => rewardPerLockedToken).
-    mapping(uint16 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
+    mapping(uint32 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
   address private dao;
@@ -58,7 +58,7 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 private latestBasketId;
 
   // array of chainIds e.g [10, 100, 1000];
-  uint16[] public chainIds;
+  uint32[] public chainIds;
 
   // interval in Unix timeStamp
   uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
@@ -81,10 +81,10 @@ contract Game is ERC721, ReentrancyGuard {
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
 
-  // (vaultNumber => bool): true when vault is cross-chain rebalancing
-  mapping(uint256 => bool) public isXChainRebalancing;
+  // (vaultNumber => chainid => bool): true when vault/ chainid is cross-chain rebalancing
+  mapping(uint256 => mapping(uint32 => bool)) public isXChainRebalancing;
 
-  event PushProtocolAllocations(uint16 chain, address vault, int256[] deltas);
+  event PushProtocolAllocations(uint32 chain, address vault, int256[] deltas);
 
   event PushedAllocationsToController(uint256 vaultNumber, int256[] deltas);
 
@@ -322,7 +322,9 @@ contract Game is ERC721, ReentrancyGuard {
     int256[][] memory _deltaAllocations
   ) external onlyBasketOwner(_basketId) nonReentrant {
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
-    require(!isXChainRebalancing[vaultNumber], "Game: vault is xChainRebalancing");
+    for (uint k = 0; k < chainIds.length; k++) {
+      require(!isXChainRebalancing[vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
+    }
 
     addToTotalRewards(_basketId);
     int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
@@ -346,7 +348,7 @@ contract Game is ERC721, ReentrancyGuard {
   ) internal returns (int256 totalDelta) {
     for (uint256 i = 0; i < _deltaAllocations.length; i++) {
       int256 chainTotal;
-      uint16 chain = chainIds[i];
+      uint32 chain = chainIds[i];
       uint256 latestProtocol = latestProtocolId[chain];
       require(_deltaAllocations[i].length == latestProtocol, "Invalid allocation length");
 
@@ -375,7 +377,7 @@ contract Game is ERC721, ReentrancyGuard {
     if (currentRebalancingPeriod <= lastRebalancingPeriod) return;
 
     for (uint k = 0; k < chainIds.length; k++) {
-      uint16 chain = chainIds[k];
+      uint32 chain = chainIds[k];
       uint256 latestProtocol = latestProtocolId[chain];
       for (uint i = 0; i < latestProtocol; i++) {
         int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
@@ -419,16 +421,27 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Step 1 trigger; Game pushes totalDeltaAllocations to xChainController
   /// @notice Trigger for Dao to push delta allocations to the xChainController
+  /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external {
+  function pushAllocationsToController(uint256 _vaultNumber) external payable {
     require(rebalanceNeeded(), "No rebalance needed");
-    require(!isXChainRebalancing[_vaultNumber], "Vault is already rebalancing");
-    isXChainRebalancing[_vaultNumber] = true;
+    for (uint k = 0; k < chainIds.length; k++) {
+      require(
+        getVaultAddress(_vaultNumber, chainIds[k]) != address(0),
+        "Game: not a valid vaultnumber"
+      );
+      require(
+        !isXChainRebalancing[_vaultNumber][chainIds[k]],
+        "Game: vault is already rebalancing"
+      );
+      isXChainRebalancing[_vaultNumber][chainIds[k]] = true;
+    }
 
     int256[] memory deltas = allocationsToArray(_vaultNumber);
-    IXProvider(xProvider).pushAllocations(_vaultNumber, deltas);
+    IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
 
     lastTimeStamp = block.timestamp;
+    vaults[_vaultNumber].rebalancingPeriod++;
 
     emit PushedAllocationsToController(_vaultNumber, deltas);
   }
@@ -440,7 +453,7 @@ contract Game is ERC721, ReentrancyGuard {
     deltas = new int[](chainIds.length);
 
     for (uint256 i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
+      uint32 chain = chainIds[i];
       deltas[i] = getDeltaAllocationChain(_vaultNumber, chain);
       vaults[_vaultNumber].deltaAllocationChain[chain] = 0;
     }
@@ -448,33 +461,28 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
+  /// @param _vaultNumber Number of vault
+  /// @param _chain Chain id of the vault where the allocations need to be sent
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(uint256 _vaultNumber) external {
-    require(isXChainRebalancing[_vaultNumber], "Vault is not rebalancing");
+  function pushAllocationsToVaults(uint256 _vaultNumber, uint32 _chain) external payable {
+    address vault = getVaultAddress(_vaultNumber, _chain);
+    require(vault != address(0), "Game: not a valid vaultnumber");
+    require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
 
-    for (uint256 i = 0; i < chainIds.length; i++) {
-      uint16 chain = chainIds[i];
-      int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, chain);
+    int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, _chain);
 
-      IXProvider(xProvider).pushProtocolAllocationsToVault(
-        chain,
-        getVaultAddress(_vaultNumber, chain),
-        deltas
-      );
+    IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(_chain, vault, deltas);
 
-      emit PushProtocolAllocations(chain, getVaultAddress(_vaultNumber, chain), deltas);
-    }
+    emit PushProtocolAllocations(_chain, getVaultAddress(_vaultNumber, _chain), deltas);
 
-    vaults[_vaultNumber].rebalancingPeriod++;
-
-    isXChainRebalancing[_vaultNumber] = false;
+    isXChainRebalancing[_vaultNumber][_chain] = false;
   }
 
   /// @notice Creates array with delta allocations in protocols for given chainId
   /// @return deltas Array with allocations where the index matches the protocolId
   function protocolAllocationsToArray(
     uint256 _vaultNumber,
-    uint16 _chainId
+    uint32 _chainId
   ) internal returns (int256[] memory deltas) {
     uint256 latestId = latestProtocolId[_chainId];
     deltas = new int[](latestId);
@@ -486,9 +494,12 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice See settleRewardsInt below
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @param _rewards Rewards per locked token per protocol (each protocol is an element in the array)
   function settleRewards(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) external onlyXProvider {
     settleRewardsInt(_vaultNumber, _chainId, _rewards);
@@ -502,7 +513,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function settleRewardsInt(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) internal {
     uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
@@ -523,7 +534,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Getter for rewardsPerLockedToken for given vaultNumber => chainId => rebalancingPeriod => protocolId
   function getRewardsPerLockedToken(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _rebalancingPeriod,
     uint256 _protocolId
   ) internal view returns (int256) {
@@ -550,7 +561,7 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice getter for vault address linked to a chainId
-  function getVaultAddress(uint256 _vaultNumber, uint16 _chainId) internal view returns (address) {
+  function getVaultAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns (address) {
     return vaults[_vaultNumber].vaultAddress[_chainId];
   }
 
@@ -565,7 +576,7 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Getter for chainId array
-  function getChainIds() public view returns (uint16[] memory) {
+  function getChainIds() public view returns (uint32[] memory) {
     return chainIds;
   }
 
@@ -633,7 +644,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice setter to link a chainId to a vault address for cross chain functions
   function setVaultAddress(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     address _address
   ) external onlyGuardian {
     vaults[_vaultNumber].vaultAddress[_chainId] = _address;
@@ -642,19 +653,23 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Setter for latest protocol Id for given chainId.
   /// @param _chainId number of chain id set in chainIds array
   /// @param _latestProtocolId latest protocol Id aka number of supported protocol vaults, starts at 0
-  function setLatestProtocolId(uint16 _chainId, uint256 _latestProtocolId) external onlyGuardian {
+  function setLatestProtocolId(uint32 _chainId, uint256 _latestProtocolId) external onlyGuardian {
     latestProtocolId[_chainId] = _latestProtocolId;
   }
 
   /// @notice Setter for chainId array
   /// @param _chainIds array of all the used chainIds
-  function setChainIds(uint16[] memory _chainIds) external onlyGuardian {
+  function setChainIds(uint32[] memory _chainIds) external onlyGuardian {
     chainIds = _chainIds;
   }
 
   /// @notice Guardian function to set state when vault gets stuck for whatever reason
-  function setRebalancingState(uint256 _vaultNumber, bool _state) external onlyGuardian {
-    isXChainRebalancing[_vaultNumber] = _state;
+  function setRebalancingState(
+    uint256 _vaultNumber,
+    uint32 _chain,
+    bool _state
+  ) external onlyGuardian {
+    isXChainRebalancing[_vaultNumber][_chain] = _state;
   }
 
   /// @notice Guardian function to set rebalancing period for vaultNumber
@@ -665,7 +680,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Step 8: Guardian function
   function settleRewardsGuard(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     int256[] memory _rewards
   ) external onlyGuardian {
     settleRewardsInt(_vaultNumber, _chainId, _rewards);

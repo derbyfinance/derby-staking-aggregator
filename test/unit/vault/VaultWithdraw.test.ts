@@ -111,7 +111,7 @@ describe.only('Testing VaultWithdraw, unit test', async () => {
     );
 
     // trying to withdraw allowance again
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!allowance');
+    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!Allowance');
   });
 
   it('Withdrawal request and withdraw when the divergence in checkForBalance too big', async function () {

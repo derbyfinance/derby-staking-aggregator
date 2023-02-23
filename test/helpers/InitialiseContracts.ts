@@ -1,8 +1,9 @@
-import { XChainController, XProvider } from '@typechain';
+import { XChainController, XProvider, ConnextMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { testConnextChainIds, usdc } from './addresses';
-import { getEndpoints, getTestVaultDeployments } from './getContracts';
+import { getTestVaultDeployments, getContract } from './getContracts';
+import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
 
 export async function getAndInitXProviders(
   hre: HardhatRuntimeEnvironment,
@@ -33,13 +34,10 @@ export async function getAndInitXProviders(
       xProvider.connect(dao).setXControllerProvider(arbitrum.address),
       xProvider.connect(dao).setXControllerChainId(chains.xController),
       xProvider.connect(dao).setGameChainId(chains.game),
-      xProvider.connect(dao).setTrustedRemote(10, main.address),
-      xProvider.connect(dao).setTrustedRemote(100, arbitrum.address),
-      xProvider.connect(dao).setTrustedRemote(1000, optimism.address),
-      xProvider.connect(dao).setTrustedRemote(10000, bnb.address),
-      xProvider.connect(dao).setConnextChainId(10, testConnextChainIds.goerli),
-      xProvider.connect(dao).setConnextChainId(100, testConnextChainIds.mumbai),
-      xProvider.connect(dao).setConnextChainId(1000, testConnextChainIds.optimismGoerli),
+      xProvider.connect(dao).setTrustedRemoteConnext(10, main.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(100, arbitrum.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(1000, optimism.address),
+      xProvider.connect(dao).setTrustedRemoteConnext(10000, bnb.address),
     ]);
   }
 
@@ -100,23 +98,15 @@ export async function setGameLatestProtocolIds(
   }
 }
 
-export async function InitEndpoints(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
-  const [LZEndpointMain, LZEndpointArbi, LZEndpointOpti, LZEndpointBnb] = await getEndpoints(hre);
+export async function InitConnextMock(hre: HardhatRuntimeEnvironment, xProviders: XProvider[]) {
+  const connext = (await getContract('ConnextMock', hre)) as ConnextMock;
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = xProviders;
 
-  await Promise.all([
-    LZEndpointMain.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
-    LZEndpointMain.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
-    LZEndpointMain.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
-    LZEndpointArbi.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
-    LZEndpointArbi.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
-    LZEndpointArbi.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
-    LZEndpointOpti.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
-    LZEndpointOpti.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
-    LZEndpointOpti.setDestLzEndpoint(xProviderBnb.address, LZEndpointBnb.address),
-    LZEndpointBnb.setDestLzEndpoint(xProviderMain.address, LZEndpointMain.address),
-    LZEndpointBnb.setDestLzEndpoint(xProviderArbi.address, LZEndpointArbi.address),
-    LZEndpointBnb.setDestLzEndpoint(xProviderOpti.address, LZEndpointOpti.address),
+  await Promise.all([ 
+    connext.setDomainLookup(xProviderMain.address, 10),
+    connext.setDomainLookup(xProviderArbi.address, 100),
+    connext.setDomainLookup(xProviderOpti.address, 1000),
+    connext.setDomainLookup(xProviderBnb.address, 10000)
   ]);
 }
 

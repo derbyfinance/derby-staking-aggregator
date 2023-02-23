@@ -8,13 +8,13 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dao } = await getNamedAccounts();
 
-  await deploy('ConnextHandlerMock', {
+  await deploy('ConnextMock', {
     from: deployer,
-    contract: 'ConnextHandlerMock',
-    args: [dao],
+    contract: 'ConnextMock',
+    args: [],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['ConnextHandlerMock'];
+func.tags = ['ConnextMock'];

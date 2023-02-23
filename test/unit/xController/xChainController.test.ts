@@ -1,10 +1,11 @@
 import { run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC } from '@testhelp/helpers';
+import { erc20, formatUSDC, parseEther } from '@testhelp/helpers';
 import type { DerbyToken, GameMock, MainVaultMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupXChain } from './setup';
+import { ethers } from 'hardhat';
 
 const chainIds = [10, 100, 1000, 10000];
 
@@ -23,6 +24,8 @@ describe.only('Testing XChainController, integration test', async () => {
     derbyToken: DerbyToken,
     game: GameMock,
     userAddr: string;
+  const slippage = 30;
+  const relayerFee = 100;
 
   before(async function () {
     const setup = await setupXChain();
@@ -98,7 +101,7 @@ describe.only('Testing XChainController, integration test', async () => {
     await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
     // chainIds = [10, 100, 1000, 2000];
-    await expect(game.pushAllocationsToController(vaultNumber))
+    await expect(game.pushAllocationsToController(vaultNumber, { value: parseEther('0.1') }))
       .to.emit(game, 'PushedAllocationsToController')
       .withArgs(vaultNumber, [398, 600, 1000]);
 
@@ -117,6 +120,12 @@ describe.only('Testing XChainController, integration test', async () => {
       2,
     );
 
+    // perform step 1.5 manually
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[0]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[1]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[2]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[3]);
+
     // chainId on or off
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
@@ -131,10 +140,10 @@ describe.only('Testing XChainController, integration test', async () => {
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
 
-    await vault1.pushTotalUnderlyingToController();
-    await vault2.pushTotalUnderlyingToController();
-    await vault3.pushTotalUnderlyingToController();
-    await vault4.pushTotalUnderlyingToController();
+    await vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault2.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault3.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault4.pushTotalUnderlyingToController({ value: parseEther('0.1') });
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1e6);
     expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(
@@ -145,7 +154,9 @@ describe.only('Testing XChainController, integration test', async () => {
     );
 
     // // Should revert if total Underlying is already set
-    await expect(vault1.pushTotalUnderlyingToController()).to.be.revertedWith('Rebalancing');
+    await expect(
+      vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') }),
+    ).to.be.revertedWith('Rebalancing');
 
     expect(await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, 10)).to.be.equal(
       100_000 * 1e6,
@@ -160,7 +171,12 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('4) Calc and set amount to deposit or withdraw in vault', async function () {
-    await xChainController.pushVaultAmounts(vaultNumber);
+    const chainIds = await xChainController.getChainIds();
+    for (let chain of chainIds) {
+      await xChainController.pushVaultAmounts(vaultNumber, chain, {
+        value: parseEther('0.1'),
+      });
+    }
 
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
     const expectedAmounts = [
@@ -188,9 +204,11 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain();
-    await vault2.rebalanceXChain();
-    await expect(vault3.rebalanceXChain()).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
+    await vault2.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
+    await expect(
+      vault3.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') }),
+    ).to.be.revertedWith('Wrong state');
 
     // 150k should be sent to xChainController
     expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_240) * 1e6);
@@ -208,7 +226,12 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
-    await xChainController.sendFundsToVault(vaultNumber);
+    const chainIds = await xChainController.getChainIds();
+    for (let chain of chainIds) {
+      await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
+        value: parseEther('0.1'),
+      });
+    }
 
     const expectedAmounts = [
       (398 / 2000) * 240_000, // vault 1
@@ -232,9 +255,14 @@ describe.only('Testing XChainController, integration test', async () => {
   });
 
   it('6) Push allocations from game to vaults', async function () {
-    expect(await game.isXChainRebalancing(vaultNumber)).to.be.true;
-    await game.pushAllocationsToVaults(vaultNumber);
-    expect(await game.isXChainRebalancing(vaultNumber)).to.be.false;
+    const chainIds = await xChainController.getChainIds();
+    for (let chain of chainIds) {
+      expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.true;
+      await game.pushAllocationsToVaults(vaultNumber, chain, {
+        value: parseEther('0.1'),
+      });
+      expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.false;
+    }
 
     const allocationArray = [
       [200, 0, 0, 198, 0], // 400

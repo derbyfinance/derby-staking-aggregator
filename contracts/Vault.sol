@@ -446,7 +446,7 @@ contract Vault is ReentrancyGuard {
   /// @dev The actual performanceFee could be a bit more or a bit less than the performanceFee set here due to approximations in the game.
   /// @param _performanceFee Value at which to set the performanceFee.
   function setPerformanceFee(uint256 _performanceFee) external onlyDao {
-    require(_performanceFee <= 100, "Cannot exceed 100%");
+    require(_performanceFee <= 100);
     performanceFee = _performanceFee;
   }
 

@@ -34,10 +34,12 @@ contract MainVault is Vault, VaultToken {
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
   uint256 public exchangeRate;
-  uint16 public homeChain;
+  uint32 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
+
+  string internal allowanceError = "!Allowance";
 
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
@@ -90,13 +92,13 @@ contract MainVault is Vault, VaultToken {
 
   event PushTotalUnderlying(
     uint256 _vaultNumber,
-    uint16 _chainId,
+    uint32 _chainId,
     uint256 _underlying,
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   );
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
-  event PushedRewardsToGame(uint256 _vaultNumber, uint16 _chain, int256[] _rewards);
+  event PushedRewardsToGame(uint256 _vaultNumber, uint32 _chain, int256[] _rewards);
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
@@ -165,7 +167,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will send the user funds and reset the allowance
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.withdrawalAllowance > 0, "!allowance");
+    require(user.withdrawalAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
@@ -196,7 +198,7 @@ contract MainVault is Vault, VaultToken {
     address _user
   ) external onlyGame nonReentrant onlyWhenVaultIsOn {
     UserInfo storage user = userInfo[_user];
-    require(user.rewardAllowance == 0, "!allowance");
+    require(user.rewardAllowance == 0, allowanceError);
 
     user.rewardAllowance = _value;
     user.rewardRequestPeriod = rebalancingPeriod;
@@ -207,8 +209,8 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
   function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.rewardAllowance > 0, "!allowance");
-    require(rebalancingPeriod > user.rewardRequestPeriod, "Funds not arrived");
+    require(user.rewardAllowance > 0, allowanceError);
+    require(rebalancingPeriod > user.rewardRequestPeriod, "!Funds");
 
     value = user.rewardAllowance;
     value = checkForBalance(value);
@@ -246,13 +248,13 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
-  function pushTotalUnderlyingToController() external onlyWhenIdle {
+  function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
-    IXProvider(xProvider).pushTotalUnderlying(
+    IXProvider(xProvider).pushTotalUnderlying{value: msg.value}(
       vaultNumber,
       homeChain,
       underlying,
@@ -302,17 +304,21 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
-  function rebalanceXChain() external {
+  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
+  /// @param _relayerFee The fee offered to the relayers
+  function rebalanceXChain(uint256 _slippage, uint256 _relayerFee) external payable {
     require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
     if (amountToSendXChain > getVaultBalance()) amountToSendXChain = getVaultBalance();
 
     vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController(
+    IXProvider(xProvider).xTransferToController{value: msg.value}(
       vaultNumber,
       amountToSendXChain,
-      address(vaultCurrency)
+      address(vaultCurrency),
+      _slippage,
+      _relayerFee
     );
 
     emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));
@@ -354,11 +360,11 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
-  function sendRewardsToGame() external {
+  function sendRewardsToGame() external payable {
     require(state == State.SendRewardsPerToken, stateError);
 
     int256[] memory rewards = rewardsToArray();
-    IXProvider(xProvider).pushRewardsToGame(vaultNumber, homeChain, rewards);
+    IXProvider(xProvider).pushRewardsToGame{value: msg.value}(vaultNumber, homeChain, rewards);
 
     state = State.Idle;
 
@@ -444,7 +450,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Setter for new homeChain Id
-  function setHomeChain(uint16 _homeChain) external onlyGuardian {
+  function setHomeChain(uint32 _homeChain) external onlyGuardian {
     homeChain = _homeChain;
   }
 
