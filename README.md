@@ -9,4 +9,5 @@ More documentation about the product can be found on: https://derby-finance.gitb
 - Run `git clone git@github.com:derbyfinance/derby-yield-optimiser.git`
 - Put the link + API key to your full node in your local .env file.
 - Run `npm install`.
+- Run `npx hardhat compile`.
 - To run the tests run `npx hardhat test`.
