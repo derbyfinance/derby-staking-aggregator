@@ -1,19 +1,5 @@
 import { ProtocolVault } from './classes/protocolVaultClass';
 
-// https://layerzero.gitbook.io/docs/technical-reference/testnet/testnet-addresses
-export const testLayerzeroChainIds = {
-  bnbChain: 10102,
-  fuju: 10106,
-  mumbai: 10109,
-  fantom: 10112,
-  goerli: 10121,
-  arbitrumGoerli: 10143,
-  optimismGoerli: 10132,
-  harmony: 10133,
-  moonbeam: 10126,
-  celo: 10125,
-};
-
 // https://docs.connext.network/resources/supported-chains
 export const testConnextChainIds = {
   goerli: 1735353714,
@@ -76,7 +62,6 @@ export const curve3Pool = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'; // DAI /
 // others
 export const comptroller = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
 export const WEth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-export const ChainlinkGasPrice = '0x169e633a2d1e6c10dd91238ba11c4a708dfef37c';
 
 // whales for testing
 export const CompWhale = '0xf977814e90da44bfa03b6295a0616a897441acec';

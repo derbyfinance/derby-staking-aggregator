@@ -4,7 +4,6 @@ pragma solidity ^0.8.11;
 
 import "./Interfaces/IProvider.sol";
 import "./Interfaces/IController.sol";
-import "./Interfaces/ExternalInterfaces/IChainlinkGasPrice.sol";
 import "hardhat/console.sol";
 
 contract Controller is IController {
@@ -12,7 +11,6 @@ contract Controller is IController {
 
   address private dao;
   address public curve3Pool;
-  address public chainlinkGasPriceOracle;
   uint256 public curve3PoolFee;
 
   // (vaultNumber => protocolNumber => protocolInfoStruct): struct in IController
@@ -126,12 +124,6 @@ contract Controller is IController {
 
   /// @notice Gets the gas price from Chainlink oracle
   /// @return gasPrice latest gas price from oracle
-  function getGasPrice() external override returns (uint256) {
-    return IChainlinkGasPrice(chainlinkGasPriceOracle).latestAnswer();
-  }
-
-  /// @notice Gets the gas price from Chainlink oracle
-  /// @return gasPrice latest gas price from oracle
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address) {
     return protocolGovToken[_vaultNumber][_protocolNum];
   }
@@ -224,12 +216,6 @@ contract Controller is IController {
 
   function addUnderlyingUScale(address _stable, uint256 _decimals) external onlyDao {
     underlyingUScale[_stable] = 10 ** _decimals;
-  }
-
-  /// @notice Setter for the Chainlink Gas price oracle contract address in case it changes
-  /// @param _chainlinkGasPriceOracle Contract address
-  function setGasPriceOracle(address _chainlinkGasPriceOracle) external override onlyDao {
-    chainlinkGasPriceOracle = _chainlinkGasPriceOracle;
   }
 
   /// @notice Set if provider have claimable tokens
