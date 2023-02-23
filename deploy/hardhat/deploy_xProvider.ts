@@ -14,8 +14,8 @@ const func: DeployFunction = async function ({
   if (!deployConfig) throw 'Unknown contract name';
   const { layerZeroEndpoint, connextHandler, mainnet } = deployConfig;
 
-  const game = await deployments.get('Game');
-  const xChainController = await deployments.get('XChainController');
+  const game = await deployments.get('GameMock');
+  const xChainController = await deployments.get('XChainControllerMock');
 
   await deploy('XProvider', {
     from: deployer,
@@ -34,4 +34,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = ['XProvider'];
-func.dependencies = ['Game', 'XChainController'];
+func.dependencies = ['GameMock', 'XChainControllerMock'];
