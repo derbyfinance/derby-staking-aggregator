@@ -1,10 +1,9 @@
 import { deployments, run } from 'hardhat';
 import { transferAndApproveUSDC } from '@testhelp/helpers';
 import { Controller, MainVaultMock } from '@typechain';
-import { allProtocols } from '@testhelp/addresses';
+import { allProtocols, compoundUSDC } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
-import { AddAllVaultsToController } from '@testhelp/InitialiseContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
   await deployments.fixture([
@@ -33,7 +32,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
   await run('controller_add_vault', { vault: vault.address });
   await run('controller_add_vault', { vault: guardian.address }); // using guardian as mock signer
   await run('controller_set_claimable', {
-    provider: allProviders.compoundProvider.address,
+    lptoken: compoundUSDC,
     bool: true,
   });
   await run('vault_set_liquidity_perc', { contract, percentage: 10 });

@@ -88,12 +88,12 @@ describe.only('Testing controller tasks', () => {
   });
 
   it('controller_set_claimable', async function () {
-    const provider = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+    const lptoken = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const { controller } = await setupController();
 
-    expect(await controller.claimable(provider)).to.be.equal(false);
-    await run('controller_set_claimable', { provider: provider, bool: true });
-    expect(await controller.claimable(provider)).to.be.equal(true);
+    expect(await controller.claimable(lptoken)).to.be.equal(false);
+    await run('controller_set_claimable', { lptoken, bool: true });
+    expect(await controller.claimable(lptoken)).to.be.equal(true);
   });
 
   it('controller_set_curve_3pool', async function () {
