@@ -5,7 +5,7 @@ import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import { setupVault } from './setup';
 import { run } from 'hardhat';
 
-describe.only('Testing VaultWithdraw, unit test', async () => {
+describe('Testing VaultWithdraw, unit test', async () => {
   const IUSDc: Contract = erc20(usdc);
 
   const compoundVault = protocols.get('compound_usdc_01')!;

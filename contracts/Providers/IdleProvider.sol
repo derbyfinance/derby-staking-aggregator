@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IIdle.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract IdleProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -83,16 +81,14 @@ contract IdleProvider is IProvider {
   /// @param _address Address to request balance from, most likely an Vault
   /// @param _iToken Address of protocol LP Token eg cUSDC
   /// @return balance in underlying token
-  function balanceUnderlying(address _address, address _iToken)
-    public
-    view
-    override
-    returns (uint256)
-  {
+  function balanceUnderlying(
+    address _address,
+    address _iToken
+  ) public view override returns (uint256) {
     uint256 balanceShares = balance(_address, _iToken);
     uint256 price = exchangeRate(_iToken);
     uint256 decimals = IERC20Metadata(IIdle(_iToken).token()).decimals();
-    return (balanceShares * price) / 10**decimals;
+    return (balanceShares * price) / 10 ** decimals;
   }
 
   /// @notice Calculates how many shares are equal to the amount
@@ -102,7 +98,7 @@ contract IdleProvider is IProvider {
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _iToken) external view override returns (uint256) {
     uint256 decimals = IERC20Metadata(IIdle(_iToken).token()).decimals();
-    uint256 shares = (_amount * (10**decimals)) / exchangeRate(_iToken);
+    uint256 shares = (_amount * (10 ** decimals)) / exchangeRate(_iToken);
     return shares;
   }
 

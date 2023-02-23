@@ -8,6 +8,7 @@ import {
   parseEther,
   formatEther,
   transferAndApproveUSDC,
+  transferAndApproveDAI,
 } from '@testhelp/helpers';
 import type { YearnProvider, YearnVaultMock } from '@typechain';
 import { dai, usdc, yearnUSDC as yUSDC, yearnDAI as yDAI } from '@testhelp/addresses';
@@ -29,6 +30,7 @@ describe('Testing Yearn provider for Mock vaults', async () => {
     const [dao, user] = await getAllSigners(hre);
 
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
+    await transferAndApproveDAI(provider.address, user, 1_000_000);
 
     // approve and send DAI to user
     const daiAmount = parseEther(1_000_000);

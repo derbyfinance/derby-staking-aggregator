@@ -8,8 +8,6 @@ import "../Interfaces/ExternalInterfaces/IAToken.sol";
 import "../Interfaces/ExternalInterfaces/IALendingPool.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract AaveProvider is IProvider {
   using SafeERC20 for IERC20;
 

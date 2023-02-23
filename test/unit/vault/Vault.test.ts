@@ -6,7 +6,7 @@ import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { setupVault } from './setup';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
 
-describe.only('Testing Vault, unit test', async () => {
+describe('Testing Vault, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
     vaultNumber: number = 10;
 

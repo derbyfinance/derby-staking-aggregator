@@ -1,5 +1,5 @@
 import hre from 'hardhat';
-import { erc20, parseDRB, parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
+import { erc20, parseDRB, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { dai, usdc, usdt, yearn } from '@testhelp/addresses';
 import {
@@ -10,12 +10,7 @@ import {
   addVaultsToXController,
   setWhitelistVaults,
 } from '@testhelp/InitialiseContracts';
-import {
-  deployYearnMockVaults,
-  getAllSigners,
-  getContract,
-  getTestVaults,
-} from '@testhelp/getContracts';
+import { deployYearnMockVaults, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
 import { allNamedAccountsToSigners } from './helpers';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
@@ -30,7 +25,6 @@ export const setupIntegration = async () => {
     'CompoundProvider',
     'AaveProvider',
     'TruefiProvider',
-    'HomoraProvider',
     'IdleProvider',
     'BetaProvider',
     'TestVault1',
@@ -146,11 +140,13 @@ export const setupIntegration = async () => {
     chainId: 1,
   });
 
-  await yearn_vault_usdc1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  await yearn_vault_usdc2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  await yearn_vault_dai1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  await yearn_vault_dai2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
-  await yearn_vault_usdt.addProtocolToController(controller, dao, vaultNumber, allProvidersClass);
+  await Promise.all([
+    yearn_vault_usdc1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_usdc2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_dai1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_dai2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_usdt.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+  ]);
 
   return {
     vaults,

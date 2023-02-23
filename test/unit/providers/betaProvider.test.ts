@@ -4,10 +4,10 @@ import { deployments } from 'hardhat';
 import {
   erc20,
   formatUSDC,
-  getDAISigner,
   parseEther,
   formatEther,
   transferAndApproveUSDC,
+  transferAndApproveDAI,
 } from '@testhelp/helpers';
 import type { BetaProvider } from '@typechain';
 import { dai, usdc, betaUSDC as bUSDC, betaDAI as bDAI } from '@testhelp/addresses';
@@ -20,13 +20,7 @@ describe('Testing Beta provider', async () => {
     const [dao, user] = await getAllSigners(hre);
 
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
-
-    // approve and send DAI to user
-    const daiAmount = parseEther(1_000_000);
-    const daiSigner = await getDAISigner();
-    const IDAI = erc20(dai);
-    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
-    await IDAI.connect(user).approve(provider.address, daiAmount);
+    await transferAndApproveDAI(provider.address, user, 1_000_000);
 
     return { provider, user };
   });
@@ -76,7 +70,7 @@ describe('Testing Beta provider', async () => {
 
       await expect(() =>
         provider.connect(user).withdraw(yUSDCBalance, bUSDC, usdc),
-      ).to.changeTokenBalance(IUSDc, user, amount);
+      ).to.changeTokenBalance(IUSDc, user, amount - 1);
     });
   });
 

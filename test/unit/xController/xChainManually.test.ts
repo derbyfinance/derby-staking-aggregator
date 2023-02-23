@@ -33,7 +33,7 @@ const deployXChainControllerMock = (
 
 const chainIds = [10, 100];
 
-describe.only('Testing XChainController, unit test for manual execution', async () => {
+describe('Testing XChainController, unit test for manual execution', async () => {
   let vault1: MainVaultMock,
     vault2: MainVaultMock,
     xChainController: XChainControllerMock,

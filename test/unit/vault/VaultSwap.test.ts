@@ -8,7 +8,6 @@ import {
   formatUSDC,
   getUSDCSigner,
   getWhale,
-  parseEther,
   parseUnits,
   parseUSDC,
 } from '@testhelp/helpers';
@@ -26,7 +25,7 @@ import {
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupVault } from './setup';
 
-describe.only('Testing VaultSwap, unit test', async () => {
+describe('Testing VaultSwap, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
     IDAI: Contract = erc20(dai),
     IComp: Contract = erc20(compToken);

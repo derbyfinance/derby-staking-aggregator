@@ -1,5 +1,3 @@
-import { Signer } from 'ethers';
-import { comptroller } from '../addresses';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Deployment } from 'hardhat-deploy/types';
 
@@ -8,7 +6,6 @@ class AllProviders {
   compoundProvider!: Deployment;
   aaveProvider!: Deployment;
   truefiProvider!: Deployment;
-  homoraProvider!: Deployment;
   idleProvider!: Deployment;
   betaProvider!: Deployment;
 
@@ -18,7 +15,6 @@ class AllProviders {
       this.compoundProvider,
       this.aaveProvider,
       this.truefiProvider,
-      this.homoraProvider,
       this.idleProvider,
       this.betaProvider,
     ] = await Promise.all([
@@ -26,7 +22,6 @@ class AllProviders {
       deployments.get('CompoundProvider'),
       deployments.get('AaveProvider'),
       deployments.get('TruefiProvider'),
-      deployments.get('HomoraProvider'),
       deployments.get('IdleProvider'),
       deployments.get('BetaProvider'),
     ]);
@@ -37,7 +32,6 @@ class AllProviders {
     if (name.includes('compound')) return this.compoundProvider.address;
     if (name.includes('aave')) return this.aaveProvider.address;
     if (name.includes('truefi')) return this.truefiProvider.address;
-    if (name.includes('homora')) return this.homoraProvider.address;
     if (name.includes('beta')) return this.betaProvider.address;
     if (name.includes('idle')) return this.idleProvider.address;
     else return 'none';

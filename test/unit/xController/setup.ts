@@ -23,7 +23,6 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     'CompoundProvider',
     'AaveProvider',
     'TruefiProvider',
-    'HomoraProvider',
     'IdleProvider',
     'BetaProvider',
     'TestVault1',

@@ -28,10 +28,6 @@ export const aaveUSDT = '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811'; // 6
 // TrueFi
 export const truefiUSDC = '0xA991356d261fbaF194463aF6DF8f0464F8f1c742'; // 6
 export const truefiUSDT = '0x6002b1dcB26E7B1AA797A17551C6F487923299d7'; // 6
-// Homora not really used
-export const homoraUSDC = '0x08bd64BFC832F1C2B3e07e634934453bA7Fa2db2'; // 8
-export const homoraDAI = '0xee8389d235E092b2945fE363e97CDBeD121A0439'; // 8
-export const homoraUSDT = '0x020eDC614187F9937A1EfEeE007656C6356Fb13A'; // 8
 // Idle
 export const idleUSDC = '0x5274891bEC421B39D23760c04A6755eCB444797C'; // 18
 export const idleDAI = '0x3fE7940616e5Bc47b0775a0dccf6237893353bB4'; // 18
@@ -157,27 +153,6 @@ export const truefi_usdt_01 = new ProtocolVault({
   decimals: 6,
   chainId: 1,
 });
-// export const homora_usdc_01 = new ProtocolVault({
-//   name: 'homora_usdc_01',
-//   protocolToken: homoraUSDC,
-//   underlyingToken: usdc,
-//   govToken: alpha,
-//   decimals: 8,
-// });
-// export const homora_dai_01 = new ProtocolVault({
-//   name: 'homora_dai_01',
-//   protocolToken: homoraDAI,
-//   underlyingToken: dai,
-//   govToken: alpha,
-//   decimals: 8,
-// });
-// export const homora_usdt_01 = new ProtocolVault({
-//   name: 'homora_usdt_01',
-//   protocolToken: homoraUSDT,
-//   underlyingToken: usdt,
-//   govToken: alpha,
-//   decimals: 8,
-// });
 export const idle_usdc_01 = new ProtocolVault({
   name: 'idle_usdc_01',
   protocolToken: idleUSDC,

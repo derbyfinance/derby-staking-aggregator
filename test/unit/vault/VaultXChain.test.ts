@@ -9,7 +9,7 @@ import { ethers } from 'hardhat';
 const amount = 100_000;
 const amountUSDC = parseUSDC(amount.toString());
 
-describe.only('Testing XChainController, unit test', async () => {
+describe('Testing XChainController, unit test', async () => {
   let vault: MainVaultMock,
     xChainController: XChainControllerMock,
     user: Signer,
@@ -46,8 +46,8 @@ describe.only('Testing XChainController, unit test', async () => {
     await vault.setVaultState(1);
     await vault.setAmountToSendXChainTEST(amountUSDC.div(2)); // 50k
 
-    console.log("balance vault: %s", )
-    await vault.rebalanceXChain(slippage, relayerFee, {value: ethers.utils.parseEther("0.1")});
+    console.log('balance vault: %s');
+    await vault.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') });
 
     const balance = await IUSDc.balanceOf(xChainController.address);
     expect(balance).to.be.equal(amountUSDC.div(2)); // 50k

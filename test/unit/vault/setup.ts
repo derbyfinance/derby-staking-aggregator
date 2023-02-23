@@ -4,7 +4,6 @@ import { Controller, MainVaultMock } from '@typechain';
 import { allProtocols } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
-import { AddAllVaultsToController } from '@testhelp/InitialiseContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
   await deployments.fixture([
@@ -13,7 +12,6 @@ export const setupVault = deployments.createFixture(async (hre) => {
     'CompoundProvider',
     'AaveProvider',
     'TruefiProvider',
-    'HomoraProvider',
     'IdleProvider',
     'BetaProvider',
   ]);

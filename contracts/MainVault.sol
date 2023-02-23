@@ -6,8 +6,6 @@ import "./Vault.sol";
 
 import "./Interfaces/IXProvider.sol";
 
-import "hardhat/console.sol";
-
 contract MainVault is Vault, VaultToken {
   using SafeERC20 for IERC20;
 

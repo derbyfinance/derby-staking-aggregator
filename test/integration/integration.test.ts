@@ -7,7 +7,7 @@ import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault } from './helpers';
 import { ethers } from 'hardhat';
 
-describe.only('Testing full integration test', async () => {
+describe('Testing full integration test', async () => {
   const slippage = 30;
   const relayerFee = 100;
 

@@ -9,6 +9,7 @@ import {
   aaveUSDC,
   compoundUSDC,
   compToken,
+  dai,
   usdc,
   yearn as yearnGov,
   yearnUSDC,
@@ -24,10 +25,32 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   const usdcSigner = await getUSDCSigner();
   const IUSDC = erc20(usdc);
 
+  // resets balance for testing
+  const balance = await IUSDC.balanceOf(user.getAddress());
+  if (balance > 0) {
+    await IUSDC.connect(user).transfer(USDCWhale, balance);
+  }
+
   await IUSDC.connect(usdcSigner).transfer(user.getAddress(), amount);
   await IUSDC.connect(user).approve(vault, amount);
 
   return { IUSDC };
+}
+
+export async function transferAndApproveDAI(vault: string, user: Signer, amount: number) {
+  const daiSigner = await getDAISigner();
+  const IDAI = erc20(dai);
+
+  // resets balance for testing
+  const balance = await IDAI.balanceOf(user.getAddress());
+  if (balance > 0) {
+    await IDAI.connect(user).transfer(DAIWhale, balance);
+  }
+
+  await IDAI.connect(daiSigner).transfer(user.getAddress(), parseEther(amount));
+  await IDAI.connect(user).approve(vault, parseEther(amount));
+
+  return { IDAI };
 }
 
 export async function addStarterProtocols(

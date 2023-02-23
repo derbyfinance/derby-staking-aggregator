@@ -1,9 +1,8 @@
 import { XChainController, XProvider, ConnextMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { testConnextChainIds, usdc } from './addresses';
+import { usdc } from './addresses';
 import { getTestVaultDeployments, getContract } from './getContracts';
-import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
 
 export async function getAndInitXProviders(
   hre: HardhatRuntimeEnvironment,
@@ -102,11 +101,11 @@ export async function InitConnextMock(hre: HardhatRuntimeEnvironment, xProviders
   const connext = (await getContract('ConnextMock', hre)) as ConnextMock;
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = xProviders;
 
-  await Promise.all([ 
+  await Promise.all([
     connext.setDomainLookup(xProviderMain.address, 10),
     connext.setDomainLookup(xProviderArbi.address, 100),
     connext.setDomainLookup(xProviderOpti.address, 1000),
-    connext.setDomainLookup(xProviderBnb.address, 10000)
+    connext.setDomainLookup(xProviderBnb.address, 10000),
   ]);
 }
 

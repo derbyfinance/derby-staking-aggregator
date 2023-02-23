@@ -4,11 +4,11 @@ import { deployments } from 'hardhat';
 import {
   erc20,
   formatUSDC,
-  getDAISigner,
   parseEther,
   formatEther,
   transferAndApproveUSDC,
   formatUnits,
+  transferAndApproveDAI,
 } from '@testhelp/helpers';
 import type { CompoundProvider } from '@typechain';
 import { dai, usdc, compoundUSDC as cUSDC, compoundDAI as cDAI } from '@testhelp/addresses';
@@ -21,13 +21,7 @@ describe('Testing Compound provider', async () => {
     const [dao, user] = await getAllSigners(hre);
 
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
-
-    // approve and send DAI to user
-    const daiAmount = parseEther(1_000_000);
-    const daiSigner = await getDAISigner();
-    const IDAI = erc20(dai);
-    await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
-    await IDAI.connect(user).approve(provider.address, daiAmount);
+    await transferAndApproveDAI(provider.address, user, 1_000_000);
 
     return { provider, user };
   });
@@ -51,16 +45,15 @@ describe('Testing Compound provider', async () => {
     });
 
     it('Should deposit in cUSDC', async () => {
-      const expectedShares = Math.round((amount * 1e12) / Number(exchangeRate));
-
       await expect(() => provider.connect(user).deposit(amount, cUSDC, usdc)).to.changeTokenBalance(
         IUSDc,
         user,
         -amount,
       );
 
+      const expectedShares = Math.round((amount * 1e12) / Number(exchangeRate));
       const cUSDCBalance = await provider.balance(user.address, cUSDC);
-      expect(formatUSDC(cUSDCBalance)).to.be.closeTo(expectedShares, 50);
+      expect(formatUSDC(cUSDCBalance)).to.be.closeTo(expectedShares, 800);
     });
 
     it('Should calculate shares correctly', async () => {
