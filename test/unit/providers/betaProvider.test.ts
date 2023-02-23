@@ -46,15 +46,15 @@ describe('Testing Beta provider', async () => {
         -amount,
       );
 
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
-      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(expectedShares, 1);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(bUSDCBalance)).to.be.closeTo(expectedShares, 1);
     });
 
     it('Should calculate shares correctly', async () => {
       const shares = await provider.calcShares(amount, bUSDC);
 
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
-      expect(formatUSDC(yUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
+      expect(formatUSDC(bUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
     });
 
     it('Should calculate balance underlying correctly', async () => {
@@ -64,12 +64,12 @@ describe('Testing Beta provider', async () => {
     });
 
     it('Should be able to withdraw', async () => {
-      const yUSDCBalance = await provider.balance(user.address, bUSDC);
+      const bUSDCBalance = await provider.balance(user.address, bUSDC);
 
-      await IbUSDC.connect(user).approve(provider.address, yUSDCBalance);
+      await IbUSDC.connect(user).approve(provider.address, bUSDCBalance);
 
       await expect(() =>
-        provider.connect(user).withdraw(yUSDCBalance, bUSDC, usdc),
+        provider.connect(user).withdraw(bUSDCBalance, bUSDC, usdc),
       ).to.changeTokenBalance(IUSDc, user, amount);
     });
   });
