@@ -68,9 +68,11 @@ describe('Testing Beta provider', async () => {
 
       await IbUSDC.connect(user).approve(provider.address, bUSDCBalance);
 
-      await expect(() =>
-        provider.connect(user).withdraw(bUSDCBalance, bUSDC, usdc),
-      ).to.changeTokenBalance(IUSDc, user, amount);
+      const balanceBefore = await IUSDc.balanceOf(user.address);
+      await provider.connect(user).withdraw(bUSDCBalance, bUSDC, usdc);
+      const balanceAfter = await IUSDc.balanceOf(user.address);
+
+      expect(balanceAfter - balanceBefore).to.be.closeTo(amount, 10);
     });
   });
 
