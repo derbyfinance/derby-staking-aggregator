@@ -425,7 +425,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Checks if a rebalance is needed based on the set interval
   /// @return bool True of rebalance is needed, false if not
   function rebalanceNeeded() public view returns (bool) {
-    return (block.timestamp - lastTimeStamp) > rebalanceInterval;
+    return (block.timestamp - lastTimeStamp) > rebalanceInterval || msg.sender == guardian;
   }
 
   /// @notice Getter for dao address
@@ -495,7 +495,7 @@ contract Vault is ReentrancyGuard {
   /// @dev This is because some deposits or withdrawals might not execute because they don't meet the marginScale.
   /// @param _liquidityPerc Value at which to set the liquidityPerc.
   function setLiquidityPerc(uint256 _liquidityPerc) external onlyGuardian {
-    require(_liquidityPerc <= 100, "Cannot exceed 100%");
+    require(_liquidityPerc <= 100);
     liquidityPerc = _liquidityPerc;
   }
 
