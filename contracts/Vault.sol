@@ -58,14 +58,14 @@ contract Vault is ReentrancyGuard {
   uint256 internal reservedFunds;
 
   // total number of allocated Derby tokens currently
-  int256 public totalAllocatedTokens;
+  uint256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
   string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
-  mapping(uint256 => int256) internal currentAllocations;
+  mapping(uint256 => uint256) internal currentAllocations;
 
   // (protocolNumber => deltaAllocation): delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
@@ -165,7 +165,10 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Adds deltaAllocatedTokens to totalAllocatedTokens
   function settleDeltaAllocation() internal {
-    totalAllocatedTokens += deltaAllocatedTokens;
+    int256 newTotalAllocatedTokens = int(totalAllocatedTokens) + deltaAllocatedTokens;
+    require(totalAllocatedTokens >= 0);
+
+    totalAllocatedTokens = uint(newTotalAllocatedTokens);
     deltaAllocatedTokens = 0;
   }
 
@@ -188,11 +191,11 @@ contract Vault is ReentrancyGuard {
       if (isBlacklisted) continue;
       setAllocation(i);
 
-      int256 amountToProtocol = calcAmountToProtocol(_newTotalUnderlying, i);
+      uint256 amountToProtocol = calcAmountToProtocol(_newTotalUnderlying, i);
       uint256 currentBalance = balanceUnderlying(i);
 
-      int256 amountToDeposit = amountToProtocol - int(currentBalance);
-      uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
+      int256 amountToDeposit = int(amountToProtocol) - int(currentBalance);
+      uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - amountToProtocol : 0;
 
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit);
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0)
@@ -209,12 +212,10 @@ contract Vault is ReentrancyGuard {
   function calcAmountToProtocol(
     uint256 _totalUnderlying,
     uint256 _protocol
-  ) internal view returns (int256 amountToProtocol) {
+  ) internal view returns (uint256 amountToProtocol) {
     if (totalAllocatedTokens == 0) amountToProtocol = 0;
     else
-      amountToProtocol =
-        (int(_totalUnderlying) * currentAllocations[_protocol]) /
-        totalAllocatedTokens;
+      amountToProtocol = (_totalUnderlying * currentAllocations[_protocol]) / totalAllocatedTokens;
   }
 
   /// @notice Stores the historical price and the reward per rounded locked token, ignoring decimals.
@@ -232,7 +233,7 @@ contract Vault is ReentrancyGuard {
 
     int256 priceDiff = int256(currentPrice - lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
-    int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
+    int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {
@@ -258,9 +259,11 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper function to set allocations
   /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
   function setAllocation(uint256 _i) internal {
-    currentAllocations[_i] += deltaAllocations[_i];
+    int256 newCurrentAllocation = int(currentAllocations[_i]) + deltaAllocations[_i];
+    require(newCurrentAllocation >= 0);
+
+    currentAllocations[_i] = uint(newCurrentAllocation);
     deltaAllocations[_i] = 0;
-    require(currentAllocations[_i] >= 0, "Allocation underflow");
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first

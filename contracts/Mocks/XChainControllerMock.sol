@@ -52,14 +52,14 @@ contract XChainControllerMock is XChainController {
     return vaultStage[_vaultNumber].fundsReceived;
   }
 
-  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns (int256) {
+  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getCurrentTotalAllocation(_vaultNumber);
   }
 
   function getCurrentAllocationTEST(
     uint256 _vaultNumber,
     uint32 _chainId
-  ) external view returns (int256) {
+  ) external view returns (uint256) {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
