@@ -171,11 +171,16 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('4) Calc and set amount to deposit or withdraw in vault', async function () {
+    let homeChain = await xChainController.homeChain();
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
-      await xChainController.pushVaultAmounts(vaultNumber, chain, {
-        value: parseEther('0.1'),
-      });
+      if (chain == homeChain) {
+        await xChainController.pushVaultAmounts(vaultNumber, chain);
+      } else {
+        await xChainController.pushVaultAmounts(vaultNumber, chain, {
+          value: parseEther('0.1'),
+        });
+      }
     }
 
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
@@ -226,11 +231,16 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
+    let homeChain = await xChainController.homeChain();
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
-        value: parseEther('0.1'),
-      });
+      if (chain == homeChain) {
+        await xChainController.sendFundsToVault(vaultNumber, slippage, chain, 0);
+      } else {
+        await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
+          value: parseEther('0.1'),
+        });
+      }
     }
 
     const expectedAmounts = [

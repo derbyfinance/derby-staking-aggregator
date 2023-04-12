@@ -282,9 +282,7 @@ describe('Testing full integration test', async () => {
           true,
         );
       await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[1].id, {
-          value: parseEther('0.1'),
-        }),
+        xChainController.pushVaultAmounts(vaultNumber, chains[1].id),
       )
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
@@ -365,9 +363,7 @@ describe('Testing full integration test', async () => {
         .to.emit(xChainController, 'SentFundsToVault')
         .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
       // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee, {
-        value: parseEther('0.1'),
-      });
+      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee);
     });
 
     it('Vaults should have received all the funds', async function () {
@@ -574,9 +570,7 @@ describe('Testing full integration test', async () => {
           false,
         );
       await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[1].id, {
-          value: parseEther('0.1'),
-        }),
+        xChainController.pushVaultAmounts(vaultNumber, chains[1].id),
       )
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
@@ -617,9 +611,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // both vaults wont receive funds
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee, {
-        value: parseEther('0.1'),
-      });
+      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee);
 
       // we have to try for each chain id
       await xChainController.sendFundsToVault(vaultNumber, slippage, chains[0].id, relayerFee, {
@@ -830,9 +822,7 @@ describe('Testing full integration test', async () => {
           false,
         );
       await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[1].id, {
-          value: parseEther('0.1'),
-        }),
+        xChainController.pushVaultAmounts(vaultNumber, chains[1].id),
       )
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
@@ -877,9 +867,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 1 will receive funds
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee, {
-        value: ethers.utils.parseEther('0.1'),
-      });
+      await xChainController.sendFundsToVault(vaultNumber, slippage, chains[1].id, relayerFee);
 
       // we have to try for each chain id
       await xChainController.sendFundsToVault(vaultNumber, slippage, chains[0].id, relayerFee, {
