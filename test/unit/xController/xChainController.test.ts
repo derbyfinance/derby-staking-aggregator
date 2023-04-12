@@ -136,6 +136,7 @@ describe('Testing XChainController, integration test', async () => {
     await vault1.connect(user).deposit(100_000 * 1e6, userAddr);
     await vault2.connect(user).deposit(200_000 * 1e6, userAddr);
 
+    await vault2.upRebalancingPeriodTEST();
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
 

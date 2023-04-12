@@ -82,6 +82,12 @@ describe('Testing VaultWithdraw, unit test', async () => {
     // mocking exchangerate to 0.9
     await vault.setExchangeRateTEST(parseUSDC(0.9));
 
+    // Rebalancing Period == 0, should not be able to withdraw
+    await expect(vault.connect(user).withdrawalRequest(parseUSDC(100))).to.be.revertedWith(
+      'Already a request',
+    );
+    await vault.upRebalancingPeriodTEST();
+
     // withdrawal request for more then LP token balance
     await expect(vault.connect(user).withdrawalRequest(parseUSDC(10_001))).to.be.revertedWith(
       'ERC20: burn amount exceeds balance',
@@ -118,6 +124,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     const { vault, user } = await setupVault();
     await vault.connect(user).deposit(parseUSDC(10_000), user.address); // 10k
     expect(await vault.totalSupply()).to.be.equal(parseUSDC(10_000)); // 10k
+    await vault.upRebalancingPeriodTEST();
 
     // withdrawal request for 10k LP tokens
     await expect(() =>
@@ -156,6 +163,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     it('Should send governance fee to dao on withdraw allowance function', async function () {
       const { vault, user, dao, contract } = await setupVault();
       await run('vault_set_governance_fee', { contract: contract, fee: 50 });
+      await vault.upRebalancingPeriodTEST();
 
       await vault.connect(user).deposit(parseUSDC(20_000), user.address);
 
