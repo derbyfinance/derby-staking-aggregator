@@ -298,8 +298,8 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
-    bool chainOff = getVaultChainIdOff(_vaultNumber, _chain);
-    if (_chain == homeChain || chainOff) {
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    if (_chain == homeChain) {
       require(msg.value == 0, "XchainController, ether sent not used");
     }
     address vault = getVaultAddress(_vaultNumber, _chain);
@@ -312,21 +312,19 @@ contract XChainController {
     uint256 decimals = xProvider.getDecimals(vault);
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
-    if (!chainOff) {
-      int256 amountToChain = calcAmountToChain(
-        _vaultNumber,
-        _chain,
-        totalUnderlying,
-        totalAllocation
-      );
-      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
-        _vaultNumber,
-        _chain,
-        amountToChain
-      );
+    int256 amountToChain = calcAmountToChain(
+      _vaultNumber,
+      _chain,
+      totalUnderlying,
+      totalAllocation
+    );
+    (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
+      _vaultNumber,
+      _chain,
+      amountToChain
+    );
 
-      sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
-    }
+    sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
   }
 
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
@@ -418,33 +416,32 @@ contract XChainController {
     uint32 _chain,
     uint256 _relayerFee
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
-    bool chainOff = getVaultChainIdOff(_vaultNumber, _chain);
-    if (_chain == homeChain || chainOff)
-      require(msg.value == 0, "XchainController, ether sent not used");
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    if (_chain == homeChain) require(msg.value == 0, "XchainController, ether sent not used");
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
-    if (!chainOff) {
-      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
-      if (amountToDeposit > 0) {
-        address underlying = getUnderlyingAddress(_vaultNumber, _chain);
+    uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
-        uint256 balance = IERC20(underlying).balanceOf(address(this));
-        if (amountToDeposit > balance) amountToDeposit = balance;
+    if (amountToDeposit > 0) {
+      address underlying = getUnderlyingAddress(_vaultNumber, _chain);
 
-        IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults{value: msg.value}(
-          vault,
-          _chain,
-          amountToDeposit,
-          underlying,
-          _slippage,
-          _relayerFee
-        );
-        setAmountToDeposit(_vaultNumber, _chain, 0);
-        emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
-      }
+      uint256 balance = IERC20(underlying).balanceOf(address(this));
+      if (amountToDeposit > balance) amountToDeposit = balance;
+
+      IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
+      xProvider.xTransferToVaults{value: msg.value}(
+        vault,
+        _chain,
+        amountToDeposit,
+        underlying,
+        _slippage,
+        _relayerFee
+      );
+      setAmountToDeposit(_vaultNumber, _chain, 0);
+      emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
     }
+
     vaultStage[_vaultNumber].fundsSent++;
     if (vaultStage[_vaultNumber].fundsSent == chainIds.length) resetVaultStages(_vaultNumber);
   }
