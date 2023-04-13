@@ -28,35 +28,6 @@ library Swap {
   address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   uint256 internal constant gasUsedForSwap = 210000;
 
-  /// @notice Swap stable coins on Curve
-  /// @param _swap Number of tokens to sell, token to sell, token to receive
-  /// @param _tokenInUScale Scale of tokenIn e.g 1E6
-  /// @param _tokenOutUScale Scale of tokenOut e.g 1E6
-  /// @param _curve Curve pool index number of TokenIn address, tokenOut address, pool address and pool fee
-  function swapStableCoins(
-    SwapInOut memory _swap,
-    uint256 _tokenInUScale,
-    uint256 _tokenOutUScale,
-    IController.CurveParams memory _curve
-  ) public returns (uint256) {
-    uint256 amountOutMin = (((_swap.amount * (10000 - _curve.poolFee)) / 10000) * _tokenOutUScale) /
-      _tokenInUScale;
-    IERC20(_swap.tokenIn).safeIncreaseAllowance(_curve.pool, _swap.amount);
-
-    uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
-
-    IStableSwap3Pool(_curve.pool).exchange(
-      _curve.indexTokenIn,
-      _curve.indexTokenOut,
-      _swap.amount,
-      amountOutMin
-    );
-
-    uint256 balanceAfter = IERC20(_swap.tokenOut).balanceOf(address(this));
-
-    return balanceAfter - balanceBefore;
-  }
-
   /// @notice Swap tokens on Uniswap
   /// @param _swap Number of tokens to sell, token to sell, token to receive
   /// @param _uniswap Address of uniswapRouter, uniswapQuoter and poolfee

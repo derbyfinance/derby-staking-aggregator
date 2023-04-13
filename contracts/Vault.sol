@@ -12,6 +12,8 @@ import "./Interfaces/IProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
+import "hardhat/console.sol";
+
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -44,7 +46,6 @@ contract Vault is ReentrancyGuard {
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
   uint256 public uScale;
-  uint256 public minimumPull;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -101,7 +102,6 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
-    minimumPull = 1_000_000;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -119,7 +119,6 @@ contract Vault is ReentrancyGuard {
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
       savedTotalUnderlying -= amountToWithdraw;
 
-      if (amountToWithdraw < minimumPull) break;
       withdrawFromProtocol(i, amountToWithdraw);
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
@@ -287,15 +286,6 @@ contract Vault is ReentrancyGuard {
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    if (protocol.underlying != address(vaultCurrency)) {
-      _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(_amount, address(vaultCurrency), protocol.underlying),
-        uScale,
-        controller.underlyingUScale(protocol.underlying),
-        controller.getCurveParams(address(vaultCurrency), protocol.underlying)
-      );
-    }
-
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
@@ -324,15 +314,6 @@ contract Vault is ReentrancyGuard {
       protocol.LPToken,
       protocol.underlying
     );
-
-    if (protocol.underlying != address(vaultCurrency)) {
-      _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(amountReceived, protocol.underlying, address(vaultCurrency)),
-        controller.underlyingUScale(protocol.underlying),
-        uScale,
-        controller.getCurveParams(protocol.underlying, address(vaultCurrency))
-      );
-    }
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols

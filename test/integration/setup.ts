@@ -37,9 +37,9 @@ export const setupIntegration = async () => {
     'XProviderBnb',
     'YearnMockUSDC1',
     'YearnMockUSDC2',
-    'YearnMockDAI1',
-    'YearnMockDAI2',
-    'YearnMockUSDT1',
+    'YearnMockUSDC3',
+    'YearnMockUSDC4',
+    'YearnMockUSDC5',
   ]);
 
   const IUSDc = erc20(usdc);
@@ -115,26 +115,26 @@ export const setupIntegration = async () => {
     decimals: 6,
     chainId: 1,
   });
-  const yearn_vault_dai1 = new ProtocolVault({
-    name: 'yearn_mock_dai1',
+  const yearn_vault_usdc3 = new ProtocolVault({
+    name: 'yearn_vault_usdc3',
     protocolToken: yearn3.address,
-    underlyingToken: dai,
+    underlyingToken: usdc,
     govToken: yearn,
-    decimals: 18,
+    decimals: 6,
     chainId: 1,
   });
-  const yearn_vault_dai2 = new ProtocolVault({
-    name: 'yearn_mock_dai2',
+  const yearn_vault_usdc4 = new ProtocolVault({
+    name: 'yearn_vault_usdc4',
     protocolToken: yearn4.address,
-    underlyingToken: dai,
+    underlyingToken: usdc,
     govToken: yearn,
-    decimals: 18,
+    decimals: 6,
     chainId: 1,
   });
-  const yearn_vault_usdt = new ProtocolVault({
-    name: 'yearn_mock_usdt1',
+  const yearn_vault_usdc5 = new ProtocolVault({
+    name: 'yearn_vault_usdc5',
     protocolToken: yearn5.address,
-    underlyingToken: usdt,
+    underlyingToken: usdc,
     govToken: yearn,
     decimals: 6,
     chainId: 1,
@@ -143,9 +143,9 @@ export const setupIntegration = async () => {
   await Promise.all([
     yearn_vault_usdc1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
     yearn_vault_usdc2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
-    yearn_vault_dai1.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
-    yearn_vault_dai2.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
-    yearn_vault_usdt.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_usdc3.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_usdc4.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
+    yearn_vault_usdc5.addProtocolToController(controller, dao, vaultNumber, allProvidersClass),
   ]);
 
   return {

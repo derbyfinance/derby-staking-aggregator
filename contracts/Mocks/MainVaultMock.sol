@@ -143,15 +143,6 @@ contract MainVaultMock is MainVault {
     emit MinAmountOut(minAmountOut);
   }
 
-  function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
-    Swap.swapStableCoins(
-      Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
-      uScale,
-      1000000000000000000,
-      controller.getCurveParams(_tokenIn, _tokenOut)
-    );
-  }
-
   function testLargeGameplayerSet(uint256 _amountOfPlayers) public {
     for (uint256 i = 0; i < _amountOfPlayers; i++) {
       players[i] = exchangeRate;
