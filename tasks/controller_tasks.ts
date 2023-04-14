@@ -35,9 +35,6 @@ task('controller_init', 'Initializes the controller').setAction(async (_, { run,
   await run('controller_set_uniswap_router', { router: uniswapRouter });
   await run('controller_set_uniswap_quoter', { quoter: uniswapQouter });
   await run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee });
-  // await run('controller_add_underlying_scale', { stable: usdc, decimals: 6 });
-  // await run('controller_add_underlying_scale', { stable: dai, decimals: 18 });
-  // await run('controller_add_underlying_scale', { stable: usdt, decimals: 6 });
 });
 
 task('controller_add_protocol', 'Add protocol to controller')
@@ -90,14 +87,6 @@ task('controller_set_uniswap_poolfee', 'Set the Uniswap Poolfee')
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setUniswapPoolFee(poolfee);
   });
-
-// task('controller_add_underlying_scale', 'Set the scale for underlying stable coin')
-//   .addParam('stable', 'Address of stable coin')
-//   .addParam('decimals', 'Scale e.g decimals of stable', null, types.int)
-//   .setAction(async ({ stable, decimals }, hre) => {
-//     const { controller, dao } = await getController(hre);
-//     await controller.connect(dao).addUnderlyingUScale(stable, decimals);
-//   });
 
 task('controller_set_claimable', 'Set if provider have claimable tokens')
   .addParam('lptoken', 'Address of protocol lptoken')

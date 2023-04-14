@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IYearn.sol";
 import "../Interfaces/IProvider.sol";
 
+import "hardhat/console.sol";
+
 contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -21,6 +23,10 @@ contract YearnProvider is IProvider {
     address _yToken,
     address _uToken
   ) external override returns (uint256) {
+    console.log("YUearn provider");
+    console.log("_amount %s", _amount);
+    console.log("_yToken %s", _uToken);
+    console.log("_uToken %s", _yToken);
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
