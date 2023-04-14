@@ -285,12 +285,8 @@ contract Vault is ReentrancyGuard {
     );
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
-    console.log("getVaultBalance() %s", getVaultBalance());
 
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    console.log("Lp token %s", protocol.LPToken);
-    console.log("Lp underlying %s", protocol.underlying);
-    console.log("Lp provider %s", protocol.provider);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
