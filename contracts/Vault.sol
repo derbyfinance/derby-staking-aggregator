@@ -146,8 +146,6 @@ contract Vault is ReentrancyGuard {
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
 
-    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
-
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
   }
@@ -309,11 +307,7 @@ contract Vault is ReentrancyGuard {
     if (balance < shares) shares = balance;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
-    IProvider(protocol.provider).withdraw(
-      shares,
-      protocol.LPToken,
-      protocol.underlying
-    );
+    IProvider(protocol.provider).withdraw(shares, protocol.LPToken, protocol.underlying);
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols
