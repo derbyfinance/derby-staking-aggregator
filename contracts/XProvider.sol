@@ -107,7 +107,7 @@ contract XProvider is IXReceiver {
   /// @param _destinationDomain chain Id of destination chain
   /// @param _callData Function selector to call on receiving chain with params
   /// @param _relayerFee The fee offered to the relayers, if 0 use the complete msg.value
-  function xSend(uint32 _destinationDomain, bytes memory _callData, uint256 _relayerFee) internal {
+  function xSend2(uint32 _destinationDomain, bytes memory _callData, uint256 _relayerFee) internal {
     address target = trustedRemoteConnext[_destinationDomain];
     require(target != address(0), "XProvider: destination chain not trusted");
     uint256 relayerFee = _relayerFee != 0 ? _relayerFee : msg.value;
@@ -129,35 +129,54 @@ contract XProvider is IXReceiver {
   /// @param _recipient The destination address (e.g. a wallet).
   /// @param _destinationDomain The destination domain ID.
   /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
-  /// @param _relayerFee The fee offered to the relayers for confirmation message, msg.value - _relayerFee is what goes to the routers
-  function xTransfer(
+  function xSend(
+    uint32 _destinationDomain,
+    bytes memory _callData,
     address _token,
     uint256 _amount,
     address _recipient,
-    uint32 _destinationDomain,
-    uint256 _slippage,
-    uint256 _relayerFee
+    uint256 _slippage
   ) internal {
-    require(
-      IERC20(_token).allowance(msg.sender, address(this)) >= _amount,
-      "User must approve amount"
-    );
+    address target = trustedRemoteConnext[_destinationDomain];
+    require(target != address(0), "XProvider: destination chain not trusted");
 
-    // User sends funds to this contract
-    IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+    if (_token != address(0)) transferAndApprove(_token, _amount);
 
-    // This contract approves transfer to Connext
-    IERC20(_token).approve(address(connext), _amount);
-
-    IConnext(connext).xcall{value: (msg.value - _relayerFee)}(
+    IConnext(connext).xcall{value: msg.value}(
       _destinationDomain, // _destination: Domain ID of the destination chain
-      _recipient, // _to: address receiving the funds on the destination
+      target, // _to: address receiving the funds on the destination
       _token, // _asset: address of the token contract
       msg.sender, // _delegate: address that can revert or forceLocal on destination
       _amount, // _amount: amount of tokens to transfer
       _slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
-      bytes("") // _callData: empty bytes because we're only sending funds
+      _callData // _callData: empty bytes because we're only sending funds
     );
+
+    // IConnext(connext).xcall{value: relayerFee}(
+    //   _destinationDomain, // _destination: Domain ID of the destination chain
+    //   target, // _to: address of the target contract
+    //   address(0), // _asset: use address zero for 0-value transfers
+    //   msg.sender, // _delegate: address that can revert or forceLocal on destination
+    //   0, // _amount: 0 because no funds are being transferred
+    //   0, // _slippage: can be anything between 0-10000 because no funds are being transferred
+    //   bytes("") // _callData: the encoded calldata to send
+    // );
+  }
+
+  /// @notice Transfers the specified amount of tokens from the user to this contract,
+  ///         and approves the transfer of the same amount to the Connext contract.
+  /// @dev This function is called within the xSend function.
+  /// @param _token The address of the token to transfer and approve.
+  /// @param _amount The amount of tokens to transfer and approve.
+  function transferAndApprove(address _token, uint256 _amount) internal {
+    require(
+      IERC20(_token).allowance(msg.sender, address(this)) >= _amount,
+      "User must approve amount"
+    );
+    // User sends funds to this contract
+    IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+    // This contract approves transfer to Connext
+    IERC20(_token).approve(address(connext), _amount);
   }
 
   /// @notice function implemented from IXReceive from connext, standard way to receive messages with connext.
