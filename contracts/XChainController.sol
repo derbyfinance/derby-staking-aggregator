@@ -248,6 +248,8 @@ contract XChainController {
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
   function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
+    if (_chainId == homeChain)
+      require(msg.value == 0, "XchainController, sent xchainfee for same chain");
     address vault = getVaultAddress(_vaultNumber, _chainId);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
     xProvider.pushStateFeedbackToVault{value: msg.value}(
@@ -299,6 +301,10 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    if (_chain == homeChain) {
+      require(msg.value == 0, "XchainController, ether sent not used");
+    }
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
     uint256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
@@ -309,21 +315,19 @@ contract XChainController {
     uint256 decimals = xProvider.getDecimals(vault);
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
-    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
-      uint256 amountToChain = calcAmountToChain(
-        _vaultNumber,
-        _chain,
-        totalUnderlying,
-        totalAllocation
-      );
-      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
-        _vaultNumber,
-        _chain,
-        amountToChain
-      );
+    uint256 amountToChain = calcAmountToChain(
+      _vaultNumber,
+      _chain,
+      totalUnderlying,
+      totalAllocation
+    );
+    (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
+      _vaultNumber,
+      _chain,
+      amountToChain
+    );
 
-      sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
-    }
+    sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
   }
 
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
@@ -413,30 +417,32 @@ contract XChainController {
     uint32 _chain,
     uint256 _relayerFee
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    if (_chain == homeChain) require(msg.value == 0, "XchainController, ether sent not used");
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
-    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
-      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
-      if (amountToDeposit > 0) {
-        address underlying = getUnderlyingAddress(_vaultNumber, _chain);
+    uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
-        uint256 balance = IERC20(underlying).balanceOf(address(this));
-        if (amountToDeposit > balance) amountToDeposit = balance;
+    if (amountToDeposit > 0) {
+      address underlying = getUnderlyingAddress(_vaultNumber, _chain);
 
-        IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults{value: msg.value}(
-          vault,
-          _chain,
-          amountToDeposit,
-          underlying,
-          _slippage,
-          _relayerFee
-        );
-        setAmountToDeposit(_vaultNumber, _chain, 0);
-        emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
-      }
+      uint256 balance = IERC20(underlying).balanceOf(address(this));
+      if (amountToDeposit > balance) amountToDeposit = balance;
+
+      IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
+      xProvider.xTransferToVaults{value: msg.value}(
+        vault,
+        _chain,
+        amountToDeposit,
+        underlying,
+        _slippage,
+        _relayerFee
+      );
+      setAmountToDeposit(_vaultNumber, _chain, 0);
+      emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
     }
+
     vaultStage[_vaultNumber].fundsSent++;
     if (vaultStage[_vaultNumber].fundsSent == chainIds.length) resetVaultStages(_vaultNumber);
   }

@@ -166,7 +166,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Adds deltaAllocatedTokens to totalAllocatedTokens
   function settleDeltaAllocation() internal {
     int256 newTotalAllocatedTokens = int(totalAllocatedTokens) + deltaAllocatedTokens;
-    require(totalAllocatedTokens >= 0);
+    require(newTotalAllocatedTokens >= 0);
 
     totalAllocatedTokens = uint(newTotalAllocatedTokens);
     deltaAllocatedTokens = 0;

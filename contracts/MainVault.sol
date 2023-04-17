@@ -150,7 +150,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount
   ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.withdrawalRequestPeriod == 0, "Already a request");
+    require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
     value = (_amount * exchangeRate) / (10 ** decimals());
 
