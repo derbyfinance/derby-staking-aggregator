@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../Interfaces/ExternalInterfaces/IConnext.sol";
 import "../../Interfaces/ExternalInterfaces/IXReceiver.sol";
 
-import "hardhat/console.sol";
-
 contract ConnextMock is IConnext {
   using SafeERC20 for IERC20;
 
