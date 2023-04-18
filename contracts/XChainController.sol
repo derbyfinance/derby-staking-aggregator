@@ -407,14 +407,10 @@ contract XChainController {
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
-  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   /// @param _chain Chain id of the vault where the funds need to be sent
-  /// @param _relayerFee The fee offered to the relayers
   function sendFundsToVault(
     uint256 _vaultNumber,
-    uint256 _slippage,
-    uint32 _chain,
-    uint256 _relayerFee
+    uint32 _chain
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
     require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
     if (_chain == homeChain) require(msg.value == 0, "XchainController, ether sent not used");
@@ -430,14 +426,7 @@ contract XChainController {
       if (amountToDeposit > balance) amountToDeposit = balance;
 
       IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-      xProvider.xTransferToVaults{value: msg.value}(
-        vault,
-        _chain,
-        amountToDeposit,
-        underlying,
-        _slippage,
-        _relayerFee
-      );
+      xProvider.xTransferToVaults{value: msg.value}(vault, _chain, amountToDeposit, underlying);
       setAmountToDeposit(_vaultNumber, _chain, 0);
       emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
     }

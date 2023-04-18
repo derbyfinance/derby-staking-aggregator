@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../Interfaces/ExternalInterfaces/IConnext.sol";
 import "../../Interfaces/ExternalInterfaces/IXReceiver.sol";
 
+import "hardhat/console.sol";
+
 contract ConnextMock is IConnext {
   using SafeERC20 for IERC20;
 
@@ -21,15 +23,14 @@ contract ConnextMock is IConnext {
     bytes calldata _callData
   ) external payable returns (bytes32) {
     if (_asset != address(0)) IERC20(_asset).transferFrom(msg.sender, _to, _amount);
-    else
-      IXReceiver(_to).xReceive(
-        bytes32(""),
-        0,
-        address(0),
-        msg.sender,
-        domainLookup[msg.sender],
-        _callData
-      );
+    IXReceiver(_to).xReceive(
+      bytes32(""),
+      0,
+      address(0),
+      msg.sender,
+      domainLookup[msg.sender],
+      _callData
+    );
   }
 
   function setDomainLookup(address _addrOrigin, uint32 _domainOrigin) public {
