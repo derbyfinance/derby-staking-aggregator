@@ -11,8 +11,6 @@ import "./Interfaces/IGame.sol";
 import "./Interfaces/ExternalInterfaces/IConnext.sol";
 import "./Interfaces/ExternalInterfaces/IXReceiver.sol";
 
-import "hardhat/console.sol";
-
 contract XProvider is IXReceiver {
   using SafeERC20 for IERC20;
 
@@ -28,7 +26,7 @@ contract XProvider is IXReceiver {
   uint32 public xControllerChain;
   uint32 public gameChain;
 
-  // Slippage tolerance for cross-chain swap and router fee, in BPS (i.e. 30 = 0.3%).
+  // Slippage tolerance and router fee for cross-chain swap, in BPS (i.e. 30 = 0.3%).
   uint256 public connextRouterFee;
   uint256 public slippage;
 
@@ -139,16 +137,6 @@ contract XProvider is IXReceiver {
       slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
       _callData // _callData: empty bytes because we're only sending funds
     );
-
-    // IConnext(connext).xcall{value: relayerFee}(
-    //   _destinationDomain, // _destination: Domain ID of the destination chain
-    //   target, // _to: address of the target contract
-    //   address(0), // _asset: use address zero for 0-value transfers
-    //   msg.sender, // _delegate: address that can revert or forceLocal on destination
-    //   0, // _amount: 0 because no funds are being transferred
-    //   0, // _slippage: can be anything between 0-10000 because no funds are being transferred
-    //   bytes("") // _callData: the encoded calldata to send
-    // );
   }
 
   /// @notice Transfers the specified amount of tokens from the user to this contract,
