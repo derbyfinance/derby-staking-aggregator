@@ -34,6 +34,7 @@ contract Vault is ReentrancyGuard {
 
   bool public deltaAllocationsReceived;
 
+  address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
   address public vaultCurrencyAddr;
@@ -92,7 +93,8 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -102,6 +104,7 @@ contract Vault is ReentrancyGuard {
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
     minimumPull = 1_000_000;
+    nativeToken = _nativeToken;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault

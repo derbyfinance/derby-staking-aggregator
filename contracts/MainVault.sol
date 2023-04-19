@@ -56,10 +56,11 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
   {
     exchangeRate = _uScale;
     game = _game;

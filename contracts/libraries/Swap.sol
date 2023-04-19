@@ -14,8 +14,6 @@ import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
-import "hardhat/console.sol";
-
 library Swap {
   using SafeERC20 for IERC20;
 
