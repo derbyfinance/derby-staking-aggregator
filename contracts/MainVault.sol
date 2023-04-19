@@ -113,9 +113,9 @@ contract MainVault is Vault, VaultToken {
       require(_amount + balanceSender <= maxTrainingDeposit);
     }
 
-    uint256 balanceBefore = getVaultBalance() - reservedFunds;
+    uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
-    uint256 balanceAfter = getVaultBalance() - reservedFunds;
+    uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
     shares = (amount * (10 ** decimals())) / exchangeRate;
