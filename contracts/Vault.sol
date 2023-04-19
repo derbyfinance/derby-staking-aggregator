@@ -475,9 +475,18 @@ contract Vault is ReentrancyGuard {
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   function blacklistProtocol(uint256 _protocolNum) external onlyGuardian {
-    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     currentAllocations[_protocolNum] = 0;
     controller.setProtocolBlacklist(vaultNumber, _protocolNum);
+  }
+
+  /// @notice Withdraws the funds from a blacklisted protocol and updates the savedTotalUnderlying.
+  /// @dev This function should only be called after a protocol has been blacklisted.
+  /// @param _protocolNum The protocol number from which to withdraw the funds.
+  function withdrawFromBlacklistedProtocol(uint256 _protocolNum) external onlyGuardian {
+    bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, _protocolNum);
+    require(isBlacklisted);
+
+    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
     savedTotalUnderlying -= balanceProtocol;
     withdrawFromProtocol(_protocolNum, balanceProtocol);
   }
