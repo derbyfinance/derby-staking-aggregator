@@ -11,6 +11,36 @@ import "../Interfaces/IProvider.sol";
 contract IdleProvider is IProvider {
   using SafeERC20 for IERC20;
 
+  address private dao;
+
+  // (vaultAddress => bool): true when address is whitelisted
+  mapping(address => bool) public vaultWhitelist;
+
+  modifier onlyDao() {
+    require(msg.sender == dao, "Provider: only DAO");
+    _;
+  }
+
+  modifier onlyVault() {
+    require(vaultWhitelist[msg.sender] == true, "Provider: only Vault");
+    _;
+  }
+
+  constructor(address _dao) {
+    dao = _dao;
+  }
+
+  /// @notice Add protocol and vault to Controller
+  /// @param _vault Vault address to whitelist
+  function addVault(address _vault) external onlyDao {
+    vaultWhitelist[_vault] = true;
+  }
+
+  /// @notice Getter for dao address
+  function getDao() public view returns (address) {
+    return dao;
+  }
+
   /// @notice Deposit the underlying asset in Idle
   /// @dev Pulls underlying asset from Vault, deposit them in Idle, send tTokens back.
   /// @param _amount Amount to deposit
@@ -21,7 +51,7 @@ contract IdleProvider is IProvider {
     uint256 _amount,
     address _iToken,
     address _uToken
-  ) external override returns (uint256) {
+  ) external override onlyVault returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(address(this));
 
     IERC20(_uToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -51,7 +81,7 @@ contract IdleProvider is IProvider {
     uint256 _amount,
     address _iToken,
     address _uToken
-  ) external override returns (uint256) {
+  ) external override onlyVault returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
 
     uint256 balanceBeforeRedeem = IERC20(_uToken).balanceOf(address(this));
@@ -117,5 +147,5 @@ contract IdleProvider is IProvider {
     return IIdle(_iToken).tokenPrice();
   }
 
-  function claim(address _iToken, address _claimer) external override returns (bool) {}
+  function claim(address _iToken, address _claimer) external override onlyVault returns (bool) {}
 }

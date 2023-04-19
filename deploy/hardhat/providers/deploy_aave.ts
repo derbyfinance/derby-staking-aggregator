@@ -6,11 +6,11 @@ const func: DeployFunction = async function ({
   deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, dao } = await getNamedAccounts();
 
   await deploy('AaveProvider', {
     from: deployer,
-    args: [],
+    args: [dao],
     log: true,
     autoMine: true,
   });

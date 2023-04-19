@@ -9,6 +9,7 @@ import {
   setGameLatestProtocolIds,
   addVaultsToXController,
   setWhitelistVaults,
+  AddAllVaultsToProviders,
 } from '@testhelp/InitialiseContracts';
 import { deployYearnMockVaults, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
@@ -19,14 +20,18 @@ const chainids = [10, 100];
 
 export const setupIntegration = async () => {
   const { run, deployments } = hre;
+  const providers = [
+    'AaveProvider',
+    'BetaProvider',
+    'CompoundProvider',
+    'IdleProvider',
+    'TruefiProvider',
+    'YearnProvider',
+  ];
+
   await deployments.fixture([
     'XChainControllerMock',
-    'YearnProvider',
-    'CompoundProvider',
-    'AaveProvider',
-    'TruefiProvider',
-    'IdleProvider',
-    'BetaProvider',
+    ...providers,
     'TestVault1',
     'TestVault2',
     'TestVault3',
@@ -83,6 +88,7 @@ export const setupIntegration = async () => {
     addVaultsToController(hre),
     addVaultsToXController(hre, xChainController, dao, vaultNumber),
     setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),
+    AddAllVaultsToProviders(dao, providers, [vault1.address, vault2.address], hre),
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),

@@ -20,6 +20,7 @@ describe('Testing Truefi provider', async () => {
 
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
 
     // approve and send USDT to user
