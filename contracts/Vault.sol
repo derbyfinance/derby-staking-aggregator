@@ -228,7 +228,7 @@ contract Vault is ReentrancyGuard {
       return;
     }
 
-    int256 priceDiff = int256(currentPrice - lastPrices[_protocolId]);
+    int256 priceDiff = int256(currentPrice) - int256(lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
     int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
