@@ -143,15 +143,6 @@ contract MainVaultMock is MainVault {
     emit MinAmountOut(minAmountOut);
   }
 
-  function curveSwapTest(uint256 _amount, address _tokenIn, address _tokenOut) external {
-    Swap.swapStableCoins(
-      Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
-      uScale,
-      1000000000000000000,
-      controller.getCurveParams(_tokenIn, _tokenOut)
-    );
-  }
-
   function testLargeGameplayerSet(uint256 _amountOfPlayers) public {
     for (uint256 i = 0; i < _amountOfPlayers; i++) {
       players[i] = exchangeRate;
@@ -167,6 +158,14 @@ contract MainVaultMock is MainVault {
 
   function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {
     storePriceAndRewards(_totalUnderlying, _protocolId);
+  }
+
+  function depositInProtocolTest(uint256 _protocolNum, uint256 _amount) external {
+    return depositInProtocol(_protocolNum, _amount);
+  }
+
+  function withdrawFromProtocolTest(uint256 _protocolNum, uint256 _amount) external {
+    return withdrawFromProtocol(_protocolNum, _amount);
   }
 
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {

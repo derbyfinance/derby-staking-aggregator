@@ -213,19 +213,8 @@ export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols
   .set('yearn_usdc_01', yearn_usdc_01)
-  .set('yearn_dai_01', yearn_dai_01)
-  .set('yearn_usdt_01', yearn_usdt_01)
   .set('compound_usdc_01', compound_usdc_01)
-  .set('compound_dai_01', compound_dai_01)
-  .set('compound_usdt_01', compound_usdt_01)
   .set('aave_usdc_01', aave_usdc_01)
-  .set('aave_dai_01', aave_dai_01)
-  .set('aave_usdt_01', aave_usdt_01)
   .set('truefi_usdc_01', truefi_usdc_01)
-  .set('truefi_usdt_01', truefi_usdt_01)
   .set('idle_usdc_01', idle_usdc_01)
-  .set('idle_dai_01', idle_dai_01)
-  .set('idle_usdt_01', idle_usdt_01)
-  .set('beta_usdc_01', beta_usdc_01)
-  .set('beta_dai_01', beta_dai_01)
-  .set('beta_usdt_01', beta_usdt_01);
+  .set('beta_usdc_01', beta_usdc_01);

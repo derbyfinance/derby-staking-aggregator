@@ -1,22 +1,21 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { dai } from '@testhelp/addresses';
+import { usdc } from '@testhelp/addresses';
 
-const name: string = 'YearnMockDAI2';
+const name: string = 'YearnMockUSDC4';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ethers,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
   const deploySettings = {
     symbol: 'YVM',
-    decimals: 18,
-    vaultCurrency: dai,
-    exchangeRate: ethers.utils.parseEther('1.150'),
+    decimals: 6,
+    vaultCurrency: usdc,
+    exchangeRate: 1150000,
   };
   const { symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
 
