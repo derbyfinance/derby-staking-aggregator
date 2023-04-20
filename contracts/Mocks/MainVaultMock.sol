@@ -33,7 +33,7 @@ contract MainVaultMock is MainVault {
     )
   {}
 
-  function getAllocationTEST(uint256 _protocolNum) external view returns (int256) {
+  function getAllocationTEST(uint256 _protocolNum) external view returns (uint256) {
     return currentAllocations[_protocolNum];
   }
 
@@ -49,7 +49,7 @@ contract MainVaultMock is MainVault {
     deltaAllocationsReceived = _state;
   }
 
-  function setTotalAllocatedTokensTest(int256 _tokens) external {
+  function setTotalAllocatedTokensTest(uint256 _tokens) external {
     totalAllocatedTokens = _tokens;
   }
 
@@ -89,7 +89,7 @@ contract MainVaultMock is MainVault {
     rebalancingPeriod++;
   }
 
-  function setCurrentAllocation(uint256 _protocolNum, int256 _allocation) external {
+  function setCurrentAllocation(uint256 _protocolNum, uint256 _allocation) external {
     currentAllocations[_protocolNum] = _allocation;
   }
 
