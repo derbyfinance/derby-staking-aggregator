@@ -391,7 +391,7 @@ contract Vault is ReentrancyGuard {
         address govToken = controller.getGovToken(vaultNumber, i);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
+          Swap.SwapInOut(tokenBalance, nativeToken, govToken, address(vaultCurrency)),
           controller.getUniswapParams(),
           false
         );
@@ -482,6 +482,6 @@ contract Vault is ReentrancyGuard {
 
   /// @notice callback to receive Ether from unwrapping WETH
   receive() external payable {
-    require(msg.sender == Swap.WETH, "Not WETH");
+    require(msg.sender == nativeToken, "Not WETH");
   }
 }

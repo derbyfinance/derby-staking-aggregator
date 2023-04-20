@@ -220,7 +220,7 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(value, nativeToken, address(vaultCurrency), derbyToken),
         controller.getUniswapParams(),
         true
       );
