@@ -31,21 +31,10 @@ task('controller_init', 'Initializes the controller').setAction(async (_, { run,
     uniswapRouter,
     uniswapQouter,
     uniswapPoolFee,
-    curve3PoolFee,
-    curve3Pool,
   } = initConfig;
-
-  await run('controller_add_curve_index', { token: dai, index: daiCurveIndex });
-  await run('controller_add_curve_index', { token: usdc, index: usdcCurveIndex });
-  await run('controller_add_curve_index', { token: usdt, index: usdtCurveIndex });
-  await run('controller_set_curve_poolfee', { poolfee: curve3PoolFee });
-  await run('controller_set_curve_3pool', { pool: curve3Pool });
   await run('controller_set_uniswap_router', { router: uniswapRouter });
   await run('controller_set_uniswap_quoter', { quoter: uniswapQouter });
   await run('controller_set_uniswap_poolfee', { poolfee: uniswapPoolFee });
-  await run('controller_add_underlying_scale', { stable: usdc, decimals: 6 });
-  await run('controller_add_underlying_scale', { stable: dai, decimals: 18 });
-  await run('controller_add_underlying_scale', { stable: usdt, decimals: 6 });
 });
 
 task('controller_add_protocol', 'Add protocol to controller')
@@ -97,36 +86,6 @@ task('controller_set_uniswap_poolfee', 'Set the Uniswap Poolfee')
   .setAction(async ({ poolfee }, hre) => {
     const { controller, dao } = await getController(hre);
     await controller.connect(dao).setUniswapPoolFee(poolfee);
-  });
-
-task('controller_set_curve_poolfee', 'Set the Curve Poolfee')
-  .addParam('poolFee', 'Curve pool fee', null, types.int)
-  .setAction(async ({ poolfee }, hre) => {
-    const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setCurvePoolFee(poolfee);
-  });
-
-task('controller_add_curve_index', 'Set curve pool index for underlying token')
-  .addParam('token', 'Address of Token')
-  .addParam('index', 'Curve index as decribed in Swap pool', null, types.int)
-  .setAction(async ({ token, index }, hre) => {
-    const { controller, dao } = await getController(hre);
-    await controller.connect(dao).addCurveIndex(token, index);
-  });
-
-task('controller_set_curve_3pool', 'Setter curve3Pool address')
-  .addParam('pool', 'New dao address')
-  .setAction(async ({ pool }, hre) => {
-    const { controller, dao } = await getController(hre);
-    await controller.connect(dao).setCurve3Pool(pool);
-  });
-
-task('controller_add_underlying_scale', 'Set the scale for underlying stable coin')
-  .addParam('stable', 'Address of stable coin')
-  .addParam('decimals', 'Scale e.g decimals of stable', null, types.int)
-  .setAction(async ({ stable, decimals }, hre) => {
-    const { controller, dao } = await getController(hre);
-    await controller.connect(dao).addUnderlyingUScale(stable, decimals);
   });
 
 task('controller_set_claimable', 'Set if provider have claimable tokens')

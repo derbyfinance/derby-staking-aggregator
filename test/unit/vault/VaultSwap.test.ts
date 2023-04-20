@@ -16,8 +16,6 @@ import {
   dai,
   compToken,
   CompWhale,
-  compound_dai_01,
-  aave_usdt_01,
   yearn_usdc_01,
   aave_usdc_01,
   compound_usdc_01,
@@ -27,21 +25,16 @@ import { setupVault } from './setup';
 
 describe('Testing VaultSwap, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
-    IDAI: Contract = erc20(dai),
     IComp: Contract = erc20(compToken);
 
   const protocols = new Map<string, ProtocolVault>()
     .set('compound_usdc_01', compound_usdc_01)
     .set('aave_usdc_01', aave_usdc_01)
-    .set('yearn_usdc_01', yearn_usdc_01)
-    .set('compound_dai_01', compound_dai_01)
-    .set('aave_usdt_01', aave_usdt_01);
+    .set('yearn_usdc_01', yearn_usdc_01);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
-  const compoundDAIVault = protocols.get('compound_dai_01')!;
-  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
   it('Claim function in vault should claim COMP and sell for more then minAmountOut in USDC', async function () {
     const { vault, user } = await setupVault();
@@ -118,107 +111,6 @@ describe('Testing VaultSwap, unit test', async () => {
     // MultiHop swap fee is 0,6% => total fee = +- 1,2% => 10_000 * 1,2% = 120 fee
     expect(Number(formatUSDC(usdcBalanceEnd))).to.be.closeTo(10_000 - 120, 25);
     expect(compBalanceEnd).to.be.equal(0);
-  });
-
-  it('Curve Stable coin swap USDC to DAI', async function () {
-    const { vault, user } = await setupVault();
-    const swapAmount = parseUSDC('10000');
-    await IUSDc.connect(user).transfer(vault.address, swapAmount);
-
-    // USDC Balance vault
-    const usdcBalance = await IUSDc.balanceOf(vault.address);
-    // console.log(`USDC Balance vault: ${formatUSDC(usdcBalance)}`);
-
-    // Curve swap USDC to DAI
-    await vault.curveSwapTest(swapAmount, usdc, dai);
-
-    // DAI Balance vault
-    const daiBalance = await IDAI.balanceOf(vault.address);
-    // console.log(`Dai Balance vault: ${formatUnits(daiBalance, 18)}`);
-
-    // Expect DAI received to be 10_000 - fee
-    expect(Number(formatUnits(daiBalance, 18))).to.be.closeTo(10_000, 5);
-  });
-
-  it('Should add CompoundDAI and AaveUSDT to vault and Swap on deposit/withdraw', async function () {
-    const { vault, user } = await setupVault();
-    for (const protocol of protocols.values()) await protocol.resetAllocation(vault);
-
-    const amount = 1_000_000;
-    const amountUSDC = parseUSDC(amount.toString());
-
-    await vault.setDeltaAllocationsReceivedTEST(true);
-
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault, 20),
-      aaveVault.setDeltaAllocation(vault, 0),
-      yearnVault.setDeltaAllocation(vault, 0),
-      compoundDAIVault.setDeltaAllocation(vault, 40),
-      aaveUSDTVault.setDeltaAllocation(vault, 40),
-    ]);
-
-    // Deposit and rebalance with 100k
-    await vault.connect(user).deposit(amountUSDC, user.address);
-    await vault.setVaultState(3);
-    await vault.rebalance();
-
-    let totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
-    let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    // console.log(`USDC Balance vault: ${balanceVault}`);
-
-    // Check if balanceInProtocol ===
-    // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
-    for (const protocol of protocols.values()) {
-      const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance =
-        (amount - balanceVault) * (protocol.allocation / totalAllocatedTokens);
-
-      // console.log(`---------------------------`);
-      // console.log(protocol.name);
-      // console.log(protocol.number);
-      // console.log(protocol.allocation);
-      // console.log({ totalAllocatedTokens });
-      // console.log({ balanceUnderlying });
-      // console.log({ expectedBalance });
-
-      // margin for trading slightly unstable stables
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 700);
-    }
-
-    // console.log('----------- Rebalance AaveUSDT to 0, compoundDAI to 10 -----------');
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault, 20),
-      aaveVault.setDeltaAllocation(vault, 0),
-      yearnVault.setDeltaAllocation(vault, 0),
-      compoundDAIVault.setDeltaAllocation(vault, -30),
-      aaveUSDTVault.setDeltaAllocation(vault, -40),
-    ]);
-    await vault.setVaultState(3);
-    await vault.setDeltaAllocationsReceivedTEST(true);
-
-    await vault.rebalance();
-
-    totalAllocatedTokens = Number(await vault.totalAllocatedTokens());
-    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    // console.log(`USDC Balance vault: ${balanceVault}`);
-
-    // Check if balanceInProtocol ===
-    // currentAllocation / totalAllocated * ( amountDeposited - balanceVault - gasUsed)
-    for (const protocol of protocols.values()) {
-      const balanceUnderlying = formatUSDC(await protocol.balanceUnderlying(vault));
-      const expectedBalance =
-        (amount - balanceVault) * (protocol.allocation / totalAllocatedTokens);
-
-      // console.log(`---------------------------`);
-      // console.log(protocol.name);
-      // console.log(protocol.number);
-      // console.log(protocol.allocation);
-      // console.log({ totalAllocatedTokens });
-      // console.log({ balanceUnderlying });
-      // console.log({ expectedBalance });
-
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 400);
-    }
   });
 
   it('Should always have some liquidity to pay for Rebalance fee', async function () {

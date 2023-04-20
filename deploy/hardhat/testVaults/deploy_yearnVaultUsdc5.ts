@@ -1,8 +1,8 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { usdt } from '@testhelp/addresses';
+import { usdc } from '@testhelp/addresses';
 
-const name: string = 'YearnMockUSDT1';
+const name: string = 'YearnMockUSDC5';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
@@ -14,7 +14,7 @@ const func: DeployFunction = async function ({
   const deploySettings = {
     symbol: 'YVM',
     decimals: 6,
-    vaultCurrency: usdt,
+    vaultCurrency: usdc,
     exchangeRate: 1200000,
   };
   const { symbol, decimals, vaultCurrency, exchangeRate } = deploySettings;
