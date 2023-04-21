@@ -383,16 +383,23 @@ contract Vault is ReentrancyGuard {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
-      bool claim = controller.claim(vaultNumber, i);
-      if (claim) {
-        address govToken = controller.getGovToken(vaultNumber, i);
-        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
-        Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
-          controller.getUniswapParams(),
-          false
-        );
-      }
+      claimAndSwapTokens(i);
+    }
+  }
+
+  /// @notice Claims and swaps tokens from the underlying protocol
+  /// @dev Claims governance tokens from the underlying protocol if claimable, and swaps them to the vault's underlying token
+  /// @param _protocolNum The protocol ID for which to claim and swap tokens
+  function claimAndSwapTokens(uint256 _protocolNum) internal {
+    bool claim = controller.claim(vaultNumber, _protocolNum);
+    if (claim) {
+      address govToken = controller.getGovToken(vaultNumber, _protocolNum);
+      uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+      Swap.swapTokensMulti(
+        Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
+        controller.getUniswapParams(),
+        false
+      );
     }
   }
 
@@ -453,7 +460,9 @@ contract Vault is ReentrancyGuard {
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   function blacklistProtocol(uint256 _protocolNum) external onlyGuardian {
+    totalAllocatedTokens -= currentAllocations[_protocolNum];
     currentAllocations[_protocolNum] = 0;
+
     controller.setProtocolBlacklist(vaultNumber, _protocolNum);
   }
 
@@ -462,11 +471,18 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum The protocol number from which to withdraw the funds.
   function withdrawFromBlacklistedProtocol(uint256 _protocolNum) external onlyGuardian {
     bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, _protocolNum);
-    require(isBlacklisted);
+    require(isBlacklisted, "!Blacklisted");
 
-    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
-    savedTotalUnderlying -= balanceProtocol;
-    withdrawFromProtocol(_protocolNum, balanceProtocol);
+    claimAndSwapTokens(_protocolNum);
+
+    uint256 balanceBefore = balanceUnderlying(_protocolNum);
+    withdrawFromProtocol(_protocolNum, balanceBefore);
+    uint256 balanceAfter = balanceUnderlying(_protocolNum);
+    uint256 balanceReceived = balanceBefore - balanceAfter;
+
+    savedTotalUnderlying = savedTotalUnderlying >= balanceReceived
+      ? savedTotalUnderlying - balanceReceived
+      : 0;
   }
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
