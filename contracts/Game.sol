@@ -62,7 +62,7 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
 
   // last rebalance timeStamp
-  uint256 public lastTimeStamp;
+  mapping(uint256 => uint256) public lastTimeStamp;
 
   // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
   int256 internal negativeRewardThreshold;
@@ -120,7 +120,6 @@ contract Game is ERC721, ReentrancyGuard {
     controller = IController(_controller);
     dao = _dao;
     guardian = _guardian;
-    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -422,7 +421,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
   function pushAllocationsToController(uint256 _vaultNumber) external payable {
-    require(rebalanceNeeded(), "No rebalance needed");
+    require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
     for (uint k = 0; k < chainIds.length; k++) {
       require(
         getVaultAddress(_vaultNumber, chainIds[k]) != address(0),
@@ -438,7 +437,7 @@ contract Game is ERC721, ReentrancyGuard {
     int256[] memory deltas = allocationsToArray(_vaultNumber);
     IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
 
-    lastTimeStamp = block.timestamp;
+    lastTimeStamp[_vaultNumber] = block.timestamp;
     vaults[_vaultNumber].rebalancingPeriod++;
 
     emit PushedAllocationsToController(_vaultNumber, deltas);
@@ -553,9 +552,11 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
-  /// @return bool True of rebalance is needed, false if not
-  function rebalanceNeeded() public view returns (bool) {
-    return (block.timestamp - lastTimeStamp) > rebalanceInterval || msg.sender == guardian;
+  /// @param _vaultNumber The vault number to check for rebalancing
+  /// @return bool True if rebalance is needed, false if not
+  function rebalanceNeeded(uint256 _vaultNumber) public view returns (bool) {
+    return
+      (block.timestamp - lastTimeStamp[_vaultNumber]) > rebalanceInterval || msg.sender == guardian;
   }
 
   /// @notice getter for vault address linked to a chainId
