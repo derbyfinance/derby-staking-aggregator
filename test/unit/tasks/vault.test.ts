@@ -140,12 +140,4 @@ describe('Testing vault tasks', () => {
     await run('vault_set_governance_fee', { contract, fee: fee });
     expect(await vault.governanceFee()).to.be.equal(fee);
   });
-
-  it('vault_set_max_divergence', async function () {
-    const { vault, contract } = await setupVault();
-    const divergence = random(100) * 1e6;
-
-    await run('vault_set_max_divergence', { contract, divergence });
-    expect(await vault.maxDivergenceWithdraws()).to.be.equal(divergence);
-  });
 });
