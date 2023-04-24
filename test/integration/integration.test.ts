@@ -113,17 +113,17 @@ describe('Testing full integration test', async () => {
         price: parseUnits(1.05, 6),
       },
       {
-        name: 'YearnMockDAI1',
+        name: 'YearnMockUSDC3',
         vault: setup.underlyingVaults[2],
-        price: parseUnits(1.1, 18),
+        price: parseUnits(1.1, 6),
       },
       {
-        name: 'YearnMockDAI2',
+        name: 'YearnMockUSDC4',
         vault: setup.underlyingVaults[3],
-        price: parseUnits(1.15, 18),
+        price: parseUnits(1.15, 6),
       },
       {
-        name: 'YearnMockUSDT',
+        name: 'YearnMockUSDC5',
         vault: setup.underlyingVaults[4],
         price: parseUnits(1.2, 6),
       },
@@ -513,8 +513,8 @@ describe('Testing full integration test', async () => {
     before(async function () {
       underlyingVaults[0].price = parseUnits(1.04, 6);
       underlyingVaults[1].price = parseUnits(1.1, 6);
-      underlyingVaults[2].price = parseUnits(1.15, 18);
-      underlyingVaults[3].price = parseUnits(1.16, 18);
+      underlyingVaults[2].price = parseUnits(1.15, 6);
+      underlyingVaults[3].price = parseUnits(1.16, 6);
       underlyingVaults[4].price = parseUnits(1.22, 6);
       for (const { vault, price } of underlyingVaults) {
         await vault.setExchangeRate(price);
@@ -532,8 +532,8 @@ describe('Testing full integration test', async () => {
   describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
     before(function () {
       // cause of the yearn mock vaults price increase
-      vaults[0].newUnderlying = 378775.693984; // old 370k
-      vaults[1].newUnderlying = 760488.944047; // old 740k
+      vaults[0].newUnderlying = 378745.757354; // old 370k
+      vaults[1].newUnderlying = 760430.475742; // old 740k
     });
 
     it('Trigger should emit PushTotalUnderlying event', async function () {
@@ -547,7 +547,7 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     // expected exchangeRate
-    const exchangeRate = 1_026_364; // 1.027688
+    const exchangeRate = 1026284; // 1.027688
 
     // setting expected amountToSend
     before(function () {
@@ -650,8 +650,8 @@ describe('Testing full integration test', async () => {
   describe('Rebalance 2 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      vaults[0].rewards = [247_565, 601_231, 573_902, 109_790, 210_430];
-      vaults[1].rewards = [248_525, 603_562, 576_127, 110_215, 211_246];
+      vaults[0].rewards = [247_546, 601_183, 573_857, 109_781, 210_414];
+      vaults[1].rewards = [248_506, 603_516, 576_083, 110_207, 211_230];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
@@ -680,9 +680,9 @@ describe('Testing full integration test', async () => {
   describe('Game user 0 rebalance to all zero for rewards', async function () {
     // rewardsPerLockedToken * allocations
     const expectedRewardsVault1 =
-      247_565 * 100 + 601_231 * 100 + 573_902 * 100 + 109_790 * 100 + 210_430 * 100;
+      247_546 * 100 + 601_183 * 100 + 573_857 * 100 + 109_781 * 100 + 210_414 * 100;
     const expectedRewardsVault2 =
-      248_525 * 200 + 603_562 * 200 + 576_127 * 200 + 110_215 * 200 + 211_246 * 200;
+      248_506 * 200 + 603_516 * 200 + 576_083 * 200 + 110_207 * 200 + 211_230 * 200;
     const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
 
     before(function () {
@@ -724,7 +724,7 @@ describe('Testing full integration test', async () => {
   });
 
   describe('Set withdrawal requests', async function () {
-    exchangeRate = 1_026_364; // 1.027688
+    exchangeRate = 1026284; // 1.027688
 
     it('Vault 0 (user 0): Should set withdrawal request for all LP tokens (10k)', async function () {
       const { user, vault } = vaultUsers[0];
@@ -769,12 +769,12 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 2: Vault underlyings should have increased', async function () {
     before(function () {
-      vaults[0].newUnderlying = 378775.419571; //
+      vaults[0].newUnderlying = 378745.757352; //
       vaults[0].totalSupply = parseUnits(110_000 - 10_000, 6); // 10k User withdraw
       vaults[0].totalWithdrawalRequests =
         Number(vaults[0].totalWithdrawalRequests) + 10_000 * exchangeRate; // 10k User withdraw
 
-      vaults[1].newUnderlying = 760489.385779; //
+      vaults[1].newUnderlying = 760430.475741; //
       vaults[1].totalSupply = parseUnits(1_000_000 - 500_000, 6); // 500k User withdraw
       vaults[1].totalWithdrawalRequests = 500_000 * exchangeRate; // 500k User withdraw
     });
@@ -802,8 +802,8 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     before(function () {
-      exchangeRate = 1_025_491; // dropped slightly cause of the rewards
-      vaults[0].amountToSend = parseUSDC(162889.239921);
+      exchangeRate = 1025412; // dropped slightly cause of the rewards
+      vaults[0].amountToSend = parseUSDC(162876.328655);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -835,7 +835,7 @@ describe('Testing full integration test', async () => {
     const vaultCurrency = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(162888.514461);
+      vaults[0].amountToSend = parseUSDC(162876.328654);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -862,7 +862,7 @@ describe('Testing full integration test', async () => {
     const underlying = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(161992.627632);
+      vaults[0].amountToSend = parseUSDC(161980.508847);
     });
 
     it('Trigger should emit SentFundsToVault event', async function () {
@@ -985,7 +985,7 @@ describe('Testing full integration test', async () => {
 
   describe('Redeem withdraw allowance for users to receive funds', async function () {
     before(function () {
-      exchangeRate = 1_026_364; // Created allowance with old exchangeRate
+      exchangeRate = 1026284; // Created allowance with old exchangeRate
     });
 
     it('Vault 0 (user 0): Withdraw allowance', async function () {
@@ -1018,9 +1018,9 @@ describe('Testing full integration test', async () => {
 
     it('Should redeem rewards for game user 0', async function () {
       const expectedRewardsVault1 =
-        247_565 * 100 + 601_231 * 100 + 573_902 * 100 + 109_790 * 100 + 210_430 * 100;
+        247_546 * 100 + 601_183 * 100 + 573_857 * 100 + 109_781 * 100 + 210_414 * 100;
       const expectedRewardsVault2 =
-        248_525 * 200 + 603_562 * 200 + 576_127 * 200 + 110_215 * 200 + 211_246 * 200;
+        248_506 * 200 + 603_516 * 200 + 576_083 * 200 + 110_207 * 200 + 211_230 * 200;
       const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
 
       const { user, basketId } = gameUsers[0];
