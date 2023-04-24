@@ -52,6 +52,9 @@ contract Game is ERC721, ReentrancyGuard {
   IController public controller;
   IERC20 public derbyToken;
 
+  // used in notInSameBlock modifier
+  uint256 private lastBlock;
+
   // latest basket id
   uint256 private latestBasketId;
 
@@ -105,6 +108,12 @@ contract Game is ERC721, ReentrancyGuard {
 
   modifier onlyGuardian() {
     require(msg.sender == guardian, "Game: only Guardian");
+    _;
+  }
+
+  modifier notInSameBlock() {
+    require(block.number != lastBlock, "Cannot call functions in the same block");
+    lastBlock = block.number;
     _;
   }
 
@@ -421,7 +430,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Trigger for Dao to push delta allocations to the xChainController
   /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external payable nonReentrant {
+  function pushAllocationsToController(uint256 _vaultNumber) external payable notInSameBlock {
     require(rebalanceNeeded(), "No rebalance needed");
     for (uint k = 0; k < chainIds.length; k++) {
       require(
@@ -465,7 +474,7 @@ contract Game is ERC721, ReentrancyGuard {
   function pushAllocationsToVaults(
     uint256 _vaultNumber,
     uint32 _chain
-  ) external payable nonReentrant {
+  ) external payable notInSameBlock {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "Game: not a valid vaultnumber");
     require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");

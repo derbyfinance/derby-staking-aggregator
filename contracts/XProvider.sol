@@ -147,7 +147,7 @@ contract XProvider is IXReceiver {
     IERC20(_token).transferFrom(msg.sender, address(this), _amount);
 
     // This contract approves transfer to Connext
-    IERC20(_token).approve(address(connext), _amount);
+    IERC20(_token).safeIncreaseAllowance(address(connext), _amount);
 
     IConnext(connext).xcall{value: (msg.value - _relayerFee)}(
       _destinationDomain, // _destination: Domain ID of the destination chain
