@@ -247,7 +247,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
-    require(rebalanceNeeded(), "!rebalance needed");
+    require(rebalanceNeeded() && !vaultOff, "!rebalance needed");
 
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
