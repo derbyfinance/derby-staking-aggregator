@@ -117,9 +117,9 @@ contract Vault is ReentrancyGuard {
       uint256 balanceProtocol = balanceUnderlying(i);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
-      savedTotalUnderlying -= amountToWithdraw;
 
-      withdrawFromProtocol(i, amountToWithdraw);
+      uint256 amountWithdrawn = withdrawFromProtocol(i, amountToWithdraw);
+      savedTotalUnderlying -= amountWithdrawn;
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
@@ -295,8 +295,11 @@ contract Vault is ReentrancyGuard {
   /// @dev shares = amount / PricePerShare
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to withdraw
-  function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    if (_amount <= 0) return;
+  function withdrawFromProtocol(
+    uint256 _protocolNum,
+    uint256 _amount
+  ) internal returns (uint256 amountReceived) {
+    if (_amount <= 0) return 0;
     IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
       _protocolNum
@@ -306,11 +309,15 @@ contract Vault is ReentrancyGuard {
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
 
-    if (shares == 0) return;
+    if (shares == 0) return 0;
     if (balance < shares) shares = balance;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
-    IProvider(protocol.provider).withdraw(shares, protocol.LPToken, protocol.underlying);
+    amountReceived = IProvider(protocol.provider).withdraw(
+      shares,
+      protocol.LPToken,
+      protocol.underlying
+    );
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols
