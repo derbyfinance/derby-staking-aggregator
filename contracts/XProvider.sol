@@ -152,7 +152,7 @@ contract XProvider is IXReceiver {
     // User sends funds to this contract
     IERC20(_asset).safeTransferFrom(msg.sender, address(this), _amount);
     // This contract approves transfer to Connext
-    IERC20(_asset).approve(address(connext), _amount);
+    IERC20(_asset).safeIncreaseAllowance(address(connext), _amount);
   }
 
   /// @notice function implemented from IXReceive from connext, standard way to receive messages with connext.
