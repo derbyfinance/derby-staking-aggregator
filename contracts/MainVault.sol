@@ -249,6 +249,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
+    claimTokens();
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
