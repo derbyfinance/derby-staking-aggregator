@@ -148,6 +148,10 @@ describe('Testing Game', async () => {
   it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
+
+    await expect(
+      game.rebalanceBoth(vaultNumber, 100, { value: parseEther('0.2') }),
+    ).to.be.revertedWith('Cannot call functions in the same block');
     // chainIds = [10, 100, 1000];
     await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
