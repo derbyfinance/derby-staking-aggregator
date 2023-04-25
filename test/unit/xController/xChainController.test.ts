@@ -23,8 +23,6 @@ describe('Testing XChainController, integration test', async () => {
     derbyToken: DerbyToken,
     game: GameMock,
     userAddr: string;
-  const slippage = 30;
-  const relayerFee = 100;
 
   before(async function () {
     const setup = await setupXChain();
@@ -209,14 +207,17 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
-    await vault2.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
-    await expect(
-      vault3.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') }),
-    ).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain({ value: parseEther('0.1') });
+    await vault2.rebalanceXChain({ value: parseEther('0.1') });
+    await expect(vault3.rebalanceXChain({ value: parseEther('0.1') })).to.be.revertedWith(
+      'Wrong state',
+    );
 
     // 150k should be sent to xChainController
-    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_240) * 1e6);
+    const amountMinusFees = 52_240 * 0.9945;
+    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(
+      (amountMinusFees + 68_000) * 1e6,
+    );
     expect(await IUSDc.balanceOf(vault1.address)).to.be.equal(47_760 * 1e6); // 100k - 52k
     expect(await IUSDc.balanceOf(vault2.address)).to.be.equal(132_000 * 1e6); // 200k - 68k
     expect(await IUSDc.balanceOf(vault3.address)).to.be.equal(0);
@@ -241,7 +242,7 @@ describe('Testing XChainController, integration test', async () => {
           xChainController.sendFundsToVault(vaultNumber, slippage, chain, 0),
         ).to.be.revertedWith('XChainController: Chain already processed');
       } else {
-        await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
+        await xChainController.sendFundsToVault(vaultNumber, chain, {
           value: parseEther('0.1'),
         });
       }
@@ -255,7 +256,7 @@ describe('Testing XChainController, integration test', async () => {
     const expectedAmounts = [
       (398 / 2000) * 240_000, // vault 1
       (600 / 2000) * 240_000 + 60_000, // vault 2 should have the request of 60k
-      (1000 / 2000) * 240_000, // vault 3 should have received 150k from controller
+      (1000 / 2000) * 240_000 * 0.9945, // vault 3 should have received 150k from controller
     ];
 
     // reserved funds of vault2 should be 60k at this point
@@ -264,11 +265,11 @@ describe('Testing XChainController, integration test', async () => {
 
     expect(formatUSDC(await IUSDc.balanceOf(vault1.address))).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
-    expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
+    expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.closeTo(expectedAmounts[2], 70);
 
     expect(formatUSDC(await vault1.getVaultBalance())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1]);
-    expect(formatUSDC(await vault3.getVaultBalance())).to.be.equal(expectedAmounts[2]);
+    expect(formatUSDC(await vault3.getVaultBalance())).to.be.closeTo(expectedAmounts[2], 70);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
   });

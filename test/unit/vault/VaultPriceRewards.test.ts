@@ -99,7 +99,7 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
     const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
 
     // expectedRewards = (totalUnderlying * performanceFee * priceDiff) / (totalAllocatedTokens * lastPrice)
-    compoundVault.setPrice(parseUnits('1100', 8)).setExpectedReward(100_000); // 10%
+    compoundVault.setPrice(parseUnits('900', 8)).setExpectedReward(-100_000); // 10%
     aaveVault.setPrice(parseUnits('2100', 6)).setExpectedReward(50000); // 5%
     yearnVault.setPrice(parseUnits('3030', 6)).setExpectedReward(10_000); // 1%
     compoundDAIVault.setPrice(parseUnits('4004', 8)).setExpectedReward(1_000); // 0.1%

@@ -60,9 +60,9 @@ export async function deployYearnMockVaults({ ethers, deployments }: HardhatRunt
   const [vault1, vault2, vault3, vault4, vault5] = await Promise.all([
     deployments.get('YearnMockUSDC1'),
     deployments.get('YearnMockUSDC2'),
-    deployments.get('YearnMockDAI1'),
-    deployments.get('YearnMockDAI2'),
-    deployments.get('YearnMockUSDT1'),
+    deployments.get('YearnMockUSDC3'),
+    deployments.get('YearnMockUSDC4'),
+    deployments.get('YearnMockUSDC5'),
   ]);
 
   const deployedVaults = await Promise.all([

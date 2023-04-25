@@ -19,9 +19,9 @@ describe('Testing Yearn provider for Mock vaults', async () => {
     await deployments.fixture([
       'YearnMockUSDC1',
       'YearnMockUSDC2',
-      'YearnMockDAI1',
-      'YearnMockDAI2',
-      'YearnMockUSDT1',
+      'YearnMockUSDC3',
+      'YearnMockUSDC4',
+      'YearnMockUSDC5',
       'YearnProvider',
     ]);
     const provider = (await getContract('YearnProvider', hre)) as YearnProvider;
@@ -183,60 +183,6 @@ describe('Testing Yearn provider for Mock vaults', async () => {
       await expect(() =>
         provider.connect(user).withdraw(20_000 * 1e6, yearnUSDC.address, usdc),
       ).to.changeTokenBalance(IUSDc, user, 20_000 * 1e6 * 2.5);
-    });
-  });
-
-  describe('Testing YearnMockVault DAI', () => {
-    const IDAI: Contract = erc20(dai);
-    let provider: YearnProvider, yearnDAI: YearnVaultMock, user: Signer;
-
-    before(async () => {
-      const setup = await setupProvider();
-      provider = setup.provider;
-      yearnDAI = setup.yearnDAI;
-      user = setup.user;
-    });
-
-    it('Should have exchangeRate', async function () {
-      await yearnDAI.setExchangeRate(parseEther(1.2));
-      expect(await yearnDAI.exchangeRate()).to.be.equal(parseEther(1.2));
-    });
-
-    it('Should deposit in VaultMock', async () => {
-      // set exchangeRate to 1.5
-      await yearnDAI.setExchangeRate(parseEther(2));
-
-      await expect(() =>
-        provider.connect(user).deposit(parseEther(100_000), yearnDAI.address, dai),
-      ).to.changeTokenBalance(yearnDAI, user, parseEther(100_000 / 2));
-    });
-
-    it('Should calc balance correctly', async function () {
-      expect(await provider.connect(user).balance(user.address, yearnDAI.address)).to.be.equal(
-        parseEther(100_000 / 2),
-      );
-    });
-
-    it('Should calc shares correctly', async function () {
-      expect(
-        await provider.connect(user).calcShares(parseEther(100_000), yearnDAI.address),
-      ).to.be.equal(parseEther(100_000 / 2));
-    });
-
-    it('Should calc balanceUnderlying correctly', async function () {
-      expect(
-        await provider.connect(user).balanceUnderlying(user.address, yearnDAI.address),
-      ).to.be.equal(parseEther(100_000));
-    });
-
-    it('Should withdraw from VaultMock', async () => {
-      // set exchangeRate to 2.5
-      await yearnDAI.setExchangeRate(parseEther(2.5));
-
-      await yearnDAI.connect(user).approve(provider.address, parseEther(20_000));
-      await expect(() =>
-        provider.connect(user).withdraw(parseEther(20_000), yearnDAI.address, dai),
-      ).to.changeTokenBalance(IDAI, user, parseEther(20_000 * 2.5));
     });
   });
 });

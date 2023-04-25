@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IYearn.sol";
 import "../Interfaces/IProvider.sol";
 
+import "hardhat/console.sol";
+
 contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -47,6 +49,7 @@ contract YearnProvider is IProvider {
     address _uToken
   ) external override returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
+    uint256 sharesBefore = IERC20(_yToken).balanceOf(address(this));
 
     require(
       IYearn(_yToken).transferFrom(msg.sender, address(this), _amount) == true,
@@ -61,6 +64,11 @@ contract YearnProvider is IProvider {
       (balanceAfter - balanceBefore - uAmountReceived) == 0,
       "Error Withdraw: under/overflow"
     );
+
+    uint256 sharesAfter = IERC20(_yToken).balanceOf(address(this));
+    if (sharesAfter > sharesBefore) {
+      IERC20(_yToken).safeTransfer(msg.sender, sharesAfter - sharesBefore);
+    }
 
     return uAmountReceived;
   }

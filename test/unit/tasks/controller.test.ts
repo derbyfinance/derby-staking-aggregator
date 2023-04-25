@@ -63,30 +63,6 @@ describe('Testing controller tasks', () => {
     expect(uniswapParams.poolFee).to.be.equal(uniswapPoolFee);
   });
 
-  it('controller_set_curve_poolfee', async function () {
-    const { controller, controllerInit } = await setupController();
-    const { curve3PoolFee } = controllerInit;
-
-    await run('controller_set_curve_poolfee', { poolfee: curve3PoolFee });
-    expect(await controller.curve3PoolFee()).to.be.equal(curve3PoolFee);
-  });
-
-  it('controller_add_curve_index', async function () {
-    const curveIndex = 11;
-    const { controller } = await setupController();
-
-    await run('controller_add_curve_index', { token: usdc, index: curveIndex });
-    expect(await controller.curveIndex(usdc)).to.be.equal(curveIndex);
-  });
-
-  it('controller_add_underlying_scale', async function () {
-    const decimals = 8;
-    const { controller } = await setupController();
-
-    await run('controller_add_underlying_scale', { stable: usdc, decimals: decimals });
-    expect(await controller.underlyingUScale(usdc)).to.be.equal(10 ** decimals);
-  });
-
   it('controller_set_claimable', async function () {
     const lptoken = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const { controller } = await setupController();
@@ -94,14 +70,6 @@ describe('Testing controller tasks', () => {
     expect(await controller.claimable(lptoken)).to.be.equal(false);
     await run('controller_set_claimable', { lptoken, bool: true });
     expect(await controller.claimable(lptoken)).to.be.equal(true);
-  });
-
-  it('controller_set_curve_3pool', async function () {
-    const { controller, controllerInit } = await setupController();
-    const { curve3Pool } = controllerInit;
-
-    await run('controller_set_curve_3pool', { pool: curve3Pool });
-    expect(await controller.curve3Pool()).to.be.equal(curve3Pool);
   });
 
   it('controller_set_dao', async function () {

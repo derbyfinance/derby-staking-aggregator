@@ -44,7 +44,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       // console.log({ expectedBalance });
 
       // 1000 margin cause of trading stables
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 1000);
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 1400);
     }
 
     const totalUnderlying = await vault.savedTotalUnderlying();

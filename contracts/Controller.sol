@@ -9,8 +9,6 @@ contract Controller is IController {
   UniswapParams public uniswapParams;
 
   address private dao;
-  address public curve3Pool;
-  uint256 public curve3PoolFee;
 
   // (vaultNumber => protocolNumber => protocolInfoStruct): struct in IController
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
@@ -28,11 +26,6 @@ contract Controller is IController {
   mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
   // (vaultNumber => latestProtocolId)
   mapping(uint256 => uint256) public latestProtocolId;
-
-  // (stableCoinAddress => curveIndex): curve index for stable coins
-  mapping(address => int128) public curveIndex;
-  // (stableCoinAddress => uScale): uScale for vault currency coins (i.e. stables) used for swapping
-  mapping(address => uint256) public underlyingUScale; // index is address of vaultcurrency erc20 contract
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -79,16 +72,6 @@ contract Controller is IController {
 
   function getUniswapQuoter() external view returns (address) {
     return uniswapParams.quoter;
-  }
-
-  function getCurveParams(address _in, address _out) external view returns (CurveParams memory) {
-    CurveParams memory curveParams;
-    curveParams.indexTokenIn = curveIndex[_in];
-    curveParams.indexTokenOut = curveIndex[_out];
-    curveParams.pool = curve3Pool;
-    curveParams.poolFee = curve3PoolFee;
-
-    return curveParams;
   }
 
   /// @notice Getter for protocol blacklist, given an vaultnumber and protocol number returns true if blacklisted. Can only be called by vault.
@@ -192,29 +175,6 @@ contract Controller is IController {
   /// @param _poolFee New Pool fee
   function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
     uniswapParams.poolFee = _poolFee;
-  }
-
-  /// @notice Set the Curve3Pool fee
-  /// @param _poolFee New Pool fee
-  function setCurvePoolFee(uint24 _poolFee) external onlyDao {
-    curve3PoolFee = _poolFee;
-  }
-
-  /// @notice Set curve pool index for underlying token
-  /// @param _token Address of Token
-  /// @param _index Curve index as decribed in Swap pool
-  function addCurveIndex(address _token, int128 _index) external onlyDao {
-    curveIndex[_token] = _index;
-  }
-
-  /// @notice Set the Curve 3 pool address
-  /// @param _pool New pool address
-  function setCurve3Pool(address _pool) external onlyDao {
-    curve3Pool = _pool;
-  }
-
-  function addUnderlyingUScale(address _stable, uint256 _decimals) external onlyDao {
-    underlyingUScale[_stable] = 10 ** _decimals;
   }
 
   /// @notice Set if provider have claimable tokens
