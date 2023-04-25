@@ -374,7 +374,7 @@ contract XProvider is IXReceiver {
     address _vault,
     address _asset,
     uint256 _estAmount
-  ) external onlySelfOrVault {
+  ) external onlySelf {
     IERC20(_asset).safeTransfer(_vault, _estAmount);
     IVault(_vault).receiveFunds();
   }
@@ -560,22 +560,26 @@ contract XProvider is IXReceiver {
   Only Guardian functions
   */
 
-  /// @notice Guardian function to send funds back to xController when xCall fails
-  function sendFundsToXController(address _token) external onlyGuardian {
+  /// @notice Send funds back to xController when xCall fails
+  /// @dev Guardian function
+  function sendFundsToXController(address _token, uint256 _amount) external onlyGuardian {
     require(xControllerChain == homeChain, "No xController on this chain");
     require(xController != address(0), "Zero address");
 
-    uint256 balance = IERC20(_token).balanceOf(address(this));
-    IERC20(_token).transfer(xController, balance);
+    IERC20(_token).safeTransfer(xController, _amount);
   }
 
-  /// @notice Guardian function to send funds back to vault when xCall fails
-  function sendFundsToVault(uint256 _vaultNumber, address _token) external onlyGuardian {
+  /// @notice Send funds back to vault when xCall fails or for residue left behind with xTransfers
+  /// @dev Guardian function
+  function sendFundsToVault(
+    uint256 _vaultNumber,
+    address _token,
+    uint256 _amount
+  ) external onlyGuardian {
     address vault = vaults[_vaultNumber];
     require(vault != address(0), "Zero address");
 
-    uint256 balance = IERC20(_token).balanceOf(address(this));
-    IERC20(_token).transfer(vault, balance);
+    IERC20(_token).safeTransfer(vault, _amount);
   }
 
   /// @notice Sets the connextRouterFee variable.
