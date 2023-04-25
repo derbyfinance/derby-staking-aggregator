@@ -83,7 +83,12 @@ contract XProvider is IXReceiver {
    *    3) The call to this contract comes from Connext.
    */
   modifier onlySource(address _originSender, uint32 _origin) {
-    require(_originSender == trustedRemoteConnext[_origin] && msg.sender == connext, "Not trusted");
+    require(
+      trustedRemoteConnext[_origin] != address(0) &&
+        _originSender == trustedRemoteConnext[_origin] &&
+        msg.sender == connext,
+      "Not trusted"
+    );
     _;
   }
 
