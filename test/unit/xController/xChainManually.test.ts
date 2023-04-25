@@ -327,14 +327,14 @@ describe('Testing XChainController, unit test for manual execution', async () =>
   it('Guardian sendFundsToXController to send funds back when xCall fails', async function () {
     await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
 
-    await expect(xProviderMain.connect(guardian).sendFundsToXController(usdc)).to.be.revertedWith(
-      'No xController on this chain',
-    );
+    await expect(
+      xProviderMain.connect(guardian).sendFundsToXController(usdc, 10_000),
+    ).to.be.revertedWith('No xController on this chain');
 
     await xProviderMain.connect(dao).setXControllerChainId(10);
 
     await expect(() =>
-      xProviderMain.connect(guardian).sendFundsToXController(usdc),
+      xProviderMain.connect(guardian).sendFundsToXController(usdc, 10_000),
     ).to.changeTokenBalance(IUSDc, xChainControllerDUMMY, 10_000);
   });
 
@@ -342,14 +342,14 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     const vaultNumber = random(100);
 
     await expect(
-      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc, 100),
     ).to.be.revertedWith('Zero address');
 
     await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
     await xProviderMain.connect(dao).setVaultAddress(vaultNumber, vault1.address);
 
     await expect(() =>
-      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc, 10_000),
     ).to.changeTokenBalance(IUSDc, vault1, 10_000);
   });
 });
