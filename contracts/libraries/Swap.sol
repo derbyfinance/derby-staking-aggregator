@@ -21,6 +21,7 @@ library Swap {
 
   struct SwapInOut {
     uint256 amount;
+    uint256 deadline;
     address tokenIn;
     address tokenOut;
   }
@@ -56,7 +57,7 @@ library Swap {
         _swap.tokenOut
       ),
       recipient: address(this),
-      deadline: block.timestamp,
+      deadline: _swap.deadline,
       amountIn: _swap.amount,
       amountOutMinimum: amountOutMinimum
     });

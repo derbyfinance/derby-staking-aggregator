@@ -205,7 +205,9 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
   /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
-  function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
+  function withdrawRewards(
+    uint256 _deadline
+  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.rewardRequestPeriod, "!Funds");
@@ -219,7 +221,7 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(value, _deadline, address(vaultCurrency), derbyToken),
         controller.getUniswapParams(),
         true
       );
