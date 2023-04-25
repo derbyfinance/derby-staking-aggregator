@@ -177,6 +177,8 @@ export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnit
 export const parseDRB = (amount: number) => ethers.utils.parseUnits(amount.toString(), 18);
 export const formatDRB = (amount: number | BigNumber) => ethers.utils.formatUnits(amount, 18);
 
+export const getSwapDeadline = () => Date.now() + 10 * 60;
+
 type IStarterProviders = {
   yearn: string;
   compound: string;

@@ -6,6 +6,7 @@ import {
   erc20,
   formatUnits,
   formatUSDC,
+  getSwapDeadline,
   getUSDCSigner,
   getWhale,
   parseUnits,
@@ -76,11 +77,21 @@ describe('Testing VaultSwap, unit test', async () => {
     expect(compBalance).to.be.equal(swapAmount);
     expect(usdcBalance).to.be.equal(0);
 
-    const tx = await vault.swapMinAmountOutMultiTest(swapAmount, compToken, usdc);
+    const tx = await vault.swapMinAmountOutMultiTest(
+      swapAmount,
+      getSwapDeadline(),
+      compToken,
+      usdc,
+    );
     const receipt = await tx.wait();
     const { minAmountOut } = receipt.events!.at(-1)!.args as Result;
 
-    await vault.swapTokensMultiTest(swapAmount, compToken, usdc, false);
+    // Low deadline so it should revert
+    await expect(
+      vault.swapTokensMultiTest(swapAmount, 1000, compToken, usdc, false),
+    ).to.be.revertedWith('Transaction too old');
+
+    await vault.swapTokensMultiTest(swapAmount, getSwapDeadline(), compToken, usdc, false);
     compBalance = await IComp.balanceOf(vault.address);
     usdcBalance = await IUSDc.balanceOf(vault.address);
 
@@ -95,14 +106,14 @@ describe('Testing VaultSwap, unit test', async () => {
     const usdcBalance = await IUSDc.balanceOf(vault.address);
     // console.log(`USDC Balance vault: ${usdcBalance}`);
 
-    await vault.swapTokensMultiTest(swapAmount, usdc, compToken, false);
+    await vault.swapTokensMultiTest(swapAmount, getSwapDeadline(), usdc, compToken, false);
 
     const compBalance = await IComp.balanceOf(vault.address);
     // console.log(`Comp Balance vault: ${compBalance}`);
 
     // Atleast receive some COMP
     expect(formatUnits(compBalance, 18)).to.be.greaterThan(0);
-    await vault.swapTokensMultiTest(compBalance, compToken, usdc, false);
+    await vault.swapTokensMultiTest(compBalance, getSwapDeadline(), compToken, usdc, false);
 
     // console.log(`USDC Balance vault End: ${await IUSDc.balanceOf(vault.address)}`);
     const compBalanceEnd = await IComp.balanceOf(vault.address);
@@ -197,7 +208,7 @@ describe('Testing VaultSwap, unit test', async () => {
     // should use token balance in the vault instead of swapping, so balance should not change
     const compBalanceBefore = await IComp.balanceOf(vault.address);
     const usdcBalanceBefore = await IUSDc.balanceOf(vault.address);
-    await vault.swapTokensMultiTest(swapAmount, usdc, compToken, true);
+    await vault.swapTokensMultiTest(swapAmount, getSwapDeadline(), usdc, compToken, true);
     const compBalanceAfter = await IComp.balanceOf(vault.address);
     const usdcBalanceAfter = await IUSDc.balanceOf(vault.address);
 

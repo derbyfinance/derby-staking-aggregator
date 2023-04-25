@@ -48,6 +48,8 @@ library Swap {
     uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
     if (_rewardSwap && balanceBefore > amountOutMinimum) return amountOutMinimum;
 
+    console.log("block timestamp %s", block.timestamp);
+    console.log("deadline from swap %s", _swap.deadline);
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: abi.encodePacked(
         _swap.tokenIn,

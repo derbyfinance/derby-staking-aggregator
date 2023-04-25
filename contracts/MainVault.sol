@@ -203,8 +203,10 @@ contract MainVault is Vault, VaultToken {
     totalWithdrawalRequests += _value;
   }
 
-  /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
-  /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
+  /// @notice Withdraw the reward allowance set by the game using the redeemRewardsGame function
+  /// @dev Swaps vaultCurrency to Derby tokens, sends the funds to the user, and resets the allowance
+  /// @param _deadline Timestamp after which the transaction is considered invalid
+  /// @return value The amount of reward withdrawn by the user
   function withdrawRewards(
     uint256 _deadline
   ) external nonReentrant onlyWhenIdle returns (uint256 value) {

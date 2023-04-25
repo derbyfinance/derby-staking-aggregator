@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
+import { erc20, formatEther, getSwapDeadline, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
@@ -235,12 +235,14 @@ describe('Testing Game', async () => {
     expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
 
     // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
-    await vault.connect(user).withdrawRewards();
+    await vault.connect(user).withdrawRewards(getSwapDeadline());
     const balance = formatEther(await IUniswap.balanceOf(userAddr));
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!Allowance');
+    await expect(vault.connect(user).withdrawRewards(getSwapDeadline())).to.be.revertedWith(
+      '!Allowance',
+    );
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
@@ -267,11 +269,9 @@ describe('Testing Game', async () => {
     await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(4_240_000)]);
     expect(await vault.getReservedFundsTEST()).to.be.equal(4_240_000);
 
-    await expect(() => vault.connect(user).withdrawRewards()).to.changeTokenBalance(
-      IUSDc,
-      user,
-      4_240_000,
-    );
+    await expect(() =>
+      vault.connect(user).withdrawRewards(getSwapDeadline()),
+    ).to.changeTokenBalance(IUSDc, user, 4_240_000);
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
