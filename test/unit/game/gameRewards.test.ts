@@ -7,7 +7,7 @@ describe('Testing Game Rewards', async () => {
   const chainIds: BigNumberish[] = [10, 100, 1000];
 
   it('Calculate rewards during rebalance Basket', async function () {
-    const { game, derbyToken, vault, user, vaultNumber, basketId } = await setupGame();
+    const { game, derbyToken, vault, user, guardian, vaultNumber, basketId } = await setupGame();
 
     let allocations = [
       [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
@@ -25,6 +25,7 @@ describe('Testing Game Rewards', async () => {
       await game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
     ]);
 
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     await derbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
     await game.connect(user).rebalanceBasket(basketId, allocations);
 
@@ -81,7 +82,7 @@ describe('Testing Game Rewards', async () => {
   });
 
   it('Should settle negative rewards when negative reward are higher then unlocked tokens', async function () {
-    const { game, derbyToken, vault, user, vaultNumber, basketId } = await setupGame();
+    const { game, derbyToken, vault, user, guardian, vaultNumber, basketId } = await setupGame();
 
     let allocations = [
       [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
@@ -100,6 +101,7 @@ describe('Testing Game Rewards', async () => {
     ]);
 
     await derbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     await game.connect(user).rebalanceBasket(basketId, allocations);
 
     // This rebalance should be skipped for the basket

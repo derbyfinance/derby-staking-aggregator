@@ -163,4 +163,11 @@ describe('Testing Vault, unit test', async () => {
     await vault.setVaultState(3);
     await vault.rebalance();
   });
+
+  it('Should not be able to pushTotalUnderlyingToController when vault is off', async function () {
+    const { vault } = await setupVault();
+    await vault.toggleVaultOnOffTEST(true);
+
+    await expect(vault.pushTotalUnderlyingToController()).to.be.revertedWith('!rebalance needed');
+  });
 });

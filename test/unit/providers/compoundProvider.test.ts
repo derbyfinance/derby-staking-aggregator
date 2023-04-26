@@ -20,6 +20,7 @@ describe('Testing Compound provider', async () => {
     const provider = (await getContract('CompoundProvider', hre)) as CompoundProvider;
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
     await transferAndApproveDAI(provider.address, user, 1_000_000);
 
