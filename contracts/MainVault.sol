@@ -56,10 +56,11 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
   {
     exchangeRate = _uScale;
     game = _game;
@@ -219,7 +220,7 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(value, nativeToken, address(vaultCurrency), derbyToken),
         controller.getUniswapParams(),
         true
       );

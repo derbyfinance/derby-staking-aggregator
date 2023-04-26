@@ -36,6 +36,7 @@ contract Vault is ReentrancyGuard {
 
   bool public deltaAllocationsReceived;
 
+  address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
   address public vaultCurrencyAddr;
@@ -93,7 +94,8 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -102,6 +104,7 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
+    nativeToken = _nativeToken;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -388,7 +391,7 @@ contract Vault is ReentrancyGuard {
         address govToken = controller.getGovToken(vaultNumber, i);
         uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
         Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
+          Swap.SwapInOut(tokenBalance, nativeToken, govToken, address(vaultCurrency)),
           controller.getUniswapParams(),
           false
         );
@@ -479,6 +482,6 @@ contract Vault is ReentrancyGuard {
 
   /// @notice callback to receive Ether from unwrapping WETH
   receive() external payable {
-    require(msg.sender == Swap.WETH, "Not WETH");
+    require(msg.sender == nativeToken, "Not WETH");
   }
 }
