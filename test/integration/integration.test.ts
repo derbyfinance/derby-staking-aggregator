@@ -137,6 +137,9 @@ describe('Testing full integration test', async () => {
 
         await derbyToken.connect(user).increaseAllowance(game.address, parseDRB(totalAllocations));
 
+        // should still pass since rebalancing Period is 1
+        await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 0);
+
         await expect(() =>
           game.connect(user).rebalanceBasket(basketId, allocations),
         ).to.changeTokenBalance(derbyToken, user, parseDRB(-totalAllocations));
@@ -696,6 +699,8 @@ describe('Testing full integration test', async () => {
     it('Rebalance basket should give unredeemedRewards', async function () {
       const { user, basketId, allocations } = gameUsers[0];
 
+      // 2 vaults
+      expect(await game.getNumberOfRewardsReceived(vaultNumber)).to.be.equal(2);
       await game.connect(user).rebalanceBasket(basketId, allocations);
       expect(await game.connect(user).basketUnredeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
