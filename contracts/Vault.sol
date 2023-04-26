@@ -135,8 +135,6 @@ contract Vault is ReentrancyGuard {
     require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
 
-    rebalancingPeriod++;
-
     claimTokens();
     settleDeltaAllocation();
 

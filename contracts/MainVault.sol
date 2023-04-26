@@ -326,7 +326,8 @@ contract MainVault is Vault, VaultToken {
   function settleReservedFunds() internal {
     reservedFunds += totalWithdrawalRequests;
     totalWithdrawalRequests = 0;
-    state = State.RebalanceVault;
+    if (vaultOff) state = State.SendRewardsPerToken;
+    else state = State.RebalanceVault;
   }
 
   /// @notice See receiveProtocolAllocations below

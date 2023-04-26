@@ -195,7 +195,7 @@ describe('Testing XChainController, integration test', async () => {
       0, // vault 4
     ];
     const expectedExchangeRate = ((310_000 - 72_000) / (310_000 - 60_000)) * 1e6; // == 0.96
-    console.log(expectedAmounts);
+
     expect(formatUSDC(await vault1.amountToSendXChain())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.amountToSendXChain())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.amountToSendXChain())).to.be.equal(expectedAmounts[2]);
@@ -277,6 +277,7 @@ describe('Testing XChainController, integration test', async () => {
     expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 500);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
+    expect(await vault4.state()).to.be.equal(5); // vault is off so should skip the vault rebalance
   });
 
   it('6) Push allocations from game to vaults', async function () {
