@@ -12,10 +12,6 @@ contract XChainControllerMock is XChainController {
     uint32 _homeChain
   ) XChainController(_game, _dao, _guardian, _homeChain) {}
 
-  function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
-    return setActiveVaults(_vaultNumber, _activeVaults);
-  }
-
   function setReadyTEST(uint256 _vaultNumber, bool _state) external {
     return setReady(_vaultNumber, _state);
   }

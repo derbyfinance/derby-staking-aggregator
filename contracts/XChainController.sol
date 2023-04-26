@@ -31,13 +31,11 @@ contract XChainController {
     mapping(uint32 => uint256) amountToDepositPerChain;
   }
 
-  // activeVaults; number of active vaults for vaultNumber, set in XChainRebalance
   // stage 0 Ready; waiting for game to send allocations
   // stage 1 AllocationsReceived; allocations received from game, ready to rebalance XChain and set activeVaults
   // stage 2 UnderlyingReceived; underlyings received from all active vault contracts
   // stage 3 FundsReceived; funds received from all active vault contracts
   struct vaultStages {
-    uint256 activeVaults;
     bool ready; // stage 0
     bool allocationsReceived; // stage 1
     uint256 underlyingReceived; // stage 2
@@ -105,7 +103,7 @@ contract XChainController {
   // vaultStage 2
   modifier onlyWhenUnderlyingsReceived(uint256 _vaultNumber) {
     require(
-      vaultStage[_vaultNumber].underlyingReceived == vaultStage[_vaultNumber].activeVaults,
+      vaultStage[_vaultNumber].underlyingReceived == chainIds.length,
       "Not all underlyings received"
     );
     _;
@@ -113,10 +111,7 @@ contract XChainController {
 
   // vaultStage 3
   modifier onlyWhenFundsReceived(uint256 _vaultNumber) {
-    require(
-      vaultStage[_vaultNumber].fundsReceived == vaultStage[_vaultNumber].activeVaults,
-      "Not all funds received"
-    );
+    require(vaultStage[_vaultNumber].fundsReceived == chainIds.length, "Not all funds received");
     _;
   }
 
@@ -126,13 +121,6 @@ contract XChainController {
     guardian = _guardian;
     homeChain = _homeChain;
     minimumAmount = 1000e6;
-  }
-
-  /// @notice Setter for number of active vaults for vaultNumber, set in xChainRebalance
-  /// @param _vaultNumber Number of the vault
-  /// @param _activeVaults Number active vaults, calculated in xChainRebalance
-  function setActiveVaults(uint256 _vaultNumber, uint256 _activeVaults) internal {
-    vaultStage[_vaultNumber].activeVaults = _activeVaults;
   }
 
   /// @notice Setter for stage 0:
@@ -202,16 +190,13 @@ contract XChainController {
   /// @param _vaultNumber Number of Vault
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
   function receiveAllocationsFromGameInt(uint256 _vaultNumber, int256[] memory _deltas) internal {
-    uint256 activeVaults;
-
     for (uint256 i = 0; i < chainIds.length; i++) {
       uint32 chain = chainIds[i];
-      activeVaults += settleCurrentAllocation(_vaultNumber, chain, _deltas[i]);
+      settleCurrentAllocation(_vaultNumber, chain, _deltas[i]);
       resetVaultUnderlyingForChain(_vaultNumber, chain);
     }
 
     resetVaultUnderlying(_vaultNumber);
-    setActiveVaults(_vaultNumber, activeVaults);
     setAllocationsReceived(_vaultNumber, true);
     setReady(_vaultNumber, false);
   }
@@ -222,17 +207,11 @@ contract XChainController {
   /// @param _vaultNumber Number of Vault
   /// @param _chainId Number of chain used
   /// @param _deltas Delta allocations array received from game, indexes match chainIds[] set in this contract
-  function settleCurrentAllocation(
-    uint256 _vaultNumber,
-    uint32 _chainId,
-    int256 _deltas
-  ) internal returns (uint256 activeVault) {
+  function settleCurrentAllocation(uint256 _vaultNumber, uint32 _chainId, int256 _deltas) internal {
     if (getCurrentAllocation(_vaultNumber, _chainId) == 0 && _deltas == 0) {
       vaults[_vaultNumber].chainIdOff[_chainId] = true;
-      activeVault = 0;
     } else {
       vaults[_vaultNumber].chainIdOff[_chainId] = false;
-      activeVault = 1;
     }
 
     int256 totalCurrentAllocation = int(getCurrentTotalAllocation(_vaultNumber)) + _deltas;
@@ -302,7 +281,6 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
-    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
     if (_chain == homeChain) {
       require(msg.value == 0, "XchainController, ether sent not used");
     }
@@ -414,7 +392,6 @@ contract XChainController {
     uint256 _vaultNumber,
     uint32 _chain
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
-    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
     if (_chain == homeChain) require(msg.value == 0, "XchainController, ether sent not used");
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
@@ -631,11 +608,6 @@ contract XChainController {
     uint256 _fundsReceived
   ) external onlyGuardian {
     vaultStage[_vaultNumber].fundsReceived = _fundsReceived;
-  }
-
-  /// @notice Guardian setter for number of active vaults for vaultNumber, set in xChainRebalance
-  function setActiveVaultsGuard(uint256 _vaultNumber, uint256 _activeVaults) external onlyGuardian {
-    vaultStage[_vaultNumber].activeVaults = _activeVaults;
   }
 
   /// @notice Guardian setter for stage 0:
