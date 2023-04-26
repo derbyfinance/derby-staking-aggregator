@@ -17,6 +17,7 @@ import {
 import { addStarterProtocols } from '@testhelp/helpers';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { Controller } from '@typechain';
+import { AddAllVaultsToProviders } from '@testhelp/InitialiseContracts';
 
 const vaultNumber = 4;
 
@@ -24,7 +25,7 @@ describe('Testing controller', async () => {
   const setupController = deployments.createFixture(async (hre) => {
     await deployments.fixture(['Controller']);
     const controller = (await getContract('Controller', hre)) as Controller;
-    const [, , , vault, deployer] = await getAllSigners(hre);
+    const [dao, , , vault, deployer] = await getAllSigners(hre);
 
     await run('controller_init');
     await run('controller_add_vault', { vault: vault.address });

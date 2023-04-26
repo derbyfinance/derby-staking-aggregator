@@ -19,6 +19,7 @@ describe('Testing Beta provider', async () => {
     const provider = (await getContract('BetaProvider', hre)) as BetaProvider;
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
     await transferAndApproveDAI(provider.address, user, 1_000_000);
 
