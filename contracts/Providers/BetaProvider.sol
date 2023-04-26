@@ -149,5 +149,15 @@ contract BetaProvider is IProvider {
     // return IBeta(_bToken).tokenPrice();
   }
 
+  /// @dev Transfers a specified amount of tokens to a specified vault, used for getting rewards out.
+  /// This function can only be called by the DAO.
+  /// @param _token The address of the token to be transferred.
+  /// @param _vault The address of the vault to receive the tokens.
+  /// @param _amount The amount of tokens to be transferred.
+  function sendTokensToVault(address _token, address _vault, uint256 _amount) external onlyDao {
+    require(vaultWhitelist[_vault] == true, "Provider: Vault not known");
+    IERC20(_token).safeTransfer(_vault, _amount);
+  }
+
   function claim(address _bToken, address _claimer) external override onlyVault returns (bool) {}
 }
