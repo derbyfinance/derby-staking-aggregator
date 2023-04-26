@@ -73,15 +73,6 @@ task('xcontroller_set_totalunderlying', 'Step 2: Guardian')
       .setTotalUnderlyingGuard(vaultnumber, chainid, underlying, totalsupply, withdrawalrequests);
   });
 
-task('xcontroller_set_active_vaults', 'Guardian setter for number of active vaults')
-  .addParam('vaultnumber', 'Number of vault', null, types.int)
-  .addParam('activevaults', 'Number of active vault', null, types.int)
-  .setAction(async ({ vaultnumber, activevaults }, hre) => {
-    const xcontroller = await getXController(hre);
-    const guardian = await getGuardian(hre);
-    await xcontroller.connect(guardian).setActiveVaultsGuard(vaultnumber, activevaults);
-  });
-
 task('xcontroller_set_ready', 'Guardian setter for stage 0')
   .addParam('vaultnumber', 'Number of vault', null, types.int)
   .addParam('state', 'If vault is ready', null, types.boolean)

@@ -11,6 +11,8 @@ import "./Interfaces/IGame.sol";
 import "./Interfaces/ExternalInterfaces/IConnext.sol";
 import "./Interfaces/ExternalInterfaces/IXReceiver.sol";
 
+import "hardhat/console.sol";
+
 contract XProvider is IXReceiver {
   using SafeERC20 for IERC20;
 

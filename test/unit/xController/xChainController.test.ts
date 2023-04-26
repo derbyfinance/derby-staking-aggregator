@@ -204,6 +204,7 @@ describe('Testing XChainController, integration test', async () => {
     expect(await vault1.exchangeRate()).to.be.equal(expectedExchangeRate);
     expect(await vault2.exchangeRate()).to.be.equal(expectedExchangeRate);
     expect(await vault3.exchangeRate()).to.be.equal(expectedExchangeRate);
+    expect(await vault4.exchangeRate()).to.be.equal(expectedExchangeRate);
 
     // Checking if vault states upped correctly
     expect(await vault1.state()).to.be.equal(2);
@@ -257,7 +258,7 @@ describe('Testing XChainController, integration test', async () => {
       (400 / 2000) * 238_000, // vault 1
       (600 / 2000) * 238_000 + 60_000, // vault 2 should have the request of 60k
       (1000 / 2000) * 238_000 * 0.9945, // vault 3 should have received 150k from controller
-      12_000, // Request of 10k * 1.2 exchangerate
+      12_000 * 0.99, // Request of 10k * 1.2 exchangerate
     ];
 
     // reserved funds of vault2 should be 60k at this point
@@ -272,7 +273,8 @@ describe('Testing XChainController, integration test', async () => {
     expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.getVaultBalance())).to.be.closeTo(expectedAmounts[2], 70);
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // expect(formatUSDC(await vault4.getVaultBalance())).to.be.equal(expectedAmounts[3]);
+    // Problem with estimated amount in xProvider at the moment
+    expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 500);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
   });

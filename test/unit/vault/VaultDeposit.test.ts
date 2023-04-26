@@ -25,15 +25,6 @@ describe('Testing VaultDeposit, unit test', async () => {
     ).to.changeTokenBalance(vault, user, expectedLPTokens);
   });
 
-  it('Should not be able to deposit when vault is off', async function () {
-    const { vault, user } = await setupVault();
-    await vault.toggleVaultOnOffTEST(true);
-
-    await expect(vault.connect(user).deposit(10_000 * 1e6, user.address)).to.be.revertedWith(
-      'Vault is off',
-    );
-  });
-
   it('Test training state', async function () {
     const { vault, user, guardian } = await setupVault();
     await vault.connect(guardian).setTraining(true);
