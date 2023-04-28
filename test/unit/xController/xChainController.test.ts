@@ -237,10 +237,10 @@ describe('Testing XChainController, integration test', async () => {
 
     for (let chain of chainIds) {
       if (chain == homeChain) {
-        await xChainController.sendFundsToVault(vaultNumber, slippage, chain, 0);
-        await expect(
-          xChainController.sendFundsToVault(vaultNumber, slippage, chain, 0),
-        ).to.be.revertedWith('XChainController: Chain already processed');
+        await xChainController.sendFundsToVault(vaultNumber, chain);
+        await expect(xChainController.sendFundsToVault(vaultNumber, chain)).to.be.revertedWith(
+          'XChainController: Chain already processed',
+        );
       } else {
         await xChainController.sendFundsToVault(vaultNumber, chain, {
           value: parseEther('0.1'),
