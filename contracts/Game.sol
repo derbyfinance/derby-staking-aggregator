@@ -54,6 +54,9 @@ contract Game is ERC721, ReentrancyGuard {
   IController public controller;
   IERC20 public derbyToken;
 
+  // used in notInSameBlock modifier
+  uint256 private lastBlock;
+
   // latest basket id
   uint256 private latestBasketId;
 
@@ -107,6 +110,12 @@ contract Game is ERC721, ReentrancyGuard {
 
   modifier onlyGuardian() {
     require(msg.sender == guardian, "Game: only Guardian");
+    _;
+  }
+
+  modifier notInSameBlock() {
+    require(block.number != lastBlock, "Cannot call functions in the same block");
+    lastBlock = block.number;
     _;
   }
 
@@ -253,7 +262,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
   /// @param _vaultNumber Number of the vault. Same as in Router.
   /// @return basketId The basket Id the user has minted.
-  function mintNewBasket(uint256 _vaultNumber) external returns (uint256) {
+  function mintNewBasket(uint256 _vaultNumber) external nonReentrant returns (uint256) {
     // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
     baskets[latestBasketId].vaultNumber = _vaultNumber;
     baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
@@ -435,7 +444,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Trigger for Dao to push delta allocations to the xChainController
   /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external payable {
+  function pushAllocationsToController(uint256 _vaultNumber) external payable notInSameBlock {
     require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
     for (uint k = 0; k < chainIds.length; k++) {
       require(
@@ -477,7 +486,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the allocations need to be sent
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(uint256 _vaultNumber, uint32 _chain) external payable {
+  function pushAllocationsToVaults(
+    uint256 _vaultNumber,
+    uint32 _chain
+  ) external payable notInSameBlock {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "Game: not a valid vaultnumber");
     require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
