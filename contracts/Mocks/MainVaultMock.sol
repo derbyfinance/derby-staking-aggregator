@@ -166,7 +166,10 @@ contract MainVaultMock is MainVault {
     return depositInProtocol(_protocolNum, _amount);
   }
 
-  function withdrawFromProtocolTest(uint256 _protocolNum, uint256 _amount) external {
+  function withdrawFromProtocolTest(
+    uint256 _protocolNum,
+    uint256 _amount
+  ) external returns (uint256) {
     return withdrawFromProtocol(_protocolNum, _amount);
   }
 
