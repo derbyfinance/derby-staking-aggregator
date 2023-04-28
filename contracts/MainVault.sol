@@ -253,7 +253,7 @@ contract MainVault is Vault, VaultToken {
       totalSupply(),
       totalWithdrawalRequests
     );
-
+    console.log("homeChain %s, requests %s", homeChain, totalWithdrawalRequests);
     state = State.PushedUnderlying;
     lastTimeStamp = block.timestamp;
 

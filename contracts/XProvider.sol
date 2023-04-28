@@ -365,6 +365,8 @@ contract XProvider is IXReceiver {
       IERC20(_asset).safeTransferFrom(msg.sender, _vault, _amount);
     } else {
       uint256 estAmount = calculateEstimatedAmount(_amount);
+      console.log("Chain %s, amount %s", _chainId, _amount);
+      console.log("estAMount %s", estAmount);
       bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address,address,uint256)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _asset, estAmount);
 

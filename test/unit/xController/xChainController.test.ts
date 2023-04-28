@@ -274,7 +274,7 @@ describe('Testing XChainController, integration test', async () => {
     expect(formatUSDC(await vault3.getVaultBalance())).to.be.closeTo(expectedAmounts[2], 70);
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Problem with estimated amount in xProvider at the moment
-    expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 500);
+    expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 100);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
     expect(await vault4.state()).to.be.equal(5); // vault is off so should skip the vault rebalance

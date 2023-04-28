@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract XChainController {
   using SafeERC20 for IERC20;
 
@@ -319,9 +321,12 @@ contract XChainController {
     uint256 _amountToChain
   ) internal view returns (int256, uint256) {
     uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
+    console.log("Chain id %s, currentUnderlying %s", _chainId, currentUnderlying);
 
     int256 amountToDeposit = int256(_amountToChain) - int256(currentUnderlying);
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - _amountToChain : 0;
+    console.log("Chain id %s, amountToDeposit %s", _chainId, uint(amountToDeposit));
+    console.log("Chain id %s, amountToWithdraw %s", _chainId, uint(amountToWithdraw));
 
     return (amountToDeposit, amountToWithdraw);
   }
@@ -340,6 +345,8 @@ contract XChainController {
 
     uint256 amountToChain = (_totalUnderlying * allocation) / _totalAllocation;
     amountToChain += withdrawalRequests;
+
+    console.log("Chain id %s, amountToChain %s", _chainId, withdrawalRequests);
 
     return amountToChain;
   }
@@ -403,7 +410,6 @@ contract XChainController {
 
       uint256 balance = IERC20(underlying).balanceOf(address(this));
       if (amountToDeposit > balance) amountToDeposit = balance;
-
       IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
       xProvider.xTransferToVaults{value: msg.value}(vault, _chain, amountToDeposit, underlying);
       setAmountToDeposit(_vaultNumber, _chain, 0);
