@@ -23,8 +23,6 @@ describe('Testing XChainController, integration test', async () => {
     derbyToken: DerbyToken,
     game: GameMock,
     userAddr: string;
-  const slippage = 30;
-  const relayerFee = 100;
 
   before(async function () {
     const setup = await setupXChain();
@@ -136,6 +134,7 @@ describe('Testing XChainController, integration test', async () => {
     await vault1.connect(user).deposit(100_000 * 1e6, userAddr);
     await vault2.connect(user).deposit(200_000 * 1e6, userAddr);
 
+    await vault2.upRebalancingPeriodTEST();
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
 
@@ -170,11 +169,16 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('4) Calc and set amount to deposit or withdraw in vault', async function () {
+    let homeChain = await xChainController.homeChain();
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
-      await xChainController.pushVaultAmounts(vaultNumber, chain, {
-        value: parseEther('0.1'),
-      });
+      if (chain == homeChain) {
+        await xChainController.pushVaultAmounts(vaultNumber, chain);
+      } else {
+        await xChainController.pushVaultAmounts(vaultNumber, chain, {
+          value: parseEther('0.1'),
+        });
+      }
     }
 
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
@@ -203,14 +207,17 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
-    await vault1.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
-    await vault2.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') });
-    await expect(
-      vault3.rebalanceXChain(slippage, relayerFee, { value: parseEther('0.1') }),
-    ).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain({ value: parseEther('0.1') });
+    await vault2.rebalanceXChain({ value: parseEther('0.1') });
+    await expect(vault3.rebalanceXChain({ value: parseEther('0.1') })).to.be.revertedWith(
+      'Wrong state',
+    );
 
     // 150k should be sent to xChainController
-    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal((52_000 + 68_240) * 1e6);
+    const amountMinusFees = 52_240 * 0.9945;
+    expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(
+      (amountMinusFees + 68_000) * 1e6,
+    );
     expect(await IUSDc.balanceOf(vault1.address)).to.be.equal(47_760 * 1e6); // 100k - 52k
     expect(await IUSDc.balanceOf(vault2.address)).to.be.equal(132_000 * 1e6); // 200k - 68k
     expect(await IUSDc.balanceOf(vault3.address)).to.be.equal(0);
@@ -225,17 +232,31 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
+    let homeChain = await xChainController.homeChain();
     const chainIds = await xChainController.getChainIds();
+
     for (let chain of chainIds) {
-      await xChainController.sendFundsToVault(vaultNumber, slippage, chain, relayerFee, {
-        value: parseEther('0.1'),
-      });
+      if (chain == homeChain) {
+        await xChainController.sendFundsToVault(vaultNumber, chain);
+        await expect(xChainController.sendFundsToVault(vaultNumber, chain)).to.be.revertedWith(
+          'XChainController: Chain already processed',
+        );
+      } else {
+        await xChainController.sendFundsToVault(vaultNumber, chain, {
+          value: parseEther('0.1'),
+        });
+      }
+    }
+
+    // should be resetted cause all chains sent funds.
+    for (let chain of chainIds) {
+      expect(await xChainController.getFundsSentToChain(vaultNumber, chain)).to.be.false;
     }
 
     const expectedAmounts = [
       (398 / 2000) * 240_000, // vault 1
       (600 / 2000) * 240_000 + 60_000, // vault 2 should have the request of 60k
-      (1000 / 2000) * 240_000, // vault 3 should have received 150k from controller
+      (1000 / 2000) * 240_000 * 0.9945, // vault 3 should have received 150k from controller
     ];
 
     // reserved funds of vault2 should be 60k at this point
@@ -244,11 +265,11 @@ describe('Testing XChainController, integration test', async () => {
 
     expect(formatUSDC(await IUSDc.balanceOf(vault1.address))).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await IUSDc.balanceOf(vault2.address))).to.be.equal(expectedAmounts[1]);
-    expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.equal(expectedAmounts[2]);
+    expect(formatUSDC(await IUSDc.balanceOf(vault3.address))).to.be.closeTo(expectedAmounts[2], 70);
 
     expect(formatUSDC(await vault1.getVaultBalance())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1]);
-    expect(formatUSDC(await vault3.getVaultBalance())).to.be.equal(expectedAmounts[2]);
+    expect(formatUSDC(await vault3.getVaultBalance())).to.be.closeTo(expectedAmounts[2], 70);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
   });

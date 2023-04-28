@@ -4,17 +4,18 @@ import { Controller, MainVaultMock } from '@typechain';
 import { allProtocols, compoundUSDC } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { AddAllVaultsToProviders } from '@testhelp/InitialiseContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
-  await deployments.fixture([
-    'TestVault1',
-    'YearnProvider',
-    'CompoundProvider',
+  const providers = [
     'AaveProvider',
-    'TruefiProvider',
-    'IdleProvider',
     'BetaProvider',
-  ]);
+    'CompoundProvider',
+    'IdleProvider',
+    'TruefiProvider',
+    'YearnProvider',
+  ];
+  await deployments.fixture(['TestVault1', ...providers]);
 
   const vaultNumber = 10;
   const contract = 'TestVault1';
@@ -25,6 +26,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
 
   await allProviders.setProviders(hre);
   await transferAndApproveUSDC(vault.address, user, 10_000_000 * 1e6);
+  await AddAllVaultsToProviders(dao, providers, [vault.address, controller.address], hre);
 
   await run('vault_init', { contract });
   await run('controller_init');

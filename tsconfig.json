@@ -34,6 +34,7 @@
     "deploy",
     "deploySettings.ts",
     "tasks/controller_tasks.ts",
+    "saves/VaultWithdrawProtocol.ts",
   ],
   "files": [
     "./hardhat.config.ts",

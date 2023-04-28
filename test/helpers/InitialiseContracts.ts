@@ -116,3 +116,18 @@ export async function AddAllVaultsToController({ run, deployments }: HardhatRunt
     await run('controller_add_vault', { vault: vault.address });
   }
 }
+
+export async function AddAllVaultsToProviders(
+  dao: Signer,
+  providers: string[],
+  vaults: string[],
+  { deployments, ethers }: HardhatRuntimeEnvironment,
+) {
+  for await (const provider of providers) {
+    const deployment = await deployments.get(provider);
+    const contract = await ethers.getContractAt(provider, deployment.address);
+    for await (const vault of vaults) {
+      await contract.connect(dao).addVault(vault);
+    }
+  }
+}

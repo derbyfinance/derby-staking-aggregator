@@ -40,7 +40,7 @@ describe('Testing Vault, unit test', async () => {
     }
   });
 
-  it('Should be able to blacklist protocol and pull all funds', async function () {
+  it('Should be able to blacklist protocol, update allocations and pull all funds', async function () {
     const { vault, controller, user, guardian } = await setupVault();
     await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
@@ -55,6 +55,7 @@ describe('Testing Vault, unit test', async () => {
 
     // blacklist compound_usdc_01
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
+    await vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
@@ -65,10 +66,20 @@ describe('Testing Vault, unit test', async () => {
       expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1);
     }
 
+    expect(await vault.getAllocationTEST(compoundVault.number)).to.be.equal(0);
+    expect(await vault.totalAllocatedTokens()).to.be.equal(80);
+
     expect(vaultBalance).to.be.closeTo(expectedVaultLiquidity, 1);
     expect(
       await controller.connect(guardian).getProtocolBlacklist(vaultNumber, compoundVault.number),
     ).to.be.true;
+  });
+
+  it('Should not be able to withdraw from protocol when !blacklisted', async function () {
+    const { vault, guardian } = await setupVault();
+    await expect(
+      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number),
+    ).to.be.revertedWith('!Blacklisted');
   });
 
   it('Should not be able to set delta on blacklisted protocol', async function () {
@@ -151,5 +162,12 @@ describe('Testing Vault, unit test', async () => {
     await vault.connect(user).deposit(amountUSDC, await user.getAddress());
     await vault.setVaultState(3);
     await vault.rebalance();
+  });
+
+  it('Should not be able to pushTotalUnderlyingToController when vault is off', async function () {
+    const { vault } = await setupVault();
+    await vault.toggleVaultOnOffTEST(true);
+
+    await expect(vault.pushTotalUnderlyingToController()).to.be.revertedWith('!rebalance needed');
   });
 });

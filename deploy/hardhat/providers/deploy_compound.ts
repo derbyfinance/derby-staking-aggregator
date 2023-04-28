@@ -7,11 +7,11 @@ const func: DeployFunction = async function ({
   deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployer, dao } = await getNamedAccounts();
 
   await deploy('CompoundProvider', {
     from: deployer,
-    args: [comptroller],
+    args: [dao, comptroller],
     log: true,
     autoMine: true,
   });

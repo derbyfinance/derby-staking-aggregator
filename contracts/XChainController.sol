@@ -11,14 +11,14 @@ contract XChainController {
   using SafeERC20 for IERC20;
 
   struct vaultInfo {
-    int256 totalCurrentAllocation;
+    uint256 totalCurrentAllocation;
     uint256 totalUnderlying;
     uint256 totalSupply;
     uint256 totalWithdrawalRequests;
     // (chainId => bool): true == off // false == on
     mapping(uint32 => bool) chainIdOff;
     // (chainId => currentAllocation)
-    mapping(uint32 => int256) currentAllocationPerChain;
+    mapping(uint32 => uint256) currentAllocationPerChain;
     // (chainId => totalUnderlying)
     mapping(uint32 => uint256) totalUnderlyingPerChain;
     // (chainId => vaultAddress)
@@ -43,6 +43,7 @@ contract XChainController {
     uint256 underlyingReceived; // stage 2
     uint256 fundsReceived; // stage 3
     uint256 fundsSent; // stage 4
+    mapping(uint32 => bool) fundsSentToChain;
   }
 
   address private dao;
@@ -173,13 +174,19 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived = 0;
     vaultStage[_vaultNumber].fundsReceived = 0;
     vaultStage[_vaultNumber].fundsSent = 0;
+
+    for (uint256 i = 0; i < chainIds.length; i++) {
+      uint32 chainId = chainIds[i];
+      vaultStage[_vaultNumber].fundsSentToChain[chainId] = false;
+    }
   }
 
   /// @notice Resets underlying for a vaultNumber at the start of a rebalancing period
   function resetVaultUnderlying(uint256 _vaultNumber) internal {
-    vaults[_vaultNumber].totalUnderlying = 0;
     vaultStage[_vaultNumber].underlyingReceived = 0;
+    vaults[_vaultNumber].totalUnderlying = 0;
     vaults[_vaultNumber].totalSupply = 0;
+    vaults[_vaultNumber].totalWithdrawalRequests = 0;
   }
 
   /// @notice Resets underlying for a vaultNumber per chainId at the start of a rebalancing period
@@ -234,10 +241,13 @@ contract XChainController {
       activeVault = 1;
     }
 
-    vaults[_vaultNumber].totalCurrentAllocation += _deltas;
-    vaults[_vaultNumber].currentAllocationPerChain[_chainId] += _deltas;
+    int256 totalCurrentAllocation = int(getCurrentTotalAllocation(_vaultNumber)) + _deltas;
+    require(totalCurrentAllocation >= 0, "Allocation underflow");
+    vaults[_vaultNumber].totalCurrentAllocation = uint(totalCurrentAllocation);
 
-    require(vaults[_vaultNumber].totalCurrentAllocation >= 0, "Allocation underflow");
+    int256 currentAllocationPerChain = int(getCurrentAllocation(_vaultNumber, _chainId)) + _deltas;
+    require(currentAllocationPerChain >= 0, "Allocation underflow");
+    vaults[_vaultNumber].currentAllocationPerChain[_chainId] = uint(currentAllocationPerChain);
   }
 
   /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
@@ -245,6 +255,8 @@ contract XChainController {
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
   function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
+    if (_chainId == homeChain)
+      require(msg.value == 0, "XchainController, sent xchainfee for same chain");
     address vault = getVaultAddress(_vaultNumber, _chainId);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
     xProvider.pushStateFeedbackToVault{value: msg.value}(
@@ -296,9 +308,13 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    if (_chain == homeChain) {
+      require(msg.value == 0, "XchainController, ether sent not used");
+    }
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
-    int256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
+    uint256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
     uint256 totalSupply = getTotalSupply(_vaultNumber);
@@ -306,21 +322,19 @@ contract XChainController {
     uint256 decimals = xProvider.getDecimals(vault);
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
-    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
-      int256 amountToChain = calcAmountToChain(
-        _vaultNumber,
-        _chain,
-        totalUnderlying,
-        totalAllocation
-      );
-      (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
-        _vaultNumber,
-        _chain,
-        amountToChain
-      );
+    uint256 amountToChain = calcAmountToChain(
+      _vaultNumber,
+      _chain,
+      totalUnderlying,
+      totalAllocation
+    );
+    (int256 amountToDeposit, uint256 amountToWithdraw) = calcDepositWithdraw(
+      _vaultNumber,
+      _chain,
+      amountToChain
+    );
 
-      sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
-    }
+    sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
   }
 
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
@@ -330,14 +344,12 @@ contract XChainController {
   function calcDepositWithdraw(
     uint256 _vaultNumber,
     uint32 _chainId,
-    int256 _amountToChain
+    uint256 _amountToChain
   ) internal view returns (int256, uint256) {
     uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
 
-    int256 amountToDeposit = _amountToChain - int256(currentUnderlying);
-    uint256 amountToWithdraw = amountToDeposit < 0
-      ? currentUnderlying - uint256(_amountToChain)
-      : 0;
+    int256 amountToDeposit = int256(_amountToChain) - int256(currentUnderlying);
+    uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - _amountToChain : 0;
 
     return (amountToDeposit, amountToWithdraw);
   }
@@ -349,13 +361,13 @@ contract XChainController {
     uint256 _vaultNumber,
     uint32 _chainId,
     uint256 _totalUnderlying,
-    int256 _totalAllocation
-  ) internal view returns (int256) {
-    int256 allocation = getCurrentAllocation(_vaultNumber, _chainId);
+    uint256 _totalAllocation
+  ) internal view returns (uint256) {
+    uint256 allocation = getCurrentAllocation(_vaultNumber, _chainId);
     uint256 withdrawalRequests = getWithdrawalRequests(_vaultNumber, _chainId);
 
-    int256 amountToChain = (int(_totalUnderlying) * allocation) / _totalAllocation;
-    amountToChain += int(withdrawalRequests);
+    uint256 amountToChain = (_totalUnderlying * allocation) / _totalAllocation;
+    amountToChain += withdrawalRequests;
 
     return amountToChain;
   }
@@ -403,41 +415,53 @@ contract XChainController {
   /// @notice Step 5 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
-  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
   /// @param _chain Chain id of the vault where the funds need to be sent
-  /// @param _relayerFee The fee offered to the relayers
   function sendFundsToVault(
     uint256 _vaultNumber,
-    uint256 _slippage,
-    uint32 _chain,
-    uint256 _relayerFee
+    uint32 _chain
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
+    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
+    require(
+      !vaultStage[_vaultNumber].fundsSentToChain[_chain],
+      "XChainController: Chain already processed"
+    );
+    if (_chain == homeChain) require(msg.value == 0, "XChainController, ether sent not used");
     address vault = getVaultAddress(_vaultNumber, _chain);
-    require(vault != address(0), "xChainController: not a valid vaultnumber");
-    if (!getVaultChainIdOff(_vaultNumber, _chain)) {
-      uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
+    require(vault != address(0), "XChainController: not a valid vaultnumber");
 
-      if (amountToDeposit > 0) {
-        address underlying = getUnderlyingAddress(_vaultNumber, _chain);
+    uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
-        uint256 balance = IERC20(underlying).balanceOf(address(this));
-        if (amountToDeposit > balance) amountToDeposit = balance;
+    if (amountToDeposit > 0) {
+      address underlying = getUnderlyingAddress(_vaultNumber, _chain);
 
-        IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
-        xProvider.xTransferToVaults{value: msg.value}(
-          vault,
-          _chain,
-          amountToDeposit,
-          underlying,
-          _slippage,
-          _relayerFee
-        );
-        setAmountToDeposit(_vaultNumber, _chain, 0);
-        emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
-      }
+      uint256 balance = IERC20(underlying).balanceOf(address(this));
+      if (amountToDeposit > balance) amountToDeposit = balance;
+
+      IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
+      xProvider.xTransferToVaults{value: msg.value}(vault, _chain, amountToDeposit, underlying);
+      setAmountToDeposit(_vaultNumber, _chain, 0);
+      emit SentFundsToVault(vault, _chain, amountToDeposit, underlying);
     }
+
+    updateVaultStage(_vaultNumber, _chain);
+  }
+
+  /// @notice Updates the vault stage after sending funds to the vault.
+  /// @dev This function should only be called internally after funds are sent to the vault.
+  /// @param _vaultNumber The vault number for which the stage is being updated.
+  /// @param _chain The chain ID of the destination vault.
+  function updateVaultStage(uint256 _vaultNumber, uint32 _chain) internal {
     vaultStage[_vaultNumber].fundsSent++;
+    vaultStage[_vaultNumber].fundsSentToChain[_chain] = true;
     if (vaultStage[_vaultNumber].fundsSent == chainIds.length) resetVaultStages(_vaultNumber);
+  }
+
+  /// @notice Retrieves the value of fundsSentToChain for a given vault number and chain ID.
+  /// @param _vaultNumber The vault number for which the fundsSentToChain value should be retrieved.
+  /// @param _chainId The chain ID for which the fundsSentToChain value should be retrieved.
+  /// @return The value of fundsSentToChain for the given vault number and chain ID.
+  function getFundsSentToChain(uint256 _vaultNumber, uint32 _chainId) public view returns (bool) {
+    return vaultStage[_vaultNumber].fundsSentToChain[_chainId];
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
@@ -472,12 +496,12 @@ contract XChainController {
   function getCurrentAllocation(
     uint256 _vaultNumber,
     uint32 _chainId
-  ) internal view returns (int256) {
+  ) internal view returns (uint256) {
     return vaults[_vaultNumber].currentAllocationPerChain[_chainId];
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
-  function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns (int256) {
+  function getCurrentTotalAllocation(uint256 _vaultNumber) internal view returns (uint256) {
     return vaults[_vaultNumber].totalCurrentAllocation;
   }
 

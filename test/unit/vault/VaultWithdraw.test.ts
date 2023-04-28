@@ -82,6 +82,12 @@ describe('Testing VaultWithdraw, unit test', async () => {
     // mocking exchangerate to 0.9
     await vault.setExchangeRateTEST(parseUSDC(0.9));
 
+    // Rebalancing Period == 0, should not be able to withdraw
+    await expect(vault.connect(user).withdrawalRequest(parseUSDC(100))).to.be.revertedWith(
+      'Already a request',
+    );
+    await vault.upRebalancingPeriodTEST();
+
     // withdrawal request for more then LP token balance
     await expect(vault.connect(user).withdrawalRequest(parseUSDC(10_001))).to.be.revertedWith(
       'ERC20: burn amount exceeds balance',
@@ -114,28 +120,6 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('!Allowance');
   });
 
-  it('Withdrawal request and withdraw when the divergence in checkForBalance too big', async function () {
-    const { vault, user } = await setupVault();
-    await vault.connect(user).deposit(parseUSDC(10_000), user.address); // 10k
-    expect(await vault.totalSupply()).to.be.equal(parseUSDC(10_000)); // 10k
-
-    // withdrawal request for 10k LP tokens
-    await expect(() =>
-      vault.connect(user).withdrawalRequest(parseUSDC(10_000)),
-    ).to.changeTokenBalance(vault, user, -parseUSDC(10_000));
-
-    expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(parseUSDC(10_000));
-
-    // mocking vault settings
-    await vault.upRebalancingPeriodTEST();
-    await vault.setReservedFundsTEST(parseUSDC(10_000));
-
-    // removing vault balance so the divergence will be greater than maxDivergenceWithdraws
-    await vault.clearCurrencyBalance(parseUSDC(10));
-
-    await expect(vault.connect(user).withdrawAllowance()).to.be.revertedWith('Max divergence');
-  });
-
   describe('Testing governance fee', async () => {
     it('Should send governance fee to dao on withdraw function', async function () {
       const { vault, user, dao, contract } = await setupVault();
@@ -156,6 +140,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     it('Should send governance fee to dao on withdraw allowance function', async function () {
       const { vault, user, dao, contract } = await setupVault();
       await run('vault_set_governance_fee', { contract: contract, fee: 50 });
+      await vault.upRebalancingPeriodTEST();
 
       await vault.connect(user).deposit(parseUSDC(20_000), user.address);
 

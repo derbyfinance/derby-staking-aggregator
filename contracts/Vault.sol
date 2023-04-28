@@ -12,6 +12,8 @@ import "./Interfaces/IProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
+import "hardhat/console.sol";
+
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -34,6 +36,7 @@ contract Vault is ReentrancyGuard {
 
   bool public deltaAllocationsReceived;
 
+  address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
   address public vaultCurrencyAddr;
@@ -44,7 +47,6 @@ contract Vault is ReentrancyGuard {
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
   uint256 public uScale;
-  uint256 public minimumPull;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -58,14 +60,14 @@ contract Vault is ReentrancyGuard {
   uint256 internal reservedFunds;
 
   // total number of allocated Derby tokens currently
-  int256 public totalAllocatedTokens;
+  uint256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
   string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
-  mapping(uint256 => int256) internal currentAllocations;
+  mapping(uint256 => uint256) internal currentAllocations;
 
   // (protocolNumber => deltaAllocation): delta of the portfolio on next rebalancing
   mapping(uint256 => int256) internal deltaAllocations;
@@ -92,7 +94,8 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   ) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
@@ -101,7 +104,7 @@ contract Vault is ReentrancyGuard {
     dao = _dao;
     uScale = _uScale;
     lastTimeStamp = block.timestamp;
-    minimumPull = 1_000_000;
+    nativeToken = _nativeToken;
   }
 
   /// @notice Withdraw from protocols on shortage in Vault
@@ -117,10 +120,9 @@ contract Vault is ReentrancyGuard {
       uint256 balanceProtocol = balanceUnderlying(i);
 
       uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
-      savedTotalUnderlying -= amountToWithdraw;
 
-      if (amountToWithdraw < minimumPull) break;
-      withdrawFromProtocol(i, amountToWithdraw);
+      uint256 amountWithdrawn = withdrawFromProtocol(i, amountToWithdraw);
+      savedTotalUnderlying -= amountWithdrawn;
 
       if (_value <= vaultCurrency.balanceOf(address(this))) break;
     }
@@ -147,8 +149,6 @@ contract Vault is ReentrancyGuard {
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
 
-    if (reservedFunds > vaultCurrency.balanceOf(address(this))) pullFunds(reservedFunds);
-
     state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
   }
@@ -165,7 +165,10 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Adds deltaAllocatedTokens to totalAllocatedTokens
   function settleDeltaAllocation() internal {
-    totalAllocatedTokens += deltaAllocatedTokens;
+    int256 newTotalAllocatedTokens = int(totalAllocatedTokens) + deltaAllocatedTokens;
+    require(newTotalAllocatedTokens >= 0);
+
+    totalAllocatedTokens = uint(newTotalAllocatedTokens);
     deltaAllocatedTokens = 0;
   }
 
@@ -188,11 +191,11 @@ contract Vault is ReentrancyGuard {
       if (isBlacklisted) continue;
       setAllocation(i);
 
-      int256 amountToProtocol = calcAmountToProtocol(_newTotalUnderlying, i);
+      uint256 amountToProtocol = calcAmountToProtocol(_newTotalUnderlying, i);
       uint256 currentBalance = balanceUnderlying(i);
 
-      int256 amountToDeposit = amountToProtocol - int(currentBalance);
-      uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - uint(amountToProtocol) : 0;
+      int256 amountToDeposit = int(amountToProtocol) - int(currentBalance);
+      uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - amountToProtocol : 0;
 
       if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit);
       if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0)
@@ -209,12 +212,10 @@ contract Vault is ReentrancyGuard {
   function calcAmountToProtocol(
     uint256 _totalUnderlying,
     uint256 _protocol
-  ) internal view returns (int256 amountToProtocol) {
+  ) internal view returns (uint256 amountToProtocol) {
     if (totalAllocatedTokens == 0) amountToProtocol = 0;
     else
-      amountToProtocol =
-        (int(_totalUnderlying) * currentAllocations[_protocol]) /
-        totalAllocatedTokens;
+      amountToProtocol = (_totalUnderlying * currentAllocations[_protocol]) / totalAllocatedTokens;
   }
 
   /// @notice Stores the historical price and the reward per rounded locked token, ignoring decimals.
@@ -230,9 +231,9 @@ contract Vault is ReentrancyGuard {
       return;
     }
 
-    int256 priceDiff = int256(currentPrice - lastPrices[_protocolId]);
+    int256 priceDiff = int256(currentPrice) - int256(lastPrices[_protocolId]);
     int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
-    int256 totalAllocatedTokensRounded = totalAllocatedTokens / 1E18;
+    int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / 1E18;
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {
@@ -258,9 +259,11 @@ contract Vault is ReentrancyGuard {
   /// @notice Helper function to set allocations
   /// @param _i Protocol number linked to an underlying protocol e.g compound_usdc_01
   function setAllocation(uint256 _i) internal {
-    currentAllocations[_i] += deltaAllocations[_i];
+    int256 newCurrentAllocation = int(currentAllocations[_i]) + deltaAllocations[_i];
+    require(newCurrentAllocation >= 0);
+
+    currentAllocations[_i] = uint(newCurrentAllocation);
     deltaAllocations[_i] = 0;
-    require(currentAllocations[_i] >= 0, "Allocation underflow");
   }
 
   /// @notice Helper function so the rebalance will execute all withdrawals first
@@ -287,15 +290,6 @@ contract Vault is ReentrancyGuard {
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    if (protocol.underlying != address(vaultCurrency)) {
-      _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(_amount, address(vaultCurrency), protocol.underlying),
-        uScale,
-        controller.underlyingUScale(protocol.underlying),
-        controller.getCurveParams(address(vaultCurrency), protocol.underlying)
-      );
-    }
-
     IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
@@ -304,8 +298,11 @@ contract Vault is ReentrancyGuard {
   /// @dev shares = amount / PricePerShare
   /// @param _protocolNum Protocol number linked to an underlying protocol e.g compound_usdc_01
   /// @param _amount in VaultCurrency to withdraw
-  function withdrawFromProtocol(uint256 _protocolNum, uint256 _amount) internal {
-    if (_amount <= 0) return;
+  function withdrawFromProtocol(
+    uint256 _protocolNum,
+    uint256 _amount
+  ) internal returns (uint256 amountReceived) {
+    if (_amount <= 0) return 0;
     IController.ProtocolInfoS memory protocol = controller.getProtocolInfo(
       vaultNumber,
       _protocolNum
@@ -315,24 +312,15 @@ contract Vault is ReentrancyGuard {
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
 
-    if (shares == 0) return;
+    if (shares == 0) return 0;
     if (balance < shares) shares = balance;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
-    uint256 amountReceived = IProvider(protocol.provider).withdraw(
+    amountReceived = IProvider(protocol.provider).withdraw(
       shares,
       protocol.LPToken,
       protocol.underlying
     );
-
-    if (protocol.underlying != address(vaultCurrency)) {
-      _amount = Swap.swapStableCoins(
-        Swap.SwapInOut(amountReceived, protocol.underlying, address(vaultCurrency)),
-        controller.underlyingUScale(protocol.underlying),
-        uScale,
-        controller.getCurveParams(protocol.underlying, address(vaultCurrency))
-      );
-    }
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols
@@ -405,16 +393,23 @@ contract Vault is ReentrancyGuard {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     for (uint i = 0; i < latestID; i++) {
       if (currentAllocations[i] == 0) continue;
-      bool claim = controller.claim(vaultNumber, i);
-      if (claim) {
-        address govToken = controller.getGovToken(vaultNumber, i);
-        uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
-        Swap.swapTokensMulti(
-          Swap.SwapInOut(tokenBalance, govToken, address(vaultCurrency)),
-          controller.getUniswapParams(),
-          false
-        );
-      }
+      claimAndSwapTokens(i);
+    }
+  }
+
+  /// @notice Claims and swaps tokens from the underlying protocol
+  /// @dev Claims governance tokens from the underlying protocol if claimable, and swaps them to the vault's underlying token
+  /// @param _protocolNum The protocol ID for which to claim and swap tokens
+  function claimAndSwapTokens(uint256 _protocolNum) internal {
+    bool claim = controller.claim(vaultNumber, _protocolNum);
+    if (claim) {
+      address govToken = controller.getGovToken(vaultNumber, _protocolNum);
+      uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+      Swap.swapTokensMulti(
+        Swap.SwapInOut(tokenBalance, nativeToken, govToken, address(vaultCurrency)),
+        controller.getUniswapParams(),
+        false
+      );
     }
   }
 
@@ -475,11 +470,29 @@ contract Vault is ReentrancyGuard {
   /// @notice The DAO should be able to blacklist protocols, the funds should be sent to the vault.
   /// @param _protocolNum Protocol number linked to an underlying vault e.g compound_usdc_01
   function blacklistProtocol(uint256 _protocolNum) external onlyGuardian {
-    uint256 balanceProtocol = balanceUnderlying(_protocolNum);
+    totalAllocatedTokens -= currentAllocations[_protocolNum];
     currentAllocations[_protocolNum] = 0;
+
     controller.setProtocolBlacklist(vaultNumber, _protocolNum);
-    savedTotalUnderlying -= balanceProtocol;
-    withdrawFromProtocol(_protocolNum, balanceProtocol);
+  }
+
+  /// @notice Withdraws the funds from a blacklisted protocol and updates the savedTotalUnderlying.
+  /// @dev This function should only be called after a protocol has been blacklisted.
+  /// @param _protocolNum The protocol number from which to withdraw the funds.
+  function withdrawFromBlacklistedProtocol(uint256 _protocolNum) external onlyGuardian {
+    bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, _protocolNum);
+    require(isBlacklisted, "!Blacklisted");
+
+    claimAndSwapTokens(_protocolNum);
+
+    uint256 balanceBefore = balanceUnderlying(_protocolNum);
+    withdrawFromProtocol(_protocolNum, balanceBefore);
+    uint256 balanceAfter = balanceUnderlying(_protocolNum);
+    uint256 balanceReceived = balanceBefore - balanceAfter;
+
+    savedTotalUnderlying = savedTotalUnderlying >= balanceReceived
+      ? savedTotalUnderlying - balanceReceived
+      : 0;
   }
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
@@ -501,6 +514,6 @@ contract Vault is ReentrancyGuard {
 
   /// @notice callback to receive Ether from unwrapping WETH
   receive() external payable {
-    require(msg.sender == Swap.WETH, "Not WETH");
+    require(msg.sender == nativeToken, "Not WETH");
   }
 }

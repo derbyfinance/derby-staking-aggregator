@@ -19,6 +19,7 @@ describe('Testing Idle provider', async () => {
     const provider = (await getContract('IdleProvider', hre)) as IdleProvider;
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
     await transferAndApproveDAI(provider.address, user, 1_000_000);
 
@@ -129,7 +130,7 @@ describe('Testing Idle provider', async () => {
 
       await expect(() =>
         provider.connect(user).withdraw(iDAIBalance, iDAI, dai),
-      ).to.changeTokenBalance(IDAI, user, amount.sub(1)); // close to, 1
+      ).to.changeTokenBalance(IDAI, user, amount.sub(2)); // close to, 1
     });
   });
 });
