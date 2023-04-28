@@ -9,6 +9,7 @@ import {
   formatEther,
   transferAndApproveUSDC,
   transferAndApproveDAI,
+  parseUSDC,
 } from '@testhelp/helpers';
 import type { YearnProvider, YearnVaultMock } from '@typechain';
 import { dai, usdc, yearnUSDC as yUSDC, yearnDAI as yDAI } from '@testhelp/addresses';
@@ -29,6 +30,7 @@ describe('Testing Yearn provider for Mock vaults', async () => {
 
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
     await transferAndApproveDAI(provider.address, user, 1_000_000);
 
@@ -39,11 +41,11 @@ describe('Testing Yearn provider for Mock vaults', async () => {
     await IDAI.connect(daiSigner).transfer(user.getAddress(), daiAmount);
     await IDAI.connect(user).approve(provider.address, daiAmount);
 
-    return { provider, yearnUSDC, yearnDAI, yearnUSDT, user };
+    return { provider, yearnUSDC, yearnDAI, yearnUSDT, user, dao };
   });
 
   describe('Testing yearnUSDC', () => {
-    let provider: YearnProvider, user: Signer, exchangeRate: BigNumber;
+    let provider: YearnProvider, user: Signer, dao: Signer, exchangeRate: BigNumber;
     const IUSDc: Contract = erc20(usdc);
     const IyUSDC: Contract = erc20(yUSDC);
     const amount = 100_000 * 1e6;
@@ -52,6 +54,7 @@ describe('Testing Yearn provider for Mock vaults', async () => {
       const setup = await setupProvider();
       provider = setup.provider;
       user = setup.user;
+      dao = setup.dao;
     });
 
     it('Should have exchangeRate', async function () {
@@ -93,6 +96,19 @@ describe('Testing Yearn provider for Mock vaults', async () => {
       await expect(() =>
         provider.connect(user).withdraw(yUSDCBalance, yUSDC, usdc),
       ).to.changeTokenBalance(IUSDc, user, amount - 1);
+    });
+
+    it('Dao should be able to send rewards to vault', async () => {
+      const amount = parseUSDC(10_000);
+      await IUSDc.connect(user).transfer(provider.address, amount);
+
+      await expect(
+        provider.connect(dao).sendTokensToVault(usdc, dao.address, amount),
+      ).to.be.revertedWith('Provider: Vault not known');
+
+      await expect(() =>
+        provider.connect(dao).sendTokensToVault(usdc, user.address, amount),
+      ).to.changeTokenBalance(IUSDc, user, amount);
     });
   });
 

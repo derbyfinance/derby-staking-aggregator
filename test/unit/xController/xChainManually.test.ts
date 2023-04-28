@@ -1,7 +1,7 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, random } from '@testhelp/helpers';
+import { erc20, formatUSDC, parseEther, random } from '@testhelp/helpers';
 import type {
   DerbyToken,
   GameMock,
@@ -47,8 +47,6 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     derbyToken: DerbyToken,
     game: GameMock,
     vaultNumber: BigNumberish = 10;
-  const slippage = 30;
-  const relayerFee = 100;
 
   const setupXChainExtended = deployments.createFixture(async (hre) => {
     const [dao, guardian] = await getAllSigners(hre);
@@ -237,7 +235,7 @@ describe('Testing XChainController, unit test for manual execution', async () =>
 
     await expect(
       xChainControllerDUMMY.pushVaultAmounts(vaultNumber, chainIds[0], {
-        value: ethers.utils.parseEther('0.1'),
+        value: parseEther('0.1'),
       }),
     )
       .to.emit(xChainControllerDUMMY, 'SendXChainAmount')
@@ -263,10 +261,10 @@ describe('Testing XChainController, unit test for manual execution', async () =>
   });
 
   it('Step 4: Push funds from vaults to xChainControlle', async function () {
-    await vault1.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') });
-    await expect(
-      vault2.rebalanceXChain(slippage, relayerFee, { value: ethers.utils.parseEther('0.1') }),
-    ).to.be.revertedWith('Wrong state');
+    await vault1.rebalanceXChain({ value: parseEther('0.1') });
+    await expect(vault2.rebalanceXChain({ value: parseEther('0.1') })).to.be.revertedWith(
+      'Wrong state',
+    );
 
     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(0);
     // Manually up funds received because feedback is sent to DUMMY controller
@@ -329,14 +327,14 @@ describe('Testing XChainController, unit test for manual execution', async () =>
   it('Guardian sendFundsToXController to send funds back when xCall fails', async function () {
     await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
 
-    await expect(xProviderMain.connect(guardian).sendFundsToXController(usdc)).to.be.revertedWith(
-      'No xController on this chain',
-    );
+    await expect(
+      xProviderMain.connect(guardian).sendFundsToXController(usdc, 10_000),
+    ).to.be.revertedWith('No xController on this chain');
 
     await xProviderMain.connect(dao).setXControllerChainId(10);
 
     await expect(() =>
-      xProviderMain.connect(guardian).sendFundsToXController(usdc),
+      xProviderMain.connect(guardian).sendFundsToXController(usdc, 10_000),
     ).to.changeTokenBalance(IUSDc, xChainControllerDUMMY, 10_000);
   });
 
@@ -344,14 +342,14 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     const vaultNumber = random(100);
 
     await expect(
-      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc, 100),
     ).to.be.revertedWith('Zero address');
 
     await IUSDc.connect(user).transfer(xProviderMain.address, 10_000);
     await xProviderMain.connect(dao).setVaultAddress(vaultNumber, vault1.address);
 
     await expect(() =>
-      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc),
+      xProviderMain.connect(guardian).sendFundsToVault(vaultNumber, usdc, 10_000),
     ).to.changeTokenBalance(IUSDc, vault1, 10_000);
   });
 });

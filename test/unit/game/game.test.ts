@@ -13,6 +13,7 @@ describe('Testing Game', async () => {
   let vault: MainVaultMock,
     derbyToken: DerbyToken,
     dao: Signer,
+    guardian: Signer,
     user: Signer,
     userAddr: string,
     IUSDc: Contract = erc20(usdc),
@@ -28,6 +29,7 @@ describe('Testing Game', async () => {
     vault = setup.vault;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
+    guardian = setup.guardian;
     user = setup.user;
     userAddr = setup.userAddr;
     vaultNumber = setup.vaultNumber;
@@ -181,6 +183,12 @@ describe('Testing Game', async () => {
     for (let chain of chainIds) {
       await game.setXChainRebalanceState(vaultNumber, chain, false);
     }
+
+    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
+      'Game: not all rewards are settled',
+    );
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
+
     await game.connect(user).rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200

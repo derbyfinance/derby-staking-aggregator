@@ -56,10 +56,11 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
   {
     exchangeRate = _uScale;
     game = _game;
@@ -113,9 +114,9 @@ contract MainVault is Vault, VaultToken {
       require(_amount + balanceSender <= maxTrainingDeposit);
     }
 
-    uint256 balanceBefore = getVaultBalance() - reservedFunds;
+    uint256 balanceBefore = getVaultBalance();
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
-    uint256 balanceAfter = getVaultBalance() - reservedFunds;
+    uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
     shares = (amount * (10 ** decimals())) / exchangeRate;
@@ -223,7 +224,7 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, _deadline, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(value, _deadline, nativeToken, address(vaultCurrency), derbyToken),
         controller.getUniswapParams(),
         true
       );
@@ -253,6 +254,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded() && !vaultOff, "!rebalance needed");
 
+    claimTokens();
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
@@ -306,9 +308,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 4 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
-  /// @param _slippage Slippage tollerance for xChain swap, in BPS (i.e. 30 = 0.3%)
-  /// @param _relayerFee The fee offered to the relayers
-  function rebalanceXChain(uint256 _slippage, uint256 _relayerFee) external payable {
+  function rebalanceXChain() external payable {
     require(state == State.SendingFundsXChain, stateError);
 
     if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
@@ -318,9 +318,7 @@ contract MainVault is Vault, VaultToken {
     IXProvider(xProvider).xTransferToController{value: msg.value}(
       vaultNumber,
       amountToSendXChain,
-      address(vaultCurrency),
-      _slippage,
-      _relayerFee
+      address(vaultCurrency)
     );
 
     emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));

@@ -14,20 +14,16 @@ import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 
-import "hardhat/console.sol";
-
 library Swap {
   using SafeERC20 for IERC20;
 
   struct SwapInOut {
     uint256 amount;
     uint256 deadline;
+    address nativeToken;
     address tokenIn;
     address tokenOut;
   }
-
-  address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  uint256 internal constant gasUsedForSwap = 210000;
 
   /// @notice Swap tokens on Uniswap
   /// @param _swap Number of tokens to sell, token to sell, token to receive
@@ -41,20 +37,24 @@ library Swap {
     IERC20(_swap.tokenIn).safeIncreaseAllowance(_uniswap.router, _swap.amount);
 
     uint256 amountOutMinimum = IQuoter(_uniswap.quoter).quoteExactInput(
-      abi.encodePacked(_swap.tokenIn, _uniswap.poolFee, WETH, _uniswap.poolFee, _swap.tokenOut),
+      abi.encodePacked(
+        _swap.tokenIn,
+        _uniswap.poolFee,
+        _swap.nativeToken,
+        _uniswap.poolFee,
+        _swap.tokenOut
+      ),
       _swap.amount
     );
 
     uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
     if (_rewardSwap && balanceBefore > amountOutMinimum) return amountOutMinimum;
 
-    console.log("block timestamp %s", block.timestamp);
-    console.log("deadline from swap %s", _swap.deadline);
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: abi.encodePacked(
         _swap.tokenIn,
         _uniswap.poolFee,
-        WETH,
+        _swap.nativeToken,
         _uniswap.poolFee,
         _swap.tokenOut
       ),
@@ -82,7 +82,7 @@ library Swap {
   ) public returns (uint256) {
     return
       IQuoter(_uniswapQuoter).quoteExactInput(
-        abi.encodePacked(_swap.tokenIn, _poolFee, WETH, _poolFee, _swap.tokenOut),
+        abi.encodePacked(_swap.tokenIn, _poolFee, _swap.nativeToken, _poolFee, _swap.tokenOut),
         _swap.amount
       );
   }
