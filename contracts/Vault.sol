@@ -406,7 +406,13 @@ contract Vault is ReentrancyGuard {
       address govToken = controller.getGovToken(vaultNumber, _protocolNum);
       uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
       Swap.swapTokensMulti(
-        Swap.SwapInOut(tokenBalance, nativeToken, govToken, address(vaultCurrency)),
+        Swap.SwapInOut(
+          tokenBalance,
+          block.timestamp,
+          nativeToken,
+          govToken,
+          address(vaultCurrency)
+        ),
         controller.getUniswapParams(),
         false
       );
