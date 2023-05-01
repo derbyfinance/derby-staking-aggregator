@@ -30,6 +30,9 @@ contract XProvider is IXReceiver {
   uint256 public connextRouterFee;
   uint256 public slippage;
 
+  // minimum ether value for cross chain messages through connext
+  uint256 public minimumConnextFee;
+
   // (domainID => contract address) mapping domainIDs to trusted remote xProvider on that specific domain
   mapping(uint32 => address) public trustedRemoteConnext;
   // (vaultAddress => bool): used for whitelisting vaults
