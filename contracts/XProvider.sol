@@ -115,6 +115,7 @@ contract XProvider is IXReceiver {
     homeChain = _homeChain;
     connextRouterFee = 5; // 0.05%
     slippage = 50; // 0.5%
+    minimumConnextFee = 0.03 ether;
   }
 
   /// @notice Transfers funds from one chain to another using the Connext contract.
@@ -192,11 +193,13 @@ contract XProvider is IXReceiver {
   ) external payable onlyGame {
     if (homeChain == xControllerChain) {
       return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
-    }
-    bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
-    bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
+    } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
+      bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
 
-    xSend(xControllerChain, callData, address(0), 0);
+      xSend(xControllerChain, callData, address(0), 0);
+    }
   }
 
   /// @notice Step 1 receive; Game pushes totalDeltaAllocations to xChainController
@@ -231,6 +234,7 @@ contract XProvider is IXReceiver {
           _withdrawalRequests
         );
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       bytes4 selector = bytes4(
         keccak256("receiveTotalUnderlying(uint256,uint32,uint256,uint256,uint256)")
       );
@@ -286,6 +290,7 @@ contract XProvider is IXReceiver {
     if (_chainId == homeChain) {
       return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       bytes4 selector = bytes4(
         keccak256("receiveSetXChainAllocation(address,uint256,uint256,bool)")
       );
@@ -328,6 +333,7 @@ contract XProvider is IXReceiver {
       IERC20(_asset).safeTransferFrom(msg.sender, xController, _amount);
       IXChainController(xController).upFundsReceived(_vaultNumber);
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       uint256 estAmount = calculateEstimatedAmount(_amount);
       bytes4 selector = bytes4(keccak256("receiveFeedbackToXController(uint256,address,uint256)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _asset, estAmount);
@@ -365,6 +371,7 @@ contract XProvider is IXReceiver {
       IVault(_vault).receiveFunds();
       IERC20(_asset).safeTransferFrom(msg.sender, _vault, _amount);
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       uint256 estAmount = calculateEstimatedAmount(_amount);
       bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address,address,uint256)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _asset, estAmount);
@@ -398,6 +405,7 @@ contract XProvider is IXReceiver {
   ) external payable onlyGame {
     if (_chainId == homeChain) return IVault(_vault).receiveProtocolAllocations(_deltas);
     else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       bytes4 selector = bytes4(keccak256("receiveProtocolAllocationsToVault(address,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _deltas);
 
@@ -429,6 +437,7 @@ contract XProvider is IXReceiver {
     if (homeChain == gameChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint32,int256[])"));
       bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _chainId, _rewards);
 
@@ -461,6 +470,7 @@ contract XProvider is IXReceiver {
     if (_chainId == homeChain) {
       return IVault(_vault).toggleVaultOnOff(_state);
     } else {
+      require(msg.value >= minimumConnextFee, "Minimum msg value");
       bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
 
@@ -600,5 +610,11 @@ contract XProvider is IXReceiver {
   /// @param _slippage The new value for the slippage.
   function setSlippage(uint256 _slippage) external onlyGuardian {
     slippage = _slippage;
+  }
+
+  /// @dev Sets the minimum ether value for cross chain messages through Connext.
+  /// @param _newMinimumConnextFee The new minimum Connext fee in ether to be set.
+  function setMinimumConnextFee(uint256 _newMinimumConnextFee) external onlyGuardian {
+    minimumConnextFee = _newMinimumConnextFee;
   }
 }

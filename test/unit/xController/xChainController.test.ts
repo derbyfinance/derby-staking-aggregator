@@ -116,13 +116,17 @@ describe('Testing XChainController, integration test', async () => {
     expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[3])).to.be.equal(
       2,
     );
-
     // perform step 1.5 manually
-    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[0]);
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[0], {
+      value: parseEther('0.1'),
+    });
     await xChainController.sendFeedbackToVault(vaultNumber, chainIds[1]);
-    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[2]);
-    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[3]);
-
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[2], {
+      value: parseEther('0.1'),
+    });
+    await xChainController.sendFeedbackToVault(vaultNumber, chainIds[3], {
+      value: parseEther('0.1'),
+    });
     // chainId on or off
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 10)).to.be.false;
     expect(await xChainController.getVaultChainIdOff(vaultNumber, 100)).to.be.false;
@@ -137,6 +141,10 @@ describe('Testing XChainController, integration test', async () => {
     await vault2.upRebalancingPeriodTEST();
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
+
+    await expect(
+      vault1.pushTotalUnderlyingToController({ value: parseEther('0.01') }),
+    ).to.be.revertedWith('Minimum msg value');
 
     await vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') });
     await vault2.pushTotalUnderlyingToController({ value: parseEther('0.1') });
