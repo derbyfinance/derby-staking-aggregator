@@ -400,7 +400,6 @@ contract XChainController {
     uint256 _vaultNumber,
     uint32 _chain
   ) external payable onlyWhenFundsReceived(_vaultNumber) {
-    require(!getVaultChainIdOff(_vaultNumber, _chain), "XChainController: chainID off");
     require(
       !vaultStage[_vaultNumber].fundsSentToChain[_chain],
       "XChainController: Chain already processed"
