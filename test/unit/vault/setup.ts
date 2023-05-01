@@ -14,9 +14,8 @@ export const setupVault = deployments.createFixture(async (hre) => {
     'IdleProvider',
     'TruefiProvider',
     'YearnProvider',
-    'XProviderMain',
   ];
-  await deployments.fixture(['TestVault1', ...providers]);
+  await deployments.fixture(['TestVault1', 'XProviderMain', ...providers]);
 
   const vaultNumber = 10;
   const contract = 'TestVault1';

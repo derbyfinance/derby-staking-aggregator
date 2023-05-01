@@ -876,7 +876,7 @@ describe('Testing full integration test', async () => {
     const underlying = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(162731.614136);
+      vaults[0].amountToSend = parseUSDC(162731.614132);
     });
 
     it('Trigger should emit SentFundsToVault event', async function () {
