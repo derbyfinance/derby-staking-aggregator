@@ -40,6 +40,11 @@ describe('Testing VaultDeposit, unit test', async () => {
       vault.connect(user).deposit(6_000 * 1e6, user.address),
     ).to.changeTokenBalance(vault, user, 6_000 * 1e6);
 
+    // min deposit of 100 not reached
+    await expect(vault.connect(user).deposit(95 * 1e6, user.address)).to.be.revertedWith(
+      'Minimum deposit amount',
+    );
+
     // max deposit of 10k reached
     await expect(vault.connect(user).deposit(6_000 * 1e6, user.address)).to.be.revertedWith('');
 

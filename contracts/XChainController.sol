@@ -122,7 +122,7 @@ contract XChainController {
     dao = _dao;
     guardian = _guardian;
     homeChain = _homeChain;
-    minimumAmount = 1000e6;
+    minimumAmount = 100e6;
   }
 
   /// @notice Setter for stage 0:
@@ -321,12 +321,9 @@ contract XChainController {
     uint256 _amountToChain
   ) internal view returns (int256, uint256) {
     uint256 currentUnderlying = getTotalUnderlyingOnChain(_vaultNumber, _chainId);
-    console.log("Chain id %s, currentUnderlying %s", _chainId, currentUnderlying);
 
     int256 amountToDeposit = int256(_amountToChain) - int256(currentUnderlying);
     uint256 amountToWithdraw = amountToDeposit < 0 ? currentUnderlying - _amountToChain : 0;
-    console.log("Chain id %s, amountToDeposit %s", _chainId, uint(amountToDeposit));
-    console.log("Chain id %s, amountToWithdraw %s", _chainId, uint(amountToWithdraw));
 
     return (amountToDeposit, amountToWithdraw);
   }
@@ -345,8 +342,6 @@ contract XChainController {
 
     uint256 amountToChain = (_totalUnderlying * allocation) / _totalAllocation;
     amountToChain += withdrawalRequests;
-
-    console.log("Chain id %s, amountToChain %s", _chainId, withdrawalRequests);
 
     return amountToChain;
   }
@@ -408,8 +403,11 @@ contract XChainController {
     if (amountToDeposit > 0) {
       address underlying = getUnderlyingAddress(_vaultNumber, _chain);
 
+      amountToDeposit = xProvider.calculateEstimatedAmount(amountToDeposit);
+
       uint256 balance = IERC20(underlying).balanceOf(address(this));
       if (amountToDeposit > balance) amountToDeposit = balance;
+
       IERC20(underlying).safeIncreaseAllowance(address(xProvider), amountToDeposit);
       xProvider.xTransferToVaults{value: msg.value}(vault, _chain, amountToDeposit, underlying);
       setAmountToDeposit(_vaultNumber, _chain, 0);

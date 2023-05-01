@@ -36,6 +36,7 @@ contract MainVault is Vault, VaultToken {
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
+  uint256 public minimumDeposit;
 
   string internal allowanceError = "!Allowance";
 
@@ -65,6 +66,7 @@ contract MainVault is Vault, VaultToken {
     game = _game;
     governanceFee = 0;
     maxDivergenceWithdraws = 1_000_000;
+    minimumDeposit = 100 * uScale;
   }
 
   modifier onlyXProvider() {
@@ -101,6 +103,8 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount,
     address _receiver
   ) external nonReentrant onlyWhenIdle returns (uint256 shares) {
+    require(_amount >= minimumDeposit, "Minimum deposit amount");
+
     if (training) {
       require(whitelist[msg.sender]);
       uint256 balanceSender = (balanceOf(msg.sender) * exchangeRate) / (10 ** decimals());
@@ -163,6 +167,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
+    value = IXProvider(xProvider).calculateEstimatedAmount(value);
     value = checkForBalance(value);
 
     reservedFunds -= value;
@@ -253,7 +258,7 @@ contract MainVault is Vault, VaultToken {
       totalSupply(),
       totalWithdrawalRequests
     );
-    console.log("homeChain %s, requests %s", homeChain, totalWithdrawalRequests);
+
     state = State.PushedUnderlying;
     lastTimeStamp = block.timestamp;
 
@@ -462,5 +467,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter to add an address to the whitelist
   function addToWhitelist(address _address) external onlyGuardian {
     whitelist[_address] = true;
+  }
+
+  /// @dev Sets the minimum deposit amount allowed.
+  /// @param _newMinimumDeposit The new minimum deposit amount to be set.
+  function setMinimumDeposit(uint256 _newMinimumDeposit) external onlyGuardian {
+    minimumDeposit = _newMinimumDeposit;
   }
 }

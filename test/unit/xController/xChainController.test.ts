@@ -257,8 +257,8 @@ describe('Testing XChainController, integration test', async () => {
     const expectedAmounts = [
       (400 / 2000) * 238_000, // vault 1
       (600 / 2000) * 238_000 + 60_000, // vault 2 should have the request of 60k
-      (1000 / 2000) * 238_000 * 0.9945, // vault 3 should have received 150k from controller
-      12_000 * 0.99, // Request of 10k * 1.2 exchangerate
+      (1000 / 2000) * 238_000 * 0.9945 * 0.9945, // 2x fees // vault 3 should have received 150k from controller
+      10_000 + 2000 * 0.9945 * 0.9945, // Request of 10k * 1.2 exchangerate
     ];
 
     // reserved funds of vault2 should be 60k at this point
@@ -272,9 +272,7 @@ describe('Testing XChainController, integration test', async () => {
     expect(formatUSDC(await vault1.getVaultBalance())).to.be.equal(expectedAmounts[0]);
     expect(formatUSDC(await vault2.getVaultBalance())).to.be.equal(expectedAmounts[1]);
     expect(formatUSDC(await vault3.getVaultBalance())).to.be.closeTo(expectedAmounts[2], 70);
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Problem with estimated amount in xProvider at the moment
-    expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 100);
+    expect(formatUSDC(await vault4.getVaultBalance())).to.be.closeTo(expectedAmounts[3], 1);
 
     expect(await vault3.state()).to.be.equal(4); // received funds, all vaults should be ready now
     expect(await vault4.state()).to.be.equal(5); // vault is off so should skip the vault rebalance

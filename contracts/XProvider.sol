@@ -365,8 +365,6 @@ contract XProvider is IXReceiver {
       IERC20(_asset).safeTransferFrom(msg.sender, _vault, _amount);
     } else {
       uint256 estAmount = calculateEstimatedAmount(_amount);
-      console.log("Chain %s, amount %s", _chainId, _amount);
-      console.log("estAMount %s", estAmount);
       bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address,address,uint256)"));
       bytes memory callData = abi.encodeWithSelector(selector, _vault, _asset, estAmount);
 
@@ -480,7 +478,7 @@ contract XProvider is IXReceiver {
   /// @dev This function computes the estimated amount by subtracting the percentage fees from the input amount.
   /// @param _amount The initial amount to be transferred.
   /// @return estAmount The estimated amount after accounting for connextRouterFee and slippage.
-  function calculateEstimatedAmount(uint256 _amount) internal view returns (uint256) {
+  function calculateEstimatedAmount(uint256 _amount) public view returns (uint256) {
     uint256 estAmount = _amount -
       ((_amount * connextRouterFee) / 10_000) -
       ((_amount * slippage) / 10_000);
