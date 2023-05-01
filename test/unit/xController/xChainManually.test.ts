@@ -92,6 +92,7 @@ describe('Testing XChainController, unit test for manual execution', async () =>
 
     await xChainController.connect(guardian).setChainIds(chainIds);
     await game.connect(guardian).setChainIds(chainIds);
+    await xProviderMain.connect(guardian).setMinimumConnextFee(0);
   });
 
   it('1) Store allocations in Game contract', async function () {
@@ -186,7 +187,9 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     );
 
     // perform step 1.5 manually
-    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[0]);
+    await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[0], {
+      value: parseEther('0.1'),
+    });
     await xChainControllerDUMMY.sendFeedbackToVault(vaultNumber, chainIds[1]);
   });
 

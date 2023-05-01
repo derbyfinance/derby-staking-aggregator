@@ -1,4 +1,4 @@
- import hre from 'hardhat';
+import hre from 'hardhat';
 import { erc20, parseDRB, transferAndApproveUSDC } from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { dai, usdc, usdt, yearn } from '@testhelp/addresses';
@@ -102,6 +102,9 @@ export const setupIntegration = async () => {
 
     allProvidersClass.setProviders(hre),
     vault1.connect(dao).setSwapRewards(false),
+
+    xProviderMain.connect(guardian).setMinimumConnextFee(0),
+    xProviderArbi.connect(guardian).setMinimumConnextFee(0),
   ]);
 
   // Adding mock yearn vaults

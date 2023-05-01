@@ -147,7 +147,7 @@ describe('Testing XChainController, integration test', async () => {
     ).to.be.revertedWith('Minimum msg value');
 
     await vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') });
-    await vault2.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await vault2.pushTotalUnderlyingToController({ value: parseEther('0') });
     await vault3.pushTotalUnderlyingToController({ value: parseEther('0.1') });
     await vault4.pushTotalUnderlyingToController({ value: parseEther('0.1') });
 
@@ -216,7 +216,7 @@ describe('Testing XChainController, integration test', async () => {
 
   it('4.5) Trigger vaults to transfer funds to xChainController', async function () {
     await vault1.rebalanceXChain({ value: parseEther('0.1') });
-    await vault2.rebalanceXChain({ value: parseEther('0.1') });
+    await vault2.rebalanceXChain({ value: parseEther('0') });
     await expect(vault3.rebalanceXChain({ value: parseEther('0.1') })).to.be.revertedWith(
       'Wrong state',
     );
@@ -285,9 +285,10 @@ describe('Testing XChainController, integration test', async () => {
   it('6) Push allocations from game to vaults', async function () {
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
+      const value = chain == 10 ? '0' : '0.1';
       expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.true;
       await game.pushAllocationsToVaults(vaultNumber, chain, {
-        value: parseEther('0.1'),
+        value: parseEther(value),
       });
       expect(await game.isXChainRebalancing(vaultNumber, chain)).to.be.false;
     }
