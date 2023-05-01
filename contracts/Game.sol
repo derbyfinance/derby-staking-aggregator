@@ -34,6 +34,8 @@ contract Game is ERC721, ReentrancyGuard {
   struct vaultInfo {
     // rebalance period of vault, upped at vault rebalance
     uint256 rebalancingPeriod;
+    // number of vaults that have sent rewards
+    uint256 numberOfRewardsReceived;
     // (chainId => vaultAddress)
     mapping(uint32 => address) vaultAddress;
     // (chainId => deltaAllocation)
@@ -52,6 +54,9 @@ contract Game is ERC721, ReentrancyGuard {
   IController public controller;
   IERC20 public derbyToken;
 
+  // used in notInSameBlock modifier
+  uint256 private lastBlock;
+
   // latest basket id
   uint256 private latestBasketId;
 
@@ -62,7 +67,7 @@ contract Game is ERC721, ReentrancyGuard {
   uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
 
   // last rebalance timeStamp
-  uint256 public lastTimeStamp;
+  mapping(uint256 => uint256) public lastTimeStamp;
 
   // threshold in vaultCurrency e.g USDC for when user tokens will be sold / burned. Must be negative
   int256 internal negativeRewardThreshold;
@@ -108,6 +113,12 @@ contract Game is ERC721, ReentrancyGuard {
     _;
   }
 
+  modifier notInSameBlock() {
+    require(block.number != lastBlock, "Cannot call functions in the same block");
+    lastBlock = block.number;
+    _;
+  }
+
   constructor(
     string memory name_,
     string memory symbol_,
@@ -120,7 +131,6 @@ contract Game is ERC721, ReentrancyGuard {
     controller = IController(_controller);
     dao = _dao;
     guardian = _guardian;
-    lastTimeStamp = block.timestamp;
   }
 
   /// @notice Setter for delta allocation in a particulair chainId
@@ -252,7 +262,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
   /// @param _vaultNumber Number of the vault. Same as in Router.
   /// @return basketId The basket Id the user has minted.
-  function mintNewBasket(uint256 _vaultNumber) external returns (uint256) {
+  function mintNewBasket(uint256 _vaultNumber) external nonReentrant returns (uint256) {
     // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
     baskets[latestBasketId].vaultNumber = _vaultNumber;
     baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
@@ -320,9 +330,7 @@ contract Game is ERC721, ReentrancyGuard {
     int256[][] memory _deltaAllocations
   ) external onlyBasketOwner(_basketId) nonReentrant {
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
-    for (uint k = 0; k < chainIds.length; k++) {
-      require(!isXChainRebalancing[vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
-    }
+    checkRebalanceAuthorization(vaultNumber);
 
     addToTotalRewards(_basketId);
     int256 totalDelta = settleDeltaAllocations(_basketId, vaultNumber, _deltaAllocations);
@@ -330,6 +338,21 @@ contract Game is ERC721, ReentrancyGuard {
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
     setBasketRebalancingPeriod(_basketId, vaultNumber);
+  }
+
+  /// @notice Checks if the basket is allowed to be rebalanced.
+  /// @param _vaultNumber The vault number to be checked.
+  function checkRebalanceAuthorization(uint256 _vaultNumber) internal view {
+    for (uint k = 0; k < chainIds.length; k++) {
+      require(!isXChainRebalancing[_vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
+    }
+
+    if (vaults[_vaultNumber].rebalancingPeriod != 0) {
+      require(
+        getNumberOfRewardsReceived(_vaultNumber) == chainIds.length,
+        "Game: not all rewards are settled"
+      );
+    }
   }
 
   /// @notice Internal helper to calculate and settle the delta allocations from baskets
@@ -421,8 +444,8 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Trigger for Dao to push delta allocations to the xChainController
   /// @param _vaultNumber Number of vault
   /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external payable {
-    require(rebalanceNeeded(), "No rebalance needed");
+  function pushAllocationsToController(uint256 _vaultNumber) external payable notInSameBlock {
+    require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
     for (uint k = 0; k < chainIds.length; k++) {
       require(
         getVaultAddress(_vaultNumber, chainIds[k]) != address(0),
@@ -438,8 +461,9 @@ contract Game is ERC721, ReentrancyGuard {
     int256[] memory deltas = allocationsToArray(_vaultNumber);
     IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
 
-    lastTimeStamp = block.timestamp;
+    lastTimeStamp[_vaultNumber] = block.timestamp;
     vaults[_vaultNumber].rebalancingPeriod++;
+    vaults[_vaultNumber].numberOfRewardsReceived = 0;
 
     emit PushedAllocationsToController(_vaultNumber, deltas);
   }
@@ -462,7 +486,10 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the allocations need to be sent
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(uint256 _vaultNumber, uint32 _chain) external payable {
+  function pushAllocationsToVaults(
+    uint256 _vaultNumber,
+    uint32 _chain
+  ) external payable notInSameBlock {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "Game: not a valid vaultnumber");
     require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
@@ -527,6 +554,8 @@ contract Game is ERC721, ReentrancyGuard {
         lastReward +
         _rewards[i];
     }
+
+    vaults[_vaultNumber].numberOfRewardsReceived++;
   }
 
   /// @notice Getter for rewardsPerLockedToken for given vaultNumber => chainId => rebalancingPeriod => protocolId
@@ -553,9 +582,11 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
-  /// @return bool True of rebalance is needed, false if not
-  function rebalanceNeeded() public view returns (bool) {
-    return (block.timestamp - lastTimeStamp) > rebalanceInterval || msg.sender == guardian;
+  /// @param _vaultNumber The vault number to check for rebalancing
+  /// @return bool True if rebalance is needed, false if not
+  function rebalanceNeeded(uint256 _vaultNumber) public view returns (bool) {
+    return
+      (block.timestamp - lastTimeStamp[_vaultNumber]) > rebalanceInterval || msg.sender == guardian;
   }
 
   /// @notice getter for vault address linked to a chainId
@@ -581,6 +612,13 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Getter for rebalancing period for a vault
   function getRebalancingPeriod(uint256 _vaultNumber) public view returns (uint256) {
     return vaults[_vaultNumber].rebalancingPeriod;
+  }
+
+  /// @notice Retrieves the number of rewards received for a specific vault.
+  /// @param _vaultNumber The vault number to get the number of rewards received for.
+  /// @return The number of rewards received for the specified vault.
+  function getNumberOfRewardsReceived(uint256 _vaultNumber) public view returns (uint256) {
+    return vaults[_vaultNumber].numberOfRewardsReceived;
   }
 
   /*
@@ -682,5 +720,12 @@ contract Game is ERC721, ReentrancyGuard {
     int256[] memory _rewards
   ) external onlyGuardian {
     settleRewardsInt(_vaultNumber, _chainId, _rewards);
+  }
+
+  /// @notice Sets the value of numberOfRewardsReceived for a given vault number.
+  /// @param _vaultNumber The vault number for which the numberOfRewardsReceived value should be set.
+  /// @param _value The new value to set for numberOfRewardsReceived.
+  function setNumberOfRewardsReceived(uint256 _vaultNumber, uint256 _value) external onlyGuardian {
+    vaults[_vaultNumber].numberOfRewardsReceived = _value;
   }
 }

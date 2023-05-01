@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
+import { erc20, formatEther, getSwapDeadline, parseEther, parseUSDC } from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
@@ -13,6 +13,7 @@ describe('Testing Game', async () => {
   let vault: MainVaultMock,
     derbyToken: DerbyToken,
     dao: Signer,
+    guardian: Signer,
     user: Signer,
     userAddr: string,
     IUSDc: Contract = erc20(usdc),
@@ -28,6 +29,7 @@ describe('Testing Game', async () => {
     vault = setup.vault;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
+    guardian = setup.guardian;
     user = setup.user;
     userAddr = setup.userAddr;
     vaultNumber = setup.vaultNumber;
@@ -148,6 +150,10 @@ describe('Testing Game', async () => {
   it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
+
+    await expect(
+      game.rebalanceBoth(vaultNumber, 100, { value: parseEther('0.2') }),
+    ).to.be.revertedWith('Cannot call functions in the same block');
     // chainIds = [10, 100, 1000];
     await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
@@ -181,6 +187,12 @@ describe('Testing Game', async () => {
     for (let chain of chainIds) {
       await game.setXChainRebalanceState(vaultNumber, chain, false);
     }
+
+    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
+      'Game: not all rewards are settled',
+    );
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
+
     await game.connect(user).rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
@@ -235,12 +247,14 @@ describe('Testing Game', async () => {
     expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
 
     // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
-    await vault.connect(user).withdrawRewards();
+    await vault.connect(user).withdrawRewards(getSwapDeadline());
     const balance = formatEther(await IUniswap.balanceOf(userAddr));
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!Allowance');
+    await expect(vault.connect(user).withdrawRewards(getSwapDeadline())).to.be.revertedWith(
+      '!Allowance',
+    );
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
@@ -267,11 +281,9 @@ describe('Testing Game', async () => {
     await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(4_240_000)]);
     expect(await vault.getReservedFundsTEST()).to.be.equal(4_240_000);
 
-    await expect(() => vault.connect(user).withdrawRewards()).to.changeTokenBalance(
-      IUSDc,
-      user,
-      4_240_000,
-    );
+    await expect(() =>
+      vault.connect(user).withdrawRewards(getSwapDeadline()),
+    ).to.changeTokenBalance(IUSDc, user, 4_240_000);
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);

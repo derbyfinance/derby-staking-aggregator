@@ -9,6 +9,7 @@ import {
   setGameLatestProtocolIds,
   addVaultsToXController,
   setWhitelistVaults,
+  AddAllVaultsToProviders,
 } from '@testhelp/InitialiseContracts';
 import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 import allProvidersClass from '@testhelp/classes/allProvidersClass';
@@ -17,14 +18,18 @@ const chainids = [10, 100, 1000, 10000];
 
 export const setupXChain = deployments.createFixture(async (hre) => {
   const { run } = hre;
+  const providers = [
+    'AaveProvider',
+    'BetaProvider',
+    'CompoundProvider',
+    'IdleProvider',
+    'TruefiProvider',
+    'YearnProvider',
+  ];
+
   await deployments.fixture([
     'XChainControllerMock',
-    'YearnProvider',
-    'CompoundProvider',
-    'AaveProvider',
-    'TruefiProvider',
-    'IdleProvider',
-    'BetaProvider',
+    ...providers,
     'TestVault1',
     'TestVault2',
     'TestVault3',
@@ -45,6 +50,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
   const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
   const [vault1, vault2, vault3, vault4] = await getTestVaults(hre);
+
   const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = allXProviders;
 
@@ -72,6 +78,12 @@ export const setupXChain = deployments.createFixture(async (hre) => {
     addVaultsToController(hre),
     addVaultsToXController(hre, xChainController, dao, vaultNumber),
     setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),
+    AddAllVaultsToProviders(
+      dao,
+      providers,
+      [vault1.address, vault2.address, vault3.address, vault4.address],
+      hre,
+    ),
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),

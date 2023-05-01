@@ -1,6 +1,14 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatUSDC, parseDRB, parseEther, parseUnits, parseUSDC } from '@testhelp/helpers';
+import {
+  erc20,
+  formatUSDC,
+  getSwapDeadline,
+  parseDRB,
+  parseEther,
+  parseUnits,
+  parseUSDC,
+} from '@testhelp/helpers';
 import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
@@ -136,6 +144,9 @@ describe('Testing full integration test', async () => {
         await mintBasket(game, user, vaultNumber);
 
         await derbyToken.connect(user).increaseAllowance(game.address, parseDRB(totalAllocations));
+
+        // should still pass since rebalancing Period is 1
+        await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 0);
 
         await expect(() =>
           game.connect(user).rebalanceBasket(basketId, allocations),
@@ -695,6 +706,8 @@ describe('Testing full integration test', async () => {
     it('Rebalance basket should give unredeemedRewards', async function () {
       const { user, basketId, allocations } = gameUsers[0];
 
+      // 2 vaults
+      expect(await game.getNumberOfRewardsReceived(vaultNumber)).to.be.equal(2);
       await game.connect(user).rebalanceBasket(basketId, allocations);
       expect(await game.connect(user).basketUnredeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
@@ -718,7 +731,9 @@ describe('Testing full integration test', async () => {
 
     it('Should not be able to withdraw rewards from vault before next rebalance', async function () {
       const { user } = gameUsers[0];
-      await expect(vaults[0].vault.connect(user).withdrawRewards()).to.be.revertedWith('!Funds');
+      await expect(
+        vaults[0].vault.connect(user).withdrawRewards(getSwapDeadline()),
+      ).to.be.revertedWith('!Funds');
     });
   });
 
@@ -1026,7 +1041,7 @@ describe('Testing full integration test', async () => {
       const { vault } = vaults[0];
 
       const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
-      await vault.connect(user).withdrawRewards();
+      await vault.connect(user).withdrawRewards(getSwapDeadline());
       const balanceAfter = formatUSDC(await IUSDc.balanceOf(user.address));
 
       expect(balanceAfter - balanceBefore).to.be.closeTo(totalExpectedRewards / 1e6, 5);

@@ -18,7 +18,8 @@ contract MainVaultMock is MainVault {
     address _Game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   )
     MainVault(
       _name,
@@ -29,7 +30,8 @@ contract MainVaultMock is MainVault {
       _Game,
       _controller,
       _vaultCurrency,
-      _uScale
+      _uScale,
+      _nativeToken
     )
   {}
 
@@ -117,13 +119,14 @@ contract MainVaultMock is MainVault {
 
   function swapTokensMultiTest(
     uint256 _amount,
+    uint256 _deadline,
     address _tokenIn,
     address _tokenOut,
     bool _rewardsSwap
   ) external returns (uint256) {
     return
       Swap.swapTokensMulti(
-        Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
+        Swap.SwapInOut(_amount, _deadline, nativeToken, _tokenIn, _tokenOut),
         controller.getUniswapParams(),
         _rewardsSwap
       );
@@ -131,11 +134,12 @@ contract MainVaultMock is MainVault {
 
   function swapMinAmountOutMultiTest(
     uint256 _amount,
+    uint256 _deadline,
     address _tokenIn,
     address _tokenOut
   ) external {
     uint256 minAmountOut = Swap.amountOutMultiSwap(
-      Swap.SwapInOut(_amount, _tokenIn, _tokenOut),
+      Swap.SwapInOut(_amount, _deadline, nativeToken, _tokenIn, _tokenOut),
       controller.getUniswapQuoter(),
       controller.getUniswapPoolFee()
     );
@@ -164,7 +168,10 @@ contract MainVaultMock is MainVault {
     return depositInProtocol(_protocolNum, _amount);
   }
 
-  function withdrawFromProtocolTest(uint256 _protocolNum, uint256 _amount) external {
+  function withdrawFromProtocolTest(
+    uint256 _protocolNum,
+    uint256 _amount
+  ) external returns (uint256) {
     return withdrawFromProtocol(_protocolNum, _amount);
   }
 

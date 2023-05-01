@@ -90,6 +90,7 @@ type IDeployVaultConfig = {
   vaultNumber: number;
   vaultCurrency: string;
   uScale: number;
+  nativeToken: string;
 };
 
 type IInitVaultConfig = {

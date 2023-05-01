@@ -59,5 +59,16 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await transferAndApproveUSDC(vault.address, user, 100_000_000 * 1e6);
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
 
-  return { game, derbyToken, vault, dao, user, userAddr, vaultNumber, basketId, xChainController };
+  return {
+    game,
+    derbyToken,
+    vault,
+    dao,
+    guardian,
+    user,
+    userAddr,
+    vaultNumber,
+    basketId,
+    xChainController,
+  };
 });

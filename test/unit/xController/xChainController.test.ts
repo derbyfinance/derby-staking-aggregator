@@ -244,14 +244,23 @@ describe('Testing XChainController, integration test', async () => {
   it('5) Trigger xChainController to send funds to vaults', async function () {
     let homeChain = await xChainController.homeChain();
     const chainIds = await xChainController.getChainIds();
+
     for (let chain of chainIds) {
       if (chain == homeChain) {
         await xChainController.sendFundsToVault(vaultNumber, chain);
+        await expect(xChainController.sendFundsToVault(vaultNumber, chain)).to.be.revertedWith(
+          'XChainController: Chain already processed',
+        );
       } else {
         await xChainController.sendFundsToVault(vaultNumber, chain, {
           value: parseEther('0.1'),
         });
       }
+    }
+
+    // should be resetted cause all chains sent funds.
+    for (let chain of chainIds) {
+      expect(await xChainController.getFundsSentToChain(vaultNumber, chain)).to.be.false;
     }
 
     const expectedAmounts = [

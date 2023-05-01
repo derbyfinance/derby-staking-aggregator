@@ -57,10 +57,11 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale
+    uint256 _uScale,
+    address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
   {
     exchangeRate = _uScale;
     game = _game;
@@ -202,9 +203,13 @@ contract MainVault is Vault, VaultToken {
     totalWithdrawalRequests += _value;
   }
 
-  /// @notice Withdraw the reward allowance set by the game with redeemRewardsGame
-  /// @dev Will swap vaultCurrency to Derby tokens, send the user funds and reset the allowance
-  function withdrawRewards() external nonReentrant onlyWhenIdle returns (uint256 value) {
+  /// @notice Withdraw the reward allowance set by the game using the redeemRewardsGame function
+  /// @dev Swaps vaultCurrency to Derby tokens, sends the funds to the user, and resets the allowance
+  /// @param _deadline Timestamp after which the transaction is considered invalid
+  /// @return value The amount of reward withdrawn by the user
+  function withdrawRewards(
+    uint256 _deadline
+  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.rewardRequestPeriod, "!Funds");
@@ -218,7 +223,7 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(value, _deadline, nativeToken, address(vaultCurrency), derbyToken),
         controller.getUniswapParams(),
         true
       );
@@ -248,6 +253,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
+    claimTokens();
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 

@@ -220,7 +220,7 @@ contract XProvider is IXReceiver {
     uint256 _totalSupply,
     uint256 _withdrawalRequests
   ) external payable onlyVaults {
-    if (_chainId == xControllerChain) {
+    if (homeChain == xControllerChain) {
       return
         IXChainController(xController).setTotalUnderlying(
           _vaultNumber,
@@ -425,7 +425,7 @@ contract XProvider is IXReceiver {
     uint32 _chainId,
     int256[] memory _rewards
   ) external payable onlyVaults {
-    if (_chainId == gameChain) {
+    if (homeChain == gameChain) {
       return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
     } else {
       bytes4 selector = bytes4(keccak256("receiveRewardsToGame(uint256,uint32,int256[])"));
