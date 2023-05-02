@@ -13,6 +13,8 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -208,13 +210,27 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _protocolId Id of the protocol of which the allocation is queried.
   /// @param _allocation Number of derby tokens that are allocated towards this specific protocol.
   function setBasketAllocationInProtocol(
+    uint256 _vaultNumber,
     uint256 _basketId,
-    uint256 _chainId,
+    uint32 _chainId,
     uint256 _protocolId,
     int256 _allocation
   ) internal onlyBasketOwner(_basketId) {
     baskets[_basketId].allocations[_chainId][_protocolId] += _allocation;
-    require(basketAllocationInProtocol(_basketId, _chainId, _protocolId) >= 0, "Basket: underflow");
+
+    int256 currentAllocation = basketAllocationInProtocol(_basketId, _chainId, _protocolId);
+    require(currentAllocation >= 0, "Basket: underflow");
+
+    int256 currentReward = getRewardsPerLockedToken(
+      _vaultNumber,
+      _chainId,
+      vaults[_vaultNumber].rebalancingPeriod,
+      _protocolId
+    );
+
+    if (currentReward == -1) {
+      require(currentAllocation == 0, "Allocations to blacklisted protocol");
+    }
   }
 
   /// @notice function to see the allocation of a specific protocol by a basketId. Only the owner of the basket can view this
@@ -378,7 +394,7 @@ contract Game is ERC721, ReentrancyGuard {
         if (allocation == 0) continue;
         chainTotal += allocation;
         addDeltaAllocationProtocol(_vaultNumber, chain, j, allocation);
-        setBasketAllocationInProtocol(_basketId, chain, j, allocation);
+        setBasketAllocationInProtocol(_vaultNumber, _basketId, chain, j, allocation);
       }
 
       totalDelta += chainTotal;
@@ -404,18 +420,22 @@ contract Game is ERC721, ReentrancyGuard {
         int256 allocation = basketAllocationInProtocol(_basketId, chain, i) / 1E18;
         if (allocation == 0) continue;
 
-        int256 lastRebalanceReward = getRewardsPerLockedToken(
-          vaultNum,
-          chain,
-          lastRebalancingPeriod,
-          i
-        );
         int256 currentReward = getRewardsPerLockedToken(
           vaultNum,
           chain,
           currentRebalancingPeriod,
           i
         );
+        // -1 means the protocol is blacklisted
+        if (currentReward == -1) continue;
+
+        int256 lastRebalanceReward = getRewardsPerLockedToken(
+          vaultNum,
+          chain,
+          lastRebalancingPeriod,
+          i
+        );
+
         baskets[_basketId].totalUnRedeemedRewards +=
           (currentReward - lastRebalanceReward) *
           allocation;
