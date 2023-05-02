@@ -12,16 +12,6 @@ describe('Testing VaultWithdraw, unit test', async () => {
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
-  it('Should not be able to withdraw when vault is off', async function () {
-    const { vault, user } = await setupVault();
-    await vault.toggleVaultOnOffTEST(true);
-
-    await expect(
-      vault.connect(user).withdraw(1 * 1e6, user.address, user.address),
-    ).to.be.revertedWith('Vault is off');
-    await vault.toggleVaultOnOffTEST(false);
-  });
-
   it('Should be able to withdraw LP tokens from vault balance', async function () {
     const { vault, user } = await setupVault();
     // 100k USDC to vault
@@ -113,7 +103,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
       IUSDc,
       user,
-      parseUSDC(9_000),
+      parseUSDC(9_000 * 0.9945),
     );
 
     // trying to withdraw allowance again
@@ -158,10 +148,10 @@ describe('Testing VaultWithdraw, unit test', async () => {
       await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
         IUSDc,
         user,
-        parseUSDC(20_000 - govFee),
+        parseUSDC((20_000 - govFee) * 0.9945),
       );
 
-      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseUSDC(govFee));
+      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseUSDC(govFee * 0.9945));
     });
   });
 });

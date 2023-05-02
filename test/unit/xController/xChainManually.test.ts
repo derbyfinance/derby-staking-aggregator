@@ -128,13 +128,11 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     // sending funds
     let stages = await xChainController.vaultStage(vaultNumber);
 
-    expect(stages.activeVaults).to.be.equal(0);
     expect(stages.ready).to.be.equal(false);
     expect(stages.allocationsReceived).to.be.equal(false);
     expect(stages.underlyingReceived).to.be.equal(0);
     expect(stages.fundsReceived).to.be.equal(0);
 
-    await xChainController.connect(guardian).setActiveVaultsGuard(vaultNumber, 5);
     await xChainController.connect(guardian).setReadyGuard(vaultNumber, true);
     await xChainController.connect(guardian).setAllocationsReceivedGuard(vaultNumber, true);
     await xChainController.connect(guardian).setUnderlyingReceivedGuard(vaultNumber, 10);
@@ -142,7 +140,6 @@ describe('Testing XChainController, unit test for manual execution', async () =>
 
     stages = await xChainController.vaultStage(vaultNumber);
 
-    expect(stages.activeVaults).to.be.equal(5);
     expect(stages.ready).to.be.equal(true);
     expect(stages.allocationsReceived).to.be.equal(true);
     expect(stages.underlyingReceived).to.be.equal(10);
@@ -154,7 +151,6 @@ describe('Testing XChainController, unit test for manual execution', async () =>
     expect(await vault1.state()).to.be.equal(5);
 
     // Reset
-    await xChainController.connect(guardian).setActiveVaultsGuard(vaultNumber, 0);
     await vault1.connect(guardian).setVaultStateGuard(0);
   });
 

@@ -13,6 +13,7 @@ describe('Testing XChainController, unit test', async () => {
   let vault: MainVaultMock,
     xChainController: XChainControllerMock,
     user: Signer,
+    guardian: Signer,
     IUSDc: Contract = erc20(usdc);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
@@ -23,6 +24,7 @@ describe('Testing XChainController, unit test', async () => {
     const setup = await setupXChain();
     vault = setup.vault1;
     user = setup.user;
+    guardian = setup.guardian;
     xChainController = setup.xChainController;
   });
 
@@ -44,7 +46,8 @@ describe('Testing XChainController, unit test', async () => {
     await vault.setVaultState(1);
     await vault.setAmountToSendXChainTEST(amountUSDC.div(2)); // 50k
 
-    console.log('balance vault: %s');
+    await xChainController.connect(guardian).setUnderlyingReceivedGuard(10, 4);
+
     await vault.rebalanceXChain({ value: ethers.utils.parseEther('0.1') });
 
     const balance = await IUSDc.balanceOf(xChainController.address);
