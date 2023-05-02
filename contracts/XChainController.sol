@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IXProvider.sol";
 
-import "hardhat/console.sol";
-
 contract XChainController {
   using SafeERC20 for IERC20;
 
