@@ -74,6 +74,9 @@ contract Game is ERC721, ReentrancyGuard {
   // percentage of tokens that will be sold at negative rewards
   uint256 internal negativeRewardFactor;
 
+  // used to scale rewards
+  uint256 public BASE_SCALE = 1e18;
+
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
   mapping(uint256 => Basket) private baskets;
@@ -246,7 +249,7 @@ contract Game is ERC721, ReentrancyGuard {
   function basketUnredeemedRewards(
     uint256 _basketId
   ) external view onlyBasketOwner(_basketId) returns (int256) {
-    return baskets[_basketId].totalUnRedeemedRewards;
+    return baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
   }
 
   /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this.
@@ -313,7 +316,9 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
-    baskets[_basketId].totalUnRedeemedRewards += int((tokensToBurn * 100) / negativeRewardFactor);
+    baskets[_basketId].totalUnRedeemedRewards += int(
+      (tokensToBurn * 100 * BASE_SCALE) / negativeRewardFactor
+    );
 
     IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
 
@@ -572,7 +577,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @dev makes a call to the vault to make the actual transfer because the vault holds the funds.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
-    int256 amount = baskets[_basketId].totalUnRedeemedRewards;
+    int256 amount = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
     require(amount > 0, "Nothing to claim");
 
     baskets[_basketId].totalRedeemedRewards += amount;
