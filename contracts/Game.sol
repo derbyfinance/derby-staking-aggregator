@@ -24,7 +24,7 @@ contract Game is ERC721, ReentrancyGuard {
     // nr of total allocated tokens
     int256 nrOfAllocatedTokens;
     // total build up rewards
-    int256 totalUnRedeemedRewards;
+    int256 totalUnRedeemedRewards; // Scaled by BASE_SCALE of 1e18
     // total redeemed rewards
     int256 totalRedeemedRewards;
     // (basket => vaultNumber => chainId => allocation)
@@ -310,7 +310,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _unlockedTokens
   ) internal returns (uint256) {
-    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards;
+    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
     if (unredeemedRewards > negativeRewardThreshold) return 0;
 
     uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
 import {
   erc20,
+  formatEther,
   formatUSDC,
   getSwapDeadline,
   parseDRB,
@@ -677,22 +678,32 @@ describe('Testing full integration test', async () => {
 
       for (let i = 0; i < Number(id); i++) {
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, rebalancingPeriod, i),
-        ).to.be.equal(vaults[0].rewards![i]);
+          formatEther(
+            await game.getRewardsPerLockedTokenTEST(
+              vaultNumber,
+              chains[0].id,
+              rebalancingPeriod,
+              i,
+            ),
+          ),
+        ).to.be.closeTo(vaults[0].rewards![i], 1);
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, rebalancingPeriod, i),
-        ).to.be.equal(vaults[1].rewards![i]);
+          formatEther(
+            await game.getRewardsPerLockedTokenTEST(
+              vaultNumber,
+              chains[1].id,
+              rebalancingPeriod,
+              i,
+            ),
+          ),
+        ).to.be.closeTo(vaults[1].rewards![i], 1);
       }
     });
   });
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
     // rewardsPerLockedToken * allocations
-    const expectedRewardsVault1 =
-      247_546 * 100 + 601_183 * 100 + 573_857 * 100 + 109_781 * 100 + 210_414 * 100;
-    const expectedRewardsVault2 =
-      248_506 * 200 + 603_516 * 200 + 576_083 * 200 + 110_207 * 200 + 211_230 * 200;
-    const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
+    const totalExpectedRewards = 524187216;
 
     before(function () {
       gameUsers[0].allocations = [
@@ -816,7 +827,7 @@ describe('Testing full integration test', async () => {
   describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
     before(function () {
       exchangeRate = 1025412; // dropped slightly cause of the rewards
-      vaults[0].amountToSend = parseUSDC(162876.328655);
+      vaults[0].amountToSend = parseUSDC(162876.328177);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -848,7 +859,7 @@ describe('Testing full integration test', async () => {
     const vaultCurrency = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(162876.328654);
+      vaults[0].amountToSend = parseUSDC(162876.328176);
       vaults[1].amountToSend = parseUSDC(0);
     });
 
@@ -875,7 +886,7 @@ describe('Testing full integration test', async () => {
     const underlying = usdc;
 
     before(function () {
-      vaults[0].amountToSend = parseUSDC(161980.508847);
+      vaults[0].amountToSend = parseUSDC(161980.508372);
     });
 
     it('Trigger should emit SentFundsToVault event', async function () {
@@ -987,11 +998,25 @@ describe('Testing full integration test', async () => {
 
       for (let i = 0; i < Number(id); i++) {
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[0].id, rebalancingPeriod, i),
-        ).to.be.equal(vaults[0].rewards![i]);
+          formatEther(
+            await game.getRewardsPerLockedTokenTEST(
+              vaultNumber,
+              chains[0].id,
+              rebalancingPeriod,
+              i,
+            ),
+          ),
+        ).to.be.closeTo(vaults[0].rewards![i], 1);
         expect(
-          await game.getRewardsPerLockedTokenTEST(vaultNumber, chains[1].id, rebalancingPeriod, i),
-        ).to.be.equal(vaults[1].rewards![i]);
+          formatEther(
+            await game.getRewardsPerLockedTokenTEST(
+              vaultNumber,
+              chains[1].id,
+              rebalancingPeriod,
+              i,
+            ),
+          ),
+        ).to.be.closeTo(vaults[1].rewards![i], 1);
       }
     });
   });
@@ -1030,11 +1055,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Should redeem rewards for game user 0', async function () {
-      const expectedRewardsVault1 =
-        247_546 * 100 + 601_183 * 100 + 573_857 * 100 + 109_781 * 100 + 210_414 * 100;
-      const expectedRewardsVault2 =
-        248_506 * 200 + 603_516 * 200 + 576_083 * 200 + 110_207 * 200 + 211_230 * 200;
-      const totalExpectedRewards = expectedRewardsVault1 + expectedRewardsVault2;
+      const totalExpectedRewards = 524187216;
 
       const { user, basketId } = gameUsers[0];
       const { vault } = vaults[0];
