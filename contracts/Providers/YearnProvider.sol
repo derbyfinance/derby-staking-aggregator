@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IYearn.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract YearnProvider is IProvider {
   using SafeERC20 for IERC20;
 

@@ -36,6 +36,7 @@ contract MainVault is Vault, VaultToken {
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
+  uint256 public minimumDeposit;
 
   string internal allowanceError = "!Allowance";
 
@@ -66,16 +67,11 @@ contract MainVault is Vault, VaultToken {
     game = _game;
     governanceFee = 0;
     maxDivergenceWithdraws = 1_000_000;
+    minimumDeposit = 100 * uScale;
   }
 
   modifier onlyXProvider() {
     require(msg.sender == xProvider, "only xProvider");
-    _;
-  }
-
-  modifier onlyWhenVaultIsOn() {
-    require(state == State.Idle, "Rebalancing");
-    require(!vaultOff, "Vault is off");
     _;
   }
 
@@ -107,7 +103,9 @@ contract MainVault is Vault, VaultToken {
   function deposit(
     uint256 _amount,
     address _receiver
-  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 shares) {
+  ) external nonReentrant onlyWhenIdle returns (uint256 shares) {
+    require(_amount >= minimumDeposit, "Minimum deposit amount");
+
     if (training) {
       require(whitelist[msg.sender]);
       uint256 balanceSender = (balanceOf(msg.sender) * exchangeRate) / (10 ** decimals());
@@ -133,7 +131,7 @@ contract MainVault is Vault, VaultToken {
     uint256 _amount,
     address _receiver,
     address _owner
-  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
+  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     value = (_amount * exchangeRate) / (10 ** decimals());
 
     require(value > 0, "!value");
@@ -149,7 +147,7 @@ contract MainVault is Vault, VaultToken {
   /// @param _amount Amount to withdraw in LP token
   function withdrawalRequest(
     uint256 _amount
-  ) external nonReentrant onlyWhenVaultIsOn returns (uint256 value) {
+  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
@@ -170,6 +168,7 @@ contract MainVault is Vault, VaultToken {
     require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
 
     value = user.withdrawalAllowance;
+    value = IXProvider(xProvider).calculateEstimatedAmount(value);
     value = checkForBalance(value);
 
     reservedFunds -= value;
@@ -195,7 +194,7 @@ contract MainVault is Vault, VaultToken {
   function redeemRewardsGame(
     uint256 _value,
     address _user
-  ) external onlyGame nonReentrant onlyWhenVaultIsOn {
+  ) external onlyGame nonReentrant onlyWhenIdle {
     UserInfo storage user = userInfo[_user];
     require(user.rewardAllowance == 0, allowanceError);
 
@@ -252,7 +251,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
-    require(rebalanceNeeded() && !vaultOff, "!rebalance needed");
+    require(rebalanceNeeded(), "!rebalance needed");
 
     claimTokens();
     setTotalUnderlying();
@@ -338,7 +337,8 @@ contract MainVault is Vault, VaultToken {
   function settleReservedFunds() internal {
     reservedFunds += totalWithdrawalRequests;
     totalWithdrawalRequests = 0;
-    state = State.RebalanceVault;
+    if (vaultOff) state = State.SendRewardsPerToken;
+    else state = State.RebalanceVault;
   }
 
   /// @notice See receiveProtocolAllocations below
@@ -473,5 +473,11 @@ contract MainVault is Vault, VaultToken {
   /// @notice Setter to add an address to the whitelist
   function addToWhitelist(address _address) external onlyGuardian {
     whitelist[_address] = true;
+  }
+
+  /// @dev Sets the minimum deposit amount allowed.
+  /// @param _newMinimumDeposit The new minimum deposit amount to be set.
+  function setMinimumDeposit(uint256 _newMinimumDeposit) external onlyGuardian {
+    minimumDeposit = _newMinimumDeposit;
   }
 }
