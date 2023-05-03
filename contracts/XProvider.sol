@@ -144,7 +144,7 @@ contract XProvider is IXReceiver {
       _destinationDomain, // _destination: Domain ID of the destination chain
       target, // _to: address receiving the funds on the destination
       _asset, // _asset: address of the token contract
-      msg.sender, // _delegate: address that can revert or forceLocal on destination
+      guardian, // _delegate: address that can revert or forceLocal on destination
       _amount, // _amount: amount of tokens to transfer
       slippage, // _slippage: the maximum amount of slippage the user will accept in BPS (e.g. 30 = 0.3%)
       _callData // _callData: empty bytes because we're only sending funds
