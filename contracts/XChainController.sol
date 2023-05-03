@@ -234,8 +234,6 @@ contract XChainController {
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
   function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
-    if (_chainId == homeChain)
-      require(msg.value == 0, "XchainController, sent xchainfee for same chain");
     address vault = getVaultAddress(_vaultNumber, _chainId);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
     xProvider.pushStateFeedbackToVault{value: msg.value}(
@@ -287,9 +285,6 @@ contract XChainController {
     uint256 _vaultNumber,
     uint16 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
-    if (_chain == homeChain) {
-      require(msg.value == 0, "XchainController, ether sent not used");
-    }
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
     uint256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
@@ -402,7 +397,6 @@ contract XChainController {
       !vaultStage[_vaultNumber].fundsSentToChain[_chain],
       "XChainController: Chain already processed"
     );
-    if (_chain == homeChain) require(msg.value == 0, "XChainController, ether sent not used");
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "XChainController: not a valid vaultnumber");
 
