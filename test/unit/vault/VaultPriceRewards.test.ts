@@ -17,9 +17,10 @@ import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { deployments, run } from 'hardhat';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { Signer } from 'ethers';
 
 describe('Testing Vault Store Price and Rewards, unit test', async () => {
-  let vault: MainVaultMock;
+  let vault: MainVaultMock, guardian: Signer;
 
   const protocols = new Map<string, ProtocolVault>()
     .set('compound_usdc_01', compound_usdc_01)
@@ -63,6 +64,7 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
   before(async function () {
     const setup = await setupVault();
     vault = setup.vault;
+    guardian = setup.guardian;
   });
 
   it('Should store historical prices and rewards, rebalance: 1', async function () {
@@ -101,9 +103,11 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
     // expectedRewards = (totalUnderlying * performanceFee * priceDiff) / (totalAllocatedTokens * lastPrice)
     compoundVault.setPrice(parseUnits('900', 8)).setExpectedReward(-100_000); // 10%
     aaveVault.setPrice(parseUnits('2100', 6)).setExpectedReward(50000); // 5%
-    yearnVault.setPrice(parseUnits('3030', 6)).setExpectedReward(10_000); // 1%
+    yearnVault.setPrice(parseUnits('3000', 6)).setExpectedReward(-1); // BLACKLISTED
     compoundDAIVault.setPrice(parseUnits('4004', 8)).setExpectedReward(1_000); // 0.1%
     aaveUSDTVault.setPrice(parseUnits('5010', 6)).setExpectedReward(2_000); // 0.2%
+
+    await vault.connect(guardian).blacklistProtocol(yearnVault.number);
 
     await Promise.all([
       compoundProvider.mock.exchangeRate.withArgs(compoundUSDC).returns(compoundVault.price),
