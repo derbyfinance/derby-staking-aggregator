@@ -9,6 +9,8 @@ import "../Interfaces/ExternalInterfaces/ICToken.sol";
 import "../Interfaces/ExternalInterfaces/IComptroller.sol";
 import "../Interfaces/IProvider.sol";
 
+import "hardhat/console.sol";
+
 contract CompoundProvider is IProvider {
   using SafeERC20 for IERC20;
 
