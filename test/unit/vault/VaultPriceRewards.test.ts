@@ -125,8 +125,9 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
       await vault.storePriceAndRewardsTest(totalUnderlying, number);
 
       expect(await vault.lastPrices(number)).to.be.equal(price);
+      // because -1 is not scaled, the rest is.
       expect(await vault.rewardPerLockedToken(rebalancePeriod, number)).to.be.equal(
-        parseEther(expectedReward),
+        expectedReward === -1 ? -1 : parseEther(expectedReward),
       );
     }
   });
