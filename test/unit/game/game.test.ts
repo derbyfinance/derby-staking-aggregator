@@ -63,6 +63,12 @@ describe('Testing Game', async () => {
       'Game: Not the owner of the basket',
     );
 
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
+    await expect(game.connect(user).rebalanceBasket(basketId, allocationArray)).to.be.revertedWith(
+      'Allocations to blacklisted protocol',
+    );
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, 0);
+
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, allocationArray),
     ).to.changeTokenBalance(derbyToken, user, -1900);
@@ -114,6 +120,9 @@ describe('Testing Game', async () => {
       [100, 0, 100, 0, 0], // 200
       [0, 100, 0, 100, 300], // 500
     ];
+
+    // blacklisting protocol, user should still be able to unlock the tokens
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
 
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, allocationArray),

@@ -138,14 +138,16 @@ contract Vault is ReentrancyGuard {
   function rebalance() external nonReentrant {
     require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
 
     rebalancingPeriod++;
 
-    claimTokens();
-    settleDeltaAllocation();
-
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
-    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(underlyingIncBalance);
+    storePriceAndRewardsLoop(latestID, underlyingIncBalance);
+    claimTokens();
+
+    settleDeltaAllocation();
+    uint256[] memory protocolToDeposit = rebalanceCheckProtocols(latestID, underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
@@ -180,14 +182,13 @@ contract Vault is ReentrancyGuard {
   /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number.
   function rebalanceCheckProtocols(
+    uint256 _latestId,
     uint256 _newTotalUnderlying
   ) internal returns (uint256[] memory) {
     uint256[] memory protocolToDeposit = new uint[](controller.latestProtocolId(vaultNumber));
-    uint256 latestID = controller.latestProtocolId(vaultNumber);
-    for (uint i = 0; i < latestID; i++) {
-      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
-      storePriceAndRewards(_newTotalUnderlying, i);
+    for (uint i = 0; i < _latestId; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       if (isBlacklisted) continue;
       setAllocation(i);
@@ -219,6 +220,14 @@ contract Vault is ReentrancyGuard {
       amountToProtocol = (_totalUnderlying * currentAllocations[_protocol]) / totalAllocatedTokens;
   }
 
+  /// @notice Harvest extra tokens from underlying protocols
+  /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
+  function storePriceAndRewardsLoop(uint256 _latestId, uint256 _totalUnderlying) internal {
+    for (uint i = 0; i < _latestId; i++) {
+      storePriceAndRewards(_totalUnderlying, i);
+    }
+  }
+
   /// @notice Stores the historical price and the reward per rounded locked token, ignoring decimals.
   /// @dev formula yield protocol i at time t: y(it) = (P(it) - P(it-1)) / P(it-1).
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
@@ -226,6 +235,11 @@ contract Vault is ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+    if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
+      rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      return;
+    }
+
     uint256 currentPrice = price(_protocolId);
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = currentPrice;

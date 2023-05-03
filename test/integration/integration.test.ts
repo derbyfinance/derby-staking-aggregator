@@ -222,7 +222,7 @@ describe('Testing full integration test', async () => {
       // should be done for every new vaultNumber deployed
       await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
 
-      await expect(game.pushAllocationsToController(vaultNumber, { value: parseEther('0.1') }))
+      await expect(game.pushAllocationsToController(vaultNumber))
         .to.emit(game, 'PushedAllocationsToController')
         .withArgs(vaultNumber, [
           parseDRB(chains[0].totalAllocations),
@@ -247,7 +247,7 @@ describe('Testing full integration test', async () => {
   describe('Rebalance Step 2: Trigger vaults to push totalUnderlyings', async function () {
     it('Trigger should emit PushTotalUnderlying event', async function () {
       for (const { vault, homeChain, underlying, totalSupply, totalWithdrawalRequests } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController({ value: parseEther('0.1') }))
+        await expect(vault.pushTotalUnderlyingToController())
           .to.emit(vault, 'PushTotalUnderlying')
           .withArgs(vaultNumber, homeChain, underlying, totalSupply, totalWithdrawalRequests);
       }
@@ -276,11 +276,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[0].id, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
           vaults[0].vault.address,
@@ -318,19 +314,11 @@ describe('Testing full integration test', async () => {
     const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(
-        vaults[0].vault.rebalanceXChain({
-          value: parseEther('0.1'),
-        }),
-      ).to.be.revertedWith('Wrong state');
+      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
     });
 
     it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(
-        vaults[1].vault.rebalanceXChain({
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(vaults[1].vault.rebalanceXChain())
         .to.emit(vaults[1].vault, 'RebalanceXChain')
         .withArgs(vaultNumber, vaults[1].amountToSend, vaultCurrency);
     });
@@ -362,11 +350,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit SentFundsToVault event', async function () {
       // only vault 0 will receive funds
-      await expect(
-        xChainController.sendFundsToVault(vaultNumber, chains[0].id, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(xChainController.sendFundsToVault(vaultNumber, chains[0].id))
         .to.emit(xChainController, 'SentFundsToVault')
         .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
       // we have to try for each chain id
@@ -412,18 +396,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -494,7 +470,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
       for (const { vault, homeChain, rewards } of vaults) {
-        await expect(vault.sendRewardsToGame({ value: parseEther('0.1') }))
+        await expect(vault.sendRewardsToGame())
           .to.emit(vault, 'PushedRewardsToGame')
           .withArgs(vaultNumber, homeChain, rewards);
       }
@@ -535,7 +511,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Rebalance Step 1: 0 deltas', async function () {
-      await expect(game.pushAllocationsToController(vaultNumber, { value: parseEther('0.1') }))
+      await expect(game.pushAllocationsToController(vaultNumber))
         .to.emit(game, 'PushedAllocationsToController')
         .withArgs(vaultNumber, [0, 0]);
     });
@@ -550,7 +526,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit PushTotalUnderlying event', async function () {
       for (const { vault, homeChain, newUnderlying, totalSupply } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController({ value: parseEther('0.1') }))
+        await expect(vault.pushTotalUnderlyingToController())
           .to.emit(vault, 'PushTotalUnderlying')
           .withArgs(vaultNumber, homeChain, parseUSDC(newUnderlying!), totalSupply, 0);
       }
@@ -568,11 +544,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[0].id, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
           vaults[0].vault.address,
@@ -597,15 +569,8 @@ describe('Testing full integration test', async () => {
     const vaultCurrency = usdc;
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(
-        vaults[0].vault.rebalanceXChain({
-          value: parseEther('0.1'),
-        }),
-      ).to.be.revertedWith('Wrong state');
-
-      await vaults[1].vault.rebalanceXChain({
-        value: parseEther('0.1'),
-      });
+      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+      await vaults[1].vault.rebalanceXChain();
     });
   });
 
@@ -623,26 +588,16 @@ describe('Testing full integration test', async () => {
       await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
 
       // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, chains[0].id, {
-        value: parseEther('0.1'),
-      });
+      await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
     });
   });
 
   describe('Rebalance 2 Step 6: Game pushes deltaAllocations to vaults', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -667,7 +622,7 @@ describe('Testing full integration test', async () => {
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
       for (const { vault } of vaults) {
-        await vault.sendRewardsToGame({ value: parseEther('0.1') });
+        await vault.sendRewardsToGame();
       }
     });
 
@@ -784,7 +739,7 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 3 Step 1: Increasing exchangeRates to simulate returns in vaults', async function () {
     it('Rebalance Step 1: game user 0 left the game with -500 and -1000 allocations', async function () {
-      await expect(game.pushAllocationsToController(vaultNumber, { value: parseEther('0.1') }))
+      await expect(game.pushAllocationsToController(vaultNumber))
         .to.emit(game, 'PushedAllocationsToController')
         .withArgs(vaultNumber, [parseDRB(-500), parseDRB(-1000)]);
     });
@@ -810,7 +765,7 @@ describe('Testing full integration test', async () => {
         totalSupply,
         totalWithdrawalRequests,
       } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController({ value: parseEther('0.1') }))
+        await expect(vault.pushTotalUnderlyingToController())
           .to.emit(vault, 'PushTotalUnderlying')
           .withArgs(
             vaultNumber,
@@ -831,9 +786,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(
-        xChainController.pushVaultAmounts(vaultNumber, chains[0].id, { value: parseEther('0.1') }),
-      )
+      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
         .to.emit(xChainController, 'SendXChainAmount')
         .withArgs(
           vaults[0].vault.address,
@@ -863,19 +816,11 @@ describe('Testing full integration test', async () => {
     });
 
     it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(
-        vaults[1].vault.rebalanceXChain({
-          value: parseEther('0.1'),
-        }),
-      ).to.be.revertedWith('Wrong state');
+      await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
     });
 
     it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(
-        vaults[0].vault.rebalanceXChain({
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(vaults[0].vault.rebalanceXChain())
         .to.emit(vaults[0].vault, 'RebalanceXChain')
         .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
     });
@@ -893,9 +838,7 @@ describe('Testing full integration test', async () => {
       await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
 
       // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, chains[0].id, {
-        value: parseEther('0.1'),
-      });
+      await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
       // await expect(xChainController.sendFundsToVault(vaultNumber))
       //   .to.emit(xChainController, 'SentFundsToVault')
       //   .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
@@ -924,18 +867,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(
-        game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain, {
-          value: parseEther('0.1'),
-        }),
-      )
+      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -985,7 +920,7 @@ describe('Testing full integration test', async () => {
       const rewards = [0, 0, 0, 0, 0];
 
       for (const { vault, homeChain } of vaults) {
-        await expect(vault.sendRewardsToGame({ value: parseEther('0.1') }))
+        await expect(vault.sendRewardsToGame())
           .to.emit(vault, 'PushedRewardsToGame')
           .withArgs(vaultNumber, homeChain, rewards);
       }

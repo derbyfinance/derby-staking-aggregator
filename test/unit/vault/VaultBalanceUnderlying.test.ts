@@ -14,7 +14,7 @@ const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 describe('Testing balanceUnderlying for every single protocol vault', async () => {
   const IUSDc: Contract = erc20(usdc);
 
-  it('Should calc balanceUnderlying for all known protocols correctly', async function () {
+  it('Should calc balanceUnderlying for all known USDC! protocols correctly', async function () {
     const { vault, user } = await setupVault();
     const liquidityPerc = 10;
 

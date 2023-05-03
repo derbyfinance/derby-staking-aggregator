@@ -144,7 +144,7 @@ contract IdleProvider is IProvider {
   /// @param _iToken Address of protocol LP Token eg yUSDC
   /// @return price of LP token
   function exchangeRate(address _iToken) public view override returns (uint256) {
-    return IIdle(_iToken).tokenPrice();
+    return IIdle(_iToken).tokenPriceWithFee(msg.sender);
   }
 
   /// @dev Transfers a specified amount of tokens to a specified vault, used for getting rewards out.
