@@ -47,6 +47,9 @@ contract Vault is ReentrancyGuard {
   uint256 public uScale;
   int256 public marginScale;
 
+  // used in storePriceAndRewards
+  uint256 public BASE_SCALE = 1e18;
+
   // UNIX timestamp
   uint256 public rebalanceInterval;
   uint256 public lastTimeStamp;
@@ -244,8 +247,8 @@ contract Vault is ReentrancyGuard {
     }
 
     int256 priceDiff = int256(currentPrice) - int256(lastPrices[_protocolId]);
-    int256 nominator = (int256(_totalUnderlying * performanceFee) * priceDiff);
-    int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / 1E18;
+    int256 nominator = (int256(_totalUnderlying * performanceFee * BASE_SCALE) * priceDiff);
+    int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / int(BASE_SCALE);
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {

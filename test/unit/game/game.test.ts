@@ -299,7 +299,7 @@ describe('Testing Game', async () => {
   });
 });
 
-async function mockRewards(
+export async function mockRewards(
   game: GameMock,
   DerbyToken: DerbyToken,
   user: Signer,
@@ -323,21 +323,58 @@ async function mockRewards(
   await game.connect(user).rebalanceBasket(basketId, allocations);
 
   // This rebalance should be skipped for the basket
+  // all rewards have to be scaled by 1e18
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(500),
+      parseEther(100),
+      0,
+    ]),
+    game.mockRewards(vaultNum, chainIds[1], [
+      parseEther(4_000),
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(200),
+      parseEther(100),
+    ]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(500),
+      parseEther(100),
+      0,
+    ]),
+    game.mockRewards(vaultNum, chainIds[1], [
+      parseEther(4_000),
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(200),
+      parseEther(100),
+    ]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(500),
+      parseEther(100),
+      0,
+    ]),
+    game.mockRewards(vaultNum, chainIds[1], [
+      parseEther(4_000),
+      parseEther(2_000),
+      parseEther(1_000),
+      parseEther(200),
+      parseEther(100),
+    ]),
   ]);
 }

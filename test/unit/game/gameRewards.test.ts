@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
-import { parseEther } from '@testhelp/helpers';
+import { parseEther, parseUnits } from '@testhelp/helpers';
 import { setupGame } from './setup';
 
 describe('Testing Game Rewards', async () => {
@@ -22,7 +22,7 @@ describe('Testing Game Rewards', async () => {
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
       await game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
-      await game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
+      await game.mockRewards(vaultNumber, chainIds[2], [1, 1, 1, 1, 1]),
     ]);
 
     await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
@@ -32,20 +32,56 @@ describe('Testing Game Rewards', async () => {
     // This rebalance should be skipped for the basket
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [-4_000, -2_000, 1_000, 200, 100]),
+      game.mockRewards(vaultNumber, chainIds[0], [
+        parseEther(2_000),
+        parseEther(1_000),
+        parseEther(500),
+        parseEther(100),
+        0,
+      ]),
+      game.mockRewards(vaultNumber, chainIds[1], [
+        parseEther(-4_000),
+        parseEther(-2_000),
+        parseEther(1_000),
+        parseEther(200),
+        parseEther(100),
+      ]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [-2_000, -1_000, 500, 100, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [-4_000, -2_000, 1_000, 200, 100]),
+      game.mockRewards(vaultNumber, chainIds[0], [
+        parseEther(-2_000),
+        parseEther(-1_000),
+        parseEther(500),
+        parseEther(100),
+        0,
+      ]),
+      game.mockRewards(vaultNumber, chainIds[1], [
+        parseEther(-4_000),
+        parseEther(-2_000),
+        parseEther(1_000),
+        parseEther(200),
+        parseEther(100),
+      ]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [-2_000, -1_000, 500, 100, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [-4_000, -2_000, 1_000, 200, 100]),
+      game.mockRewards(vaultNumber, chainIds[0], [
+        parseEther(-2_000),
+        parseEther(-1_000),
+        parseEther(500),
+        parseEther(100),
+        0,
+      ]),
+      game.mockRewards(vaultNumber, chainIds[1], [
+        parseEther(-4_000),
+        parseEther(-2_000),
+        parseEther(1_000),
+        parseEther(200),
+        parseEther(100),
+      ]),
     ]);
 
     const emptyAllocations = [
@@ -56,6 +92,7 @@ describe('Testing Game Rewards', async () => {
 
     // simulating negative rewards
     let rewards = await game.connect(user).basketUnredeemedRewards(basketId);
+    console.log({ rewards });
     expect(rewards).to.be.equal(-1_080_000);
 
     /*
@@ -108,19 +145,19 @@ describe('Testing Game Rewards', async () => {
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [0, 0, 0, 1000, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseEther('-1'), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-1', 36), 0, 0, 0, 0]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [parseEther('-5'), 0, 0, 0, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseEther('-5'), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 36), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 36), 0, 0, 0, 0]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [parseEther('-5'), 0, 0, 0, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseEther('-5'), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 36), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 36), 0, 0, 0, 0]),
     ]);
 
     const emptyAllocations = [
