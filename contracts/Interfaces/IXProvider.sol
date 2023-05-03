@@ -62,4 +62,6 @@ interface IXProvider {
   ) external payable;
 
   function homeChain() external returns (uint32);
+
+  function calculateEstimatedAmount(uint256 _amount) external returns (uint256);
 }

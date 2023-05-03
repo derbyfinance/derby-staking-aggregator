@@ -112,16 +112,13 @@ describe('Testing xController tasks', () => {
   it('xcontroller_guardian_setters', async function () {
     const { xController } = await setupXController();
     const vaultnumber = random(100);
-    const activeVaults = random(20);
     const underlyingReceived = random(20);
 
-    await run('xcontroller_set_active_vaults', { vaultnumber, activevaults: activeVaults });
     await run('xcontroller_set_ready', { vaultnumber, state: true });
     await run('xcontroller_set_allocations_received', { vaultnumber, state: true });
     await run('xcontroller_set_underlying_received', { vaultnumber, received: underlyingReceived });
 
     const vaultStage = await xController.vaultStage(vaultnumber);
-    expect(vaultStage.activeVaults).to.be.equal(activeVaults);
     expect(vaultStage.ready).to.be.equal(true);
     expect(vaultStage.allocationsReceived).to.be.equal(true);
     expect(vaultStage.underlyingReceived).to.be.equal(underlyingReceived);

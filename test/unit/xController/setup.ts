@@ -87,6 +87,7 @@ export const setupXChain = deployments.createFixture(async (hre) => {
 
     IUSDc.connect(user).approve(vault1.address, 100_000 * 1e6),
     IUSDc.connect(user).approve(vault2.address, 200_000 * 1e6),
+    IUSDc.connect(user).approve(vault4.address, 10_000 * 1e6),
     derbyToken.transfer(user.address, parseEther('2100')),
     transferAndApproveUSDC(vault1.address, user, 10_000_000 * 1e6),
 
