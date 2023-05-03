@@ -327,8 +327,6 @@ contract Vault is ReentrancyGuard {
 
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
-    console.log("Vault: shares %s", shares);
-    console.log("Vault: balance %s", balance);
 
     if (shares == 0) return 0;
     // if (balance < shares) shares = balance;

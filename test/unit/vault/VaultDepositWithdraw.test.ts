@@ -1,86 +1,83 @@
 import { expect } from 'chai';
-import { Contract } from 'ethers';
+import { Contract, Signer } from 'ethers';
 import { erc20, formatUSDC, formatUnits, parseUSDC, parseUnits } from '@testhelp/helpers';
-import { usdc, starterProtocols as protocols, compoundUSDC, yearnUSDC } from '@testhelp/addresses';
+import { starterProtocols as protocols } from '@testhelp/addresses';
 import { setupVault } from './setup';
-import { getDeployConfigVault } from '@testhelp/deployHelpers';
+import { MainVaultMock } from '@typechain';
 
 describe('Testing Vault, unit test', async () => {
-  const IUSDc: Contract = erc20(usdc),
-    vaultNumber: number = 10;
-
   const compoundVault = protocols.get('compound_usdc_01')!;
   const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   const amount = 100_000;
-  const amountUSDC = parseUSDC(amount.toString());
 
-  it('Deposit and withdraw partially from compoundUSDC', async function () {
-    const { vault, controller, user, guardian } = await setupVault();
-    const CUSDc: Contract = erc20(compoundUSDC);
+  const tests = [
+    { protocol: compoundVault, priceScale: 18 },
+    { protocol: aaveVault, priceScale: 0 },
+    { protocol: yearnVault, priceScale: 6 },
+  ];
 
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
+  tests.forEach(({ protocol, priceScale }) => {
+    describe(`Testing ${protocol.name}`, async () => {
+      const LPToken: Contract = erc20(protocol.protocolToken);
+      const decimals = protocol.decimals;
 
-    await vault.depositInProtocolTest(compoundVault.number, parseUSDC(10_000));
-    let balanceUnderlying = formatUSDC(await vault.balanceUnderlying(compoundVault.number));
-    expect(balanceUnderlying).to.be.closeTo(10_000, 1);
+      let vault: MainVaultMock, user: Signer;
 
-    let expectedShares = await vault.calcShares(compoundVault.number, parseUSDC(10_000));
-    expect(formatUnits(expectedShares, 8)).to.be.closeTo(
-      formatUnits(await CUSDc.balanceOf(vault.address), 8),
-      1,
-    );
+      before(async () => {
+        const setup = await setupVault();
+        vault = setup.vault;
+        user = setup.user;
+      });
 
-    const expectedPrice = parseUnits(10_000, 6 + 18).div(await CUSDc.balanceOf(vault.address));
-    const price = await vault.price(compoundVault.number);
-    expect(formatUnits(expectedPrice, 8)).to.be.closeTo(formatUnits(price, 8), 1);
-    console.log({ expectedShares });
-    console.log({ expectedPrice });
-    console.log({ price });
+      it(`Deposit funds into the vault and protocol`, async function () {
+        await vault.connect(user).deposit(parseUSDC(amount), await user.getAddress());
 
-    await vault.withdrawFromProtocolTest(compoundVault.number, parseUSDC(2_000));
-    balanceUnderlying = formatUSDC(await vault.balanceUnderlying(compoundVault.number));
-    expect(balanceUnderlying).to.be.closeTo(10_000 - 2_000, 1);
+        await vault.depositInProtocolTest(protocol.number, parseUSDC(10_000));
+        const balanceUnderlying = formatUSDC(await vault.balanceUnderlying(protocol.number));
+        expect(balanceUnderlying).to.be.closeTo(10_000, 1);
+      });
 
-    expectedShares = await vault.calcShares(compoundVault.number, parseUSDC(10_000 - 2_000));
-    expect(formatUnits(expectedShares, 8)).to.be.closeTo(
-      formatUnits(await CUSDc.balanceOf(vault.address), 8),
-      1,
-    );
+      it(`Verify expected shares match real balance after deposit`, async function () {
+        const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000));
+        const realBalance = await LPToken.balanceOf(vault.address);
+        expect(formatUnits(expectedShares, decimals)).to.be.closeTo(
+          formatUnits(realBalance, decimals),
+          0.1,
+        );
+      });
 
-    // await vault.withdrawFromProtocolTest(compoundVault.number, parseUSDC(1_000));
-    // const balance1 = await vault.balanceUnderlying(compoundVault.number);
-    // console.log(`Balance in compoundVault after withdraw ${balance1}`);
+      it(`Compare expected protocol price with actual price`, async function () {
+        const expectedPrice = parseUnits(10_000, 6 + priceScale).div(
+          await LPToken.balanceOf(vault.address),
+        );
+        const price = await vault.price(protocol.number);
+        // console.log({ expectedPrice });
+        // console.log({ price });
+        // console.log(formatUnits(expectedPrice, decimals));
+        // console.log(formatUnits(price, decimals));
+        expect(formatUnits(expectedPrice, decimals)).to.be.closeTo(
+          formatUnits(price, decimals),
+          0.0001,
+        );
+      });
 
-    // console.log(`vault balance after ${await IUSDc.balanceOf(vault.address)}`);
-  });
+      it(`Withdraw funds from the protocol`, async function () {
+        await vault.withdrawFromProtocolTest(protocol.number, parseUSDC(2_000));
+        const balanceUnderlying = formatUSDC(await vault.balanceUnderlying(protocol.number));
+        expect(balanceUnderlying).to.be.closeTo(10_000 - 2_000, 1);
+      });
 
-  it('Deposit and withdraw partially from yearnUSDC', async function () {
-    const { vault, controller, user, guardian } = await setupVault();
-    const YUSDc: Contract = erc20(yearnUSDC);
-
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
-
-    await vault.depositInProtocolTest(yearnVault.number, parseUSDC(10_000));
-    let balanceUnderlying = formatUSDC(await vault.balanceUnderlying(yearnVault.number));
-    expect(balanceUnderlying).to.be.closeTo(10_000, 1);
-
-    let expectedShares = await vault.calcShares(yearnVault.number, parseUSDC(10_000));
-    expect(formatUnits(expectedShares, 6)).to.be.closeTo(
-      formatUnits(await YUSDc.balanceOf(vault.address), 6),
-      1,
-    );
-
-    await vault.withdrawFromProtocolTest(yearnVault.number, parseUSDC(2_000));
-    balanceUnderlying = formatUSDC(await vault.balanceUnderlying(yearnVault.number));
-    expect(balanceUnderlying).to.be.closeTo(10_000 - 2_000, 1);
-
-    expectedShares = await vault.calcShares(yearnVault.number, parseUSDC(10_000 - 2_000));
-    expect(formatUnits(expectedShares, 6)).to.be.closeTo(
-      formatUnits(await YUSDc.balanceOf(vault.address), 6),
-      1,
-    );
+      it(`Verify expected shares match real balance after withdrawal`, async function () {
+        const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000 - 2_000));
+        const realBalance = await LPToken.balanceOf(vault.address);
+        expect(formatUnits(expectedShares, decimals)).to.be.closeTo(
+          formatUnits(realBalance, decimals),
+          0.1,
+        );
+      });
+    });
   });
 });
 // 99999999

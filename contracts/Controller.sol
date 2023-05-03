@@ -5,8 +5,6 @@ pragma solidity ^0.8.11;
 import "./Interfaces/IProvider.sol";
 import "./Interfaces/IController.sol";
 
-import "hardhat/console.sol";
-
 contract Controller is IController {
   UniswapParams public uniswapParams;
 
@@ -138,7 +136,6 @@ contract Controller is IController {
     uint256 _uScale
   ) external onlyDao returns (uint256) {
     uint256 protocolNumber = latestProtocolId[_vaultNumber];
-    console.log("Name %s, uScale: %s", _name, _uScale);
 
     protocolNames[_vaultNumber][protocolNumber] = _name;
     protocolGovToken[_vaultNumber][protocolNumber] = _govToken;
