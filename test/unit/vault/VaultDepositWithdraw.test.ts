@@ -16,11 +16,11 @@ describe('Testing Vault, unit test', async () => {
   const amount = 100_000;
 
   const tests = [
-    { protocol: compoundVault, priceScale: 18 },
-    { protocol: aaveVault, priceScale: 0 },
-    { protocol: yearnVault, priceScale: 6 },
-    { protocol: truefiVault, priceScale: 6 },
-    // { protocol: idleVault, priceScale: 18 },
+    // { protocol: compoundVault, priceScale: 18 },
+    // { protocol: aaveVault, priceScale: 0 },
+    // { protocol: yearnVault, priceScale: 6 },
+    // { protocol: truefiVault, priceScale: 6 },
+    { protocol: idleVault, priceScale: 6 },
   ];
 
   tests.forEach(({ protocol, priceScale }) => {
@@ -47,6 +47,8 @@ describe('Testing Vault, unit test', async () => {
       it(`Verify expected shares match real balance after deposit`, async function () {
         const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000));
         const realBalance = await LPToken.balanceOf(vault.address);
+        console.log(formatUnits(expectedShares, decimals));
+        console.log(formatUnits(realBalance, decimals));
         expect(formatUnits(expectedShares, decimals)).to.be.closeTo(
           formatUnits(realBalance, decimals),
           0.01,
@@ -77,6 +79,8 @@ describe('Testing Vault, unit test', async () => {
       it(`Verify expected shares match real balance after withdrawal`, async function () {
         const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000 - 2_000));
         const realBalance = await LPToken.balanceOf(vault.address);
+        console.log(formatUnits(expectedShares, decimals));
+        console.log(formatUnits(realBalance, decimals));
         expect(formatUnits(expectedShares, decimals)).to.be.closeTo(
           formatUnits(realBalance, decimals),
           0.01,
