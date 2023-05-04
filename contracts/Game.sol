@@ -356,7 +356,6 @@ contract Game is ERC721, ReentrancyGuard {
 
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
-    setBasketRebalancingPeriod(_basketId, vaultNumber);
   }
 
   /// @notice Checks if the basket is allowed to be rebalanced.
@@ -444,6 +443,8 @@ contract Game is ERC721, ReentrancyGuard {
           allocation;
       }
     }
+
+    setBasketRebalancingPeriod(_basketId, vaultNum);
   }
 
   /// @notice Internal helper to lock or unlock tokens from the game contract
