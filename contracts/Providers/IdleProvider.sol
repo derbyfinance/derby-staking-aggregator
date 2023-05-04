@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/ExternalInterfaces/IIdle.sol";
 import "../Interfaces/IProvider.sol";
 
-import "hardhat/console.sol";
-
 contract IdleProvider is IProvider {
   using SafeERC20 for IERC20;
 
@@ -120,7 +118,6 @@ contract IdleProvider is IProvider {
     uint256 balanceShares = balance(_address, _iToken);
     uint256 price = exchangeRate(_iToken);
     uint256 decimals = IIdle(_iToken).decimals();
-    console.log("decimals %s", decimals);
     return (balanceShares * price) / 10 ** decimals;
   }
 
