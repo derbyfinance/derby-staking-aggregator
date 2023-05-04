@@ -12,8 +12,6 @@ import "./Interfaces/IProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
-import "hardhat/console.sol";
-
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -321,15 +319,12 @@ contract Vault is ReentrancyGuard {
       vaultNumber,
       _protocolNum
     );
-    // console.log("Vault: protocol.uScale %s", protocol.uScale);
-    // console.log("Vault: uScale %s", uScale);
-    // uint256 newAmount = (_amount * protocol.uScale) / uScale;
 
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
 
     if (shares == 0) return 0;
-    // if (balance < shares) shares = balance;
+    if (balance < shares) shares = balance;
 
     IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     amountReceived = IProvider(protocol.provider).withdraw(

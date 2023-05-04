@@ -132,8 +132,7 @@ contract Controller is IController {
     address _provider,
     address _protocolLPToken,
     address _underlying,
-    address _govToken,
-    uint256 _uScale
+    address _govToken
   ) external onlyDao returns (uint256) {
     uint256 protocolNumber = latestProtocolId[_vaultNumber];
 
@@ -142,8 +141,7 @@ contract Controller is IController {
     protocolInfo[_vaultNumber][protocolNumber] = ProtocolInfoS(
       _protocolLPToken,
       _provider,
-      _underlying,
-      _uScale
+      _underlying
     );
 
     emit SetProtocolNumber(protocolNumber, _protocolLPToken);

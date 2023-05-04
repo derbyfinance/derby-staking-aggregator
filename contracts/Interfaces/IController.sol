@@ -7,7 +7,6 @@ interface IController {
     address LPToken;
     address provider;
     address underlying;
-    uint256 uScale; // uScale of protocol LP Token
   }
 
   struct UniswapParams {
@@ -24,8 +23,7 @@ interface IController {
     address provider,
     address protocolLPToken,
     address underlying,
-    address govToken,
-    uint256 _uScale
+    address govToken
   ) external returns (uint256);
 
   function getProtocolInfo(
