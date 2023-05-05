@@ -55,7 +55,7 @@ describe('Testing Vault, unit test', async () => {
 
     // blacklist compound_usdc_01
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
-    await vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number);
+    await vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
@@ -78,7 +78,7 @@ describe('Testing Vault, unit test', async () => {
   it('Should not be able to withdraw from protocol when !blacklisted', async function () {
     const { vault, guardian } = await setupVault();
     await expect(
-      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number),
+      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0),
     ).to.be.revertedWith('!Blacklisted');
   });
 

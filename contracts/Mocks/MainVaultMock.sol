@@ -120,13 +120,14 @@ contract MainVaultMock is MainVault {
   function swapTokensMultiTest(
     uint256 _amount,
     uint256 _deadline,
+    uint256 _minAmountOut,
     address _tokenIn,
     address _tokenOut,
     bool _rewardsSwap
   ) external returns (uint256) {
     return
       Swap.swapTokensMulti(
-        Swap.SwapInOut(_amount, _deadline, nativeToken, _tokenIn, _tokenOut),
+        Swap.SwapInOut(_amount, _deadline, _minAmountOut, nativeToken, _tokenIn, _tokenOut),
         controller.getUniswapParams(),
         _rewardsSwap
       );
@@ -135,11 +136,12 @@ contract MainVaultMock is MainVault {
   function swapMinAmountOutMultiTest(
     uint256 _amount,
     uint256 _deadline,
+    uint256 _minAmountOut,
     address _tokenIn,
     address _tokenOut
   ) external {
     uint256 minAmountOut = Swap.amountOutMultiSwap(
-      Swap.SwapInOut(_amount, _deadline, nativeToken, _tokenIn, _tokenOut),
+      Swap.SwapInOut(_amount, _deadline, _minAmountOut, nativeToken, _tokenIn, _tokenOut),
       controller.getUniswapQuoter(),
       controller.getUniswapPoolFee()
     );
