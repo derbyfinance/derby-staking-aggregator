@@ -13,6 +13,8 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -356,6 +358,7 @@ contract Game is ERC721, ReentrancyGuard {
 
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
+    setBasketRebalancingPeriod(_basketId, vaultNumber);
   }
 
   /// @notice Checks if the basket is allowed to be rebalanced.
@@ -413,7 +416,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 currentRebalancingPeriod = vaults[vaultNum].rebalancingPeriod;
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
-    if (currentRebalancingPeriod <= lastRebalancingPeriod) return;
+    require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
 
     for (uint k = 0; k < chainIds.length; k++) {
       uint32 chain = chainIds[k];
@@ -443,8 +446,6 @@ contract Game is ERC721, ReentrancyGuard {
           allocation;
       }
     }
-
-    setBasketRebalancingPeriod(_basketId, vaultNum);
   }
 
   /// @notice Internal helper to lock or unlock tokens from the game contract
