@@ -15,6 +15,7 @@ contract XChainController {
     uint256 totalUnderlying;
     uint256 totalSupply;
     uint256 totalWithdrawalRequests;
+    uint256 decimals;
     // (chainId => bool): true == off // false == on
     mapping(uint32 => bool) chainIdOff;
     // (chainId => currentAllocation)
@@ -283,7 +284,7 @@ contract XChainController {
   /// @param _chain Chain id of the vault where the funds need to be sent
   function pushVaultAmounts(
     uint256 _vaultNumber,
-    uint16 _chain
+    uint32 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
@@ -292,7 +293,7 @@ contract XChainController {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
     uint256 totalSupply = getTotalSupply(_vaultNumber);
 
-    uint256 decimals = xProvider.getDecimals(vault);
+    uint256 decimals = vaults[_vaultNumber].decimals;
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
     uint256 amountToChain = calcAmountToChain(
@@ -550,6 +551,13 @@ contract XChainController {
   ) external onlyDao {
     vaults[_vaultNumber].vaultChainAddress[_chainId] = _address;
     vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
+  }
+
+  /// @notice Set the decimals for a specific vault.
+  /// @param _vaultNumber The number of the vault.
+  /// @param _decimals The number of decimals for the specified vault.
+  function setVaultDecimals(uint256 _vaultNumber, uint256 _decimals) external onlyDao {
+    vaults[_vaultNumber].decimals = _decimals;
   }
 
   /// @notice Setter for xProvider address
