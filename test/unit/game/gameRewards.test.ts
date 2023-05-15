@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
-import { parseEther, parseUnits } from '@testhelp/helpers';
+import { parseEther as pE, parseUnits } from '@testhelp/helpers';
 import { setupGame } from './setup';
 
 describe('Testing Game Rewards', async () => {
@@ -10,10 +10,10 @@ describe('Testing Game Rewards', async () => {
     const { game, derbyToken, vault, user, guardian, vaultNumber, basketId } = await setupGame();
 
     let allocations = [
-      [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
-      [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
+      [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
+      [pE('100'), pE('0'), pE('200'), pE('100'), pE('200')], // 600
     ];
-    const totalAllocations = parseEther('1000');
+    const totalAllocations = pE('1000');
 
     /*
      Setup negative rewards
@@ -32,55 +32,37 @@ describe('Testing Game Rewards', async () => {
     // This rebalance should be skipped for the basket
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [
-        parseEther(2_000),
-        parseEther(1_000),
-        parseEther(500),
-        parseEther(100),
-        0,
-      ]),
+      game.mockRewards(vaultNumber, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
-        parseEther(-4_000),
-        parseEther(-2_000),
-        parseEther(1_000),
-        parseEther(200),
-        parseEther(100),
+        pE(-4_000),
+        pE(-2_000),
+        pE(1_000),
+        pE(200),
+        pE(100),
       ]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [
-        parseEther(-2_000),
-        parseEther(-1_000),
-        parseEther(500),
-        parseEther(100),
-        0,
-      ]),
+      game.mockRewards(vaultNumber, chainIds[0], [pE(-2_000), pE(-1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
-        parseEther(-4_000),
-        parseEther(-2_000),
-        parseEther(1_000),
-        parseEther(200),
-        parseEther(100),
+        pE(-4_000),
+        pE(-2_000),
+        pE(1_000),
+        pE(200),
+        pE(100),
       ]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [
-        parseEther(-2_000),
-        parseEther(-1_000),
-        parseEther(500),
-        parseEther(100),
-        0,
-      ]),
+      game.mockRewards(vaultNumber, chainIds[0], [pE(-2_000), pE(-1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
-        parseEther(-4_000),
-        parseEther(-2_000),
-        parseEther(1_000),
-        parseEther(200),
-        parseEther(100),
+        pE(-4_000),
+        pE(-2_000),
+        pE(1_000),
+        pE(200),
+        pE(100),
       ]),
     ]);
 
@@ -88,6 +70,7 @@ describe('Testing Game Rewards', async () => {
       [0, 0, 0, 0, 0], // 400
       [0, 0, 0, 0, 0], // 600
     ];
+
     await game.connect(user).rebalanceBasket(basketId, emptyAllocations);
 
     // simulating negative rewards
@@ -100,14 +83,17 @@ describe('Testing Game Rewards', async () => {
     */
 
     const newAllocations = [
-      [parseEther('-200'), 0, 0, parseEther('-200'), 0], // 400
-      [parseEther('-100'), 0, parseEther('-200'), parseEther('-100'), parseEther('-200')], // 600
+      [pE('-200'), 0, 0, pE('-200'), 0], // 400
+      [pE('-100'), 0, pE('-200'), pE('-100'), pE('-200')], // 600
     ];
+
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
 
     // user should get allocation of 1k tokens back minus the negativeReward * 50%
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, newAllocations),
-    ).to.changeTokenBalance(derbyToken, user, parseEther('1000').sub(1_080_000 * 0.5));
+    ).to.changeTokenBalance(derbyToken, user, pE('1000').sub(1_080_000 * 0.5));
 
     // unredeemedRewards should be 0
     rewards = await game.connect(user).basketUnredeemedRewards(basketId);
@@ -122,10 +108,10 @@ describe('Testing Game Rewards', async () => {
     const { game, derbyToken, vault, user, guardian, vaultNumber, basketId } = await setupGame();
 
     let allocations = [
-      [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
-      [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
+      [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
+      [pE('100'), pE('0'), pE('200'), pE('100'), pE('200')], // 600
     ];
-    const totalAllocations = parseEther('1000');
+    const totalAllocations = pE('1000');
 
     /*
      Setup negative rewards
@@ -168,7 +154,7 @@ describe('Testing Game Rewards', async () => {
 
     // simulating negative rewards
     let rewards = await game.connect(user).basketUnredeemedRewards(basketId);
-    expect(rewards).to.be.equal(parseEther('-3000'));
+    expect(rewards).to.be.equal(pE('-3000'));
 
     /*
      settle negative rewards when withdrawing all allocations
@@ -176,21 +162,23 @@ describe('Testing Game Rewards', async () => {
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
-      [parseEther('-100'), 0, 0, 0, 0],
+      [pE('-100'), 0, 0, 0, 0],
     ];
 
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     // user should 0 tokens back, cause they are all burned (higher negative rewards then unlockedTokens)
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, newAllocations),
-    ).to.changeTokenBalance(derbyToken, user, parseEther('0'));
+    ).to.changeTokenBalance(derbyToken, user, pE('0'));
 
     // unredeemedRewards should be -3000 + (100 / 0,5)
     // 100 tokens unlocked / burned at factor of 0,5
     rewards = await game.connect(user).basketUnredeemedRewards(basketId);
-    expect(rewards).to.be.equal(parseEther('-2800'));
+    expect(rewards).to.be.equal(pE('-2800'));
 
     // Vault should receive all the unlocked tokens
     const balance = await derbyToken.balanceOf(vault.address);
-    expect(balance).to.be.equal(parseEther('100'));
+    expect(balance).to.be.equal(pE('100'));
   });
 });
