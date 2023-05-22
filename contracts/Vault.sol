@@ -42,12 +42,12 @@ contract Vault is ReentrancyGuard {
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
-  uint256 public performanceFee;
+  uint256 public performanceFee; // percentage
   uint256 public rebalancingPeriod;
   uint256 public uScale;
   int256 public marginScale;
 
-  // used in storePriceAndRewards
+  // used in storePriceAndRewards, must be equal to DerbyToken.decimals()
   uint256 public BASE_SCALE = 1e18;
 
   // UNIX timestamp
@@ -60,7 +60,7 @@ contract Vault is ReentrancyGuard {
   // total amount of funds the vault reserved for users that made a withdrawalRequest
   uint256 internal reservedFunds;
 
-  // total number of allocated Derby tokens currently
+  // total number of allocated Derby tokens currently (in derbytoken.decimals())
   uint256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
@@ -75,10 +75,10 @@ contract Vault is ReentrancyGuard {
 
   // historical reward per protocol per token, formula: TVL * yield * perfFee / totalLockedTokens
   // (rebalancingPeriod => protocolId => rewardPerLockedToken)
-  mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken;
+  mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken; // in BASE_SCALE * vaultCurrency.decimals() nr of decimals
 
   // (protocolNumber => lastPrice): last price of underlying protocol vault
-  mapping(uint256 => uint256) public lastPrices;
+  mapping(uint256 => uint256) public lastPrices; // in protocol.LPToken.decimals()
 
   modifier onlyDao() {
     require(msg.sender == dao, "Vault: only DAO");
@@ -231,7 +231,7 @@ contract Vault is ReentrancyGuard {
   /// @dev formula yield protocol i at time t: y(it) = (P(it) - P(it-1)) / P(it-1).
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t
-  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault.
+  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals()).
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
@@ -239,7 +239,7 @@ contract Vault is ReentrancyGuard {
       return;
     }
 
-    uint256 currentPrice = price(_protocolId);
+    uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = currentPrice;
       return;
