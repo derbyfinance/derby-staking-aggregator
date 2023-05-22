@@ -696,7 +696,7 @@ describe('Testing full integration test', async () => {
     it('Should not be able to withdraw rewards from vault before next rebalance', async function () {
       const { user } = gameUsers[0];
       await expect(
-        vaults[0].vault.connect(user).withdrawRewards(getSwapDeadline()),
+        vaults[0].vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
       ).to.be.revertedWith('!Funds');
     });
   });
@@ -995,7 +995,7 @@ describe('Testing full integration test', async () => {
       const { vault } = vaults[0];
 
       const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
-      await vault.connect(user).withdrawRewards(getSwapDeadline());
+      await vault.connect(user).withdrawRewards(getSwapDeadline(), 0);
       const balanceAfter = formatUSDC(await IUSDc.balanceOf(user.address));
 
       expect(balanceAfter - balanceBefore).to.be.closeTo(totalExpectedRewards / 1e6, 5);
