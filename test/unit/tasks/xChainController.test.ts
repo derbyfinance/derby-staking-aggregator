@@ -133,7 +133,6 @@ describe('Testing xController tasks', () => {
     const vaultnumber = random(100);
     const chainid = random(50_000);
     const vaultAddress = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
-    const underlying = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
 
     await run('xcontroller_set_vault_chain_address', {
       vaultnumber,

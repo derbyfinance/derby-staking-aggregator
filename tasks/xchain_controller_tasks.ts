@@ -108,14 +108,10 @@ task('xcontroller_set_vault_chain_address', 'Set Vault address and underlying fo
   .addParam('vaultnumber', 'Number of the vault', null, types.int)
   .addParam('chainid', 'Number of chain used', null, types.int)
   .addParam('address', 'Address of the Vault')
-  .addParam('underlying', 'Underlying of the Vault eg USDC')
-  .addParam('decimals', 'Number of chain used', null, types.int)
-  .setAction(async ({ vaultnumber, chainid, address, underlying, decimals }, hre) => {
+  .setAction(async ({ vaultnumber, chainid, address }, hre) => {
     const xcontroller = await getXController(hre);
     const dao = await getDao(hre);
-    await xcontroller
-      .connect(dao)
-      .setVaultChainAddress(vaultnumber, chainid, address, underlying, decimals);
+    await xcontroller.connect(dao).setVaultChainAddress(vaultnumber, chainid, address);
   });
 
 task('xcontroller_set_vault_decimals', 'Set Vault decimals')
