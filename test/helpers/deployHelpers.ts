@@ -89,7 +89,6 @@ type IDeployVaultConfig = {
   decimals: number;
   vaultNumber: number;
   vaultCurrency: string;
-  uScale: number;
   nativeToken: string;
 };
 

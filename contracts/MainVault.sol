@@ -57,17 +57,16 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
     address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken)
   {
-    exchangeRate = _uScale;
+    exchangeRate = 10 ** decimals();
     game = _game;
     governanceFee = 0;
     maxDivergenceWithdraws = 1_000_000;
-    minimumDeposit = 100 * uScale;
+    minimumDeposit = 100 * 10 ** decimals();
   }
 
   modifier onlyXProvider() {

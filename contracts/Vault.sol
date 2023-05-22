@@ -44,7 +44,6 @@ contract Vault is ReentrancyGuard {
   uint256 public liquidityPerc;
   uint256 public performanceFee;
   uint256 public rebalancingPeriod;
-  uint256 public uScale;
   int256 public marginScale;
 
   // UNIX timestamp
@@ -92,7 +91,6 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
     address _nativeToken
   ) {
     controller = IController(_controller);
@@ -100,7 +98,6 @@ contract Vault is ReentrancyGuard {
 
     vaultNumber = _vaultNumber;
     dao = _dao;
-    uScale = _uScale;
     lastTimeStamp = block.timestamp;
     nativeToken = _nativeToken;
   }
@@ -511,7 +508,7 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
   /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
-  /// @dev Take into account the uScale (scale of the underlying).
+  /// @dev Take into account the scale of the underlying.
   /// @param _marginScale Value at which to set the marginScale.
   function setMarginScale(int256 _marginScale) external onlyGuardian {
     marginScale = _marginScale;
