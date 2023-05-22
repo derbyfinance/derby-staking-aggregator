@@ -293,6 +293,7 @@ contract XChainController {
     uint256 totalSupply = getTotalSupply(_vaultNumber);
 
     uint256 decimals = xProvider.getDecimals(vault);
+    // newExchangeRate always expressed in #decimals equal to the #decimals from the vaultCurrency
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
     uint256 amountToChain = calcAmountToChain(
@@ -349,7 +350,7 @@ contract XChainController {
   /// @dev if the xChainController needs to deposit, the amount will be 0 so the vault knows it will receive currency
   /// @param _amountDeposit Amount the vault will receive from the xChainController
   /// @param _amountToWithdraw Amount the vault will have to send back to the xChainController
-  /// @param _exchangeRate New exchangerate for vaults
+  /// @param _exchangeRate New exchangerate for vaults (always expressed in #decimals equal to the #decimals from the vaultCurrency)
   function sendXChainAmount(
     uint256 _vaultNumber,
     uint32 _chainId,

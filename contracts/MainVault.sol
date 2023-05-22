@@ -31,7 +31,7 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-  uint256 public exchangeRate;
+  uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
   uint32 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
