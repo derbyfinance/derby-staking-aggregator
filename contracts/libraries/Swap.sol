@@ -20,6 +20,7 @@ library Swap {
   struct SwapInOut {
     uint256 amount;
     uint256 deadline;
+    uint256 amountOutMin;
     address nativeToken;
     address tokenIn;
     address tokenOut;
@@ -48,7 +49,8 @@ library Swap {
     );
 
     uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
-    if (_rewardSwap && balanceBefore > amountOutMinimum) return amountOutMinimum;
+    if (_rewardSwap && balanceBefore > amountOutMinimum && balanceBefore > _swap.amountOutMin)
+      return amountOutMinimum;
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: abi.encodePacked(
@@ -61,7 +63,7 @@ library Swap {
       recipient: address(this),
       deadline: _swap.deadline,
       amountIn: _swap.amount,
-      amountOutMinimum: amountOutMinimum
+      amountOutMinimum: _swap.amountOutMin
     });
 
     ISwapRouter(_uniswap.router).exactInput(params);

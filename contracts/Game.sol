@@ -13,6 +13,8 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -24,9 +26,9 @@ contract Game is ERC721, ReentrancyGuard {
     // nr of total allocated tokens
     int256 nrOfAllocatedTokens;
     // total build up rewards
-    int256 totalUnRedeemedRewards; // Scaled by BASE_SCALE of 1e18
+    int256 totalUnRedeemedRewards; // In vaultCurrency.decimals() * BASE_SCALE of 1e18
     // total redeemed rewards
-    int256 totalRedeemedRewards;
+    int256 totalRedeemedRewards; // In vaultCurrency.decimals() * BASE_SCALE of 1e18
     // (basket => vaultNumber => chainId => allocation)
     mapping(uint256 => mapping(uint256 => int256)) allocations;
   }
@@ -43,6 +45,7 @@ contract Game is ERC721, ReentrancyGuard {
     // (chainId => protocolNumber => deltaAllocation)
     mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     // (chainId => rebalancing period => protocol id => rewardPerLockedToken).
+    // in BASE_SCALE (same as DerbyToken.decimals()) * vaultCurrency.decimals() nr of decimals
     mapping(uint32 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
@@ -259,7 +262,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-  /// @return int256 Total unredeemed rewards.
+  /// @return int256 Total unredeemed rewards. (in vaultCurrency.decimals())
   function basketUnredeemedRewards(
     uint256 _basketId
   ) external view onlyBasketOwner(_basketId) returns (int256) {
@@ -414,7 +417,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 currentRebalancingPeriod = vaults[vaultNum].rebalancingPeriod;
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
-    if (currentRebalancingPeriod <= lastRebalancingPeriod) return;
+    require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
 
     for (uint k = 0; k < chainIds.length; k++) {
       uint32 chain = chainIds[k];

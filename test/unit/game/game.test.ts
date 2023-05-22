@@ -1,6 +1,12 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatEther, getSwapDeadline, parseEther, parseUSDC } from '@testhelp/helpers';
+import {
+  erc20,
+  formatEther,
+  getSwapDeadline,
+  parseEther as pE,
+  parseUSDC,
+} from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
@@ -44,7 +50,7 @@ describe('Testing Game', async () => {
 
     expect(await derbyToken.name()).to.be.equal(name);
     expect(await derbyToken.symbol()).to.be.equal(symbol);
-    expect(await derbyToken.totalSupply()).to.be.equal(parseEther(totalSupply.toString()));
+    expect(await derbyToken.totalSupply()).to.be.equal(pE(totalSupply.toString()));
   });
 
   it('game should have DerbyToken contract addresses set', async function () {
@@ -122,6 +128,8 @@ describe('Testing Game', async () => {
     ];
 
     // blacklisting protocol, user should still be able to unlock the tokens
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
 
     await expect(() =>
@@ -160,9 +168,9 @@ describe('Testing Game', async () => {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
 
-    await expect(
-      game.rebalanceBoth(vaultNumber, 100, { value: parseEther('0.2') }),
-    ).to.be.revertedWith('Cannot call functions in the same block');
+    await expect(game.rebalanceBoth(vaultNumber, 100, { value: pE('0.2') })).to.be.revertedWith(
+      'Cannot call functions in the same block',
+    );
     // chainIds = [10, 100, 1000];
     await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
@@ -256,12 +264,12 @@ describe('Testing Game', async () => {
     expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
 
     // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
-    await vault.connect(user).withdrawRewards(getSwapDeadline());
+    await vault.connect(user).withdrawRewards(getSwapDeadline(), 0);
     const balance = formatEther(await IUniswap.balanceOf(userAddr));
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards(getSwapDeadline())).to.be.revertedWith(
+    await expect(vault.connect(user).withdrawRewards(getSwapDeadline(), 0)).to.be.revertedWith(
       '!Allowance',
     );
 
@@ -291,7 +299,7 @@ describe('Testing Game', async () => {
     expect(await vault.getReservedFundsTEST()).to.be.equal(4_240_000);
 
     await expect(() =>
-      vault.connect(user).withdrawRewards(getSwapDeadline()),
+      vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
     ).to.changeTokenBalance(IUSDc, user, 4_240_000);
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
@@ -308,10 +316,10 @@ export async function mockRewards(
   chainIds: BigNumberish[],
 ) {
   let allocations = [
-    [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
-    [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
+    [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
+    [pE('100'), pE('0'), pE('200'), pE('100'), pE('200')], // 600
   ];
-  const totalAllocations = parseEther('1000');
+  const totalAllocations = pE('1000');
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
@@ -326,55 +334,19 @@ export async function mockRewards(
   // all rewards have to be scaled by 1e18
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(500),
-      parseEther(100),
-      0,
-    ]),
-    game.mockRewards(vaultNum, chainIds[1], [
-      parseEther(4_000),
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(200),
-      parseEther(100),
-    ]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(500),
-      parseEther(100),
-      0,
-    ]),
-    game.mockRewards(vaultNum, chainIds[1], [
-      parseEther(4_000),
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(200),
-      parseEther(100),
-    ]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(500),
-      parseEther(100),
-      0,
-    ]),
-    game.mockRewards(vaultNum, chainIds[1], [
-      parseEther(4_000),
-      parseEther(2_000),
-      parseEther(1_000),
-      parseEther(200),
-      parseEther(100),
-    ]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 }
