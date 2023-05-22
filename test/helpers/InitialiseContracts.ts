@@ -73,6 +73,7 @@ export async function addVaultsToXController(
     xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address),
     xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address),
     xController.connect(dao).setVaultUnderlying(vaultNumber, usdc),
+    xController.connect(dao).setVaultDecimals(vaultNumber, 6),
   ]);
 }
 

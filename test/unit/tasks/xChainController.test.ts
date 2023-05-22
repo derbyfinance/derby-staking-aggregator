@@ -133,7 +133,6 @@ describe('Testing xController tasks', () => {
     const vaultnumber = random(100);
     const chainid = random(50_000);
     const vaultAddress = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
-    const underlying = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
 
     await run('xcontroller_set_vault_chain_address', {
       vaultnumber,
@@ -155,6 +154,18 @@ describe('Testing xController tasks', () => {
     });
 
     expect(await xController.getUnderlyingAddressTEST(vaultnumber)).to.be.equal(underlying);
+  });
+
+  it('xcontroller_set_vault_chain_address', async function () {
+    const { xController } = await setupXController();
+    const vaultnumber = random(100);
+
+    await run('xcontroller_set_vault_decimals', {
+      vaultnumber,
+      decimals: 6,
+    });
+
+    expect(await xController.getVaultDecimalsTEST(vaultnumber)).to.be.equal(6);
   });
 
   it('xcontroller_set_homexprovider', async function () {
