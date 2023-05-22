@@ -96,9 +96,9 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
-  /// @param _amount Amount to deposit
+  /// @param _amount Amount to deposit, expressed in vaultcurrency and vaultcurrency.decimals()
   /// @param _receiver Receiving adress for the tokens
-  /// @return shares Tokens received by buyer
+  /// @return shares Tokens received by buyer, expressed in LPtoken and LPtoken.decimals()
   function deposit(
     uint256 _amount,
     address _receiver
@@ -123,9 +123,9 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw from Vault
   /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
-  /// @param _amount Amount to withdraw in LP tokens
+  /// @param _amount Amount to withdraw in LP tokens, expressed in LPtoken and LPtoken.decimals()
   /// @param _receiver Receiving adress for the vaultcurrency
-  /// @return value Amount received by seller in vaultCurrency
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
   function withdraw(
     uint256 _amount,
     address _receiver,
@@ -143,7 +143,8 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP token
+  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
   function withdrawalRequest(
     uint256 _amount
   ) external nonReentrant onlyWhenIdle returns (uint256 value) {
@@ -161,6 +162,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.withdrawalAllowance > 0, allowanceError);

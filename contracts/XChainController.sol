@@ -406,7 +406,7 @@ contract XChainController {
     if (amountToDeposit > 0) {
       address underlying = getUnderlyingAddress(_vaultNumber, _chain);
 
-      amountToDeposit = xProvider.calculateEstimatedAmount(amountToDeposit);
+      amountToDeposit = xProvider.calculateEstimatedAmount(amountToDeposit); // in vaultCurrency.decimals()
 
       uint256 balance = IERC20(underlying).balanceOf(address(this));
       if (amountToDeposit > balance) amountToDeposit = balance;
