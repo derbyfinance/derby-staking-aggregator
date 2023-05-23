@@ -76,7 +76,7 @@ contract Game is ERC721, ReentrancyGuard {
   int256 internal negativeRewardThreshold;
   // percentage of tokens that will be sold at negative rewards
   uint256 internal negativeRewardFactor;
-  // price of vaultCurrency / derbyToken
+  // vaultNumber => tokenPrice || price of vaultCurrency / derbyToken
   mapping(uint256 => uint256) public tokenPrice;
 
   // used to scale rewards
@@ -329,10 +329,10 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _unlockedTokens
   ) internal returns (uint256) {
-    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
-    if (unredeemedRewards > negativeRewardThreshold) return 0;
+    if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
+    uint256 tokensToBurn = ((uint(-baskets[_basketId].totalUnRedeemedRewards) *
+      negativeRewardFactor) / tokenPrice[baskets[_basketId].vaultNumber]) * 100;
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
     baskets[_basketId].totalUnRedeemedRewards += int(
