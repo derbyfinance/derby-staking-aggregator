@@ -15,6 +15,8 @@ contract XChainController {
     uint256 totalUnderlying;
     uint256 totalSupply;
     uint256 totalWithdrawalRequests;
+    uint256 decimals;
+    address vaultUnderlyingAddress;
     // (chainId => bool): true == off // false == on
     mapping(uint32 => bool) chainIdOff;
     // (chainId => currentAllocation)
@@ -23,8 +25,6 @@ contract XChainController {
     mapping(uint32 => uint256) totalUnderlyingPerChain;
     // (chainId => vaultAddress)
     mapping(uint32 => address) vaultChainAddress;
-    // (chainId => underlyingAddress): e.g USDC
-    mapping(uint32 => address) vaultUnderlyingAddress;
     // (chainId => totalWithdrawalRequests): total withdrawal requests in LP Token
     mapping(uint32 => uint256) withdrawalRequests;
     // (chainId => amountToDeposit)
@@ -283,7 +283,7 @@ contract XChainController {
   /// @param _chain Chain id of the vault where the funds need to be sent
   function pushVaultAmounts(
     uint256 _vaultNumber,
-    uint16 _chain
+    uint32 _chain
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
@@ -292,8 +292,7 @@ contract XChainController {
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
     uint256 totalSupply = getTotalSupply(_vaultNumber);
 
-    uint256 decimals = xProvider.getDecimals(vault);
-    // newExchangeRate always expressed in #decimals equal to the #decimals from the vaultCurrency
+    uint256 decimals = vaults[_vaultNumber].decimals;
     uint256 newExchangeRate = (totalUnderlying * (10 ** decimals)) / totalSupply;
 
     uint256 amountToChain = calcAmountToChain(
@@ -404,7 +403,7 @@ contract XChainController {
     uint256 amountToDeposit = getAmountToDeposit(_vaultNumber, _chain);
 
     if (amountToDeposit > 0) {
-      address underlying = getUnderlyingAddress(_vaultNumber, _chain);
+      address underlying = getUnderlyingAddress(_vaultNumber);
 
       amountToDeposit = xProvider.calculateEstimatedAmount(amountToDeposit); // in vaultCurrency.decimals()
 
@@ -458,12 +457,9 @@ contract XChainController {
     return vaults[_vaultNumber].vaultChainAddress[_chainId];
   }
 
-  /// @notice Helper to get underyling address of vaultNumber with given chainID eg USDC
-  function getUnderlyingAddress(
-    uint256 _vaultNumber,
-    uint32 _chainId
-  ) internal view returns (address) {
-    return vaults[_vaultNumber].vaultUnderlyingAddress[_chainId];
+  /// @notice Helper to get underyling address of vaultNumber eg USDC
+  function getUnderlyingAddress(uint256 _vaultNumber) internal view returns (address) {
+    return vaults[_vaultNumber].vaultUnderlyingAddress;
   }
 
   /// @notice Helper to get current allocation per chain of vaultNumber with given chainID
@@ -542,15 +538,26 @@ contract XChainController {
   /// @param _vaultNumber number of Vault
   /// @param _chainId Number of chain used
   /// @param _address address of the Vault
-  /// @param _underlying underlying of the Vault eg USDC
   function setVaultChainAddress(
     uint256 _vaultNumber,
     uint32 _chainId,
-    address _address,
-    address _underlying
+    address _address
   ) external onlyDao {
     vaults[_vaultNumber].vaultChainAddress[_chainId] = _address;
-    vaults[_vaultNumber].vaultUnderlyingAddress[_chainId] = _underlying;
+  }
+
+  /// @notice Set the underlying address for a specific vault and chain ID.
+  /// @param _vaultNumber The number of the vault.
+  /// @param _underlying The address of the underlying asset (e.g., USDC) for the specified vault on homechain
+  function setVaultUnderlying(uint256 _vaultNumber, address _underlying) external onlyDao {
+    vaults[_vaultNumber].vaultUnderlyingAddress = _underlying;
+  }
+
+  /// @notice Set the decimals for a specific vault.
+  /// @param _vaultNumber The number of the vault.
+  /// @param _decimals The number of decimals for the specified vault.
+  function setVaultDecimals(uint256 _vaultNumber, uint256 _decimals) external onlyDao {
+    vaults[_vaultNumber].decimals = _decimals;
   }
 
   /// @notice Setter for xProvider address

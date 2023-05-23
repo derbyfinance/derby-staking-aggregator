@@ -68,10 +68,12 @@ export async function addVaultsToXController(
   const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
 
   await Promise.all([
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address, usdc),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address),
+    xController.connect(dao).setVaultUnderlying(vaultNumber, usdc),
+    xController.connect(dao).setVaultDecimals(vaultNumber, 6),
   ]);
 }
 

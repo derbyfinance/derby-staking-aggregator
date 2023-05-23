@@ -209,7 +209,8 @@ contract MainVault is Vault, VaultToken {
   /// @param _deadline Timestamp after which the transaction is considered invalid
   /// @return value The amount of reward withdrawn by the user
   function withdrawRewards(
-    uint256 _deadline
+    uint256 _deadline,
+    uint256 _minAmountOut
   ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
@@ -224,7 +225,14 @@ contract MainVault is Vault, VaultToken {
 
     if (swapRewards) {
       uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(value, _deadline, nativeToken, address(vaultCurrency), derbyToken),
+        Swap.SwapInOut(
+          value,
+          _deadline,
+          _minAmountOut,
+          nativeToken,
+          address(vaultCurrency),
+          derbyToken
+        ),
         controller.getUniswapParams(),
         true
       );
@@ -254,7 +262,6 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
-    claimTokens();
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
