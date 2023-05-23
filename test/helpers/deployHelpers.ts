@@ -72,6 +72,7 @@ type IDeployGameConfig = {
 type IInitGameConfig = {
   negativeRewardFactor: number;
   negativeRewardThreshold: number;
+  tokenPrice: number;
 };
 
 type IDeployXProviderConfig = {
