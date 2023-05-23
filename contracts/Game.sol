@@ -76,6 +76,8 @@ contract Game is ERC721, ReentrancyGuard {
   int256 internal negativeRewardThreshold;
   // percentage of tokens that will be sold at negative rewards
   uint256 internal negativeRewardFactor;
+  // price of vaultCurrency / derbyToken
+  mapping(uint256 => uint256) public tokenPrice;
 
   // used to scale rewards
   uint256 public BASE_SCALE = 1e18;
@@ -702,6 +704,13 @@ contract Game is ERC721, ReentrancyGuard {
   /*
   Only Guardian functions
   */
+
+  /// @notice Setter for tokenPrice
+  /// @param _vaultNumber Number of the vault
+  /// @param _tokenPrice tokenPrice in vaultCurrency / derbyTokenPrice
+  function setTokenPrice(uint256 _vaultNumber, uint256 _tokenPrice) external onlyGuardian {
+    tokenPrice[_vaultNumber] = _tokenPrice;
+  }
 
   /// @notice setter to link a chainId to a vault address for cross chain functions
   function setVaultAddress(
