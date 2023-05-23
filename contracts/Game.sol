@@ -327,10 +327,10 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _unlockedTokens
   ) internal returns (uint256) {
-    if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
+    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
+    if (unredeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 tokensToBurn = ((uint(-baskets[_basketId].totalUnRedeemedRewards) *
-      negativeRewardFactor) / exchangeRate) * 100;
+    uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
     baskets[_basketId].totalUnRedeemedRewards += int(
