@@ -15,7 +15,7 @@ contract XChainController {
     uint256 totalUnderlying;
     uint256 totalSupply;
     uint256 totalWithdrawalRequests;
-    uint256 decimals;
+    uint256 decimals; // decimals of the LPtoken
     address vaultUnderlyingAddress;
     // (chainId => bool): true == off // false == on
     mapping(uint32 => bool) chainIdOff;

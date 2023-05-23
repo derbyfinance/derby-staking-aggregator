@@ -123,7 +123,7 @@ contract TruefiProvider is IProvider {
   /// @notice Calculates how many shares are equal to the amount
   /// @dev shares = totalsupply * balance / poolvalue
   /// @param _amount Amount in underyling token e.g USDC
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _tToken Address of protocol LP Token
   /// @return number of shares i.e LP tokens
   function calcShares(uint256 _amount, address _tToken) external view override returns (uint256) {
     uint256 shares = (ITruefi(_tToken).totalSupply() * _amount) / ITruefi(_tToken).poolValue();
@@ -132,20 +132,19 @@ contract TruefiProvider is IProvider {
 
   /// @notice Get balance of cToken from address
   /// @param _address Address to request balance from
-  /// @param _tToken Address of protocol LP Token eg cUSDC
+  /// @param _tToken Address of protocol LP Token
   /// @return number of shares i.e LP tokens
   function balance(address _address, address _tToken) public view override returns (uint256) {
     return ITruefi(_tToken).balanceOf(_address);
   }
 
   /// @notice Exchange rate of underyling protocol token
-  /// @dev returned price from compound is scaled by 1e18
-  /// @param _tToken Address of protocol LP Token eg cUSDC
-  /// @return price of LP token
+  /// @param _tToken Address of protocol LP Token
+  /// @return price of LP token in vaultcurrency.decimals()
   function exchangeRate(address _tToken) public view override returns (uint256) {
     uint256 poolValue = ITruefi(_tToken).poolValue();
     uint256 totalSupply = ITruefi(_tToken).totalSupply();
-    return (poolValue * 1E6) / totalSupply;
+    return (poolValue * ITruefi(_tToken).decimals()) / totalSupply;
   }
 
   /// @dev Transfers a specified amount of tokens to a specified vault, used for getting rewards out.

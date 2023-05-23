@@ -175,7 +175,7 @@ contract Vault is ReentrancyGuard {
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),
   /// @dev the performanceFee and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault.
-  /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals())
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number.
   function rebalanceCheckProtocols(
     uint256 _latestId,
@@ -206,7 +206,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Calculates the amount to deposit or withdraw to protocol during a vault rebalance
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @param _protocol Protocol id number
-  /// @return amountToProtocol amount to deposit or withdraw to protocol
+  /// @return amountToProtocol amount to deposit or withdraw to protocol (in vaultCurency.decimals())
   function calcAmountToProtocol(
     uint256 _totalUnderlying,
     uint256 _protocol
