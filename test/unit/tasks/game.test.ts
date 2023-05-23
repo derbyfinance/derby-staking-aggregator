@@ -28,7 +28,7 @@ describe('Testing game tasks', () => {
     const basketId1 = await run('game_mint_basket', { vaultnumber });
     expect(basketId).to.be.equal(0);
     expect(basketId1).to.be.equal(1);
-    expect(await game.tokenPrice(0)).to.be.equal(130000);
+    expect(await game.tokenPrice(10)).to.be.equal(200000);
   });
 
   /*************

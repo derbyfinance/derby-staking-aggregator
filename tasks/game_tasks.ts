@@ -18,7 +18,7 @@ task('game_init', 'Initializes the game')
     await run('game_set_chain_ids', { chainids });
     await run('game_set_xprovider', { provider });
     await run('game_set_home_vault', { vault: homevault });
-    await run('game_set_vault_token_price', { vaultnumber: 0, price: tokenPrice });
+    await run('game_set_vault_token_price', { vaultnumber: 10, price: tokenPrice });
   });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')

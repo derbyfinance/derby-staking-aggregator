@@ -144,7 +144,7 @@ contract TruefiProvider is IProvider {
   function exchangeRate(address _tToken) public view override returns (uint256) {
     uint256 poolValue = ITruefi(_tToken).poolValue();
     uint256 totalSupply = ITruefi(_tToken).totalSupply();
-    return (poolValue * ITruefi(_tToken).decimals()) / totalSupply;
+    return (poolValue * (10 ** ITruefi(_tToken).decimals())) / totalSupply;
   }
 
   /// @dev Transfers a specified amount of tokens to a specified vault, used for getting rewards out.

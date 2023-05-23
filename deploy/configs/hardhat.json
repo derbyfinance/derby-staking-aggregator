@@ -12,7 +12,7 @@
     "init": {
       "negativeRewardFactor": 50,
       "negativeRewardThreshold": -50000,
-      "tokenPrice": 130000
+      "tokenPrice": 200000
     }
   },
   "Controller": {

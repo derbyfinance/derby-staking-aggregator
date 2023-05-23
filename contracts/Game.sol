@@ -13,8 +13,6 @@ import "./Interfaces/IVault.sol";
 import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 
-import "hardhat/console.sol";
-
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -331,12 +329,14 @@ contract Game is ERC721, ReentrancyGuard {
   ) internal returns (uint256) {
     if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 tokensToBurn = ((uint(-baskets[_basketId].totalUnRedeemedRewards) *
-      negativeRewardFactor) / tokenPrice[baskets[_basketId].vaultNumber]) * 100;
+    uint256 unreedemedRewards = uint(-baskets[_basketId].totalUnRedeemedRewards);
+    uint256 price = tokenPrice[baskets[_basketId].vaultNumber];
+
+    uint256 tokensToBurn = (((unreedemedRewards * negativeRewardFactor) / 100) / price);
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
     baskets[_basketId].totalUnRedeemedRewards += int(
-      (tokensToBurn * 100 * BASE_SCALE) / negativeRewardFactor
+      (tokensToBurn * 100 * price) / negativeRewardFactor
     );
 
     IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
