@@ -18,6 +18,8 @@ contract MainVault is Vault, VaultToken {
     uint256 rewardAllowance;
     // rebalancing period the reward request is made
     uint256 rewardRequestPeriod;
+    uint256 depositRequest;
+    uint256 depositRequestPeriod;
   }
 
   address public derbyToken;
@@ -31,6 +33,8 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
+  uint256 internal totalDepositRequests;
+
   uint256 public exchangeRate;
   uint32 public homeChain;
   uint256 public amountToSendXChain;
@@ -39,6 +43,7 @@ contract MainVault is Vault, VaultToken {
   uint256 public minimumDeposit;
 
   string internal allowanceError = "!Allowance";
+  string internal noFundsError = "No funds";
 
   // (userAddress => userInfo struct)
   mapping(address => UserInfo) internal userInfo;
@@ -98,13 +103,8 @@ contract MainVault is Vault, VaultToken {
   /// @notice Deposit in Vault
   /// @dev Deposit VaultCurrency to Vault and mint LP tokens
   /// @param _amount Amount to deposit
-  /// @param _receiver Receiving adress for the tokens
-  /// @return shares Tokens received by buyer
-  function deposit(
-    uint256 _amount,
-    address _receiver
-  ) external nonReentrant onlyWhenIdle returns (uint256 shares) {
-    require(_amount >= minimumDeposit, "Minimum deposit amount");
+  function deposit(uint256 _amount) external nonReentrant onlyWhenIdle {
+    require(_amount >= minimumDeposit, "Minimum deposit");
 
     if (training) {
       require(whitelist[msg.sender]);
@@ -117,9 +117,25 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = (amount * (10 ** decimals())) / exchangeRate;
+    userInfo[msg.sender].depositRequest += amount;
+    userInfo[msg.sender].depositRequestPeriod = rebalancingPeriod;
+    totalDepositRequests += amount;
+    // shares = (amount * (10 ** decimals())) / exchangeRate;
 
-    _mint(_receiver, shares);
+    // _mint(_receiver, shares);
+  }
+
+  function redeemDeposit() external nonReentrant onlyWhenIdle returns (uint256 shares) {
+    UserInfo storage user = userInfo[msg.sender];
+    require(user.depositRequest > 0, allowanceError);
+    require(rebalancingPeriod > user.depositRequestPeriod, noFundsError);
+
+    shares = (user.depositRequest * (10 ** decimals())) / exchangeRate;
+
+    delete user.depositRequest;
+    delete user.depositRequestPeriod;
+
+    _mint(msg.sender, shares);
   }
 
   /// @notice Withdraw from Vault
@@ -136,7 +152,7 @@ contract MainVault is Vault, VaultToken {
 
     require(value > 0, "!value");
 
-    require(getVaultBalance() - reservedFunds >= value, "!funds");
+    require(getVaultBalance() - reservedFunds >= value, noFundsError);
 
     _burn(msg.sender, _amount);
     transferFunds(_receiver, value);
@@ -165,7 +181,7 @@ contract MainVault is Vault, VaultToken {
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.withdrawalAllowance > 0, allowanceError);
-    require(rebalancingPeriod > user.withdrawalRequestPeriod, "Funds not arrived");
+    require(rebalancingPeriod > user.withdrawalRequestPeriod, noFundsError);
 
     value = user.withdrawalAllowance;
     value = IXProvider(xProvider).calculateEstimatedAmount(value);
@@ -213,7 +229,7 @@ contract MainVault is Vault, VaultToken {
   ) external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
-    require(rebalancingPeriod > user.rewardRequestPeriod, "!Funds");
+    require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
 
     value = user.rewardAllowance;
     value = checkForBalance(value);
@@ -392,6 +408,12 @@ contract MainVault is Vault, VaultToken {
   /// @notice Returns the rewards the user is able to withdraw
   function getRewardAllowance() external view returns (uint256) {
     return userInfo[msg.sender].rewardAllowance;
+  }
+
+  /// @notice Get the deposit request for a specific user.
+  /// @return The deposit request of the user in vaultCurrency.
+  function getDepositRequest() external view returns (uint256) {
+    return userInfo[msg.sender].depositRequest;
   }
 
   /*

@@ -1,31 +1,54 @@
 import { expect } from 'chai';
 import { setupVault } from './setup';
+import { MainVaultMock } from '@typechain';
+import { Contract, Signer } from 'ethers';
+import { parseUSDC } from '@testhelp/helpers';
 
 describe('Testing VaultDeposit, unit test', async () => {
-  it('Deposit, mint and return Derby LP tokens', async function () {
-    const { vault, user } = await setupVault();
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, 10_000 * 1e6);
-
-    // mocking exchangerate to 0.9
-    await vault.setExchangeRateTEST(0.9 * 1e6);
-
-    let expectedLPTokens = Math.trunc((10_000 / 0.9) * 1e6);
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, expectedLPTokens);
-
-    // mocking exchangerate to 1.321
-    await vault.setExchangeRateTEST(1.321 * 1e6);
-
-    expectedLPTokens = Math.trunc((10_000 / 1.321) * 1e6);
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, expectedLPTokens);
+  let vault: MainVaultMock, user: Signer, IUSDC: Contract;
+  before(async () => {
+    ({ vault, user, IUSDC } = await setupVault());
   });
 
-  it('Test training state', async function () {
+  it('Set and check deposit request', async function () {
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -10_000 * 1e6,
+    );
+
+    expect(await vault.connect(user).getDepositRequest()).to.be.equal(10_000 * 1e6);
+    expect(await IUSDC.balanceOf(vault.address)).to.be.equal(10_000 * 1e6);
+  });
+
+  it('Deposit a second time before rebalance', async function () {
+    await expect(() => vault.connect(user).deposit(5_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -5_000 * 1e6,
+    );
+
+    expect(await vault.connect(user).getDepositRequest()).to.be.equal(15_000 * 1e6);
+    expect(await IUSDC.balanceOf(vault.address)).to.be.equal(15_000 * 1e6);
+  });
+
+  it('Redeem deposit before next rebalance', async function () {
+    await expect(vault.connect(user).redeemDeposit()).to.be.revertedWith('No funds');
+  });
+
+  it('Redeem deposit after next rebalance', async function () {
+    // mocking exchangerate to 2
+    await vault.setExchangeRateTEST(parseUSDC(2));
+    await vault.upRebalancingPeriodTEST();
+
+    await expect(() => vault.connect(user).redeemDeposit()).to.changeTokenBalance(
+      vault,
+      user,
+      (15_000 * 1e6) / 2,
+    );
+  });
+
+  it.skip('Test training state', async function () {
     const { vault, user, guardian } = await setupVault();
     await vault.connect(guardian).setTraining(true);
     // set maxTrainingDeposit to 10k

@@ -1,7 +1,7 @@
 import { deployments, run } from 'hardhat';
-import { transferAndApproveUSDC } from '@testhelp/helpers';
+import { erc20, transferAndApproveUSDC } from '@testhelp/helpers';
 import { Controller, MainVaultMock, XProvider } from '@typechain';
-import { allProtocols, compoundUSDC } from '@testhelp/addresses';
+import { allProtocols, compoundUSDC, usdc } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { AddAllVaultsToProviders } from '@testhelp/InitialiseContracts';
@@ -19,6 +19,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
 
   const vaultNumber = 10;
   const contract = 'TestVault1';
+  const IUSDC = erc20(usdc);
   const [dao, user, guardian] = await getAllSigners(hre);
 
   const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
@@ -37,12 +38,12 @@ export const setupVault = deployments.createFixture(async (hre) => {
     lptoken: compoundUSDC,
     bool: true,
   });
-  await run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
-    await run('vault_set_liquidity_perc', { contract, percentage: 10 });
+  await run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address });
+  await run('vault_set_liquidity_perc', { contract, percentage: 10 });
   // add all protocol vaults to controller
   for (const protocol of allProtocols.values()) {
     await protocol.addProtocolToController(controller, dao, vaultNumber, allProviders);
   }
 
-  return { vault, controller, dao, user, guardian, contract };
+  return { vault, controller, dao, user, guardian, contract, IUSDC };
 });
