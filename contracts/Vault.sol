@@ -322,7 +322,6 @@ contract Vault is ReentrancyGuard {
       _protocolNum
     );
 
-    _amount = (_amount * protocol.uScale) / uScale;
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
 
@@ -356,10 +355,10 @@ contract Vault is ReentrancyGuard {
       vaultNumber,
       _protocolNum
     );
-    uint256 underlyingBalance = (IProvider(protocol.provider).balanceUnderlying(
+    uint256 underlyingBalance = IProvider(protocol.provider).balanceUnderlying(
       address(this),
       protocol.LPToken
-    ) * uScale) / protocol.uScale;
+    );
     return underlyingBalance;
   }
 
@@ -372,10 +371,7 @@ contract Vault is ReentrancyGuard {
       vaultNumber,
       _protocolNum
     );
-    uint256 shares = IProvider(protocol.provider).calcShares(
-      (_amount * protocol.uScale) / uScale,
-      protocol.LPToken
-    );
+    uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
 
     return shares;
   }

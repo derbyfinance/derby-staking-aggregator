@@ -28,14 +28,12 @@ describe('Testing controller tasks', () => {
       protocoltoken: yearnUSDC,
       underlying: usdc,
       govtoken: yearn,
-      uscale: 1e6,
     });
 
     const protocolInfo = await controller.getProtocolInfo(vaultNumber, protocolNumber);
     expect(protocolInfo.LPToken.toLowerCase()).to.be.equal(yearnUSDC.toLowerCase());
     expect(protocolInfo.provider.toLowerCase()).to.be.equal(providerAddress.toLowerCase());
     expect(protocolInfo.underlying.toLowerCase()).to.be.equal(usdc.toLowerCase());
-    expect(protocolInfo.uScale).to.be.equal(1e6);
   });
 
   it('controller_add_vault', async function () {
