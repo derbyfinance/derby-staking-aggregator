@@ -7,14 +7,7 @@ import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { AddAllVaultsToProviders } from '@testhelp/InitialiseContracts';
 
 export const setupVault = deployments.createFixture(async (hre) => {
-  const providers = [
-    'AaveProvider',
-    'BetaProvider',
-    'CompoundProvider',
-    'IdleProvider',
-    'TruefiProvider',
-    'YearnProvider',
-  ];
+  const providers = ['CompoundProvider', 'IdleProvider', 'TruefiProvider', 'YearnProvider'];
   await deployments.fixture(['TestVault1', 'XProviderMain', ...providers]);
 
   const vaultNumber = 10;

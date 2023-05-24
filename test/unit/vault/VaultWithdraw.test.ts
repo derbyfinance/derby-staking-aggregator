@@ -9,7 +9,6 @@ describe('Testing VaultWithdraw, unit test', async () => {
   const IUSDc: Contract = erc20(usdc);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   it('Should be able to withdraw LP tokens from vault balance', async function () {
@@ -46,7 +45,6 @@ describe('Testing VaultWithdraw, unit test', async () => {
 
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40 * 1e6),
-      aaveVault.setDeltaAllocation(vault, 60 * 1e6),
       yearnVault.setDeltaAllocation(vault, 20 * 1e6),
     ]);
 
