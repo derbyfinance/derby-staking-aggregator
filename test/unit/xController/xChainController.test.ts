@@ -134,12 +134,20 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('3) Trigger vaults to push totalUnderlyings to xChainController', async function () {
-    await vault1.connect(user).deposit(100_000 * 1e6, userAddr);
-    await vault2.connect(user).deposit(200_000 * 1e6, userAddr);
-    await vault4.connect(user).deposit(10_000 * 1e6, userAddr);
+    await vault1.connect(user).deposit(100_000 * 1e6);
+    await vault2.connect(user).deposit(200_000 * 1e6);
+    await vault4.connect(user).deposit(10_000 * 1e6);
 
-    await vault2.upRebalancingPeriodTEST();
-    await vault4.upRebalancingPeriodTEST();
+    await Promise.all([
+      vault1.upRebalancingPeriodTEST(),
+      vault2.upRebalancingPeriodTEST(),
+      vault4.upRebalancingPeriodTEST(),
+    ]);
+    await Promise.all([
+      vault1.connect(user).redeemDeposit(),
+      vault2.connect(user).redeemDeposit(),
+      vault4.connect(user).redeemDeposit(),
+    ]);
     await vault2.setExchangeRateTEST(1.2 * 1e6);
     await vault4.setExchangeRateTEST(1.2 * 1e6);
     await vault2.connect(user).withdrawalRequest(50_000 * 1e6);
@@ -149,10 +157,12 @@ describe('Testing XChainController, integration test', async () => {
       vault1.pushTotalUnderlyingToController({ value: parseEther('0.01') }),
     ).to.be.revertedWith('Minimum msg value');
 
-    await vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') });
-    await vault2.pushTotalUnderlyingToController({ value: parseEther('0') });
-    await vault3.pushTotalUnderlyingToController({ value: parseEther('0.1') });
-    await vault4.pushTotalUnderlyingToController({ value: parseEther('0.1') });
+    await Promise.all([
+      vault1.pushTotalUnderlyingToController({ value: parseEther('0.1') }),
+      vault2.pushTotalUnderlyingToController({ value: parseEther('0') }),
+      vault3.pushTotalUnderlyingToController({ value: parseEther('0.1') }),
+      vault4.pushTotalUnderlyingToController({ value: parseEther('0.1') }),
+    ]);
 
     expect(await xChainController.getTotalSupplyTEST(vaultNumber)).to.be.equal(250_000 * 1e6);
     expect(await xChainController.getWithdrawalRequestsTEST(vaultNumber, 100)).to.be.equal(

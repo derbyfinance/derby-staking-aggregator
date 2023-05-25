@@ -190,8 +190,11 @@ describe('Testing XChainController, unit test for manual execution', async () =>
   });
 
   it('Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController', async function () {
-    await vault1.connect(user).deposit(400_000 * 1e6, userAddr);
-    await vault2.connect(user).deposit(1000 * 1e6, userAddr);
+    await vault1.connect(user).deposit(400_000 * 1e6);
+    await vault2.connect(user).deposit(1000 * 1e6);
+
+    await Promise.all([vault1.upRebalancingPeriodTEST(), vault2.upRebalancingPeriodTEST()]);
+    await Promise.all([vault1.connect(user).redeemDeposit(), vault2.connect(user).redeemDeposit()]);
 
     await expect(vault1.pushTotalUnderlyingToController())
       .to.emit(vault1, 'PushTotalUnderlying')

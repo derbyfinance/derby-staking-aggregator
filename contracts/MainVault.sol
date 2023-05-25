@@ -33,7 +33,6 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-  uint256 internal totalDepositRequests;
 
   uint256 public exchangeRate;
   uint32 public homeChain;
@@ -100,16 +99,19 @@ contract MainVault is Vault, VaultToken {
   event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
   event PushedRewardsToGame(uint256 _vaultNumber, uint32 _chain, int256[] _rewards);
 
-  /// @notice Deposit in Vault
-  /// @dev Deposit VaultCurrency to Vault and mint LP tokens
-  /// @param _amount Amount to deposit
+  /// @notice Enables a user to make a deposit into the Vault.
+  /// @dev This function allows a user to deposit an amount greater than or equal to the minimum deposit,
+  /// transfers the deposited amount from the user to the Vault, and records the deposit request.
+  /// If the training mode is active, the function checks if the user is whitelisted and the deposit doesn't exceed the max training deposit.
+  /// @param _amount The amount that the user wants to deposit.
   function deposit(uint256 _amount) external nonReentrant onlyWhenIdle {
+    UserInfo storage user = userInfo[msg.sender];
+
     require(_amount >= minimumDeposit, "Minimum deposit");
 
     if (training) {
       require(whitelist[msg.sender]);
-      uint256 balanceSender = (balanceOf(msg.sender) * exchangeRate) / (10 ** decimals());
-      require(_amount + balanceSender <= maxTrainingDeposit);
+      require(user.depositRequest + _amount <= maxTrainingDeposit);
     }
 
     uint256 balanceBefore = getVaultBalance();
@@ -117,20 +119,24 @@ contract MainVault is Vault, VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    userInfo[msg.sender].depositRequest += amount;
-    userInfo[msg.sender].depositRequestPeriod = rebalancingPeriod;
-    totalDepositRequests += amount;
-    // shares = (amount * (10 ** decimals())) / exchangeRate;
-
-    // _mint(_receiver, shares);
+    user.depositRequest += amount;
+    user.depositRequestPeriod = rebalancingPeriod;
   }
 
+  /// @notice Redeems the pending deposit requests for the calling user.
+  /// @dev This function allows a user to redeem their deposit requests and receive shares.
+  /// This can only be done if a deposit request has been made and the current rebalancing period is greater than
+  /// the period in which the deposit request was made.
+  /// The function will mint new shares in exchange for the deposit and update the user's deposit request status.
+  /// @return shares The number of shares minted in exchange for the deposit.
   function redeemDeposit() external nonReentrant onlyWhenIdle returns (uint256 shares) {
     UserInfo storage user = userInfo[msg.sender];
-    require(user.depositRequest > 0, allowanceError);
+    uint256 depositRequest = user.depositRequest;
+
+    require(depositRequest > 0, allowanceError);
     require(rebalancingPeriod > user.depositRequestPeriod, noFundsError);
 
-    shares = (user.depositRequest * (10 ** decimals())) / exchangeRate;
+    shares = (depositRequest * (10 ** decimals())) / exchangeRate;
 
     delete user.depositRequest;
     delete user.depositRequestPeriod;
@@ -138,24 +144,17 @@ contract MainVault is Vault, VaultToken {
     _mint(msg.sender, shares);
   }
 
-  /// @notice Withdraw from Vault
-  /// @dev Withdraw VaultCurrency from Vault and burn LP tokens
-  /// @param _amount Amount to withdraw in LP tokens
-  /// @param _receiver Receiving adress for the vaultcurrency
-  /// @return value Amount received by seller in vaultCurrency
-  function withdraw(
-    uint256 _amount,
-    address _receiver,
-    address _owner
-  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
-    value = (_amount * exchangeRate) / (10 ** decimals());
+  /// @notice Cancel the deposit request for the caller.
+  function cancelDepositRequest() external nonReentrant onlyWhenIdle {
+    UserInfo storage user = userInfo[msg.sender];
+    uint256 depositRequest = user.depositRequest;
 
-    require(value > 0, "!value");
+    require(depositRequest > 0, allowanceError);
 
-    require(getVaultBalance() - reservedFunds >= value, noFundsError);
+    delete user.depositRequest;
+    delete user.depositRequestPeriod;
 
-    _burn(msg.sender, _amount);
-    transferFunds(_receiver, value);
+    vaultCurrency.safeTransfer(msg.sender, depositRequest);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available

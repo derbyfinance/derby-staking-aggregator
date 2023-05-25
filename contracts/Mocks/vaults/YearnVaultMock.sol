@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../../VaultToken.sol";
 
-import "hardhat/console.sol";
-
 contract YearnVaultMock is VaultToken {
   using SafeERC20 for IERC20;
 
