@@ -8,9 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../Interfaces/IController.sol";
 
 import "../Interfaces/ExternalInterfaces/ISwapRouter.sol";
-import "../Interfaces/ExternalInterfaces/IUniswapV3Factory.sol";
-import "../Interfaces/ExternalInterfaces/IUniswapV3Pool.sol";
-import "../Interfaces/ExternalInterfaces/IStableSwap3Pool.sol";
 import "../Interfaces/ExternalInterfaces/IWETH.sol";
 import "../Interfaces/ExternalInterfaces/IQuoter.sol";
 

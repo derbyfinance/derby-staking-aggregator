@@ -30,7 +30,7 @@ describe('Testing XChainController, unit test', async () => {
   it('Testing vault rebalanceXChain', async function () {
     // Rebalancing the vault for setup funds in protocols
     await vault.setDeltaAllocationsReceivedTEST(true);
-    await vault.connect(user).deposit(amountUSDC, user.address);
+    await vault.connect(user).deposit(amountUSDC);
 
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40),
