@@ -20,14 +20,7 @@ const chainids = [10, 100];
 
 export const setupIntegration = async () => {
   const { run, deployments } = hre;
-  const providers = [
-    'AaveProvider',
-    'BetaProvider',
-    'CompoundProvider',
-    'IdleProvider',
-    'TruefiProvider',
-    'YearnProvider',
-  ];
+  const providers = ['CompoundProvider', 'IdleProvider', 'TruefiProvider', 'YearnProvider'];
 
   await deployments.fixture([
     'XChainControllerMock',

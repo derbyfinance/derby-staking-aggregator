@@ -1,23 +1,16 @@
 import { expect } from 'chai';
 import { deployments, run } from 'hardhat';
-import {
-  deployAaveProviderMock,
-  deployCompoundProviderMock,
-  deployYearnProviderMock,
-} from '@testhelp/deployMocks';
+import { deployCompoundProviderMock, deployYearnProviderMock } from '@testhelp/deployMocks';
 import {
   usdc,
   yearn as yearnGov,
   compToken as compGov,
-  aave as aaveGov,
   compoundUSDC,
   yearnUSDC,
-  aaveUSDC,
 } from '@testhelp/addresses';
 import { addStarterProtocols } from '@testhelp/helpers';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { Controller } from '@typechain';
-import { AddAllVaultsToProviders } from '@testhelp/InitialiseContracts';
 
 const vaultNumber = 4;
 
@@ -30,17 +23,15 @@ describe('Testing controller', async () => {
     await run('controller_init');
     await run('controller_add_vault', { vault: vault.address });
 
-    const [yearnProviderMock, compoundProviderMock, aaveProviderMock] = await Promise.all([
+    const [yearnProviderMock, compoundProviderMock] = await Promise.all([
       deployYearnProviderMock(deployer),
       deployCompoundProviderMock(deployer),
-      deployAaveProviderMock(deployer),
     ]);
 
-    const [yearnNumber, compNumber, aaveNumber] = await addStarterProtocols(
+    const [yearnNumber, compNumber] = await addStarterProtocols(
       {
         yearn: yearnProviderMock.address,
         compound: compoundProviderMock.address,
-        aave: aaveProviderMock.address,
       },
       vaultNumber,
     );
@@ -50,68 +41,51 @@ describe('Testing controller', async () => {
       vault,
       yearnProviderMock,
       compoundProviderMock,
-      aaveProviderMock,
       yearnNumber,
       compNumber,
-      aaveNumber,
     };
   });
 
   it('Should correctly set controller mappings for the protocol names', async function () {
-    const { controller, yearnNumber, compNumber, aaveNumber } = await setupController();
-    const [yearn, compound, aave] = await Promise.all([
+    const { controller, yearnNumber, compNumber } = await setupController();
+    const [yearn, compound] = await Promise.all([
       controller.protocolNames(vaultNumber, yearnNumber),
       controller.protocolNames(vaultNumber, compNumber),
-      controller.protocolNames(vaultNumber, aaveNumber),
     ]);
 
     expect(yearn).to.be.equal('yearn_usdc_01');
     expect(compound).to.be.equal('compound_usdc_01');
-    expect(aave).to.be.equal('aave_usdc_01');
   });
 
   it('Should correctly set controller mappings for the protocol provider, LPtoken, underlying', async function () {
-    const {
-      controller,
-      yearnProviderMock,
-      compoundProviderMock,
-      aaveProviderMock,
-      yearnNumber,
-      compNumber,
-      aaveNumber,
-    } = await setupController();
+    const { controller, yearnProviderMock, compoundProviderMock, yearnNumber, compNumber } =
+      await setupController();
 
-    const [yearn, compound, aave] = await Promise.all([
+    const [yearn, compound] = await Promise.all([
       controller.getProtocolInfo(vaultNumber, yearnNumber),
       controller.getProtocolInfo(vaultNumber, compNumber),
-      controller.getProtocolInfo(vaultNumber, aaveNumber),
     ]);
 
     expect(yearn.provider).to.be.equal(yearnProviderMock.address);
     expect(compound.provider).to.be.equal(compoundProviderMock.address);
-    expect(aave.provider).to.be.equal(aaveProviderMock.address);
 
     expect(yearn.LPToken).to.be.equal(yearnUSDC);
     expect(compound.LPToken).to.be.equal(compoundUSDC);
-    expect(aave.LPToken).to.be.equal(aaveUSDC);
 
     expect(yearn.underlying).to.be.equal(usdc);
     expect(compound.underlying).to.be.equal(usdc);
-    expect(aave.underlying).to.be.equal(usdc);
   });
 
   it('Should correctly set governance tokens', async function () {
-    const { controller, yearnNumber, compNumber, aaveNumber } = await setupController();
+    const { controller, yearnNumber, compNumber } = await setupController();
 
-    const [yearn, compound, aave] = await Promise.all([
+    const [yearn, compound] = await Promise.all([
       controller.getGovToken(vaultNumber, yearnNumber),
       controller.getGovToken(vaultNumber, compNumber),
-      controller.getGovToken(vaultNumber, aaveNumber),
     ]);
 
     expect(yearn).to.be.equal(yearnGov);
     expect(compound).to.be.equal(compGov);
-    expect(aave).to.be.equal(aaveGov);
   });
 
   it('Should correctly set protocol blacklist', async function () {

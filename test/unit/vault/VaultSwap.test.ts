@@ -18,7 +18,6 @@ import {
   compToken,
   CompWhale,
   yearn_usdc_01,
-  aave_usdc_01,
   compound_usdc_01,
 } from '@testhelp/addresses';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
@@ -30,11 +29,9 @@ describe('Testing VaultSwap, unit test', async () => {
 
   const protocols = new Map<string, ProtocolVault>()
     .set('compound_usdc_01', compound_usdc_01)
-    .set('aave_usdc_01', aave_usdc_01)
     .set('yearn_usdc_01', yearn_usdc_01);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   it('Claim function in vault should claim COMP and sell for more then minAmountOut in USDC', async function () {
@@ -42,7 +39,6 @@ describe('Testing VaultSwap, unit test', async () => {
     await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 60),
-      aaveVault.setDeltaAllocation(vault, 0),
       yearnVault.setDeltaAllocation(vault, 0),
     ]);
 
