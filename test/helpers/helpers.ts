@@ -113,7 +113,6 @@ export const controllerAddProtocol = async (
   protocolToken: string,
   protocolUnderlying: string,
   govToken: string,
-  uScale: string,
 ) => {
   const tx = await controller.addProtocol(
     name,
@@ -122,7 +121,6 @@ export const controllerAddProtocol = async (
     protocolToken,
     protocolUnderlying,
     govToken,
-    uScale,
   );
   const receipt = await tx.wait();
   const { protocolNumber } = receipt.events![0].args as Result;

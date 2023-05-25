@@ -499,7 +499,7 @@ contract XProvider is IXReceiver {
 
   /// @notice Calculates the estimated amount after accounting for connextRouterFee and slippage.
   /// @dev This function computes the estimated amount by subtracting the percentage fees from the input amount.
-  /// @param _amount The initial amount to be transferred.
+  /// @param _amount The initial amount to be transferred, in vaultcurrency.decimals().
   /// @return estAmount The estimated amount after accounting for connextRouterFee and slippage.
   function calculateEstimatedAmount(uint256 _amount) public view returns (uint256) {
     uint256 estAmount = _amount -

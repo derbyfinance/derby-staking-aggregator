@@ -21,13 +21,14 @@ describe('Testing game tasks', () => {
   const random = (max: number) => Math.floor(Math.random() * max);
 
   it('game_mint_basket', async function () {
-    await setupGame();
+    const { game } = await setupGame();
     const vaultnumber = random(100);
 
     const basketId = await run('game_mint_basket', { vaultnumber });
     const basketId1 = await run('game_mint_basket', { vaultnumber });
     expect(basketId).to.be.equal(0);
     expect(basketId1).to.be.equal(1);
+    expect(await game.tokenPrice(10)).to.be.equal(200000);
   });
 
   /*************
