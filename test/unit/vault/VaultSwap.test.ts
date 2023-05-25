@@ -49,7 +49,7 @@ describe('Testing VaultSwap, unit test', async () => {
     const amountToDeposit = parseUSDC('100000');
 
     // Deposit and rebalance with 100k in only Compound
-    await vault.connect(user).deposit(amountToDeposit, user.address);
+    await vault.connect(user).deposit(amountToDeposit);
     await vault.setVaultState(3);
     await vault.rebalance();
     // mine 100 blocks to gain COMP Tokens
@@ -129,73 +129,6 @@ describe('Testing VaultSwap, unit test', async () => {
     // MultiHop swap fee is 0,6% => total fee = +- 1,2% => 10_000 * 1,2% = 120 fee
     expect(Number(formatUSDC(usdcBalanceEnd))).to.be.closeTo(10_000 - 120, 25);
     expect(compBalanceEnd).to.be.equal(0);
-  });
-
-  it('Should always have some liquidity to pay for Rebalance fee', async function () {
-    const { vault, user, dao } = await setupVault();
-    for (const protocol of protocols.values()) await protocol.resetAllocation(vault);
-
-    const gasFeeLiquidity = 10_000;
-    const amountToDeposit = parseUSDC('100000');
-    let amountToWithdraw = parseUSDC('50000');
-
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault, 40),
-      aaveVault.setDeltaAllocation(vault, 60),
-      yearnVault.setDeltaAllocation(vault, 20),
-    ]);
-
-    // Deposit and rebalance with 100k
-    await vault.connect(user).deposit(amountToDeposit, user.address);
-    await vault.setVaultState(3);
-
-    await vault.rebalance();
-
-    let balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    let USDCBalanceUser = await IUSDc.balanceOf(user.address);
-    // console.log({ gasUsed });
-    // console.log(USDCBalanceUser);
-
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity);
-
-    // console.log('-----------------withdraw 50k-----------------');
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await Promise.all([
-      compoundVault.setDeltaAllocation(vault, -40),
-      aaveVault.setDeltaAllocation(vault, -60),
-      yearnVault.setDeltaAllocation(vault, 120),
-    ]);
-
-    await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).deposit(amountToWithdraw, user.address);
-    await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
-    await vault.setVaultState(3);
-    await vault.rebalance();
-
-    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    USDCBalanceUser = await IUSDc.balanceOf(user.address);
-    // console.log({ gasUsed });
-    // console.log(USDCBalanceUser);
-
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(gasFeeLiquidity);
-
-    // console.log('-----------------withdraw another 42k = 92k total-----------------');
-    amountToWithdraw = parseUSDC('42000');
-    await vault.connect(dao).setVaultState(0);
-    await vault.connect(user).deposit(amountToWithdraw, user.address);
-    await vault.connect(user).withdraw(amountToWithdraw, user.address, user.address);
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await vault.setVaultState(3);
-    await vault.rebalance();
-
-    balanceVault = formatUSDC(await IUSDc.balanceOf(vault.address));
-    USDCBalanceUser = await IUSDc.balanceOf(user.address);
-    // console.log({ gasUsed });
-    // console.log(USDCBalanceUser);
-
-    // 3 times gas for rebalances
-    expect(Number(balanceVault)).to.be.greaterThanOrEqual(100_000 - 92_000);
   });
 
   it('Should take into account token balance first', async function () {

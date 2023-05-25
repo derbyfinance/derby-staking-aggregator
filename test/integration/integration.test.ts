@@ -208,11 +208,14 @@ describe('Testing full integration test', async () => {
     it('Deposit funds in vault 1 and 2 for all 3 vault users', async function () {
       for (const { user, vault, depositAmount } of vaultUsers) {
         const expectedLPTokens = depositAmount; // exchangeRate is 1
-        const userAddr = await user.getAddress();
 
-        await expect(() =>
-          vault.connect(user).deposit(depositAmount, userAddr),
-        ).to.changeTokenBalance(vault, user, expectedLPTokens);
+        await vault.connect(user).deposit(depositAmount);
+        await vault.upRebalancingPeriodTEST(),
+          await expect(() => vault.connect(user).redeemDeposit()).to.changeTokenBalance(
+            vault,
+            user,
+            expectedLPTokens,
+          );
       }
     });
   });
@@ -697,7 +700,7 @@ describe('Testing full integration test', async () => {
       const { user } = gameUsers[0];
       await expect(
         vaults[0].vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
-      ).to.be.revertedWith('!Funds');
+      ).to.be.revertedWith('No funds');
     });
   });
 
