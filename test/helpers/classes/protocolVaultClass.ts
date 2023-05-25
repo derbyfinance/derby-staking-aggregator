@@ -121,7 +121,6 @@ export class ProtocolVault {
         this.protocolToken,
         this.underlyingToken,
         this.govToken,
-        (10 ** this.decimals).toString(),
       );
     const receipt = await tx.wait();
     const { protocolNumber } = receipt.events![0].args as Result;

@@ -94,7 +94,7 @@ export const compound_usdc_01 = new ProtocolVault({
   protocolToken: compoundUSDC,
   underlyingToken: usdc,
   govToken: compToken,
-  decimals: 6,
+  decimals: 8,
   chainId: 1,
 });
 export const compound_dai_01 = new ProtocolVault({
@@ -102,7 +102,7 @@ export const compound_dai_01 = new ProtocolVault({
   protocolToken: compoundDAI,
   underlyingToken: dai,
   govToken: compToken,
-  decimals: 18,
+  decimals: 8,
   chainId: 1,
 });
 export const compound_usdt_01 = new ProtocolVault({
@@ -110,7 +110,7 @@ export const compound_usdt_01 = new ProtocolVault({
   protocolToken: compoundUSDT,
   underlyingToken: usdt,
   govToken: compToken,
-  decimals: 6,
+  decimals: 8,
   chainId: 1,
 });
 export const aave_usdc_01 = new ProtocolVault({

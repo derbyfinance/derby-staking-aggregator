@@ -44,21 +44,18 @@ task('controller_add_protocol', 'Add protocol to controller')
   .addParam('protocoltoken', 'Address of protocolToken eg cUSDC')
   .addParam('underlying', 'Address of underlying protocol vault eg USDC')
   .addParam('govtoken', 'Address governance token of the protocol')
-  .addParam('uscale', 'Underlying scale of the protocol', 0, types.int)
-  .setAction(
-    async ({ name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale }, hre) => {
-      const { controller, dao } = await getController(hre);
+  .setAction(async ({ name, vaultnumber, provider, protocoltoken, underlying, govtoken }, hre) => {
+    const { controller, dao } = await getController(hre);
 
-      const tx = await controller
-        .connect(dao)
-        .addProtocol(name, vaultnumber, provider, protocoltoken, underlying, govtoken, uscale);
+    const tx = await controller
+      .connect(dao)
+      .addProtocol(name, vaultnumber, provider, protocoltoken, underlying, govtoken);
 
-      const receipt = await tx.wait();
-      const { protocolNumber } = receipt.events![0].args as Result;
+    const receipt = await tx.wait();
+    const { protocolNumber } = receipt.events![0].args as Result;
 
-      return protocolNumber;
-    },
-  );
+    return protocolNumber;
+  });
 
 task('controller_add_vault', 'Add vault to controller whitelist')
   .addParam('vault', 'Address of the vault')

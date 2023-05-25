@@ -111,23 +111,23 @@ contract CompoundProvider is IProvider {
 
   /// @notice Get balance from address in underlying token
   /// @param _address Address to request balance from, most likely a Vault
-  /// @param _cToken Address of protocol LP Token eg cUSDC
+  /// @param _cToken Address of protocol LP Token eg cUSDC (only works if _cToken.decimals() = 8)
   /// @return balance in underlying token
   function balanceUnderlying(
     address _address,
     address _cToken
   ) public view override returns (uint256) {
-    uint256 balanceShares = balance(_address, _cToken);
-    uint256 price = exchangeRate(_cToken);
+    uint256 balanceShares = balance(_address, _cToken); // decimals = 8
+    uint256 price = exchangeRate(_cToken); // decimals = 10 + vaultCurrency.decimals
 
     return (balanceShares * price) / 1e18;
   }
 
   /// @notice Calculates how many shares are equal to the amount
   /// @dev returned price from compound is scaled https://compound.finance/docs/ctokens#exchange-rate
-  /// @param _amount Amount in underyling token e.g USDC
+  /// @param _amount Amount in underyling token e.g USDC (decimals = vaultCurrency.decimals)
   /// @param _cToken Address of protocol LP Token eg cUSDC
-  /// @return number of shares i.e LP tokens
+  /// @return number of shares i.e LP tokens (decimals = 8)
   function calcShares(uint256 _amount, address _cToken) external view override returns (uint256) {
     uint256 shares = (_amount * 1e18) / exchangeRate(_cToken);
     return shares;
@@ -136,7 +136,7 @@ contract CompoundProvider is IProvider {
   /// @notice Get balance of cToken from address
   /// @param _address Address to request balance from
   /// @param _cToken Address of protocol LP Token eg cUSDC
-  /// @return number of shares i.e LP tokens
+  /// @return number of shares i.e LP tokens (decimals = 8)
   function balance(address _address, address _cToken) public view override returns (uint256) {
     uint256 _balanceShares = ICToken(_cToken).balanceOf(_address);
     return _balanceShares;
@@ -145,7 +145,7 @@ contract CompoundProvider is IProvider {
   /// @notice Exchange rate of underyling protocol token
   /// @dev returned price from compound is scaled https://compound.finance/docs/ctokens#exchange-rate
   /// @param _cToken Address of protocol LP Token eg cUSDC
-  /// @return price of LP token
+  /// @return price of LP token (decimals = 10 + vaultCurrency.decimals)
   function exchangeRate(address _cToken) public view override returns (uint256) {
     uint256 _price = ICToken(_cToken).exchangeRateStored();
     return _price;

@@ -60,13 +60,13 @@ describe('Testing Idle provider', async () => {
       const shares = await provider.calcShares(amount, iUSDC);
 
       const iUSDCBalance = await provider.balance(user.address, iUSDC);
-      expect(formatEther(iUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
+      expect(formatUSDC(iUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
     });
 
     it('Should calculate balance underlying correctly', async () => {
       const balanceUnderlying = await provider.balanceUnderlying(user.address, iUSDC);
 
-      expect(formatEther(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
     });
 
     it('Should be able to withdraw', async () => {
