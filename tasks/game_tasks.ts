@@ -11,13 +11,14 @@ task('game_init', 'Initializes the game')
     const initConfig = await getInitConfigGame(network.name);
     if (!initConfig) throw 'Unknown contract name';
 
-    const { negativeRewardThreshold, negativeRewardFactor } = initConfig;
+    const { negativeRewardThreshold, negativeRewardFactor, tokenPrice } = initConfig;
 
     await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
     await run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold });
     await run('game_set_chain_ids', { chainids });
     await run('game_set_xprovider', { provider });
     await run('game_set_home_vault', { vault: homevault });
+    await run('game_set_vault_token_price', { vaultnumber: 10, price: tokenPrice });
   });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
@@ -52,6 +53,15 @@ task('game_trigger_step_6', 'Game pushes deltaAllocations to vaults')
 /*************
 Only Guardian
 **************/
+
+task('game_set_vault_token_price', 'Set tokenPrice in vaultCurrency / derbyTokenPrice')
+  .addParam('vaultnumber', 'Number of the vault', null, types.int)
+  .addParam('price', 'tokenPrice in vaultCurrency / derbyTokenPrice', null, types.int)
+  .setAction(async ({ vaultnumber, price }, hre) => {
+    const game = await getGame(hre);
+    const guardian = await getGuardian(hre);
+    await game.connect(guardian).setTokenPrice(vaultnumber, price);
+  });
 
 task('game_set_vault_address', 'Link a chainId to a vault address for cross chain functions')
   .addParam('vaultnumber', 'Number of the vault', null, types.int)

@@ -18,7 +18,9 @@ contract MainVault is Vault, VaultToken {
     uint256 rewardAllowance;
     // rebalancing period the reward request is made
     uint256 rewardRequestPeriod;
+    // amount in vaultCurrency for the deposit request of the user
     uint256 depositRequest;
+    // rebalancing period the deposit request is made
     uint256 depositRequestPeriod;
   }
 
@@ -33,8 +35,7 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
-
-  uint256 public exchangeRate;
+  uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
   uint32 public homeChain;
   uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
@@ -61,17 +62,16 @@ contract MainVault is Vault, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
     address _nativeToken
   )
     VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _uScale, _nativeToken)
+    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken)
   {
-    exchangeRate = _uScale;
+    exchangeRate = 10 ** decimals();
     game = _game;
     governanceFee = 0;
     maxDivergenceWithdraws = 1_000_000;
-    minimumDeposit = 100 * uScale;
+    minimumDeposit = 100 * 10 ** decimals();
   }
 
   modifier onlyXProvider() {
@@ -159,7 +159,8 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP token
+  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
   function withdrawalRequest(
     uint256 _amount
   ) external nonReentrant onlyWhenIdle returns (uint256 value) {
@@ -177,6 +178,7 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
   function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.withdrawalAllowance > 0, allowanceError);

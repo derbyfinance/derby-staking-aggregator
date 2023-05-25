@@ -26,7 +26,7 @@ contract Game is ERC721, ReentrancyGuard {
     // total build up rewards
     int256 totalUnRedeemedRewards; // In vaultCurrency.decimals() * BASE_SCALE of 1e18
     // total redeemed rewards
-    int256 totalRedeemedRewards; // In vaultCurrency.decimals() * BASE_SCALE of 1e18
+    int256 totalRedeemedRewards; // In vaultCurrency.decimals()
     // (basket => vaultNumber => chainId => allocation)
     mapping(uint256 => mapping(uint256 => int256)) allocations;
   }
@@ -43,7 +43,7 @@ contract Game is ERC721, ReentrancyGuard {
     // (chainId => protocolNumber => deltaAllocation)
     mapping(uint256 => mapping(uint256 => int256)) deltaAllocationProtocol;
     // (chainId => rebalancing period => protocol id => rewardPerLockedToken).
-    // in BASE_SCALE (same as DerbyToken.decimals()) * vaultCurrency.decimals() nr of decimals
+    // in BASE_SCALE * vaultCurrency.decimals() nr of decimals (BASE_SCALE (same as DerbyToken.decimals()))
     mapping(uint32 => mapping(uint256 => mapping(uint256 => int256))) rewardPerLockedToken;
   }
 
@@ -74,6 +74,8 @@ contract Game is ERC721, ReentrancyGuard {
   int256 internal negativeRewardThreshold;
   // percentage of tokens that will be sold at negative rewards
   uint256 internal negativeRewardFactor;
+  // vaultNumber => tokenPrice || price of vaultCurrency / derbyToken
+  mapping(uint256 => uint256) public tokenPrice;
 
   // used to scale rewards
   uint256 public BASE_SCALE = 1e18;
@@ -325,14 +327,16 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _unlockedTokens
   ) internal returns (uint256) {
-    int256 unredeemedRewards = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
-    if (unredeemedRewards > negativeRewardThreshold) return 0;
+    if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
 
-    uint256 tokensToBurn = (uint(-unredeemedRewards) * negativeRewardFactor) / 100;
+    uint256 unreedemedRewards = uint(-baskets[_basketId].totalUnRedeemedRewards);
+    uint256 price = tokenPrice[baskets[_basketId].vaultNumber];
+
+    uint256 tokensToBurn = (((unreedemedRewards * negativeRewardFactor) / 100) / price);
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
 
     baskets[_basketId].totalUnRedeemedRewards += int(
-      (tokensToBurn * 100 * BASE_SCALE) / negativeRewardFactor
+      (tokensToBurn * 100 * price) / negativeRewardFactor
     );
 
     IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
@@ -700,6 +704,13 @@ contract Game is ERC721, ReentrancyGuard {
   /*
   Only Guardian functions
   */
+
+  /// @notice Setter for tokenPrice
+  /// @param _vaultNumber Number of the vault
+  /// @param _tokenPrice tokenPrice in vaultCurrency / derbyTokenPrice
+  function setTokenPrice(uint256 _vaultNumber, uint256 _tokenPrice) external onlyGuardian {
+    tokenPrice[_vaultNumber] = _tokenPrice;
+  }
 
   /// @notice setter to link a chainId to a vault address for cross chain functions
   function setVaultAddress(

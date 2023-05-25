@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
-import { parseEther as pE, parseUnits } from '@testhelp/helpers';
+import { parseEther as pE, parseUnits, parseUSDC } from '@testhelp/helpers';
 import { setupGame } from './setup';
 
 describe('Testing Game Rewards', async () => {
@@ -75,7 +75,7 @@ describe('Testing Game Rewards', async () => {
 
     // simulating negative rewards
     let rewards = await game.connect(user).basketUnredeemedRewards(basketId);
-    console.log({ rewards });
+    // console.log({ rewards });
     expect(rewards).to.be.equal(-1_080_000);
 
     /*
@@ -91,9 +91,10 @@ describe('Testing Game Rewards', async () => {
     await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
 
     // user should get allocation of 1k tokens back minus the negativeReward * 50%
+    const expectedTokensToBurn = parseUnits((1_080_000 * 0.5) / 0.2e6, 18);
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, newAllocations),
-    ).to.changeTokenBalance(derbyToken, user, pE('1000').sub(1_080_000 * 0.5));
+    ).to.changeTokenBalance(derbyToken, user, pE('1000').sub(expectedTokensToBurn));
 
     // unredeemedRewards should be 0
     rewards = await game.connect(user).basketUnredeemedRewards(basketId);
@@ -101,7 +102,7 @@ describe('Testing Game Rewards', async () => {
 
     // Vault should receive the tokens off; negativeRewards * factor of 50%
     const balance = await derbyToken.balanceOf(vault.address);
-    expect(balance).to.be.equal(1_080_000 * 0.5);
+    expect(balance).to.be.equal(expectedTokensToBurn);
   });
 
   it('Should settle negative rewards when negative reward are higher then unlocked tokens', async function () {
@@ -131,19 +132,19 @@ describe('Testing Game Rewards', async () => {
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [0, 0, 0, 1000, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-1', 36), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-1', 24), 0, 0, 0, 0]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 36), 0, 0, 0, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 36), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 24), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 24), 0, 0, 0, 0]),
     ]);
 
     await game.upRebalancingPeriod(vaultNumber);
     await Promise.all([
-      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 36), 0, 0, 0, 0]),
-      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 36), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 24), 0, 0, 0, 0]),
+      game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 24), 0, 0, 0, 0]),
     ]);
 
     const emptyAllocations = [
@@ -154,7 +155,8 @@ describe('Testing Game Rewards', async () => {
 
     // simulating negative rewards
     let rewards = await game.connect(user).basketUnredeemedRewards(basketId);
-    expect(rewards).to.be.equal(pE('-3000'));
+    // console.log({ rewards });
+    expect(rewards).to.be.equal(parseUSDC('-3000'));
 
     /*
      settle negative rewards when withdrawing all allocations
@@ -172,10 +174,11 @@ describe('Testing Game Rewards', async () => {
       game.connect(user).rebalanceBasket(basketId, newAllocations),
     ).to.changeTokenBalance(derbyToken, user, pE('0'));
 
-    // unredeemedRewards should be -3000 + (100 / 0,5)
-    // 100 tokens unlocked / burned at factor of 0,5
+    // unredeemedRewards should be -3000 + (100 / 0,5 / 0.2)
+    // 100 tokens unlocked / burned at factor of 0,5 with price of 0.2
     rewards = await game.connect(user).basketUnredeemedRewards(basketId);
-    expect(rewards).to.be.equal(pE('-2800'));
+    // console.log({ rewards });
+    expect(rewards).to.be.equal(parseUSDC('-2960'));
 
     // Vault should receive all the unlocked tokens
     const balance = await derbyToken.balanceOf(vault.address);

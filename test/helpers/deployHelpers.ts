@@ -72,6 +72,7 @@ type IDeployGameConfig = {
 type IInitGameConfig = {
   negativeRewardFactor: number;
   negativeRewardThreshold: number;
+  tokenPrice: number;
 };
 
 type IDeployXProviderConfig = {
@@ -89,7 +90,6 @@ type IDeployVaultConfig = {
   decimals: number;
   vaultNumber: number;
   vaultCurrency: string;
-  uScale: number;
   nativeToken: string;
 };
 

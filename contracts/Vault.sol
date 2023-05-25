@@ -44,7 +44,6 @@ contract Vault is ReentrancyGuard {
   uint256 public liquidityPerc;
   uint256 public performanceFee; // percentage
   uint256 public rebalancingPeriod;
-  uint256 public uScale;
   int256 public marginScale;
 
   // used in storePriceAndRewards, must be equal to DerbyToken.decimals()
@@ -95,7 +94,6 @@ contract Vault is ReentrancyGuard {
     address _dao,
     address _controller,
     address _vaultCurrency,
-    uint256 _uScale,
     address _nativeToken
   ) {
     controller = IController(_controller);
@@ -103,7 +101,6 @@ contract Vault is ReentrancyGuard {
 
     vaultNumber = _vaultNumber;
     dao = _dao;
-    uScale = _uScale;
     lastTimeStamp = block.timestamp;
     nativeToken = _nativeToken;
   }
@@ -178,7 +175,7 @@ contract Vault is ReentrancyGuard {
   /// @dev Loops over all protocols in ETF, calculate new currentAllocation based on deltaAllocation
   /// @dev Also calculate the performance fee here. This is an amount, based on the current TVL (before the rebalance),
   /// @dev the performanceFee and difference between the current exchangeRate and the exchangeRate of the last rebalance of the vault.
-  /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _newTotalUnderlying this will be the new total underlying: Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals())
   /// @return uint256[] with amounts to deposit in protocols, the index being the protocol number.
   function rebalanceCheckProtocols(
     uint256 _latestId,
@@ -209,7 +206,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Calculates the amount to deposit or withdraw to protocol during a vault rebalance
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
   /// @param _protocol Protocol id number
-  /// @return amountToProtocol amount to deposit or withdraw to protocol
+  /// @return amountToProtocol amount to deposit or withdraw to protocol (in vaultCurency.decimals())
   function calcAmountToProtocol(
     uint256 _totalUnderlying,
     uint256 _protocol
@@ -507,7 +504,7 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Set the marginScale, the threshold used for deposits and withdrawals.
   /// @notice If the threshold is not met the deposit/ withdrawal is not executed.
-  /// @dev Take into account the uScale (scale of the underlying).
+  /// @dev Take into account the scale of the underlying.
   /// @param _marginScale Value at which to set the marginScale.
   function setMarginScale(int256 _marginScale) external onlyGuardian {
     marginScale = _marginScale;

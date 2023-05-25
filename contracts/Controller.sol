@@ -104,8 +104,10 @@ contract Controller is IController {
     protocolBlacklist[_vaultNumber][_protocolNum] = true;
   }
 
-  /// @notice Gets the gas price from Chainlink oracle
-  /// @return gasPrice latest gas price from oracle
+  /// @notice Getter for the gov token address
+  /// @param _vaultNumber Number of the vault
+  /// @param _protocolNum Protocol number linked to protocol vault
+  /// @return Protocol gov token address
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address) {
     return protocolGovToken[_vaultNumber][_protocolNum];
   }
