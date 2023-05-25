@@ -5,7 +5,6 @@ import {
   usdc,
   yearn as yearnGov,
   compToken as compGov,
-  aave as aaveGov,
   compoundUSDC,
   yearnUSDC,
 } from '@testhelp/addresses';

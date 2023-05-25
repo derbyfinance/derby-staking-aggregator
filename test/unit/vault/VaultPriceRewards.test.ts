@@ -26,7 +26,6 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
   const compoundVault = protocols.get('compound_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
   const compoundDAIVault = protocols.get('compound_dai_01')!;
-  const aaveUSDTVault = protocols.get('aave_usdt_01')!;
 
   const setupVault = deployments.createFixture(async (hre) => {
     await deployments.fixture(['TestVault1']);

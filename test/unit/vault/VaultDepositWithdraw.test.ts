@@ -7,21 +7,17 @@ import { MainVaultMock } from '@typechain';
 
 describe('Testing Vault, unit test', async () => {
   const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
   const truefiVault = protocols.get('truefi_usdc_01')!;
   const idleVault = protocols.get('idle_usdc_01')!;
-  const betaVault = protocols.get('beta_usdc_01')!;
 
   const amount = 100_000;
 
   const tests = [
     { protocol: compoundVault, priceScale: 18 },
-    { protocol: aaveVault, priceScale: 0 }, // aave price always 1
     { protocol: yearnVault, priceScale: 6 },
     { protocol: truefiVault, priceScale: 6 },
     { protocol: idleVault, priceScale: 18 },
-    { protocol: betaVault, priceScale: 0 }, // beta price always 0
   ];
 
   tests.forEach(({ protocol, priceScale }) => {
