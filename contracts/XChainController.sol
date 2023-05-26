@@ -42,6 +42,7 @@ contract XChainController {
     uint256 fundsReceived; // stage 3
     uint256 fundsSent; // stage 4
     mapping(uint32 => bool) fundsSentToChain;
+    mapping(uint32 => bool) amountSentToChain;
   }
 
   address private dao;
@@ -166,6 +167,7 @@ contract XChainController {
     for (uint256 i = 0; i < chainIds.length; i++) {
       uint32 chainId = chainIds[i];
       vaultStage[_vaultNumber].fundsSentToChain[chainId] = false;
+      vaultStage[_vaultNumber].amountSentToChain[chainId] = false;
     }
   }
 
@@ -287,6 +289,10 @@ contract XChainController {
   ) external payable onlyWhenUnderlyingsReceived(_vaultNumber) {
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "xChainController: not a valid vaultnumber");
+    require(
+      !vaultStage[_vaultNumber].amountSentToChain[_chain],
+      "XChainController: Chain already processed"
+    );
     uint256 totalAllocation = getCurrentTotalAllocation(_vaultNumber);
     uint256 totalWithdrawalRequests = getTotalWithdrawalRequests(_vaultNumber);
     uint256 totalUnderlying = getTotalUnderlyingVault(_vaultNumber) - totalWithdrawalRequests;
@@ -308,6 +314,7 @@ contract XChainController {
     );
 
     sendXChainAmount(_vaultNumber, _chain, amountToDeposit, amountToWithdraw, newExchangeRate);
+    vaultStage[_vaultNumber].amountSentToChain[_chain] = true;
   }
 
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
@@ -435,6 +442,14 @@ contract XChainController {
   /// @return The value of fundsSentToChain for the given vault number and chain ID.
   function getFundsSentToChain(uint256 _vaultNumber, uint32 _chainId) public view returns (bool) {
     return vaultStage[_vaultNumber].fundsSentToChain[_chainId];
+  }
+
+  /// @notice Retrieves the value of amountSentToChain for a given vault number and chain ID.
+  /// @param _vaultNumber The vault number for which the amountSentToChain value should be retrieved.
+  /// @param _chainId The chain ID for which the amountSentToChain value should be retrieved.
+  /// @return The value of amountSentToChain for the given vault number and chain ID.
+  function getAmountSentToChain(uint256 _vaultNumber, uint32 _chainId) public view returns (bool) {
+    return vaultStage[_vaultNumber].amountSentToChain[_chainId];
   }
 
   /// @notice Helper to get total current allocation of vaultNumber
