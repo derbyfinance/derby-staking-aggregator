@@ -19,7 +19,6 @@ contract XProvider is IXReceiver {
   address private dao;
   address private guardian;
   address public xController;
-  address public xControllerProvider;
   address public game;
 
   uint32 public homeChain;
@@ -214,7 +213,28 @@ contract XProvider is IXReceiver {
     return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
   }
 
-  /// @notice Step 2 push; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Step 2: Push feedback to the vault if the vault is set to on or off
+  /// @param _vault Address of the Derby Vault on given chainId
+  /// @param _chainId Number of chain used
+  /// @param _state bool for chainId on or off
+  function pushStateFeedbackToVault(
+    address _vault,
+    uint32 _chainId,
+    bool _state
+  ) external payable onlyController {
+    if (_chainId == homeChain) {
+      require(msg.value == 0, etherNotUsed);
+      return IVault(_vault).toggleVaultOnOff(_state);
+    } else {
+      require(msg.value >= minimumConnextFee, minValue);
+      bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
+
+      xSend(_chainId, callData, address(0), 0);
+    }
+  }
+
+  /// @notice Step 3 push; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -256,7 +276,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 2 receive; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Step 3 receive; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -280,7 +300,7 @@ contract XProvider is IXReceiver {
       );
   }
 
-  /// @notice Step 3 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
+  /// @notice Step 4 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _chainId Number of chain used
   /// @param _amountToSendBack Amount the vault has to send back
@@ -312,7 +332,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 3 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
+  /// @notice Step 4 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @param _vault Address of the Derby Vault on given chainId
   /// @param _amountToSendBack Amount the vault has to send back
   /// @param _exchangeRate New exchangerate for vaults
@@ -325,7 +345,7 @@ contract XProvider is IXReceiver {
     return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
   }
 
-  /// @notice Step 4 push; Push funds from vaults to xChainController
+  /// @notice Step 5 push; Push funds from vaults to xChainController
   /// @notice Transfers funds from vault to xController for crosschain rebalance
   /// @param _vaultNumber Address of the Derby Vault on given chainId
   /// @param _amount Number of the vault
@@ -349,7 +369,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 4 receive; Transfers estimated funds from the contract to the xController and triggers the xController's upFundsReceived function.
+  /// @notice Step 5 receive; Transfers estimated funds from the contract to the xController and triggers the xController's upFundsReceived function.
   /// @dev This function can only be called by the contract itself.
   /// @param _vaultNumber The vault number associated with the vault that will receive the funds.
   /// @param _asset The address of the token to be transferred.
@@ -363,7 +383,7 @@ contract XProvider is IXReceiver {
     IXChainController(xController).upFundsReceived(_vaultNumber);
   }
 
-  /// @notice Step 5 push; Push funds from xChainController to vaults
+  /// @notice Step 6 push; Push funds from xChainController to vaults
   /// @notice Transfers funds from xController to vault for crosschain rebalance
   /// @param _chainId Number of chainId
   /// @param _amount Amount to send to vault in vaultcurrency
@@ -388,7 +408,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 5 receive: Transfers estimated funds from the contract to the specified vault and triggers the vault's receiveFunds function.
+  /// @notice Step 6 receive: Transfers estimated funds from the contract to the specified vault and triggers the vault's receiveFunds function.
   /// @dev This function can only be called by the contract itself or a vault.
   /// @param _vault The address of the target vault to transfer funds to.
   /// @param _asset The address of the token to be transferred.
@@ -402,7 +422,7 @@ contract XProvider is IXReceiver {
     IVault(_vault).receiveFunds();
   }
 
-  /// @notice Step 6 push; Game pushes deltaAllocations to vaults
+  /// @notice Step 7 push; Game pushes deltaAllocations to vaults
   /// @notice Push protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
@@ -423,7 +443,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 6 receive; Game pushes deltaAllocations to vaults
+  /// @notice Step 7 receive; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
@@ -434,7 +454,7 @@ contract XProvider is IXReceiver {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
   }
 
-  /// @notice Step 8 push; Vaults push rewardsPerLockedToken to game
+  /// @notice Step 9 push; Vaults push rewardsPerLockedToken to game
   /// @notice Push price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -456,7 +476,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 8 receive; Vaults push rewardsPerLockedToken to game
+  /// @notice Step 9 receive; Vaults push rewardsPerLockedToken to game
   /// @notice Receives price and rewards array from vaults to the game
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used
@@ -467,27 +487,6 @@ contract XProvider is IXReceiver {
     int256[] memory _rewards
   ) external onlySelf {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
-  }
-
-  /// @notice Push feedback to the vault if the vault is set to on or off
-  /// @param _vault Address of the Derby Vault on given chainId
-  /// @param _chainId Number of chain used
-  /// @param _state bool for chainId on or off
-  function pushStateFeedbackToVault(
-    address _vault,
-    uint32 _chainId,
-    bool _state
-  ) external payable onlyController {
-    if (_chainId == homeChain) {
-      require(msg.value == 0, etherNotUsed);
-      return IVault(_vault).toggleVaultOnOff(_state);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
-
-      xSend(_chainId, callData, address(0), 0);
-    }
   }
 
   /// @notice Receive feedback for the vault if the vault is set to on or off
@@ -528,12 +527,6 @@ contract XProvider is IXReceiver {
   /// @param _xController New address of _xController
   function setXController(address _xController) external onlyDao {
     xController = _xController;
-  }
-
-  /// @notice Setter for xControllerProvider address
-  /// @param _xControllerProvider New address of xProvider for xController chain
-  function setXControllerProvider(address _xControllerProvider) external onlyDao {
-    xControllerProvider = _xControllerProvider;
   }
 
   /// @notice Setter for xController chain id

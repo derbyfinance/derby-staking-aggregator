@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./DerbyToken.sol";
 
 import "./Interfaces/IVault.sol";
-import "./Interfaces/IController.sol";
 import "./Interfaces/IXProvider.sol";
 
 contract Game is ERC721, ReentrancyGuard {
@@ -52,7 +51,6 @@ contract Game is ERC721, ReentrancyGuard {
   address public xProvider;
   address public homeVault;
 
-  IController public controller;
   IERC20 public derbyToken;
 
   // used in notInSameBlock modifier
@@ -130,11 +128,9 @@ contract Game is ERC721, ReentrancyGuard {
     string memory symbol_,
     address _derbyToken,
     address _dao,
-    address _guardian,
-    address _controller
+    address _guardian
   ) ERC721(name_, symbol_) {
     derbyToken = IERC20(_derbyToken);
-    controller = IController(_controller);
     dao = _dao;
     guardian = _guardian;
   }
@@ -509,7 +505,7 @@ contract Game is ERC721, ReentrancyGuard {
     }
   }
 
-  /// @notice Step 6 trigger; Game pushes deltaAllocations to vaults
+  /// @notice Step 7 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the allocations need to be sent
@@ -559,7 +555,7 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   // basket should not be able to rebalance before this step
-  /// @notice Step 8 end; Vaults push rewardsPerLockedToken to game
+  /// @notice Step 9 end; Vaults push rewardsPerLockedToken to game
   /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
   /// @param _vaultNumber Number of the vault
   /// @param _chainId Number of chain used

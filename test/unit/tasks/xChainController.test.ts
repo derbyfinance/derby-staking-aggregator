@@ -176,14 +176,6 @@ describe('Testing xController tasks', () => {
     expect(await xController.xProvider()).to.be.equal(address);
   });
 
-  it('xcontroller_set_home_chain', async function () {
-    const { xController } = await setupXController();
-    const chainid = random(10_000);
-
-    await run('xcontroller_set_home_chain', { chainid });
-    expect(await xController.homeChain()).to.be.equal(chainid);
-  });
-
   it('xcontroller_set_dao', async function () {
     const { xController } = await setupXController();
     const dao = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';

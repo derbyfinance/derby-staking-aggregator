@@ -34,14 +34,6 @@ describe('Testing xProvider tasks', () => {
     expect(await xProvider.xController()).to.be.equal(address);
   });
 
-  it('xprovider_set_xcontroller_provider', async function () {
-    const { xProvider } = await setupXProvider();
-    const address = '0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9';
-
-    await run('xprovider_set_xcontroller_provider', { address });
-    expect(await xProvider.xControllerProvider()).to.be.equal(address);
-  });
-
   it('xprovider_set_xcontroller_chain', async function () {
     const { xProvider } = await setupXProvider();
     const chainid = random(10_000);

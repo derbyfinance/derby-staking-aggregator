@@ -37,8 +37,6 @@ contract Vault is ReentrancyGuard {
   address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
-  address public vaultCurrencyAddr;
-  address public xController;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
@@ -126,7 +124,7 @@ contract Vault is ReentrancyGuard {
     }
   }
 
-  /// @notice Step 7 trigger, end; Vaults rebalance
+  /// @notice Step 8 trigger, end; Vaults rebalance
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
@@ -459,6 +457,11 @@ contract Vault is ReentrancyGuard {
   /// @param _guardian new address of the guardian
   function setGuardian(address _guardian) external onlyDao {
     guardian = _guardian;
+  }
+
+  /// @notice Setter for controller address
+  function setController(address _controller) external onlyDao {
+    controller = IController(_controller);
   }
 
   /*

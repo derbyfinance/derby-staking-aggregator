@@ -47,11 +47,9 @@ contract XChainController {
   address private dao;
   address private guardian;
   address public game;
-  address public xProviderAddr;
   IXProvider public xProvider;
 
   uint32[] public chainIds;
-  uint32 public homeChain;
   int256 public minimumAmount;
 
   // (vaultNumber => vaultInfo struct)
@@ -116,11 +114,10 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao, address _guardian, uint32 _homeChain) {
+  constructor(address _game, address _dao, address _guardian) {
     game = _game;
     dao = _dao;
     guardian = _guardian;
-    homeChain = _homeChain;
     minimumAmount = 100e6;
   }
 
@@ -230,7 +227,8 @@ contract XChainController {
   }
 
   /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
-  /// @notice Step 1.5, toggle vault on or off
+  /// @notice Step 2: Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
+  /// @notice Toggle vault on or off
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
   function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
@@ -255,7 +253,7 @@ contract XChainController {
     setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 
-  /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Step 3 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -277,7 +275,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// @notice Step 3 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
+  /// @notice Step 4 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the funds need to be sent
@@ -385,7 +383,7 @@ contract XChainController {
     emit SendXChainAmount(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
   }
 
-  /// @notice Step 5 trigger; Push funds from xChainController to vaults
+  /// @notice Step 6 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the funds need to be sent
@@ -564,12 +562,6 @@ contract XChainController {
   /// @param _xProvider new address of xProvider on this chain
   function setHomeXProvider(address _xProvider) external onlyDao {
     xProvider = IXProvider(_xProvider);
-  }
-
-  /// @notice Setter for homeChain Id
-  /// @param _homeChainId New home chainId
-  function setHomeChainId(uint32 _homeChainId) external onlyDao {
-    homeChain = _homeChainId;
   }
 
   /// @notice Setter for DAO address

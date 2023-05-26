@@ -13,13 +13,13 @@ const func: DeployFunction = async function ({
   const deployConfig = await getDeployConfigXController(network.name);
   if (!deployConfig) throw 'Unknown contract name';
 
-  const { homeChainId } = deployConfig;
+  const {} = deployConfig;
 
   const game = await deployments.get('GameMock');
 
   await deploy('XChainControllerMock', {
     from: deployer,
-    args: [game.address, dao, guardian, homeChainId],
+    args: [game.address, dao, guardian],
     log: true,
     autoMine: true,
   });

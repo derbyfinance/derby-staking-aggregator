@@ -32,9 +32,7 @@
     }
   },
   "XChainController": {
-    "deploy": {
-      "homeChainId": 100
-    },
+    "deploy": {},
     "init": {}
   },
   "XProvider": {
