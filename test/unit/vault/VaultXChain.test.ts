@@ -17,7 +17,6 @@ describe('Testing XChainController, unit test', async () => {
     IUSDc: Contract = erc20(usdc);
 
   const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   before(async function () {
@@ -35,7 +34,6 @@ describe('Testing XChainController, unit test', async () => {
 
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40),
-      aaveVault.setDeltaAllocation(vault, 60),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
 
