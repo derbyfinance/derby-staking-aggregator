@@ -16,9 +16,11 @@ contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   // state 0 Rebalance done and ready for xController to rebalance again
-  // state 1 Allocation amount received and ready to send funds over to xController
-  // state 2 Allocation amount 0 received => will receive funds from xController
-  // state 3 Allocation amount sent or received and ready to rebalance the vault itself
+  // state 1 Underlying amount pushed to controller
+  // state 2 Sending the funds crosschain
+  // state 3 Waiting for the crosschain funds
+  // state 4 Vault can be rebalanced
+  // state 5 Rewards per locked token can be sent
   enum State {
     Idle,
     PushedUnderlying,

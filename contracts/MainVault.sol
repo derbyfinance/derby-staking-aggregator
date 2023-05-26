@@ -273,7 +273,7 @@ contract MainVault is Vault, VaultToken {
     return _value;
   }
 
-  /// @notice Step 2 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Step 3 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
@@ -311,7 +311,7 @@ contract MainVault is Vault, VaultToken {
     setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
-  /// @notice Step 3 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
+  /// @notice Step 4 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Will set the amount to send back to the xController by the xController
   /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
   /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
@@ -329,7 +329,7 @@ contract MainVault is Vault, VaultToken {
     else state = State.SendingFundsXChain;
   }
 
-  /// @notice Step 4 trigger; Push funds from vaults to xChainController
+  /// @notice Step 5 trigger; Push funds from vaults to xChainController
   /// @notice Send vaultcurrency to the xController for xChain rebalance
   function rebalanceXChain() external payable {
     require(state == State.SendingFundsXChain, stateError);
@@ -350,7 +350,7 @@ contract MainVault is Vault, VaultToken {
     settleReservedFunds();
   }
 
-  /// @notice Step 5 end; Push funds from xChainController to vaults
+  /// @notice Step 6 end; Push funds from xChainController to vaults
   /// @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
     if (state != State.WaitingForFunds) return;
@@ -370,7 +370,7 @@ contract MainVault is Vault, VaultToken {
     receiveProtocolAllocationsInt(_deltas);
   }
 
-  /// @notice Step 6 end; Game pushes deltaAllocations to vaults
+  /// @notice Step 7 end; Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game and settles the allocations
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocationsInt(int256[] memory _deltas) internal {
@@ -383,7 +383,7 @@ contract MainVault is Vault, VaultToken {
     deltaAllocationsReceived = true;
   }
 
-  /// @notice Step 8 trigger; Vaults push rewardsPerLockedToken to game
+  /// @notice Step 9 trigger; Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external payable {
     require(state == State.SendRewardsPerToken, stateError);
 
@@ -455,7 +455,7 @@ contract MainVault is Vault, VaultToken {
   Only Guardian functions
   */
 
-  /// @notice Step 3: Guardian function
+  /// @notice Step 4: Guardian function
   function setXChainAllocationGuard(
     uint256 _amountToSend,
     uint256 _exchangeRate,
@@ -464,12 +464,12 @@ contract MainVault is Vault, VaultToken {
     setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
   }
 
-  /// @notice Step 5: Guardian function
+  /// @notice Step 6: Guardian function
   function receiveFundsGuard() external onlyGuardian {
     settleReservedFunds();
   }
 
-  /// @notice Step 6: Guardian function
+  /// @notice Step 7: Guardian function
   function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
     receiveProtocolAllocationsInt(_deltas);
   }

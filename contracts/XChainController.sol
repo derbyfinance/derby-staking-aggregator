@@ -147,7 +147,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// @notice Step 4 end; Push funds from vaults to xChainController
+  /// @notice Step 5 end; Push funds from vaults to xChainController
   /// @notice FundsReceived; funds received from all active vault contracts
   function upFundsReceived(
     uint256 _vaultNumber
@@ -230,7 +230,7 @@ contract XChainController {
   }
 
   /// @notice Will send feedback to the vault if it is turned on or off by settleCurrentAllocation
-  /// @notice Step 1.5, toggle vault on or off
+  /// @notice Step 2, toggle vault on or off
   /// @param _vaultNumber Number of vault
   /// @param _chainId Chain id of the vault where the funds need to be sent
   function sendFeedbackToVault(uint256 _vaultNumber, uint32 _chainId) external payable {
@@ -255,7 +255,7 @@ contract XChainController {
     setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 
-  /// @notice Step 2 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
+  /// @notice Step 3 end; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
   /// @notice Receive and set totalUnderlyings from the vaults for every chainId
   /// @param _vaultNumber number of the vault
   /// @param _chainId Number of chain used
@@ -277,7 +277,7 @@ contract XChainController {
     vaultStage[_vaultNumber].underlyingReceived++;
   }
 
-  /// @notice Step 3 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
+  /// @notice Step 4 trigger; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
   /// @notice Calculates the amounts the vaults on each chainId have to send or receive
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the funds need to be sent
@@ -385,7 +385,7 @@ contract XChainController {
     emit SendXChainAmount(vault, _chainId, amountToSend, _exchangeRate, receivingFunds);
   }
 
-  /// @notice Step 5 trigger; Push funds from xChainController to vaults
+  /// @notice Step 6 trigger; Push funds from xChainController to vaults
   /// @notice Send amount to deposit from xController to vault and reset all stages for the vault
   /// @param _vaultNumber Number of vault
   /// @param _chain Chain id of the vault where the funds need to be sent
@@ -621,7 +621,7 @@ contract XChainController {
     return receiveAllocationsFromGameInt(_vaultNumber, _deltas);
   }
 
-  /// @notice Step 2: Guardian function
+  /// @notice Step 3: Guardian function
   function setTotalUnderlyingGuard(
     uint256 _vaultNumber,
     uint32 _chainId,
@@ -633,7 +633,7 @@ contract XChainController {
       setTotalUnderlyingInt(_vaultNumber, _chainId, _underlying, _totalSupply, _withdrawalRequests);
   }
 
-  /// @notice Step 4: Guardian function
+  /// @notice Step 5: Guardian function
   function setFundsReceivedGuard(
     uint256 _vaultNumber,
     uint256 _fundsReceived
