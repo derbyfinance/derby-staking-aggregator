@@ -43,7 +43,6 @@ export const setupGame = deployments.createFixture(async (hre) => {
   );
   await InitConnextMock(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
 
-  const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
   await run('game_init', {
     provider: xProviderMain.address,
     homevault: vault.address,
@@ -58,6 +57,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await derbyToken.transfer(userAddr, parseEther('2100'));
   await transferAndApproveUSDC(vault.address, user, 100_000_000 * 1e6);
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
+  const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
 
   return {
     game,

@@ -207,15 +207,20 @@ describe('Testing full integration test', async () => {
   describe('Deposit funds in vaults', async function () {
     it('Deposit funds in vault 1 and 2 for all 3 vault users', async function () {
       for (const { user, vault, depositAmount } of vaultUsers) {
+        await vault.connect(user).deposit(depositAmount);
+      }
+
+      await vaults[0].vault.upRebalancingPeriodTEST();
+      await vaults[1].vault.upRebalancingPeriodTEST();
+
+      for (const { user, vault, depositAmount } of vaultUsers) {
         const expectedLPTokens = depositAmount; // exchangeRate is 1
 
-        await vault.connect(user).deposit(depositAmount);
-        await vault.upRebalancingPeriodTEST(),
-          await expect(() => vault.connect(user).redeemDeposit()).to.changeTokenBalance(
-            vault,
-            user,
-            expectedLPTokens,
-          );
+        await expect(() => vault.connect(user).redeemDeposit()).to.changeTokenBalance(
+          vault,
+          user,
+          expectedLPTokens,
+        );
       }
     });
   });
@@ -631,7 +636,7 @@ describe('Testing full integration test', async () => {
 
     it('Check rewards for every protocolId', async function () {
       const id = await controller.latestProtocolId(vaultNumber);
-      const rebalancingPeriod = 2;
+      const rebalancingPeriod = 3;
 
       for (let i = 0; i < Number(id); i++) {
         expect(

@@ -12,13 +12,14 @@ task('game_init', 'Initializes the game')
     if (!initConfig) throw 'Unknown contract name';
 
     const { negativeRewardThreshold, negativeRewardFactor, tokenPrice } = initConfig;
+    const vaultnumber = 10;
 
     await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
     await run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold });
     await run('game_set_chain_ids', { chainids });
     await run('game_set_xprovider', { provider });
-    await run('game_set_home_vault', { vault: homevault });
-    await run('game_set_vault_token_price', { vaultnumber: 10, price: tokenPrice });
+    await run('game_set_home_vault', { vaultnumber, vault: homevault });
+    await run('game_set_vault_token_price', { vaultnumber, price: tokenPrice });
   });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
@@ -99,15 +100,6 @@ task('game_set_rebalancing_state', 'Guardian function to set state')
     await game.connect(guardian).setRebalancingState(vaultnumber, state);
   });
 
-task('game_set_rebalancing_period', 'Guardian function to set rebalancing period')
-  .addParam('vaultnumber', 'Number of the vault', null, types.int)
-  .addParam('period', 'Rebalancing period', null, types.int)
-  .setAction(async ({ vaultnumber, period }, hre) => {
-    const game = await getGame(hre);
-    const guardian = await getGuardian(hre);
-    await game.connect(guardian).setRebalancingPeriod(vaultnumber, period);
-  });
-
 task('game_settle_rewards_guard', 'Guardian function for step 8')
   .addParam('vaultnumber', 'Number of the vault', null, types.int)
   .addParam('chainid', 'Number of chain id set in chainIds array', null, types.int)
@@ -131,11 +123,12 @@ task('game_set_xprovider', 'Setter for xProvider address')
   });
 
 task('game_set_home_vault', 'Setter for homeVault address')
+  .addParam('vaultnumber', 'Number of the vault', null, types.int)
   .addParam('vault', 'homeVault address')
-  .setAction(async ({ vault }, hre) => {
+  .setAction(async ({ vaultnumber, vault }, hre) => {
     const game = await getGame(hre);
     const dao = await getDao(hre);
-    await game.connect(dao).setHomeVault(vault);
+    await game.connect(dao).setHomeVault(vaultnumber, vault);
   });
 
 task('game_set_rebalance_interval', 'Set minimum interval for the rebalance function')

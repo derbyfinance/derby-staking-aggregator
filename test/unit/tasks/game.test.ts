@@ -2,27 +2,35 @@ import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
 import { GameMock } from '@typechain';
 import { getInitConfigGame } from '@testhelp/deployHelpers';
+import { deployMockContract } from '@ethereum-waffle/mock-contract';
+import { getAllSigners } from '@testhelp/getContracts';
+import { abi } from 'artifacts/contracts/MainVault.sol/MainVault.json';
 
 describe('Testing game tasks', () => {
-  const setupGame = deployments.createFixture(async ({ deployments, ethers, network }) => {
+  const setupGame = deployments.createFixture(async (hre) => {
+    const { deployments, ethers, network } = hre;
     await deployments.fixture(['GameMock']);
     const deployment = await deployments.get('GameMock');
     const game: GameMock = await ethers.getContractAt('GameMock', deployment.address);
+    const [dao] = await getAllSigners(hre);
 
     const gameConfig = await getInitConfigGame(network.name);
     if (!gameConfig) throw 'Unknown contract name';
 
     const dummyProvider = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7';
-    await run('game_init', { provider: dummyProvider, homevault: dummyProvider });
+    const vaultMock = await deployMockContract(dao, abi);
+    await vaultMock.mock.rebalancingPeriod.returns(0);
 
-    return { game, gameConfig };
+    await run('game_init', { provider: dummyProvider, homevault: vaultMock.address });
+
+    return { game, vaultMock, gameConfig };
   });
 
   const random = (max: number) => Math.floor(Math.random() * max);
 
   it('game_mint_basket', async function () {
     const { game } = await setupGame();
-    const vaultnumber = random(100);
+    const vaultnumber = 10;
 
     const basketId = await run('game_mint_basket', { vaultnumber });
     const basketId1 = await run('game_mint_basket', { vaultnumber });
@@ -82,7 +90,7 @@ describe('Testing game tasks', () => {
   });
 
   it('game_settle_rewards_guard', async function () {
-    const { game } = await setupGame();
+    const { game, vaultMock } = await setupGame();
     const rewards = [
       random(10_000e6),
       random(10_000e6),
@@ -91,11 +99,11 @@ describe('Testing game tasks', () => {
       random(10_000e6),
       random(10_000e6),
     ];
-    const vaultnumber = random(100);
+    const vaultnumber = 10;
     const chainid = random(10_000);
     const period = 1;
 
-    await game.upRebalancingPeriod(vaultnumber);
+    await vaultMock.mock.rebalancingPeriod.returns(1);
     await run('game_settle_rewards_guard', { vaultnumber, chainid, rewards });
 
     const rewardsPromise = rewards.map((reward, i) => {
@@ -120,10 +128,11 @@ describe('Testing game tasks', () => {
 
   it('game_set_home_vault', async function () {
     const { game } = await setupGame();
+    const vaultnumber = 11;
     const vault = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
-    await run('game_set_home_vault', { vault });
-    expect(await game.homeVault()).to.be.equal(vault);
+    await run('game_set_home_vault', { vaultnumber, vault });
+    expect(await game.homeVault(vaultnumber)).to.be.equal(vault);
   });
 
   it('game_set_rebalance_interval', async function () {
@@ -172,14 +181,5 @@ describe('Testing game tasks', () => {
 
     await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
     expect(await game.getNegativeRewardFactor()).to.be.equal(negativeRewardFactor);
-  });
-
-  it('game_set_rebalancing_period', async function () {
-    const { game } = await setupGame();
-    const vaultnumber = random(1000);
-    const period = random(1000);
-
-    await run('game_set_rebalancing_period', { vaultnumber, period });
-    expect(await game.getRebalancingPeriod(vaultnumber)).to.be.equal(period);
   });
 });

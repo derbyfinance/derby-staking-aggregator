@@ -128,7 +128,7 @@ describe('Testing Game', async () => {
     ];
 
     // blacklisting protocol, user should still be able to unlock the tokens
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
 
@@ -172,6 +172,7 @@ describe('Testing Game', async () => {
       'Cannot call functions in the same block',
     );
     // chainIds = [10, 100, 1000];
+    await vault.upRebalancingPeriodTEST();
     await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
     // checking of allocations are correctly set in xChainController
@@ -218,7 +219,7 @@ describe('Testing Game', async () => {
   });
 
   it('Calculate rewards during rebalance Basket', async function () {
-    await mockRewards(game, derbyToken, user, vaultNumber, basketId, chainIds);
+    await mockRewards(game, vault, derbyToken, user, vaultNumber, basketId, chainIds);
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
@@ -278,7 +279,7 @@ describe('Testing Game', async () => {
   });
 
   it('Mocking rewards again to test when swappingRewards is false', async function () {
-    await mockRewards(game, derbyToken, user, vaultNumber, basketId, chainIds);
+    await mockRewards(game, vault, derbyToken, user, vaultNumber, basketId, chainIds);
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
@@ -309,6 +310,7 @@ describe('Testing Game', async () => {
 
 export async function mockRewards(
   game: GameMock,
+  vault: MainVaultMock,
   DerbyToken: DerbyToken,
   user: Signer,
   vaultNum: BigNumberish,
@@ -321,7 +323,7 @@ export async function mockRewards(
   ];
   const totalAllocations = pE('1000');
 
-  await game.upRebalancingPeriod(vaultNum);
+  await vault.upRebalancingPeriodTEST();
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [1, 1, 1, 1, 1]),
     game.mockRewards(vaultNum, chainIds[1], [1, 1, 1, 1, 1]),
@@ -332,19 +334,19 @@ export async function mockRewards(
 
   // This rebalance should be skipped for the basket
   // all rewards have to be scaled by 1e18
-  await game.upRebalancingPeriod(vaultNum);
+  await vault.upRebalancingPeriodTEST();
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
     game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
-  await game.upRebalancingPeriod(vaultNum);
+  await vault.upRebalancingPeriodTEST();
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
     game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
-  await game.upRebalancingPeriod(vaultNum);
+  await vault.upRebalancingPeriodTEST();
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
     game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),

@@ -36,7 +36,7 @@ contract GameMock is Game {
   }
 
   function mockRewards(uint256 _vaultNumber, uint32 _chainId, int256[] memory _rewards) external {
-    uint256 rebalancingPeriod = IVault(homeVault).rebalancingPeriod();
+    uint256 rebalancingPeriod = IVault(homeVault[_vaultNumber]).rebalancingPeriod();
 
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
