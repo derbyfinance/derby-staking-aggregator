@@ -33,7 +33,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   struct vaultInfo {
     // rebalance period of vault, upped at vault rebalance
-    uint256 rebalancingPeriod;
+    // uint256 rebalancingPeriod;
     // number of vaults that have sent rewards
     uint256 numberOfRewardsReceived;
     // (chainId => vaultAddress)
@@ -228,7 +228,7 @@ contract Game is ERC721, ReentrancyGuard {
     int256 currentReward = getRewardsPerLockedToken(
       _vaultNumber,
       _chainId,
-      vaults[_vaultNumber].rebalancingPeriod,
+      IVault(homeVault).rebalancingPeriod(),
       _protocolId
     );
 
@@ -257,7 +257,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _vaultNumber
   ) internal onlyBasketOwner(_basketId) {
-    baskets[_basketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
+    baskets[_basketId].lastRebalancingPeriod = IVault(homeVault).rebalancingPeriod() + 1;
   }
 
   /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
@@ -285,7 +285,7 @@ contract Game is ERC721, ReentrancyGuard {
   function mintNewBasket(uint256 _vaultNumber) external nonReentrant returns (uint256) {
     // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
     baskets[latestBasketId].vaultNumber = _vaultNumber;
-    baskets[latestBasketId].lastRebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod + 1;
+    baskets[latestBasketId].lastRebalancingPeriod = IVault(homeVault).rebalancingPeriod() + 1;
     _safeMint(msg.sender, latestBasketId);
     latestBasketId++;
 
@@ -371,7 +371,7 @@ contract Game is ERC721, ReentrancyGuard {
       require(!isXChainRebalancing[_vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
     }
 
-    if (vaults[_vaultNumber].rebalancingPeriod != 0) {
+    if (IVault(homeVault).rebalancingPeriod() != 0) {
       require(
         getNumberOfRewardsReceived(_vaultNumber) == chainIds.length,
         "Game: not all rewards are settled"
@@ -416,7 +416,7 @@ contract Game is ERC721, ReentrancyGuard {
     if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
 
     uint256 vaultNum = baskets[_basketId].vaultNumber;
-    uint256 currentRebalancingPeriod = vaults[vaultNum].rebalancingPeriod;
+    uint256 currentRebalancingPeriod = IVault(homeVault).rebalancingPeriod();
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
 
     require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
@@ -490,7 +490,6 @@ contract Game is ERC721, ReentrancyGuard {
     IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
 
     lastTimeStamp[_vaultNumber] = block.timestamp;
-    vaults[_vaultNumber].rebalancingPeriod++;
     vaults[_vaultNumber].numberOfRewardsReceived = 0;
 
     emit PushedAllocationsToController(_vaultNumber, deltas);
@@ -569,7 +568,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     int256[] memory _rewards
   ) internal {
-    uint256 rebalancingPeriod = vaults[_vaultNumber].rebalancingPeriod;
+    uint256 rebalancingPeriod = IVault(homeVault).rebalancingPeriod();
 
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
@@ -639,7 +638,7 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Getter for rebalancing period for a vault
   function getRebalancingPeriod(uint256 _vaultNumber) public view returns (uint256) {
-    return vaults[_vaultNumber].rebalancingPeriod;
+    return IVault(homeVault).rebalancingPeriod();
   }
 
   /// @notice Retrieves the number of rewards received for a specific vault.
@@ -741,11 +740,6 @@ contract Game is ERC721, ReentrancyGuard {
     bool _state
   ) external onlyGuardian {
     isXChainRebalancing[_vaultNumber][_chain] = _state;
-  }
-
-  /// @notice Guardian function to set rebalancing period for vaultNumber
-  function setRebalancingPeriod(uint256 _vaultNumber, uint256 _period) external onlyGuardian {
-    vaults[_vaultNumber].rebalancingPeriod = _period;
   }
 
   /// @notice Step 8: Guardian function

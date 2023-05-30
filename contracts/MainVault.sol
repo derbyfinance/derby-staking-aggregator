@@ -28,7 +28,6 @@ contract MainVault is Vault, VaultToken {
   address public game;
   address public xProvider;
 
-  bool public vaultOff;
   // True when rewards should be swapped to derby tokens
   bool public swapRewards;
 
@@ -278,6 +277,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
+    rebalancingPeriod++;
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 
@@ -361,8 +361,7 @@ contract MainVault is Vault, VaultToken {
   function settleReservedFunds() internal {
     reservedFunds += totalWithdrawalRequests;
     totalWithdrawalRequests = 0;
-    if (vaultOff) state = State.SendRewardsPerToken;
-    else state = State.RebalanceVault;
+    state = State.RebalanceVault;
   }
 
   /// @notice See receiveProtocolAllocations below
@@ -393,12 +392,6 @@ contract MainVault is Vault, VaultToken {
     state = State.Idle;
 
     emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
-  }
-
-  /// @notice Receive feedback for the vault if the vault is set to on or off
-  /// @param _state bool for chainId on or off
-  function toggleVaultOnOff(bool _state) external onlyXProvider {
-    vaultOff = _state;
   }
 
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw

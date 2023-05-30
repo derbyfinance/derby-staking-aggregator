@@ -101,10 +101,6 @@ contract MainVaultMock is MainVault {
     vaultCurrency.transfer(getDao(), _balance);
   }
 
-  function toggleVaultOnOffTEST(bool _state) external {
-    vaultOff = _state;
-  }
-
   function balanceSharesTEST(
     uint256 _protocolNum,
     address _address
