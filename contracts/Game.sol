@@ -32,8 +32,6 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   struct vaultInfo {
-    // rebalance period of vault, upped at vault rebalance
-    // uint256 rebalancingPeriod;
     // number of vaults that have sent rewards
     uint256 numberOfRewardsReceived;
     // (chainId => vaultAddress)
