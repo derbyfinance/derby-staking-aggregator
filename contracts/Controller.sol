@@ -178,10 +178,11 @@ contract Controller is IController {
     });
   }
 
-  /// @notice Add protocol and vault to Controller
-  /// @param _vault Vault address to whitelist
-  function addVault(address _vault) external onlyDao {
-    vaultWhitelist[_vault] = true;
+  /// @notice Set the whitelist status of a vault in the Controller
+  /// @param _vault Vault address to update
+  /// @param _status Boolean value representing the new whitelist status of the vault
+  function setVaultWhitelistStatus(address _vault, bool _status) external onlyDao {
+    vaultWhitelist[_vault] = _status;
   }
 
   /// @notice Set the Uniswap Router address

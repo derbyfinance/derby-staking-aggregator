@@ -49,7 +49,6 @@ contract Game is ERC721, ReentrancyGuard {
   address private dao;
   address private guardian;
   address public xProvider;
-  address public homeVault;
 
   IERC20 public derbyToken;
 
@@ -77,6 +76,9 @@ contract Game is ERC721, ReentrancyGuard {
 
   // used to scale rewards
   uint256 public BASE_SCALE = 1e18;
+
+  // vaultNumber => vaultAddress
+  mapping(uint256 => address) public homeVault;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
@@ -325,8 +327,9 @@ contract Game is ERC721, ReentrancyGuard {
   ) internal returns (uint256) {
     if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
 
+    uint256 vaultNumber = baskets[_basketId].vaultNumber;
     uint256 unreedemedRewards = uint(-baskets[_basketId].totalUnRedeemedRewards);
-    uint256 price = tokenPrice[baskets[_basketId].vaultNumber];
+    uint256 price = tokenPrice[vaultNumber];
 
     uint256 tokensToBurn = (((unreedemedRewards * negativeRewardFactor) / 100) / price);
     tokensToBurn = tokensToBurn < _unlockedTokens ? tokensToBurn : _unlockedTokens;
@@ -335,7 +338,7 @@ contract Game is ERC721, ReentrancyGuard {
       (tokensToBurn * 100 * price) / negativeRewardFactor
     );
 
-    IERC20(derbyToken).safeTransfer(homeVault, tokensToBurn);
+    IERC20(derbyToken).safeTransfer(homeVault[vaultNumber], tokensToBurn);
 
     return tokensToBurn;
   }
@@ -602,7 +605,8 @@ contract Game is ERC721, ReentrancyGuard {
     baskets[_basketId].totalRedeemedRewards += amount;
     baskets[_basketId].totalUnRedeemedRewards = 0;
 
-    IVault(homeVault).redeemRewardsGame(uint256(amount), msg.sender);
+    uint256 vaultNumber = baskets[_basketId].vaultNumber;
+    IVault(homeVault[vaultNumber]).redeemRewardsGame(uint256(amount), msg.sender);
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
@@ -656,9 +660,10 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice Setter for homeVault address
+  /// @param _vaultNumber The vault number to set the home vault for
   /// @param _homeVault new address of homeVault on this chain
-  function setHomeVault(address _homeVault) external onlyDao {
-    homeVault = _homeVault;
+  function setHomeVault(uint256 _vaultNumber, address _homeVault) external onlyDao {
+    homeVault[_vaultNumber] = _homeVault;
   }
 
   /// @notice Set minimum interval for the rebalance function

@@ -57,11 +57,12 @@ task('controller_add_protocol', 'Add protocol to controller')
     return protocolNumber;
   });
 
-task('controller_add_vault', 'Add vault to controller whitelist')
+task('controller_set_vault_whitelist', 'Set the whitelist status of a vault in the controller')
   .addParam('vault', 'Address of the vault')
-  .setAction(async ({ vault }, hre) => {
+  .addParam('status', 'Whitelist status of the vault', null, types.boolean)
+  .setAction(async ({ vault, status }, hre) => {
     const { controller, dao } = await getController(hre);
-    await controller.connect(dao).addVault(vault);
+    await controller.connect(dao).setVaultWhitelistStatus(vault, status);
   });
 
 task('controller_set_uniswap_router', 'Set the Uniswap Router address')

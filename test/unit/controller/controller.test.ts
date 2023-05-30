@@ -21,7 +21,7 @@ describe('Testing controller', async () => {
     const [dao, , , vault, deployer] = await getAllSigners(hre);
 
     await run('controller_init');
-    await run('controller_add_vault', { vault: vault.address });
+    await run('controller_set_vault_whitelist', { vault: vault.address, status: true });
 
     const [yearnProviderMock, compoundProviderMock] = await Promise.all([
       deployYearnProviderMock(deployer),

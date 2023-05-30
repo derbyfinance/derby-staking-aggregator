@@ -120,10 +120,11 @@ describe('Testing game tasks', () => {
 
   it('game_set_home_vault', async function () {
     const { game } = await setupGame();
+    const vaultnumber = 10;
     const vault = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
-    await run('game_set_home_vault', { vault });
-    expect(await game.homeVault()).to.be.equal(vault);
+    await run('game_set_home_vault', { vaultnumber, vault });
+    expect(await game.homeVault(vaultnumber)).to.be.equal(vault);
   });
 
   it('game_set_rebalance_interval', async function () {

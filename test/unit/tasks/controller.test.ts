@@ -36,13 +36,15 @@ describe('Testing controller tasks', () => {
     expect(protocolInfo.underlying.toLowerCase()).to.be.equal(usdc.toLowerCase());
   });
 
-  it('controller_add_vault', async function () {
+  it('controller_set_vault_whitelist', async function () {
     const vault = '0x90c84237fddf091b1e63f369af122eb46000bc70';
     const { controller } = await setupController();
 
     expect(await controller.vaultWhitelist(vault)).to.be.equal(false);
-    await run('controller_add_vault', { vault });
+    await run('controller_set_vault_whitelist', { vault, status: true });
     expect(await controller.vaultWhitelist(vault)).to.be.equal(true);
+    await run('controller_set_vault_whitelist', { vault, status: false });
+    expect(await controller.vaultWhitelist(vault)).to.be.equal(false);
   });
 
   it('controller_uniswap_setters', async function () {

@@ -193,7 +193,7 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('4) Calc and set amount to deposit or withdraw in vault', async function () {
-    let homeChain = await xChainController.homeChain();
+    let homeChain = 100;
     const chainIds = await xChainController.getChainIds();
     for (let chain of chainIds) {
       if (chain == homeChain) {
@@ -260,7 +260,7 @@ describe('Testing XChainController, integration test', async () => {
   });
 
   it('5) Trigger xChainController to send funds to vaults', async function () {
-    let homeChain = await xChainController.homeChain();
+    let homeChain = 100;
     const chainIds = await xChainController.getChainIds();
 
     for (let chain of chainIds) {

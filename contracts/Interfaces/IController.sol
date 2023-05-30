@@ -35,7 +35,7 @@ interface IController {
 
   function latestProtocolId(uint256 _ETFnumber) external view returns (uint256);
 
-  function addVault(address _vault) external;
+  function setVaultWhitelistStatus(address _vault, bool _status) external;
 
   function setUniswapRouter(address _uniswapRouter) external;
 

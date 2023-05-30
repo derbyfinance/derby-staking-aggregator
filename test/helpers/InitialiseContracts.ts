@@ -30,7 +30,6 @@ export async function getAndInitXProviders(
 
   for (const xProvider of xProviders) {
     await Promise.all([
-      xProvider.connect(dao).setXControllerProvider(arbitrum.address),
       xProvider.connect(dao).setXControllerChainId(chains.xController),
       xProvider.connect(dao).setGameChainId(chains.game),
       xProvider.connect(dao).setTrustedRemoteConnext(10, main.address),
@@ -115,7 +114,7 @@ export async function AddAllVaultsToController({ run, deployments }: HardhatRunt
   const vaults = await getTestVaultDeployments(deployments);
 
   for (const vault of vaults) {
-    await run('controller_add_vault', { vault: vault.address });
+    await run('controller_set_vault_whitelist', { vault: vault.address, status: true });
   }
 }
 

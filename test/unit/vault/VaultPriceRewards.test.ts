@@ -42,7 +42,7 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
 
     await run('vault_init', { contract });
     await run('controller_init');
-    await run('controller_add_vault', { vault: vault.address });
+    await run('controller_set_vault_whitelist', { vault: vault.address, status: true });
     await run('vault_set_liquidity_perc', { contract, percentage: 10 });
 
     // add all protocol vaults to controller with mocked providers
