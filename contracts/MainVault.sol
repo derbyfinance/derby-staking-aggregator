@@ -28,9 +28,9 @@ contract MainVault is Vault, VaultToken {
   address public game;
   address public xProvider;
 
-  bool public vaultOff;
   // True when rewards should be swapped to derby tokens
   bool public swapRewards;
+  bool public vaultOff;
 
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
@@ -278,6 +278,7 @@ contract MainVault is Vault, VaultToken {
   function pushTotalUnderlyingToController() external payable onlyWhenIdle {
     require(rebalanceNeeded(), "!rebalance needed");
 
+    rebalancingPeriod++;
     setTotalUnderlying();
     uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
 

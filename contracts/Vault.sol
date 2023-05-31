@@ -39,7 +39,6 @@ contract Vault is ReentrancyGuard {
   address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
-  address public vaultCurrencyAddr;
   address public xController;
 
   uint256 public vaultNumber;
@@ -138,8 +137,6 @@ contract Vault is ReentrancyGuard {
     require(state == State.RebalanceVault, stateError);
     require(deltaAllocationsReceived, "!Delta allocations");
     uint256 latestID = controller.latestProtocolId(vaultNumber);
-
-    rebalancingPeriod++;
 
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
     storePriceAndRewardsLoop(latestID, underlyingIncBalance);
