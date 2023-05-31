@@ -205,6 +205,14 @@ describe('Testing XChainController, integration test', async () => {
       }
     }
 
+    for (let chain of chainIds) {
+      expect(await xChainController.getAmountSentToChain(vaultNumber, chain)).to.be.true;
+    }
+
+    await expect(
+      xChainController.pushVaultAmounts(vaultNumber, chainIds[2], { value: parseEther('0.1') }),
+    ).to.be.revertedWith('XChainController: Chain already processed');
+
     // balanceVault - ( allocation * totalUnderlying ) - withdrawRequests
     const expectedAmounts = [
       100_000 - (400 / 2000) * 238_000 - 0, // vault 1 = 52_000
@@ -279,6 +287,7 @@ describe('Testing XChainController, integration test', async () => {
     // should be resetted cause all chains sent funds.
     for (let chain of chainIds) {
       expect(await xChainController.getFundsSentToChain(vaultNumber, chain)).to.be.false;
+      expect(await xChainController.getAmountSentToChain(vaultNumber, chain)).to.be.false;
     }
 
     const expectedAmounts = [
