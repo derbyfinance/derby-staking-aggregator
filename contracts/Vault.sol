@@ -230,12 +230,13 @@ contract Vault is ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals()).
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+    uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      lastPrices[_protocolId] = currentPrice;
       return;
     }
 
-    uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = currentPrice;
       return;
