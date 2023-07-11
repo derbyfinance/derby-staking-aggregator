@@ -35,6 +35,7 @@ contract MainVault is Vault, VaultToken {
   // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
+  uint256 internal totalDepositRequests;
   uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
   uint32 public homeChain;
   uint256 public amountToSendXChain;
@@ -121,6 +122,7 @@ contract MainVault is Vault, VaultToken {
     uint256 amount = balanceAfter - balanceBefore;
     user.depositRequest += amount;
     user.depositRequestPeriod = rebalancingPeriod;
+    totalDepositRequests += amount;
   }
 
   /// @notice Redeems the pending deposit requests for the calling user.
@@ -133,13 +135,10 @@ contract MainVault is Vault, VaultToken {
     UserInfo storage user = userInfo[msg.sender];
     uint256 depositRequest = user.depositRequest;
 
-    require(depositRequest > 0, allowanceError);
     require(rebalancingPeriod > user.depositRequestPeriod, noFundsError);
-
     shares = (depositRequest * (10 ** decimals())) / exchangeRate;
 
-    delete user.depositRequest;
-    delete user.depositRequestPeriod;
+    deleteDepositRequest(user);
 
     _mint(msg.sender, shares);
   }
@@ -148,13 +147,17 @@ contract MainVault is Vault, VaultToken {
   function cancelDepositRequest() external nonReentrant onlyWhenIdle {
     UserInfo storage user = userInfo[msg.sender];
     uint256 depositRequest = user.depositRequest;
+    deleteDepositRequest(user);
+    vaultCurrency.safeTransfer(msg.sender, depositRequest);
+  }
 
-    require(depositRequest > 0, allowanceError);
-
+  /// @dev Deletes the user's deposit request and updates the total deposit requests.
+  /// @param user The user whose deposit request is being deleted.
+  function deleteDepositRequest(UserInfo storage user) internal {
+    require(user.depositRequest > 0, allowanceError);
+    totalDepositRequests -= user.depositRequest;
     delete user.depositRequest;
     delete user.depositRequestPeriod;
-
-    vaultCurrency.safeTransfer(msg.sender, depositRequest);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
@@ -280,7 +283,10 @@ contract MainVault is Vault, VaultToken {
 
     rebalancingPeriod++;
     setTotalUnderlying();
-    uint256 underlying = savedTotalUnderlying + getVaultBalance() - reservedFunds;
+    uint256 underlying = savedTotalUnderlying +
+      getVaultBalance() -
+      reservedFunds -
+      totalDepositRequests;
 
     IXProvider(xProvider).pushTotalUnderlying{value: msg.value}(
       vaultNumber,
