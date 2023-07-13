@@ -5,6 +5,7 @@ import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { setupVault } from './setup';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 describe('Testing Vault, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
@@ -51,8 +52,11 @@ describe('Testing Vault, unit test', async () => {
     await vault.rebalance();
 
     // blacklist compound_usdc_01
+    const deadline = (await time.latest()) + 10_000;
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
-    await vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0);
+    await vault
+      .connect(guardian)
+      .withdrawFromBlacklistedProtocol(compoundVault.number, 0, deadline);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
@@ -74,8 +78,9 @@ describe('Testing Vault, unit test', async () => {
 
   it('Should not be able to withdraw from protocol when !blacklisted', async function () {
     const { vault, guardian } = await setupVault();
+    const deadline = (await time.latest()) + 10_000;
     await expect(
-      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0),
+      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0, deadline),
     ).to.be.revertedWith('!Blacklisted');
   });
 
