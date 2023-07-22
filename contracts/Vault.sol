@@ -317,6 +317,7 @@ contract Vault is ReentrancyGuard {
       vaultNumber,
       _protocolNum
     );
+    require(protocol.underlying == address(vaultCurrency), "Provider underlying mismatch");
 
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
