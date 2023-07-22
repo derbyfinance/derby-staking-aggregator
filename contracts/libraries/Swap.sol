@@ -46,7 +46,7 @@ library Swap {
     );
 
     uint256 balanceBefore = IERC20(_swap.tokenOut).balanceOf(address(this));
-    if (_rewardSwap && balanceBefore > amountOutMinimum && balanceBefore > _swap.amountOutMin)
+    if (_rewardSwap && balanceBefore >= amountOutMinimum && amountOutMinimum >= _swap.amountOutMin)
       return amountOutMinimum;
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
@@ -65,6 +65,7 @@ library Swap {
 
     ISwapRouter(_uniswap.router).exactInput(params);
     uint256 balanceAfter = IERC20(_swap.tokenOut).balanceOf(address(this));
+    require(balanceAfter - balanceBefore >= _swap.amountOutMin, "Over/underflow");
 
     return balanceAfter - balanceBefore;
   }
