@@ -77,7 +77,6 @@ contract YearnProvider is IProvider {
     address _uToken
   ) external override onlyVault returns (uint256) {
     uint256 balanceBefore = IERC20(_uToken).balanceOf(msg.sender);
-    uint256 sharesBefore = IERC20(_yToken).balanceOf(address(this));
 
     require(
       IYearn(_yToken).transferFrom(msg.sender, address(this), _amount) == true,
@@ -93,9 +92,9 @@ contract YearnProvider is IProvider {
       "Error Withdraw: under/overflow"
     );
 
-    uint256 sharesAfter = IERC20(_yToken).balanceOf(address(this));
-    if (sharesAfter > sharesBefore) {
-      IERC20(_yToken).safeTransfer(msg.sender, sharesAfter - sharesBefore);
+    uint256 remainingLpBalance = IYearn(_yToken).balanceOf(address(this));
+    if (remainingLpBalance != 0) {
+      IYearn(_yToken).transfer(msg.sender, remainingLpBalance);
     }
 
     return uAmountReceived;
