@@ -22,6 +22,7 @@ import {
 } from '@testhelp/addresses';
 import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupVault } from './setup';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 describe('Testing VaultSwap, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
@@ -54,11 +55,14 @@ describe('Testing VaultSwap, unit test', async () => {
     const USDCBalanceBeforeClaim = await IUSDc.balanceOf(vault.address);
 
     // Should revert with high minAmountOut
+    const deadline = (await time.latest()) + 10_000;
     await expect(
-      vault.connect(guardian).claimAndSwapTokens(compoundVault.number, parseUSDC('100')),
+      vault.connect(guardian).claimAndSwapTokens(compoundVault.number, parseUSDC('100'), deadline),
     ).to.be.revertedWith('Too little received');
 
-    await vault.connect(guardian).claimAndSwapTokens(compoundVault.number, parseUSDC('0.01'));
+    await vault
+      .connect(guardian)
+      .claimAndSwapTokens(compoundVault.number, parseUSDC('0.01'), deadline);
     const USDCBalanceAfterClaim = await IUSDc.balanceOf(vault.address);
 
     const USDCReceived = USDCBalanceAfterClaim.sub(USDCBalanceBeforeClaim);

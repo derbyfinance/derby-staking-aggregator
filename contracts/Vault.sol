@@ -398,7 +398,7 @@ contract Vault is ReentrancyGuard {
   /// @notice Claims and swaps tokens from the underlying protocol
   /// @dev Claims governance tokens from the underlying protocol if claimable, and swaps them to the vault's underlying token
   /// @param _protocolNum The protocol ID for which to claim and swap tokens
-  function claimAndSwapTokens(uint256 _protocolNum, uint256 _minAmount) public onlyGuardian {
+  function claimAndSwapTokens(uint256 _protocolNum, uint256 _minAmount, uint256 _deadline) public onlyGuardian {
     bool claim = controller.claim(vaultNumber, _protocolNum);
     if (claim) {
       address govToken = controller.getGovToken(vaultNumber, _protocolNum);
@@ -406,7 +406,7 @@ contract Vault is ReentrancyGuard {
       Swap.swapTokensMulti(
         Swap.SwapInOut(
           tokenBalance,
-          block.timestamp,
+          _deadline,
           _minAmount,
           nativeToken,
           govToken,
@@ -486,12 +486,13 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum The protocol number from which to withdraw the funds.
   function withdrawFromBlacklistedProtocol(
     uint256 _protocolNum,
-    uint256 _minAmount
+    uint256 _minAmount,
+    uint256 _deadline
   ) external onlyGuardian {
     bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, _protocolNum);
     require(isBlacklisted, "!Blacklisted");
 
-    claimAndSwapTokens(_protocolNum, _minAmount);
+    claimAndSwapTokens(_protocolNum, _minAmount, _deadline);
 
     uint256 balanceBefore = balanceUnderlying(_protocolNum);
     withdrawFromProtocol(_protocolNum, balanceBefore);
