@@ -29,6 +29,7 @@ describe('Testing VaultDeposit, unit test', async () => {
     );
 
     expect(await vault.connect(user).getDepositRequest()).to.be.equal(15_000 * 1e6);
+    expect(await vault.getTotalDepositRequestsTest()).to.be.equal(15_000 * 1e6);
     expect(await IUSDC.balanceOf(vault.address)).to.be.equal(15_000 * 1e6);
   });
 
@@ -46,6 +47,8 @@ describe('Testing VaultDeposit, unit test', async () => {
       user,
       (15_000 * 1e6) / 2,
     );
+
+    expect(await vault.getTotalDepositRequestsTest()).to.be.equal(0);
   });
 
   it('Deposit and cancel request', async function () {

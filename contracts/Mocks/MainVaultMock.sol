@@ -171,6 +171,10 @@ contract MainVaultMock is MainVault {
     return withdrawFromProtocol(_protocolNum, _amount);
   }
 
+  function getTotalDepositRequestsTest() external view returns (uint256) {
+    return totalDepositRequests;
+  }
+
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {
   //   int128 g_casted = ABDKMath64x64.fromUInt(_g);
   //   int128 n_casted = ABDKMath64x64.fromUInt(_n);
