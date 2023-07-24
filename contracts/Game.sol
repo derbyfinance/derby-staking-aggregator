@@ -327,7 +327,8 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _basketId,
     uint256 _unlockedTokens
   ) internal returns (uint256) {
-    if (baskets[_basketId].totalUnRedeemedRewards > negativeRewardThreshold) return 0;
+    if (baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE) > negativeRewardThreshold)
+      return 0;
 
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
     uint256 unreedemedRewards = uint(-baskets[_basketId].totalUnRedeemedRewards);
