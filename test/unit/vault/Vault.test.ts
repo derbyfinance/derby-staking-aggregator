@@ -11,7 +11,6 @@ describe('Testing Vault, unit test', async () => {
     vaultNumber: number = 10;
 
   const compoundVault = protocols.get('compound_usdc_01')!;
-  const aaveVault = protocols.get('aave_usdc_01')!;
   const yearnVault = protocols.get('yearn_usdc_01')!;
 
   const amount = 100_000;
@@ -29,7 +28,6 @@ describe('Testing Vault, unit test', async () => {
     const { vault } = await setupVault();
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40),
-      aaveVault.setDeltaAllocation(vault, 60),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
 
@@ -40,35 +38,45 @@ describe('Testing Vault, unit test', async () => {
     }
   });
 
-  it('Should be able to blacklist protocol and pull all funds', async function () {
+  it('Should be able to blacklist protocol, update allocations and pull all funds', async function () {
     const { vault, controller, user, guardian } = await setupVault();
     await vault.setDeltaAllocationsReceivedTEST(true);
     await Promise.all([
       compoundVault.setExpectedBalance(0).setDeltaAllocation(vault, 40),
-      aaveVault.setExpectedBalance(45_000).setDeltaAllocation(vault, 60),
-      yearnVault.setExpectedBalance(15_000).setDeltaAllocation(vault, 20),
+      yearnVault.setExpectedBalance(30_000).setDeltaAllocation(vault, 20),
     ]);
 
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.rebalance();
 
     // blacklist compound_usdc_01
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
+    await vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0);
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
-    let expectedVaultLiquidity = 40000;
+    let expectedVaultLiquidity = 70000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
       expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1);
     }
 
+    expect(await vault.getAllocationTEST(compoundVault.number)).to.be.equal(0);
+    expect(await vault.totalAllocatedTokens()).to.be.equal(20);
+
     expect(vaultBalance).to.be.closeTo(expectedVaultLiquidity, 1);
     expect(
       await controller.connect(guardian).getProtocolBlacklist(vaultNumber, compoundVault.number),
     ).to.be.true;
+  });
+
+  it('Should not be able to withdraw from protocol when !blacklisted', async function () {
+    const { vault, guardian } = await setupVault();
+    await expect(
+      vault.connect(guardian).withdrawFromBlacklistedProtocol(compoundVault.number, 0),
+    ).to.be.revertedWith('!Blacklisted');
   });
 
   it('Should not be able to set delta on blacklisted protocol', async function () {
@@ -83,19 +91,18 @@ describe('Testing Vault, unit test', async () => {
 
     await Promise.all([
       compoundVault.setExpectedBalance(0).setDeltaAllocation(vault, 40),
-      aaveVault.setExpectedBalance(45_000).setDeltaAllocation(vault, 60),
-      yearnVault.setExpectedBalance(15_000).setDeltaAllocation(vault, 20),
+      yearnVault.setExpectedBalance(30_000).setDeltaAllocation(vault, 20),
     ]);
 
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
+    await vault.connect(user).deposit(amountUSDC);
 
     await vault.setVaultState(3);
     await vault.rebalance();
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
 
-    let expectedVaultLiquidity = 40000;
+    let expectedVaultLiquidity = 70000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
@@ -121,23 +128,18 @@ describe('Testing Vault, unit test', async () => {
     const { vault, user, dao } = await setupVault();
     await AllMockProviders.deployAllMockProviders(dao);
 
-    const { yearnProvider, compoundProvider, aaveProvider } = AllMockProviders;
+    const { yearnProvider, compoundProvider } = AllMockProviders;
     await vault.setDeltaAllocationsReceivedTEST(true);
     let compoundPrice = 1;
-    let aavePrice = 2;
     let yearnPrice = 3;
     await Promise.all([
       compoundProvider.mock.exchangeRate.returns(compoundPrice),
-      aaveProvider.mock.exchangeRate.returns(aavePrice),
       yearnProvider.mock.exchangeRate.returns(yearnPrice),
       compoundProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
-      aaveProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
       yearnProvider.mock.balanceUnderlying.returns(0), // to be able to use the rebalance function
       compoundProvider.mock.deposit.returns(0), // to be able to use the rebalance function
-      aaveProvider.mock.deposit.returns(0), // to be able to use the rebalance function
       yearnProvider.mock.deposit.returns(0), // to be able to use the rebalance function
       compoundProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
-      aaveProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
       yearnProvider.mock.withdraw.returns(0), // to be able to use the rebalance function
     ]);
     await vault.setTotalUnderlying();
@@ -145,10 +147,9 @@ describe('Testing Vault, unit test', async () => {
     // await setDeltaAllocations(user, vaultMock, allProtocols);
     await Promise.all([
       compoundVault.setDeltaAllocation(vault, 40),
-      aaveVault.setDeltaAllocation(vault, 60),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
-    await vault.connect(user).deposit(amountUSDC, await user.getAddress());
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.rebalance();
   });

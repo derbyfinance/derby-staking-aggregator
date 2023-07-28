@@ -4,16 +4,7 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
-import {
-  aave as aaveGov,
-  aaveUSDC,
-  compoundUSDC,
-  compToken,
-  dai,
-  usdc,
-  yearn as yearnGov,
-  yearnUSDC,
-} from './addresses';
+import { compoundUSDC, compToken, dai, usdc, yearn as yearnGov, yearnUSDC } from './addresses';
 
 const provider = ethers.provider;
 
@@ -54,7 +45,7 @@ export async function transferAndApproveDAI(vault: string, user: Signer, amount:
 }
 
 export async function addStarterProtocols(
-  { yearn, compound, aave }: IStarterProviders,
+  { yearn, compound }: IStarterProviders,
   vaultNumber: number,
 ) {
   const yearnNumber = await run(`controller_add_protocol`, {
@@ -75,17 +66,8 @@ export async function addStarterProtocols(
     govtoken: compToken,
     uscale: 1e6,
   });
-  const aaveNumber = await run(`controller_add_protocol`, {
-    name: 'aave_usdc_01',
-    vaultnumber: vaultNumber,
-    provider: aave,
-    protocoltoken: aaveUSDC,
-    underlying: usdc,
-    govtoken: aaveGov,
-    uscale: 1e6,
-  });
 
-  return [yearnNumber, compNumber, aaveNumber];
+  return [yearnNumber, compNumber];
 }
 
 export const random = (max: number) => Math.floor(Math.random() * max);
@@ -131,7 +113,6 @@ export const controllerAddProtocol = async (
   protocolToken: string,
   protocolUnderlying: string,
   govToken: string,
-  uScale: string,
 ) => {
   const tx = await controller.addProtocol(
     name,
@@ -140,7 +121,6 @@ export const controllerAddProtocol = async (
     protocolToken,
     protocolUnderlying,
     govToken,
-    uScale,
   );
   const receipt = await tx.wait();
   const { protocolNumber } = receipt.events![0].args as Result;
@@ -177,8 +157,9 @@ export const formatDAI = (amount: string | BigNumber) => ethers.utils.formatUnit
 export const parseDRB = (amount: number) => ethers.utils.parseUnits(amount.toString(), 18);
 export const formatDRB = (amount: number | BigNumber) => ethers.utils.formatUnits(amount, 18);
 
+export const getSwapDeadline = () => Date.now() + 10 * 60;
+
 type IStarterProviders = {
   yearn: string;
   compound: string;
-  aave: string;
 };

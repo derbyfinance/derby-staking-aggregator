@@ -28,23 +28,23 @@ describe('Testing controller tasks', () => {
       protocoltoken: yearnUSDC,
       underlying: usdc,
       govtoken: yearn,
-      uscale: 1e6,
     });
 
     const protocolInfo = await controller.getProtocolInfo(vaultNumber, protocolNumber);
     expect(protocolInfo.LPToken.toLowerCase()).to.be.equal(yearnUSDC.toLowerCase());
     expect(protocolInfo.provider.toLowerCase()).to.be.equal(providerAddress.toLowerCase());
     expect(protocolInfo.underlying.toLowerCase()).to.be.equal(usdc.toLowerCase());
-    expect(protocolInfo.uScale).to.be.equal(1e6);
   });
 
-  it('controller_add_vault', async function () {
+  it('controller_set_vault_whitelist', async function () {
     const vault = '0x90c84237fddf091b1e63f369af122eb46000bc70';
     const { controller } = await setupController();
 
     expect(await controller.vaultWhitelist(vault)).to.be.equal(false);
-    await run('controller_add_vault', { vault });
+    await run('controller_set_vault_whitelist', { vault, status: true });
     expect(await controller.vaultWhitelist(vault)).to.be.equal(true);
+    await run('controller_set_vault_whitelist', { vault, status: false });
+    expect(await controller.vaultWhitelist(vault)).to.be.equal(false);
   });
 
   it('controller_uniswap_setters', async function () {
@@ -63,30 +63,6 @@ describe('Testing controller tasks', () => {
     expect(uniswapParams.poolFee).to.be.equal(uniswapPoolFee);
   });
 
-  it('controller_set_curve_poolfee', async function () {
-    const { controller, controllerInit } = await setupController();
-    const { curve3PoolFee } = controllerInit;
-
-    await run('controller_set_curve_poolfee', { poolfee: curve3PoolFee });
-    expect(await controller.curve3PoolFee()).to.be.equal(curve3PoolFee);
-  });
-
-  it('controller_add_curve_index', async function () {
-    const curveIndex = 11;
-    const { controller } = await setupController();
-
-    await run('controller_add_curve_index', { token: usdc, index: curveIndex });
-    expect(await controller.curveIndex(usdc)).to.be.equal(curveIndex);
-  });
-
-  it('controller_add_underlying_scale', async function () {
-    const decimals = 8;
-    const { controller } = await setupController();
-
-    await run('controller_add_underlying_scale', { stable: usdc, decimals: decimals });
-    expect(await controller.underlyingUScale(usdc)).to.be.equal(10 ** decimals);
-  });
-
   it('controller_set_claimable', async function () {
     const lptoken = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
     const { controller } = await setupController();
@@ -94,14 +70,6 @@ describe('Testing controller tasks', () => {
     expect(await controller.claimable(lptoken)).to.be.equal(false);
     await run('controller_set_claimable', { lptoken, bool: true });
     expect(await controller.claimable(lptoken)).to.be.equal(true);
-  });
-
-  it('controller_set_curve_3pool', async function () {
-    const { controller, controllerInit } = await setupController();
-    const { curve3Pool } = controllerInit;
-
-    await run('controller_set_curve_3pool', { pool: curve3Pool });
-    expect(await controller.curve3Pool()).to.be.equal(curve3Pool);
   });
 
   it('controller_set_dao', async function () {

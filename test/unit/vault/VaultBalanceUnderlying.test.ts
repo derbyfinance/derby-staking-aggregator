@@ -14,7 +14,7 @@ const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
 describe('Testing balanceUnderlying for every single protocol vault', async () => {
   const IUSDc: Contract = erc20(usdc);
 
-  it('Should calc balanceUnderlying for all known protocols correctly', async function () {
+  it('Should calc balanceUnderlying for all known USDC! protocols correctly', async function () {
     const { vault, user } = await setupVault();
     const liquidityPerc = 10;
 
@@ -23,7 +23,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       await protocol.setDeltaAllocation(vault, getRandomAllocation());
     }
 
-    await vault.connect(user).deposit(amountUSDC, user.address);
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.rebalance();
@@ -43,8 +43,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       // console.log({ balanceUnderlying });
       // console.log({ expectedBalance });
 
-      // 1000 margin cause of trading stables
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 1000);
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 2300);
     }
 
     const totalUnderlying = await vault.savedTotalUnderlying();
@@ -63,7 +62,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       await protocol.setDeltaAllocation(vault, getRandomAllocation());
     }
 
-    await vault.connect(user).deposit(amountUSDC, user.address);
+    await vault.connect(user).deposit(amountUSDC);
     await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.rebalance();

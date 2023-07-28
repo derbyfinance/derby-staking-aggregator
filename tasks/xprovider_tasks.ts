@@ -2,13 +2,11 @@ import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('xprovider_init', 'Set trusted provider on remote chains')
-  .addParam('provider', 'Address of the XController provider', null, types.int)
   .addParam('chainid', 'chainId of the xController')
   .addParam('gamechain', 'chainId of the game')
-  .setAction(async ({ provider, chainid, gamechain }, hre) => {
+  .setAction(async ({ chainid, gamechain }, hre) => {
     const xProvider = await getXProvider(hre);
     const dao = await getDao(hre);
-    await xProvider.connect(dao).setXControllerProvider(provider);
     await xProvider.connect(dao).setXControllerChainId(chainid);
     await xProvider.connect(dao).setGameChainId(gamechain);
   });
@@ -16,7 +14,7 @@ task('xprovider_init', 'Set trusted provider on remote chains')
 /*************
   Only Dao
 **************/
-  task('xprovider_set_trusted_connext', 'Set trusted provider on remote chains')
+task('xprovider_set_trusted_connext', 'Set trusted provider on remote chains')
   .addParam('chainid', 'Chain is for remote xprovider', null, types.int)
   .addParam('address', 'Address of remote xprovider')
   .setAction(async ({ chainid, address }, hre) => {
@@ -31,14 +29,6 @@ task('xprovider_set_xcontroller', 'Setter for xController address')
     const xProvider = await getXProvider(hre);
     const dao = await getDao(hre);
     await xProvider.connect(dao).setXController(address);
-  });
-
-task('xprovider_set_xcontroller_provider', 'Setter for xControllerProvider address')
-  .addParam('address', 'New game address')
-  .setAction(async ({ address }, hre) => {
-    const xProvider = await getXProvider(hre);
-    const dao = await getDao(hre);
-    await xProvider.connect(dao).setXControllerProvider(address);
   });
 
 task('xprovider_set_xcontroller_chain', 'Setter for xController chain id')

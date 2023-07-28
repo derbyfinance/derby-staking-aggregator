@@ -20,6 +20,7 @@ describe('Testing Compound provider', async () => {
     const provider = (await getContract('CompoundProvider', hre)) as CompoundProvider;
     const [dao, user] = await getAllSigners(hre);
 
+    await provider.connect(dao).addVault(user.address);
     await transferAndApproveUSDC(provider.address, user, 10_000_000 * 1e6);
     await transferAndApproveDAI(provider.address, user, 1_000_000);
 
@@ -60,13 +61,13 @@ describe('Testing Compound provider', async () => {
       const shares = await provider.calcShares(amount, cUSDC);
 
       const cUSDCBalance = await provider.balance(user.address, cUSDC);
-      expect(formatUnits(cUSDCBalance, 8)).to.be.closeTo(formatUSDC(shares), 1);
+      expect(formatUSDC(cUSDCBalance)).to.be.closeTo(formatUSDC(shares), 1);
     });
 
     it('Should calculate balance underlying correctly', async () => {
       const balanceUnderlying = await provider.balanceUnderlying(user.address, cUSDC);
 
-      expect(formatUnits(balanceUnderlying, 8)).to.be.closeTo(amount / 1e6, 1);
+      expect(formatUSDC(balanceUnderlying)).to.be.closeTo(amount / 1e6, 1);
     });
 
     it('Should be able to withdraw', async () => {
@@ -114,13 +115,13 @@ describe('Testing Compound provider', async () => {
       const shares = await provider.calcShares(amount, cDAI);
 
       const cDAIBalance = await provider.balance(user.address, cDAI);
-      expect(formatUnits(cDAIBalance, 8)).to.be.closeTo(formatEther(shares), 1);
+      expect(formatUnits(cDAIBalance, 18)).to.be.closeTo(formatEther(shares), 1);
     });
 
     it('Should calculate balance underlying correctly', async () => {
       const balanceUnderlying = await provider.balanceUnderlying(user.address, cDAI);
 
-      expect(formatUnits(balanceUnderlying, 8)).to.be.closeTo(formatEther(amount), 1);
+      expect(formatUnits(balanceUnderlying, 18)).to.be.closeTo(formatEther(amount), 1);
     });
 
     it('Should be able to withdraw', async () => {

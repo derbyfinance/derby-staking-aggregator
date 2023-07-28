@@ -8,13 +8,8 @@ contract XChainControllerMock is XChainController {
   constructor(
     address _game,
     address _dao,
-    address _guardian,
-    uint32 _homeChain
-  ) XChainController(_game, _dao, _guardian, _homeChain) {}
-
-  function setActiveVaultsTEST(uint256 _vaultNumber, uint256 _activeVaults) external {
-    return setActiveVaults(_vaultNumber, _activeVaults);
-  }
+    address _guardian
+  ) XChainController(_game, _dao, _guardian) {}
 
   function setReadyTEST(uint256 _vaultNumber, bool _state) external {
     return setReady(_vaultNumber, _state);
@@ -52,14 +47,14 @@ contract XChainControllerMock is XChainController {
     return vaultStage[_vaultNumber].fundsReceived;
   }
 
-  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns (int256) {
+  function getCurrentTotalAllocationTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getCurrentTotalAllocation(_vaultNumber);
   }
 
   function getCurrentAllocationTEST(
     uint256 _vaultNumber,
     uint32 _chainId
-  ) external view returns (int256) {
+  ) external view returns (uint256) {
     return getCurrentAllocation(_vaultNumber, _chainId);
   }
 
@@ -72,6 +67,10 @@ contract XChainControllerMock is XChainController {
 
   function getTotalSupplyTEST(uint256 _vaultNumber) external view returns (uint256) {
     return getTotalSupply(_vaultNumber);
+  }
+
+  function getVaultDecimalsTEST(uint256 _vaultNumber) external view returns (uint256) {
+    return vaults[_vaultNumber].decimals;
   }
 
   function getWithdrawalRequestsTEST(
@@ -89,11 +88,8 @@ contract XChainControllerMock is XChainController {
     return vaults[_vaultNumber].totalUnderlying;
   }
 
-  function getUnderlyingAddressTEST(
-    uint256 _vaultNumber,
-    uint32 _chainId
-  ) external view returns (address) {
-    return getUnderlyingAddress(_vaultNumber, _chainId);
+  function getUnderlyingAddressTEST(uint256 _vaultNumber) external view returns (address) {
+    return getUnderlyingAddress(_vaultNumber);
   }
 
   function getVaultAddressTEST(

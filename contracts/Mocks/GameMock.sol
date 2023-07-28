@@ -11,9 +11,8 @@ contract GameMock is Game {
     string memory symbol_,
     address _derbyTokenAddress,
     address _dao,
-    address _guardian,
-    address _controller
-  ) Game(name_, symbol_, _derbyTokenAddress, _dao, _guardian, _controller) {}
+    address _guardian
+  ) Game(name_, symbol_, _derbyTokenAddress, _dao, _guardian) {}
 
   function lockTokensToBasketTEST(uint256 _lockedTokenAmount) public {
     lockTokensToBasket(_lockedTokenAmount);
@@ -55,6 +54,16 @@ contract GameMock is Game {
     }
   }
 
+  function setRewardPerLockedTokenTEST(
+    uint256 _vaultNumber,
+    uint32 _chainId,
+    uint256 _rebalancingPeriod,
+    uint256 _protocolId,
+    int256 _reward
+  ) external {
+    vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId] = _reward;
+  }
+
   function getRewardsPerLockedTokenTEST(
     uint256 _vaultNumber,
     uint32 _chainId,
@@ -77,5 +86,10 @@ contract GameMock is Game {
     uint32 _chainId
   ) external view returns (address) {
     return getVaultAddress(_vaultNumber, _chainId);
+  }
+
+  function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
+    this.pushAllocationsToController{value: msg.value / 2}(_vaultNumber);
+    this.pushAllocationsToVaults{value: msg.value / 2}(_vaultNumber, _chain);
   }
 }

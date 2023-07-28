@@ -10,7 +10,7 @@ interface IIdle {
 
   function redeemIdleToken(uint _amount) external returns (uint);
 
-  function tokenPrice() external view returns (uint);
+  function tokenPriceWithFee(address _receiver) external view returns (uint);
 
   function decimals() external view returns (uint);
 
@@ -20,9 +20,5 @@ interface IIdle {
 
   function transfer(address _receiver, uint _amount) external returns (bool);
 
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }

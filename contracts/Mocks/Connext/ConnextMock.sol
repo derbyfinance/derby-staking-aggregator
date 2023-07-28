@@ -21,15 +21,14 @@ contract ConnextMock is IConnext {
     bytes calldata _callData
   ) external payable returns (bytes32) {
     if (_asset != address(0)) IERC20(_asset).transferFrom(msg.sender, _to, _amount);
-    else
-      IXReceiver(_to).xReceive(
-        bytes32(""),
-        0,
-        address(0),
-        msg.sender,
-        domainLookup[msg.sender],
-        _callData
-      );
+    IXReceiver(_to).xReceive(
+      bytes32(""),
+      0,
+      address(0),
+      msg.sender,
+      domainLookup[msg.sender],
+      _callData
+    );
   }
 
   function setDomainLookup(address _addrOrigin, uint32 _domainOrigin) public {

@@ -1,6 +1,12 @@
 import { expect } from 'chai';
 import { Signer, Contract, BigNumberish } from 'ethers';
-import { erc20, formatEther, parseEther, parseUSDC } from '@testhelp/helpers';
+import {
+  erc20,
+  formatEther,
+  getSwapDeadline,
+  parseEther as pE,
+  parseUSDC,
+} from '@testhelp/helpers';
 import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
@@ -13,6 +19,7 @@ describe('Testing Game', async () => {
   let vault: MainVaultMock,
     derbyToken: DerbyToken,
     dao: Signer,
+    guardian: Signer,
     user: Signer,
     userAddr: string,
     IUSDc: Contract = erc20(usdc),
@@ -28,6 +35,7 @@ describe('Testing Game', async () => {
     vault = setup.vault;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
+    guardian = setup.guardian;
     user = setup.user;
     userAddr = setup.userAddr;
     vaultNumber = setup.vaultNumber;
@@ -42,7 +50,7 @@ describe('Testing Game', async () => {
 
     expect(await derbyToken.name()).to.be.equal(name);
     expect(await derbyToken.symbol()).to.be.equal(symbol);
-    expect(await derbyToken.totalSupply()).to.be.equal(parseEther(totalSupply.toString()));
+    expect(await derbyToken.totalSupply()).to.be.equal(pE(totalSupply.toString()));
   });
 
   it('game should have DerbyToken contract addresses set', async function () {
@@ -60,6 +68,12 @@ describe('Testing Game', async () => {
     await expect(game.connect(dao).rebalanceBasket(basketId, allocationArray)).to.be.revertedWith(
       'Game: Not the owner of the basket',
     );
+
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
+    await expect(game.connect(user).rebalanceBasket(basketId, allocationArray)).to.be.revertedWith(
+      'Allocations to blacklisted protocol',
+    );
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, 0);
 
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, allocationArray),
@@ -113,6 +127,11 @@ describe('Testing Game', async () => {
       [0, 100, 0, 100, 300], // 500
     ];
 
+    // blacklisting protocol, user should still be able to unlock the tokens
+    await game.upRebalancingPeriod(vaultNumber);
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
+    await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
+
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId, allocationArray),
     ).to.changeTokenBalance(derbyToken, user, 1000);
@@ -148,6 +167,10 @@ describe('Testing Game', async () => {
   it('Should push delta allocations from game to xChainController', async function () {
     await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
     expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
+
+    await expect(game.rebalanceBoth(vaultNumber, 100, { value: pE('0.2') })).to.be.revertedWith(
+      'Cannot call functions in the same block',
+    );
     // chainIds = [10, 100, 1000];
     await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
 
@@ -181,6 +204,12 @@ describe('Testing Game', async () => {
     for (let chain of chainIds) {
       await game.setXChainRebalanceState(vaultNumber, chain, false);
     }
+
+    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
+      'Game: not all rewards are settled',
+    );
+    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
+
     await game.connect(user).rebalanceBasket(basketId, [
       [0, 0, 0, -200, 0], // 200
       [-100, 0, -100, 0, 0], // 200
@@ -229,18 +258,20 @@ describe('Testing Game', async () => {
     ]);
 
     // Deposit so the vault has funds
-    await vault.connect(user).deposit(parseUSDC('10000'), userAddr); // 10k
+    await vault.connect(user).deposit(parseUSDC('10000')); // 10k
 
     await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(2_120_000)]);
     expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
 
     // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
-    await vault.connect(user).withdrawRewards();
+    await vault.connect(user).withdrawRewards(getSwapDeadline(), 0);
     const balance = formatEther(await IUniswap.balanceOf(userAddr));
     expect(Number(balance)).to.be.greaterThan(0.3);
 
     // Trying to withdraw again, should revert
-    await expect(vault.connect(user).withdrawRewards()).to.be.revertedWith('!Allowance');
+    await expect(vault.connect(user).withdrawRewards(getSwapDeadline(), 0)).to.be.revertedWith(
+      '!Allowance',
+    );
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
@@ -267,18 +298,16 @@ describe('Testing Game', async () => {
     await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(4_240_000)]);
     expect(await vault.getReservedFundsTEST()).to.be.equal(4_240_000);
 
-    await expect(() => vault.connect(user).withdrawRewards()).to.changeTokenBalance(
-      IUSDc,
-      user,
-      4_240_000,
-    );
+    await expect(() =>
+      vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
+    ).to.changeTokenBalance(IUSDc, user, 4_240_000);
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
     expect(await vault.getReservedFundsTEST()).to.be.equal(0);
   });
 });
 
-async function mockRewards(
+export async function mockRewards(
   game: GameMock,
   DerbyToken: DerbyToken,
   user: Signer,
@@ -287,10 +316,10 @@ async function mockRewards(
   chainIds: BigNumberish[],
 ) {
   let allocations = [
-    [parseEther('200'), parseEther('0'), parseEther('0'), parseEther('200'), parseEther('0')], // 400
-    [parseEther('100'), parseEther('0'), parseEther('200'), parseEther('100'), parseEther('200')], // 600
+    [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
+    [pE('100'), pE('0'), pE('200'), pE('100'), pE('200')], // 600
   ];
-  const totalAllocations = parseEther('1000');
+  const totalAllocations = pE('1000');
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
@@ -302,21 +331,22 @@ async function mockRewards(
   await game.connect(user).rebalanceBasket(basketId, allocations);
 
   // This rebalance should be skipped for the basket
+  // all rewards have to be scaled by 1e18
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await game.upRebalancingPeriod(vaultNum);
   await Promise.all([
-    game.mockRewards(vaultNum, chainIds[0], [2_000, 1_000, 500, 100, 0]),
-    game.mockRewards(vaultNum, chainIds[1], [4_000, 2_000, 1_000, 200, 100]),
+    game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
+    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 }

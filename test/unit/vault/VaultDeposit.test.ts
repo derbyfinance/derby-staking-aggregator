@@ -1,36 +1,64 @@
 import { expect } from 'chai';
 import { setupVault } from './setup';
+import { MainVaultMock } from '@typechain';
+import { Contract, Signer } from 'ethers';
+import { parseUSDC } from '@testhelp/helpers';
 
 describe('Testing VaultDeposit, unit test', async () => {
-  it('Deposit, mint and return Derby LP tokens', async function () {
-    const { vault, user } = await setupVault();
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, 10_000 * 1e6);
-
-    // mocking exchangerate to 0.9
-    await vault.setExchangeRateTEST(0.9 * 1e6);
-
-    let expectedLPTokens = Math.trunc((10_000 / 0.9) * 1e6);
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, expectedLPTokens);
-
-    // mocking exchangerate to 1.321
-    await vault.setExchangeRateTEST(1.321 * 1e6);
-
-    expectedLPTokens = Math.trunc((10_000 / 1.321) * 1e6);
-    await expect(() =>
-      vault.connect(user).deposit(10_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, expectedLPTokens);
+  let vault: MainVaultMock, user: Signer, IUSDC: Contract;
+  before(async () => {
+    ({ vault, user, IUSDC } = await setupVault());
   });
 
-  it('Should not be able to deposit when vault is off', async function () {
-    const { vault, user } = await setupVault();
-    await vault.toggleVaultOnOffTEST(true);
+  it('Set and check deposit request', async function () {
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -10_000 * 1e6,
+    );
 
-    await expect(vault.connect(user).deposit(10_000 * 1e6, user.address)).to.be.revertedWith(
-      'Vault is off',
+    expect(await vault.connect(user).getDepositRequest()).to.be.equal(10_000 * 1e6);
+    expect(await IUSDC.balanceOf(vault.address)).to.be.equal(10_000 * 1e6);
+  });
+
+  it('Deposit a second time before rebalance', async function () {
+    await expect(() => vault.connect(user).deposit(5_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -5_000 * 1e6,
+    );
+
+    expect(await vault.connect(user).getDepositRequest()).to.be.equal(15_000 * 1e6);
+    expect(await IUSDC.balanceOf(vault.address)).to.be.equal(15_000 * 1e6);
+  });
+
+  it('Redeem deposit before next rebalance', async function () {
+    await expect(vault.connect(user).redeemDeposit()).to.be.revertedWith('No funds');
+  });
+
+  it('Redeem deposit after next rebalance', async function () {
+    // mocking exchangerate to 2
+    await vault.setExchangeRateTEST(parseUSDC(2));
+    await vault.upRebalancingPeriodTEST();
+
+    await expect(() => vault.connect(user).redeemDeposit()).to.changeTokenBalance(
+      vault,
+      user,
+      (15_000 * 1e6) / 2,
+    );
+  });
+
+  it('Deposit and cancel request', async function () {
+    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -10_000 * 1e6,
+    );
+
+    await expect(() => vault.connect(user).cancelDepositRequest()).to.changeTokenBalance(
+      IUSDC,
+      user,
+      10_000 * 1e6,
     );
   });
 
@@ -41,20 +69,28 @@ describe('Testing VaultDeposit, unit test', async () => {
     await vault.connect(guardian).setTrainingDeposit(10_000 * 1e6);
 
     // not whitelisted
-    await expect(vault.connect(user).deposit(5_000 * 1e6, user.address)).to.be.revertedWith('');
+    await expect(vault.connect(user).deposit(5_000 * 1e6)).to.be.revertedWith('');
 
     await vault.connect(guardian).addToWhitelist(user.address);
 
-    await expect(() =>
-      vault.connect(user).deposit(6_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, 6_000 * 1e6);
+    await expect(() => vault.connect(user).deposit(6_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -6_000 * 1e6,
+    );
+    expect(await vault.connect(user).getDepositRequest()).to.be.equal(6_000 * 1e6);
+
+    // min deposit of 100 not reached
+    await expect(vault.connect(user).deposit(95 * 1e6)).to.be.revertedWith('Minimum deposit');
 
     // max deposit of 10k reached
-    await expect(vault.connect(user).deposit(6_000 * 1e6, user.address)).to.be.revertedWith('');
+    await expect(vault.connect(user).deposit(6_000 * 1e6)).to.be.revertedWith('');
 
     // User will have a total of 9k LPs, so should be fine
-    await expect(() =>
-      vault.connect(user).deposit(3_000 * 1e6, user.address),
-    ).to.changeTokenBalance(vault, user, 3_000 * 1e6);
+    await expect(() => vault.connect(user).deposit(3_000 * 1e6)).to.changeTokenBalance(
+      IUSDC,
+      user,
+      -3_000 * 1e6,
+    );
   });
 });

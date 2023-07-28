@@ -15,7 +15,7 @@ const func: DeployFunction = async function ({
   const deployConfig = await getDeployConfigVault(vaultName, network.name);
   if (!deployConfig) throw 'Unknown contract name';
 
-  const { name, symbol, decimals, vaultNumber, vaultCurrency, uScale } = deployConfig;
+  const { name, symbol, decimals, vaultNumber, vaultCurrency, nativeToken } = deployConfig;
 
   const swapLibrary = await deployments.get('Swap');
   const game = await deployments.get('GameMock');
@@ -33,7 +33,7 @@ const func: DeployFunction = async function ({
       game.address,
       controller.address,
       vaultCurrency,
-      uScale,
+      nativeToken,
     ],
     libraries: {
       Swap: swapLibrary.address,

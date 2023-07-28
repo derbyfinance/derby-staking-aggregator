@@ -9,8 +9,6 @@ contract Controller is IController {
   UniswapParams public uniswapParams;
 
   address private dao;
-  address public curve3Pool;
-  uint256 public curve3PoolFee;
 
   // (vaultNumber => protocolNumber => protocolInfoStruct): struct in IController
   mapping(uint256 => mapping(uint256 => ProtocolInfoS)) public protocolInfo;
@@ -28,11 +26,8 @@ contract Controller is IController {
   mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
   // (vaultNumber => latestProtocolId)
   mapping(uint256 => uint256) public latestProtocolId;
-
-  // (stableCoinAddress => curveIndex): curve index for stable coins
-  mapping(address => int128) public curveIndex;
-  // (stableCoinAddress => uScale): uScale for vault currency coins (i.e. stables) used for swapping
-  mapping(address => uint256) public underlyingUScale; // index is address of vaultcurrency erc20 contract
+  // LPtoken => bool: already added protocols
+  mapping(address => bool) private addedProtocols;
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -81,16 +76,6 @@ contract Controller is IController {
     return uniswapParams.quoter;
   }
 
-  function getCurveParams(address _in, address _out) external view returns (CurveParams memory) {
-    CurveParams memory curveParams;
-    curveParams.indexTokenIn = curveIndex[_in];
-    curveParams.indexTokenOut = curveIndex[_out];
-    curveParams.pool = curve3Pool;
-    curveParams.poolFee = curve3PoolFee;
-
-    return curveParams;
-  }
-
   /// @notice Getter for protocol blacklist, given an vaultnumber and protocol number returns true if blacklisted. Can only be called by vault.
   /// @param _vaultNumber Number of the vault
   /// @param _protocolNum Protocol number linked to protocol vault
@@ -121,8 +106,10 @@ contract Controller is IController {
     protocolBlacklist[_vaultNumber][_protocolNum] = true;
   }
 
-  /// @notice Gets the gas price from Chainlink oracle
-  /// @return gasPrice latest gas price from oracle
+  /// @notice Getter for the gov token address
+  /// @param _vaultNumber Number of the vault
+  /// @param _protocolNum Protocol number linked to protocol vault
+  /// @return Protocol gov token address
   function getGovToken(uint256 _vaultNumber, uint256 _protocolNum) external view returns (address) {
     return protocolGovToken[_vaultNumber][_protocolNum];
   }
@@ -149,9 +136,9 @@ contract Controller is IController {
     address _provider,
     address _protocolLPToken,
     address _underlying,
-    address _govToken,
-    uint256 _uScale
+    address _govToken
   ) external onlyDao returns (uint256) {
+    require(!addedProtocols[_protocolLPToken], "Protocol already added");
     uint256 protocolNumber = latestProtocolId[_vaultNumber];
 
     protocolNames[_vaultNumber][protocolNumber] = _name;
@@ -159,10 +146,10 @@ contract Controller is IController {
     protocolInfo[_vaultNumber][protocolNumber] = ProtocolInfoS(
       _protocolLPToken,
       _provider,
-      _underlying,
-      _uScale
+      _underlying
     );
 
+    addedProtocols[_protocolLPToken] = true;
     emit SetProtocolNumber(protocolNumber, _protocolLPToken);
 
     latestProtocolId[_vaultNumber]++;
@@ -170,10 +157,32 @@ contract Controller is IController {
     return protocolNumber;
   }
 
-  /// @notice Add protocol and vault to Controller
-  /// @param _vault Vault address to whitelist
-  function addVault(address _vault) external onlyDao {
-    vaultWhitelist[_vault] = true;
+  /// @notice Sets the protocol information for a specific vault and protocol number in case something goes wrong.
+  /// @dev Stores the protocol information in the protocolInfo mapping.
+  /// @param _vaultNumber The vault number to associate the protocol information with.
+  /// @param _protocolNumber The protocol number to associate the protocol information with.
+  /// @param _LPToken The address of the liquidity provider token for the protocol.
+  /// @param _provider The address of the provider for the protocol.
+  /// @param _underlying The address of the underlying token for the protocol.
+  function setProtocolInfo(
+    uint256 _vaultNumber,
+    uint256 _protocolNumber,
+    address _LPToken,
+    address _provider,
+    address _underlying
+  ) external onlyDao {
+    protocolInfo[_vaultNumber][_protocolNumber] = ProtocolInfoS({
+      LPToken: _LPToken,
+      provider: _provider,
+      underlying: _underlying
+    });
+  }
+
+  /// @notice Set the whitelist status of a vault in the Controller
+  /// @param _vault Vault address to update
+  /// @param _status Boolean value representing the new whitelist status of the vault
+  function setVaultWhitelistStatus(address _vault, bool _status) external onlyDao {
+    vaultWhitelist[_vault] = _status;
   }
 
   /// @notice Set the Uniswap Router address
@@ -192,29 +201,6 @@ contract Controller is IController {
   /// @param _poolFee New Pool fee
   function setUniswapPoolFee(uint24 _poolFee) external onlyDao {
     uniswapParams.poolFee = _poolFee;
-  }
-
-  /// @notice Set the Curve3Pool fee
-  /// @param _poolFee New Pool fee
-  function setCurvePoolFee(uint24 _poolFee) external onlyDao {
-    curve3PoolFee = _poolFee;
-  }
-
-  /// @notice Set curve pool index for underlying token
-  /// @param _token Address of Token
-  /// @param _index Curve index as decribed in Swap pool
-  function addCurveIndex(address _token, int128 _index) external onlyDao {
-    curveIndex[_token] = _index;
-  }
-
-  /// @notice Set the Curve 3 pool address
-  /// @param _pool New pool address
-  function setCurve3Pool(address _pool) external onlyDao {
-    curve3Pool = _pool;
-  }
-
-  function addUnderlyingUScale(address _stable, uint256 _decimals) external onlyDao {
-    underlyingUScale[_stable] = 10 ** _decimals;
   }
 
   /// @notice Set if provider have claimable tokens

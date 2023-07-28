@@ -21,10 +21,6 @@ export const yearnUSDT = '0x3B27F92C0e212C671EA351827EDF93DB27cc0c65'; // 6
 export const compoundUSDC = '0x39AA39c021dfbaE8faC545936693aC917d5E7563'; // 8
 export const compoundDAI = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'; // 8
 export const compoundUSDT = '0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9'; // 8
-// Aave
-export const aaveUSDC = '0xBcca60bB61934080951369a648Fb03DF4F96263C'; // 6
-export const aaveDAI = '0x028171bCA77440897B824Ca71D1c56caC55b68A3'; // 18
-export const aaveUSDT = '0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811'; // 6
 // TrueFi
 export const truefiUSDC = '0xA991356d261fbaF194463aF6DF8f0464F8f1c742'; // 6
 export const truefiUSDT = '0x6002b1dcB26E7B1AA797A17551C6F487923299d7'; // 6
@@ -32,10 +28,6 @@ export const truefiUSDT = '0x6002b1dcB26E7B1AA797A17551C6F487923299d7'; // 6
 export const idleUSDC = '0x5274891bEC421B39D23760c04A6755eCB444797C'; // 18
 export const idleDAI = '0x3fE7940616e5Bc47b0775a0dccf6237893353bB4'; // 18
 export const idleUSDT = '0xF34842d05A1c888Ca02769A633DF37177415C2f8'; // 18
-// beta
-export const betaUSDC = '0xC02392336420bb54CE2Da8a8aa4B118F2dceeB04'; // 6
-export const betaDAI = '0x70540A3178290498B0C6d843Fa7ED97cAe69B86c'; // 18
-export const betaUSDT = '0xBe1c71c94FebcA2673DB2E9BD610E2Cc80b950FC'; // 6
 
 // Gov Tokens
 export const aave = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9';
@@ -113,30 +105,6 @@ export const compound_usdt_01 = new ProtocolVault({
   decimals: 8,
   chainId: 1,
 });
-export const aave_usdc_01 = new ProtocolVault({
-  name: 'aave_usdc_01',
-  protocolToken: aaveUSDC,
-  underlyingToken: usdc,
-  govToken: aave,
-  decimals: 6,
-  chainId: 1,
-});
-export const aave_dai_01 = new ProtocolVault({
-  name: 'aave_dai_01',
-  protocolToken: aaveDAI,
-  underlyingToken: dai,
-  govToken: aave,
-  decimals: 18,
-  chainId: 1,
-});
-export const aave_usdt_01 = new ProtocolVault({
-  name: 'aave_usdt_01',
-  protocolToken: aaveUSDT,
-  underlyingToken: usdt,
-  govToken: aave,
-  decimals: 6,
-  chainId: 1,
-});
 export const truefi_usdc_01 = new ProtocolVault({
   name: 'truefi_usdc_01',
   protocolToken: truefiUSDC,
@@ -177,55 +145,15 @@ export const idle_usdt_01 = new ProtocolVault({
   decimals: 18,
   chainId: 1,
 });
-export const beta_usdc_01 = new ProtocolVault({
-  name: 'beta_usdc_01',
-  protocolToken: betaUSDC,
-  underlyingToken: usdc,
-  govToken: beta,
-  decimals: 6,
-  chainId: 1,
-});
-export const beta_dai_01 = new ProtocolVault({
-  name: 'beta_dai_01',
-  protocolToken: betaDAI,
-  underlyingToken: dai,
-  govToken: beta,
-  decimals: 18,
-  chainId: 1,
-});
-export const beta_usdt_01 = new ProtocolVault({
-  name: 'beta_usdt_01',
-  protocolToken: betaUSDT,
-  underlyingToken: usdt,
-  govToken: beta,
-  decimals: 6,
-  chainId: 1,
-});
 
 export const starterProtocols = new Map<string, ProtocolVault>();
 
-starterProtocols
-  .set('compound_usdc_01', compound_usdc_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('yearn_usdc_01', yearn_usdc_01);
+starterProtocols.set('compound_usdc_01', compound_usdc_01).set('yearn_usdc_01', yearn_usdc_01);
 
 export const allProtocols = new Map<string, ProtocolVault>();
 
 allProtocols
   .set('yearn_usdc_01', yearn_usdc_01)
-  .set('yearn_dai_01', yearn_dai_01)
-  .set('yearn_usdt_01', yearn_usdt_01)
   .set('compound_usdc_01', compound_usdc_01)
-  .set('compound_dai_01', compound_dai_01)
-  .set('compound_usdt_01', compound_usdt_01)
-  .set('aave_usdc_01', aave_usdc_01)
-  .set('aave_dai_01', aave_dai_01)
-  .set('aave_usdt_01', aave_usdt_01)
   .set('truefi_usdc_01', truefi_usdc_01)
-  .set('truefi_usdt_01', truefi_usdt_01)
-  .set('idle_usdc_01', idle_usdc_01)
-  .set('idle_dai_01', idle_dai_01)
-  .set('idle_usdt_01', idle_usdt_01)
-  .set('beta_usdc_01', beta_usdc_01)
-  .set('beta_dai_01', beta_dai_01)
-  .set('beta_usdt_01', beta_usdt_01);
+  .set('idle_usdc_01', idle_usdc_01);

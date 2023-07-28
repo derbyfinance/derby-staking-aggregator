@@ -30,7 +30,6 @@ export async function getAndInitXProviders(
 
   for (const xProvider of xProviders) {
     await Promise.all([
-      xProvider.connect(dao).setXControllerProvider(arbitrum.address),
       xProvider.connect(dao).setXControllerChainId(chains.xController),
       xProvider.connect(dao).setGameChainId(chains.game),
       xProvider.connect(dao).setTrustedRemoteConnext(10, main.address),
@@ -68,10 +67,12 @@ export async function addVaultsToXController(
   const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
 
   await Promise.all([
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address, usdc),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address, usdc),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address),
+    xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address),
+    xController.connect(dao).setVaultUnderlying(vaultNumber, usdc),
+    xController.connect(dao).setVaultDecimals(vaultNumber, 6),
   ]);
 }
 
@@ -113,6 +114,21 @@ export async function AddAllVaultsToController({ run, deployments }: HardhatRunt
   const vaults = await getTestVaultDeployments(deployments);
 
   for (const vault of vaults) {
-    await run('controller_add_vault', { vault: vault.address });
+    await run('controller_set_vault_whitelist', { vault: vault.address, status: true });
+  }
+}
+
+export async function AddAllVaultsToProviders(
+  dao: Signer,
+  providers: string[],
+  vaults: string[],
+  { deployments, ethers }: HardhatRuntimeEnvironment,
+) {
+  for await (const provider of providers) {
+    const deployment = await deployments.get(provider);
+    const contract = await ethers.getContractAt(provider, deployment.address);
+    for await (const vault of vaults) {
+      await contract.connect(dao).addVault(vault);
+    }
   }
 }

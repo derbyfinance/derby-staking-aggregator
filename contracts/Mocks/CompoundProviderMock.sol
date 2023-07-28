@@ -5,7 +5,7 @@ pragma solidity ^0.8.11;
 import "../Providers/CompoundProvider.sol";
 
 contract CompoundProviderMock is CompoundProvider {
-  constructor(address _comptroller) CompoundProvider(_comptroller) {}
+  constructor(address _dao, address _comptroller) CompoundProvider(_dao, _comptroller) {}
 
   function claimTest(address _address, address _cToken) public {
     address[] memory cTokens = new address[](1);
