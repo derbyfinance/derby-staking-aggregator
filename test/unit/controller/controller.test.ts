@@ -21,7 +21,7 @@ describe('Testing controller', async () => {
     const [dao, , , vault, deployer] = await getAllSigners(hre);
 
     await run('controller_init');
-    await run('controller_add_vault', { vault: vault.address });
+    await run('controller_set_vault_whitelist', { vault: vault.address, status: true });
 
     const [yearnProviderMock, compoundProviderMock] = await Promise.all([
       deployYearnProviderMock(deployer),
@@ -39,6 +39,7 @@ describe('Testing controller', async () => {
     return {
       controller,
       vault,
+      dao,
       yearnProviderMock,
       compoundProviderMock,
       yearnNumber,
@@ -115,5 +116,25 @@ describe('Testing controller', async () => {
     await expect(controller.connect(vault).claim(vaultNumber, compNumber)).to.be.revertedWith(
       'Claimed tokens',
     );
+  });
+
+  it('sets protocol information correctly', async function () {
+    const { controller, dao } = await setupController();
+
+    const vaultNumber = 10;
+    const protocolNumber = 5;
+    const LPToken = '0x1111111111111111111111111111111111111111';
+    const provider = '0x2222222222222222222222222222222222222222';
+    const underlying = '0x3333333333333333333333333333333333333333';
+
+    await controller
+      .connect(dao)
+      .setProtocolInfo(vaultNumber, protocolNumber, LPToken, provider, underlying);
+
+    const storedProtocolInfo = await controller.protocolInfo(vaultNumber, protocolNumber);
+
+    expect(storedProtocolInfo.LPToken).to.equal(LPToken);
+    expect(storedProtocolInfo.provider).to.equal(provider);
+    expect(storedProtocolInfo.underlying).to.equal(underlying);
   });
 });

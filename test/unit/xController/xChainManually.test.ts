@@ -21,13 +21,11 @@ const deployXChainControllerMock = (
   game: string,
   dao: string,
   guardian: string,
-  homeChain: number,
 ): Promise<XChainControllerMock> => {
   return deployContract(deployerSign, XChainControllerMockArtifact, [
     game,
     dao,
     guardian,
-    homeChain,
   ]) as Promise<XChainControllerMock>;
 };
 
@@ -60,7 +58,6 @@ describe('Testing XChainController, unit test for manual execution', async () =>
       addr,
       addr,
       guardian.address,
-      100,
     );
 
     await Promise.all([

@@ -26,6 +26,8 @@ contract Controller is IController {
   mapping(uint256 => mapping(uint256 => address)) public protocolGovToken;
   // (vaultNumber => latestProtocolId)
   mapping(uint256 => uint256) public latestProtocolId;
+  // LPtoken => bool: already added protocols
+  mapping(address => bool) private addedProtocols;
 
   event SetProtocolNumber(uint256 protocolNumber, address protocol);
 
@@ -136,6 +138,7 @@ contract Controller is IController {
     address _underlying,
     address _govToken
   ) external onlyDao returns (uint256) {
+    require(!addedProtocols[_protocolLPToken], "Protocol already added");
     uint256 protocolNumber = latestProtocolId[_vaultNumber];
 
     protocolNames[_vaultNumber][protocolNumber] = _name;
@@ -146,6 +149,7 @@ contract Controller is IController {
       _underlying
     );
 
+    addedProtocols[_protocolLPToken] = true;
     emit SetProtocolNumber(protocolNumber, _protocolLPToken);
 
     latestProtocolId[_vaultNumber]++;
@@ -153,10 +157,32 @@ contract Controller is IController {
     return protocolNumber;
   }
 
-  /// @notice Add protocol and vault to Controller
-  /// @param _vault Vault address to whitelist
-  function addVault(address _vault) external onlyDao {
-    vaultWhitelist[_vault] = true;
+  /// @notice Sets the protocol information for a specific vault and protocol number in case something goes wrong.
+  /// @dev Stores the protocol information in the protocolInfo mapping.
+  /// @param _vaultNumber The vault number to associate the protocol information with.
+  /// @param _protocolNumber The protocol number to associate the protocol information with.
+  /// @param _LPToken The address of the liquidity provider token for the protocol.
+  /// @param _provider The address of the provider for the protocol.
+  /// @param _underlying The address of the underlying token for the protocol.
+  function setProtocolInfo(
+    uint256 _vaultNumber,
+    uint256 _protocolNumber,
+    address _LPToken,
+    address _provider,
+    address _underlying
+  ) external onlyDao {
+    protocolInfo[_vaultNumber][_protocolNumber] = ProtocolInfoS({
+      LPToken: _LPToken,
+      provider: _provider,
+      underlying: _underlying
+    });
+  }
+
+  /// @notice Set the whitelist status of a vault in the Controller
+  /// @param _vault Vault address to update
+  /// @param _status Boolean value representing the new whitelist status of the vault
+  function setVaultWhitelistStatus(address _vault, bool _status) external onlyDao {
+    vaultWhitelist[_vault] = _status;
   }
 
   /// @notice Set the Uniswap Router address

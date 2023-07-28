@@ -48,11 +48,9 @@ contract XChainController {
   address private dao;
   address private guardian;
   address public game;
-  address public xProviderAddr;
   IXProvider public xProvider;
 
   uint32[] public chainIds;
-  uint32 public homeChain;
   int256 public minimumAmount;
 
   // (vaultNumber => vaultInfo struct)
@@ -117,11 +115,10 @@ contract XChainController {
     _;
   }
 
-  constructor(address _game, address _dao, address _guardian, uint32 _homeChain) {
+  constructor(address _game, address _dao, address _guardian) {
     game = _game;
     dao = _dao;
     guardian = _guardian;
-    homeChain = _homeChain;
     minimumAmount = 100e6;
   }
 
@@ -579,12 +576,6 @@ contract XChainController {
   /// @param _xProvider new address of xProvider on this chain
   function setHomeXProvider(address _xProvider) external onlyDao {
     xProvider = IXProvider(_xProvider);
-  }
-
-  /// @notice Setter for homeChain Id
-  /// @param _homeChainId New home chainId
-  function setHomeChainId(uint32 _homeChainId) external onlyDao {
-    homeChain = _homeChainId;
   }
 
   /// @notice Setter for DAO address

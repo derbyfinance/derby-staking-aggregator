@@ -140,14 +140,6 @@ task('xcontroller_set_homexprovider', 'Setter for xProvider address')
     await xcontroller.connect(dao).setHomeXProvider(address);
   });
 
-task('xcontroller_set_home_chain', 'Setter for new homeChain Id')
-  .addParam('chainid', 'new homeChain id', null, types.int)
-  .setAction(async ({ chainid }, hre) => {
-    const xcontroller = await getXController(hre);
-    const dao = await getDao(hre);
-    await xcontroller.connect(dao).setHomeChainId(chainid);
-  });
-
 task('xcontroller_set_dao', 'Setter for dao address')
   .addParam('address', 'New dao address')
   .setAction(async ({ address }, hre) => {

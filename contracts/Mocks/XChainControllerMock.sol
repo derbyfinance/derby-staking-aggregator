@@ -8,9 +8,8 @@ contract XChainControllerMock is XChainController {
   constructor(
     address _game,
     address _dao,
-    address _guardian,
-    uint32 _homeChain
-  ) XChainController(_game, _dao, _guardian, _homeChain) {}
+    address _guardian
+  ) XChainController(_game, _dao, _guardian) {}
 
   function setReadyTEST(uint256 _vaultNumber, bool _state) external {
     return setReady(_vaultNumber, _state);

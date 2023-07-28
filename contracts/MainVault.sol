@@ -402,7 +402,7 @@ contract MainVault is Vault, VaultToken {
     emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
   }
 
-  /// @notice Receive feedback for the vault if the vault is set to on or off
+  /// @notice Step 2: Receive feedback for the vault if the vault is set to on or off
   /// @param _state bool for chainId on or off
   function toggleVaultOnOff(bool _state) external onlyXProvider {
     vaultOff = _state;
