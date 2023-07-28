@@ -100,15 +100,6 @@ task('game_set_rebalancing_state', 'Guardian function to set state')
     await game.connect(guardian).setRebalancingState(vaultnumber, state);
   });
 
-task('game_set_rebalancing_period', 'Guardian function to set rebalancing period')
-  .addParam('vaultnumber', 'Number of the vault', null, types.int)
-  .addParam('period', 'Rebalancing period', null, types.int)
-  .setAction(async ({ vaultnumber, period }, hre) => {
-    const game = await getGame(hre);
-    const guardian = await getGuardian(hre);
-    await game.connect(guardian).setRebalancingPeriod(vaultnumber, period);
-  });
-
 task('game_settle_rewards_guard', 'Guardian function for step 8')
   .addParam('vaultnumber', 'Number of the vault', null, types.int)
   .addParam('chainid', 'Number of chain id set in chainIds array', null, types.int)

@@ -101,10 +101,6 @@ contract MainVaultMock is MainVault {
     vaultCurrency.transfer(getDao(), _balance);
   }
 
-  function toggleVaultOnOffTEST(bool _state) external {
-    vaultOff = _state;
-  }
-
   function balanceSharesTEST(
     uint256 _protocolNum,
     address _address
@@ -173,6 +169,10 @@ contract MainVaultMock is MainVault {
     uint256 _amount
   ) external returns (uint256) {
     return withdrawFromProtocol(_protocolNum, _amount);
+  }
+
+  function getTotalDepositRequestsTest() external view returns (uint256) {
+    return totalDepositRequests;
   }
 
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {

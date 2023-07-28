@@ -16,9 +16,11 @@ contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
   // state 0 Rebalance done and ready for xController to rebalance again
-  // state 1 Allocation amount received and ready to send funds over to xController
-  // state 2 Allocation amount 0 received => will receive funds from xController
-  // state 3 Allocation amount sent or received and ready to rebalance the vault itself
+  // state 1 Underlying amount pushed to controller
+  // state 2 Sending the funds crosschain
+  // state 3 Waiting for the crosschain funds
+  // state 4 Vault can be rebalanced
+  // state 5 Rewards per locked token can be sent
   enum State {
     Idle,
     PushedUnderlying,
@@ -37,6 +39,7 @@ contract Vault is ReentrancyGuard {
   address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
+  address public xController;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
@@ -135,8 +138,6 @@ contract Vault is ReentrancyGuard {
     require(deltaAllocationsReceived, "!Delta allocations");
     uint256 latestID = controller.latestProtocolId(vaultNumber);
 
-    rebalancingPeriod++;
-
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
     storePriceAndRewardsLoop(latestID, underlyingIncBalance);
 
@@ -229,12 +230,13 @@ contract Vault is ReentrancyGuard {
   /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals()).
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+    uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
       rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      lastPrices[_protocolId] = currentPrice;
       return;
     }
 
-    uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (lastPrices[_protocolId] == 0) {
       lastPrices[_protocolId] = currentPrice;
       return;
@@ -316,6 +318,7 @@ contract Vault is ReentrancyGuard {
       vaultNumber,
       _protocolNum
     );
+    require(protocol.underlying == address(vaultCurrency), "Provider underlying mismatch");
 
     uint256 shares = IProvider(protocol.provider).calcShares(_amount, protocol.LPToken);
     uint256 balance = IProvider(protocol.provider).balance(address(this), protocol.LPToken);
@@ -395,7 +398,11 @@ contract Vault is ReentrancyGuard {
   /// @notice Claims and swaps tokens from the underlying protocol
   /// @dev Claims governance tokens from the underlying protocol if claimable, and swaps them to the vault's underlying token
   /// @param _protocolNum The protocol ID for which to claim and swap tokens
-  function claimAndSwapTokens(uint256 _protocolNum, uint256 _minAmount) public onlyGuardian {
+  function claimAndSwapTokens(
+    uint256 _protocolNum,
+    uint256 _minAmount,
+    uint256 _deadline
+  ) public onlyGuardian {
     bool claim = controller.claim(vaultNumber, _protocolNum);
     if (claim) {
       address govToken = controller.getGovToken(vaultNumber, _protocolNum);
@@ -403,7 +410,7 @@ contract Vault is ReentrancyGuard {
       Swap.swapTokensMulti(
         Swap.SwapInOut(
           tokenBalance,
-          block.timestamp,
+          _deadline,
           _minAmount,
           nativeToken,
           govToken,
@@ -488,12 +495,13 @@ contract Vault is ReentrancyGuard {
   /// @param _protocolNum The protocol number from which to withdraw the funds.
   function withdrawFromBlacklistedProtocol(
     uint256 _protocolNum,
-    uint256 _minAmount
+    uint256 _minAmount,
+    uint256 _deadline
   ) external onlyGuardian {
     bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, _protocolNum);
     require(isBlacklisted, "!Blacklisted");
 
-    claimAndSwapTokens(_protocolNum, _minAmount);
+    claimAndSwapTokens(_protocolNum, _minAmount, _deadline);
 
     uint256 balanceBefore = balanceUnderlying(_protocolNum);
     withdrawFromProtocol(_protocolNum, balanceBefore);

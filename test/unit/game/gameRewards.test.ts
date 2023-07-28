@@ -19,7 +19,7 @@ describe('Testing Game Rewards', async () => {
      Setup negative rewards
     */
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       await game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
       await game.mockRewards(vaultNumber, chainIds[2], [1, 1, 1, 1, 1]),
@@ -30,7 +30,7 @@ describe('Testing Game Rewards', async () => {
     await game.connect(user).rebalanceBasket(basketId, allocations);
 
     // This rebalance should be skipped for the basket
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
@@ -42,7 +42,7 @@ describe('Testing Game Rewards', async () => {
       ]),
     ]);
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [pE(-2_000), pE(-1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
@@ -54,7 +54,7 @@ describe('Testing Game Rewards', async () => {
       ]),
     ]);
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [pE(-2_000), pE(-1_000), pE(500), pE(100), 0]),
       game.mockRewards(vaultNumber, chainIds[1], [
@@ -87,7 +87,7 @@ describe('Testing Game Rewards', async () => {
       [pE('-100'), 0, pE('-200'), pE('-100'), pE('-200')], // 600
     ];
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
 
     // user should get allocation of 1k tokens back minus the negativeReward * 50%
@@ -118,7 +118,7 @@ describe('Testing Game Rewards', async () => {
      Setup negative rewards
     */
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       await game.mockRewards(vaultNumber, chainIds[0], [1, 1, 1, 1, 1]),
       await game.mockRewards(vaultNumber, chainIds[1], [1, 1, 1, 1, 1]),
@@ -129,19 +129,19 @@ describe('Testing Game Rewards', async () => {
     await game.connect(user).rebalanceBasket(basketId, allocations);
 
     // This rebalance should be skipped for the basket
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [0, 0, 0, 1000, 0]),
       game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-1', 24), 0, 0, 0, 0]),
     ]);
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 24), 0, 0, 0, 0]),
       game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 24), 0, 0, 0, 0]),
     ]);
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await Promise.all([
       game.mockRewards(vaultNumber, chainIds[0], [parseUnits('-5', 24), 0, 0, 0, 0]),
       game.mockRewards(vaultNumber, chainIds[1], [parseUnits('-5', 24), 0, 0, 0, 0]),
@@ -167,7 +167,7 @@ describe('Testing Game Rewards', async () => {
       [pE('-100'), 0, 0, 0, 0],
     ];
 
-    await game.upRebalancingPeriod(vaultNumber);
+    await vault.upRebalancingPeriodTEST();
     await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
     // user should 0 tokens back, cause they are all burned (higher negative rewards then unlockedTokens)
     await expect(() =>

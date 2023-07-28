@@ -294,8 +294,6 @@ describe('Testing XChainController, unit test for manual execution', async () =>
   });
 
   it('Step 8: Vaults push rewardsPerLockedToken to game', async function () {
-    await game.connect(guardian).upRebalancingPeriod(vaultNumber);
-
     const vault1Rewards = [1 * 1e6, 0, 2 * 1e6, 3 * 1e6, 4 * 1e6];
     const vault2Rewards = [0, 0, 0, 6 * 1e6, 7 * 1e6];
 
