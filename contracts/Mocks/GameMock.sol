@@ -85,7 +85,6 @@ contract GameMock is Game {
   }
 
   function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
-    this.pushAllocationsToController{value: msg.value / 2}(_vaultNumber);
     this.pushAllocationsToVaults{value: msg.value / 2}(_vaultNumber, _chain);
   }
 }

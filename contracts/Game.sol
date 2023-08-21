@@ -466,33 +466,6 @@ contract Game is ERC721, ReentrancyGuard {
     }
   }
 
-  /// @notice Step 1 trigger; Game pushes totalDeltaAllocations to xChainController
-  /// @notice Trigger for Dao to push delta allocations to the xChainController
-  /// @param _vaultNumber Number of vault
-  /// @dev Sends over an array that should match the IDs in chainIds array
-  function pushAllocationsToController(uint256 _vaultNumber) external payable notInSameBlock {
-    require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
-    for (uint k = 0; k < chainIds.length; k++) {
-      require(
-        getVaultAddress(_vaultNumber, chainIds[k]) != address(0),
-        "Game: not a valid vaultnumber"
-      );
-      require(
-        !isXChainRebalancing[_vaultNumber][chainIds[k]],
-        "Game: vault is already rebalancing"
-      );
-      isXChainRebalancing[_vaultNumber][chainIds[k]] = true;
-    }
-
-    int256[] memory deltas = allocationsToArray(_vaultNumber);
-    IXProvider(xProvider).pushAllocations{value: msg.value}(_vaultNumber, deltas);
-
-    lastTimeStamp[_vaultNumber] = block.timestamp;
-    vaults[_vaultNumber].numberOfRewardsReceived = 0;
-
-    emit PushedAllocationsToController(_vaultNumber, deltas);
-  }
-
   /// @notice Creates delta allocation array for chains matching IDs in chainIds array
   /// @notice Resets deltaAllocation for chainIds
   /// @return deltas Array with delta Allocations for all chainIds

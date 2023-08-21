@@ -90,14 +90,6 @@ contract MainVault is Vault, VaultToken {
     _;
   }
 
-  event PushTotalUnderlying(
-    uint256 _vaultNumber,
-    uint32 _chainId,
-    uint256 _underlying,
-    uint256 _totalSupply,
-    uint256 _withdrawalRequests
-  );
-  event RebalanceXChain(uint256 _vaultNumber, uint256 _amount, address _asset);
   event PushedRewardsToGame(uint256 _vaultNumber, uint32 _chain, int256[] _rewards);
 
   /// @notice Enables a user to make a deposit into the Vault.
@@ -276,87 +268,6 @@ contract MainVault is Vault, VaultToken {
     return _value;
   }
 
-  /// @notice Step 3 trigger; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
-  /// @notice Pushes totalUnderlying, totalSupply and totalWithdrawalRequests of the vault for this chainId to xController
-  function pushTotalUnderlyingToController() external payable onlyWhenIdle {
-    require(rebalanceNeeded(), "!rebalance needed");
-
-    rebalancingPeriod++;
-    setTotalUnderlying();
-    uint256 underlying = savedTotalUnderlying +
-      getVaultBalance() -
-      reservedFunds -
-      totalDepositRequests;
-
-    IXProvider(xProvider).pushTotalUnderlying{value: msg.value}(
-      vaultNumber,
-      homeChain,
-      underlying,
-      totalSupply(),
-      totalWithdrawalRequests
-    );
-
-    state = State.PushedUnderlying;
-    lastTimeStamp = block.timestamp;
-
-    emit PushTotalUnderlying(
-      vaultNumber,
-      homeChain,
-      underlying,
-      totalSupply(),
-      totalWithdrawalRequests
-    );
-  }
-
-  /// @notice See setXChainAllocationInt below
-  function setXChainAllocation(
-    uint256 _amountToSend,
-    uint256 _exchangeRate,
-    bool _receivingFunds
-  ) external onlyXProvider {
-    require(state == State.PushedUnderlying, stateError);
-    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
-  }
-
-  /// @notice Step 4 end; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
-  /// @notice Will set the amount to send back to the xController by the xController
-  /// @dev Sets the amount and state so the dao can trigger the rebalanceXChain function
-  /// @dev When amount == 0 the vault doesnt need to send anything and will wait for funds from the xController
-  /// @param _amountToSend amount to send in vaultCurrency
-  function setXChainAllocationInt(
-    uint256 _amountToSend,
-    uint256 _exchangeRate,
-    bool _receivingFunds
-  ) internal {
-    amountToSendXChain = _amountToSend;
-    exchangeRate = _exchangeRate;
-
-    if (_amountToSend == 0 && !_receivingFunds) settleReservedFunds();
-    else if (_amountToSend == 0 && _receivingFunds) state = State.WaitingForFunds;
-    else state = State.SendingFundsXChain;
-  }
-
-  /// @notice Step 5 trigger; Push funds from vaults to xChainController
-  /// @notice Send vaultcurrency to the xController for xChain rebalance
-  function rebalanceXChain() external payable {
-    require(state == State.SendingFundsXChain, stateError);
-
-    if (amountToSendXChain > getVaultBalance()) pullFunds(amountToSendXChain);
-    if (amountToSendXChain > getVaultBalance()) amountToSendXChain = getVaultBalance();
-
-    vaultCurrency.safeIncreaseAllowance(xProvider, amountToSendXChain);
-    IXProvider(xProvider).xTransferToController{value: msg.value}(
-      vaultNumber,
-      amountToSendXChain,
-      address(vaultCurrency)
-    );
-
-    emit RebalanceXChain(vaultNumber, amountToSendXChain, address(vaultCurrency));
-
-    amountToSendXChain = 0;
-    settleReservedFunds();
-  }
-
   /// @notice Step 6 end; Push funds from xChainController to vaults
   /// @notice Receiving feedback from xController when funds are received, so the vault can rebalance
   function receiveFunds() external onlyXProvider {
@@ -400,12 +311,6 @@ contract MainVault is Vault, VaultToken {
     state = State.Idle;
 
     emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
-  }
-
-  /// @notice Step 2: Receive feedback for the vault if the vault is set to on or off
-  /// @param _state bool for chainId on or off
-  function toggleVaultOnOff(bool _state) external onlyXProvider {
-    vaultOff = _state;
   }
 
   /// @notice Returns the amount in vaultCurrency the user is able to withdraw
@@ -461,15 +366,6 @@ contract MainVault is Vault, VaultToken {
   /*
   Only Guardian functions
   */
-
-  /// @notice Step 4: Guardian function
-  function setXChainAllocationGuard(
-    uint256 _amountToSend,
-    uint256 _exchangeRate,
-    bool _receivingFunds
-  ) external onlyGuardian {
-    setXChainAllocationInt(_amountToSend, _exchangeRate, _receivingFunds);
-  }
 
   /// @notice Step 6: Guardian function
   function receiveFundsGuard() external onlyGuardian {
