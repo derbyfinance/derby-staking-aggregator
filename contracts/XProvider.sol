@@ -18,11 +18,9 @@ contract XProvider is IXReceiver {
 
   address private dao;
   address private guardian;
-  address public xController;
   address public game;
 
   uint32 public homeChain;
-  uint32 public xControllerChain;
   uint32 public gameChain;
 
   // Slippage tolerance and router fee for cross-chain swap, in BPS (i.e. 30 = 0.3%).
@@ -52,11 +50,6 @@ contract XProvider is IXReceiver {
 
   modifier onlyGuardian() {
     require(msg.sender == guardian, "only Guardian");
-    _;
-  }
-
-  modifier onlyController() {
-    require(msg.sender == xController, "xProvider: only Controller");
     _;
   }
 
@@ -101,19 +94,11 @@ contract XProvider is IXReceiver {
     _;
   }
 
-  constructor(
-    address _connext,
-    address _dao,
-    address _guardian,
-    address _game,
-    address _xController,
-    uint32 _homeChain
-  ) {
+  constructor(address _connext, address _dao, address _guardian, address _game, uint32 _homeChain) {
     connext = _connext;
     dao = _dao;
     guardian = _guardian;
     game = _game;
-    xController = _xController;
     homeChain = _homeChain;
     connextRouterFee = 5; // 0.05%
     slippage = 50; // 0.5%
@@ -183,243 +168,6 @@ contract XProvider is IXReceiver {
   ) external onlySource(_originSender, _origin) returns (bytes memory) {
     (bool success, ) = address(this).call(_callData);
     require(success, "xReceive: No success");
-  }
-
-  /// @notice Step 1 push; Game pushes totalDeltaAllocations to xChainController
-  /// @notice Pushes the delta allocations from the game to the xChainController
-  /// @param _vaultNumber number of the vault
-  /// @param _deltas Array with delta Allocations for all chainIds
-  function pushAllocations(
-    uint256 _vaultNumber,
-    int256[] memory _deltas
-  ) external payable onlyGame {
-    if (homeChain == xControllerChain) {
-      require(msg.value == 0, etherNotUsed);
-      return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      bytes4 selector = bytes4(keccak256("receiveAllocations(uint256,int256[])"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _deltas);
-
-      xSend(xControllerChain, callData, address(0), 0);
-    }
-  }
-
-  /// @notice Step 1 receive; Game pushes totalDeltaAllocations to xChainController
-  /// @notice Receives the delta allocations from the game and routes to xChainController
-  /// @param _vaultNumber number of the vault
-  /// @param _deltas Array with delta Allocations for all chainIds
-  function receiveAllocations(uint256 _vaultNumber, int256[] memory _deltas) external onlySelf {
-    return IXChainController(xController).receiveAllocationsFromGame(_vaultNumber, _deltas);
-  }
-
-  /// @notice Step 2: Push feedback to the vault if the vault is set to on or off
-  /// @param _vault Address of the Derby Vault on given chainId
-  /// @param _chainId Number of chain used
-  /// @param _state bool for chainId on or off
-  function pushStateFeedbackToVault(
-    address _vault,
-    uint32 _chainId,
-    bool _state
-  ) external payable onlyController {
-    if (_chainId == homeChain) {
-      require(msg.value == 0, etherNotUsed);
-      return IVault(_vault).toggleVaultOnOff(_state);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      bytes4 selector = bytes4(keccak256("receiveStateFeedbackToVault(address,bool)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault, _state);
-
-      xSend(_chainId, callData, address(0), 0);
-    }
-  }
-
-  /// @notice Step 3 push; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
-  /// @notice Pushes cross chain requests for the totalUnderlying for a vaultNumber on a chainId
-  /// @param _vaultNumber Number of the vault
-  /// @param _chainId Number of chain used
-  /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
-  /// @param _totalSupply Supply of the LP token of the vault on given chainId
-  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
-  function pushTotalUnderlying(
-    uint256 _vaultNumber,
-    uint32 _chainId,
-    uint256 _underlying,
-    uint256 _totalSupply,
-    uint256 _withdrawalRequests
-  ) external payable onlyVaults {
-    if (homeChain == xControllerChain) {
-      require(msg.value == 0, etherNotUsed);
-      return
-        IXChainController(xController).setTotalUnderlying(
-          _vaultNumber,
-          _chainId,
-          _underlying,
-          _totalSupply,
-          _withdrawalRequests
-        );
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      bytes4 selector = bytes4(
-        keccak256("receiveTotalUnderlying(uint256,uint32,uint256,uint256,uint256)")
-      );
-      bytes memory callData = abi.encodeWithSelector(
-        selector,
-        _vaultNumber,
-        _chainId,
-        _underlying,
-        _totalSupply,
-        _withdrawalRequests
-      );
-
-      xSend(xControllerChain, callData, address(0), 0);
-    }
-  }
-
-  /// @notice Step 3 receive; Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests to xChainController
-  /// @notice Receive and set totalUnderlyings from the vaults for every chainId
-  /// @param _vaultNumber Number of the vault
-  /// @param _chainId Number of chain used
-  /// @param _underlying TotalUnderling plus vault balance in vaultcurrency e.g USDC
-  /// @param _totalSupply Supply of the LP token of the vault on given chainId
-  /// @param _withdrawalRequests Total amount of withdrawal requests from the vault in LP Tokens
-  function receiveTotalUnderlying(
-    uint256 _vaultNumber,
-    uint32 _chainId,
-    uint256 _underlying,
-    uint256 _totalSupply,
-    uint256 _withdrawalRequests
-  ) external onlySelf {
-    return
-      IXChainController(xController).setTotalUnderlying(
-        _vaultNumber,
-        _chainId,
-        _underlying,
-        _totalSupply,
-        _withdrawalRequests
-      );
-  }
-
-  /// @notice Step 4 push; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
-  /// @param _vault Address of the Derby Vault on given chainId
-  /// @param _chainId Number of chain used
-  /// @param _amountToSendBack Amount the vault has to send back
-  /// @param _exchangeRate New exchangerate for vaults
-  function pushSetXChainAllocation(
-    address _vault,
-    uint32 _chainId,
-    uint256 _amountToSendBack,
-    uint256 _exchangeRate,
-    bool _receivingFunds
-  ) external payable onlyController {
-    if (_chainId == homeChain) {
-      require(msg.value == 0, etherNotUsed);
-      return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      bytes4 selector = bytes4(
-        keccak256("receiveSetXChainAllocation(address,uint256,uint256,bool)")
-      );
-      bytes memory callData = abi.encodeWithSelector(
-        selector,
-        _vault,
-        _amountToSendBack,
-        _exchangeRate,
-        _receivingFunds
-      );
-
-      xSend(_chainId, callData, address(0), 0);
-    }
-  }
-
-  /// @notice Step 4 receive; xChainController pushes exchangeRate and amount the vaults have to send back to all vaults
-  /// @param _vault Address of the Derby Vault on given chainId
-  /// @param _amountToSendBack Amount the vault has to send back
-  /// @param _exchangeRate New exchangerate for vaults
-  function receiveSetXChainAllocation(
-    address _vault,
-    uint256 _amountToSendBack,
-    uint256 _exchangeRate,
-    bool _receivingFunds
-  ) external onlySelf {
-    return IVault(_vault).setXChainAllocation(_amountToSendBack, _exchangeRate, _receivingFunds);
-  }
-
-  /// @notice Step 5 push; Push funds from vaults to xChainController
-  /// @notice Transfers funds from vault to xController for crosschain rebalance
-  /// @param _vaultNumber Address of the Derby Vault on given chainId
-  /// @param _amount Number of the vault
-  /// @param _asset Address of the token to send e.g USDC
-  function xTransferToController(
-    uint256 _vaultNumber,
-    uint256 _amount,
-    address _asset
-  ) external payable onlyVaults {
-    if (homeChain == xControllerChain) {
-      require(msg.value == 0, etherNotUsed);
-      IERC20(_asset).safeTransferFrom(msg.sender, xController, _amount);
-      IXChainController(xController).upFundsReceived(_vaultNumber);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      uint256 estAmount = calculateEstimatedAmount(_amount);
-      bytes4 selector = bytes4(keccak256("receiveFeedbackToXController(uint256,address,uint256)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vaultNumber, _asset, estAmount);
-
-      xSend(xControllerChain, callData, _asset, _amount);
-    }
-  }
-
-  /// @notice Step 5 receive; Transfers estimated funds from the contract to the xController and triggers the xController's upFundsReceived function.
-  /// @dev This function can only be called by the contract itself.
-  /// @param _vaultNumber The vault number associated with the vault that will receive the funds.
-  /// @param _asset The address of the token to be transferred.
-  /// @param _estAmount The estimated amount of tokens to be transferred.
-  function receiveFeedbackToXController(
-    uint256 _vaultNumber,
-    address _asset,
-    uint256 _estAmount
-  ) external onlySelf {
-    IERC20(_asset).safeTransfer(xController, _estAmount);
-    IXChainController(xController).upFundsReceived(_vaultNumber);
-  }
-
-  /// @notice Step 6 push; Push funds from xChainController to vaults
-  /// @notice Transfers funds from xController to vault for crosschain rebalance
-  /// @param _chainId Number of chainId
-  /// @param _amount Amount to send to vault in vaultcurrency
-  /// @param _asset Addres of underlying e.g USDC
-  function xTransferToVaults(
-    address _vault,
-    uint32 _chainId,
-    uint256 _amount,
-    address _asset
-  ) external payable onlyController {
-    if (_chainId == homeChain) {
-      require(msg.value == 0, etherNotUsed);
-      IVault(_vault).receiveFunds();
-      IERC20(_asset).safeTransferFrom(msg.sender, _vault, _amount);
-    } else {
-      require(msg.value >= minimumConnextFee, minValue);
-      uint256 estAmount = calculateEstimatedAmount(_amount);
-      bytes4 selector = bytes4(keccak256("receiveFeedbackToVault(address,address,uint256)"));
-      bytes memory callData = abi.encodeWithSelector(selector, _vault, _asset, estAmount);
-
-      xSend(_chainId, callData, _asset, _amount);
-    }
-  }
-
-  /// @notice Step 6 receive: Transfers estimated funds from the contract to the specified vault and triggers the vault's receiveFunds function.
-  /// @dev This function can only be called by the contract itself or a vault.
-  /// @param _vault The address of the target vault to transfer funds to.
-  /// @param _asset The address of the token to be transferred.
-  /// @param _estAmount The estimated amount of tokens to be transferred.
-  function receiveFeedbackToVault(
-    address _vault,
-    address _asset,
-    uint256 _estAmount
-  ) external onlySelf {
-    IERC20(_asset).safeTransfer(_vault, _estAmount);
-    IVault(_vault).receiveFunds();
   }
 
   /// @notice Step 7 push; Game pushes deltaAllocations to vaults
@@ -523,18 +271,6 @@ contract XProvider is IXReceiver {
     emit SetTrustedRemoteConnext(_srcChainId, _srcAddress);
   }
 
-  /// @notice Setter for xControlleraddress
-  /// @param _xController New address of _xController
-  function setXController(address _xController) external onlyDao {
-    xController = _xController;
-  }
-
-  /// @notice Setter for xController chain id
-  /// @param _xControllerChain new xController chainId
-  function setXControllerChainId(uint32 _xControllerChain) external onlyDao {
-    xControllerChain = _xControllerChain;
-  }
-
   /// @notice Setter for homeChain Id
   /// @param _homeChain New home chainId
   function setHomeChain(uint32 _homeChain) external onlyDao {
@@ -577,15 +313,6 @@ contract XProvider is IXReceiver {
   /*
   Only Guardian functions
   */
-
-  /// @notice Send funds back to xController when xCall fails
-  /// @dev Guardian function
-  function sendFundsToXController(address _token, uint256 _amount) external onlyGuardian {
-    require(xControllerChain == homeChain, "No xController on this chain");
-    require(xController != address(0), "Zero address");
-
-    IERC20(_token).safeTransfer(xController, _amount);
-  }
 
   /// @notice Send funds back to vault when xCall fails or for residue left behind with xTransfers
   /// @dev Guardian function

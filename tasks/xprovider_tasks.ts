@@ -7,7 +7,6 @@ task('xprovider_init', 'Set trusted provider on remote chains')
   .setAction(async ({ chainid, gamechain }, hre) => {
     const xProvider = await getXProvider(hre);
     const dao = await getDao(hre);
-    await xProvider.connect(dao).setXControllerChainId(chainid);
     await xProvider.connect(dao).setGameChainId(gamechain);
   });
 
@@ -21,22 +20,6 @@ task('xprovider_set_trusted_connext', 'Set trusted provider on remote chains')
     const xProvider = await getXProvider(hre);
     const dao = await getDao(hre);
     await xProvider.connect(dao).setTrustedRemoteConnext(chainid, address);
-  });
-
-task('xprovider_set_xcontroller', 'Setter for xController address')
-  .addParam('address', 'New xController address')
-  .setAction(async ({ address }, hre) => {
-    const xProvider = await getXProvider(hre);
-    const dao = await getDao(hre);
-    await xProvider.connect(dao).setXController(address);
-  });
-
-task('xprovider_set_xcontroller_chain', 'Setter for xController chain id')
-  .addParam('chainid', 'new xController chain id', null, types.int)
-  .setAction(async ({ chainid }, hre) => {
-    const xProvider = await getXProvider(hre);
-    const dao = await getDao(hre);
-    await xProvider.connect(dao).setXControllerChainId(chainid);
   });
 
 task('xprovider_set_home_chain', 'Setter for new homeChain Id')

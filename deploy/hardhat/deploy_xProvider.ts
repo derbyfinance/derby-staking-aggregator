@@ -15,15 +15,14 @@ const func: DeployFunction = async function ({
   const { connextHandler, mainnet } = deployConfig;
 
   const game = await deployments.get('GameMock');
-  const xChainController = await deployments.get('XChainControllerMock');
 
   await deploy('XProvider', {
     from: deployer,
-    args: [connextHandler, dao, guardian, game.address, xChainController.address, mainnet],
+    args: [connextHandler, dao, guardian, game.address, mainnet],
     log: true,
     autoMine: true,
   });
 };
 export default func;
 func.tags = ['XProvider'];
-func.dependencies = ['GameMock', 'XChainControllerMock'];
+func.dependencies = ['GameMock'];

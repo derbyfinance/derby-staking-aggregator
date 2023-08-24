@@ -6,13 +6,6 @@ export async function getTokenConfig(network: string): Promise<ITokenConfig> {
   return config['DerbyToken'];
 }
 
-export async function getDeployConfigXController(
-  network: string,
-): Promise<IDeployXControllerConfig> {
-  const config = await getConfig(network);
-  return config['XChainController']?.deploy;
-}
-
 export async function getDeployConfigGame(network: string): Promise<IDeployGameConfig> {
   const config = await getConfig(network);
   return config['Game']?.deploy;

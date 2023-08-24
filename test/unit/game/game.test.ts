@@ -7,7 +7,7 @@ import {
   parseEther as pE,
   parseUSDC,
 } from '@testhelp/helpers';
-import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
+import type { GameMock, MainVaultMock, DerbyToken } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
 import { getTokenConfig } from '@testhelp/deployHelpers';
@@ -26,10 +26,9 @@ describe('Testing Game', async () => {
     game: GameMock,
     basketId: BigNumberish,
     vaultNumber: BigNumberish,
-    chainIds: BigNumberish[] = [10, 100, 1000],
-    xChainController: XChainControllerMock;
+    chainIds: BigNumberish[] = [10, 100, 1000];
 
-  before(async function () {
+  before (async function () {
     const setup = await setupGame();
     game = setup.game;
     vault = setup.vault;
@@ -40,7 +39,6 @@ describe('Testing Game', async () => {
     userAddr = setup.userAddr;
     vaultNumber = setup.vaultNumber;
     basketId = setup.basketId;
-    xChainController = setup.xChainController;
   });
 
   it('DerbyToken should have name, symbol and totalSupply set', async function () {
@@ -161,61 +159,6 @@ describe('Testing Game', async () => {
     expect(chainId0).to.deep.equal(allocationTestArray[0]);
     expect(chainId1).to.deep.equal(allocationTestArray[1]);
     expect(chainId2).to.deep.equal(allocationTestArray[2]);
-  });
-
-  // Allocations in protocols are not resetted at this point
-  it('Should push delta allocations from game to xChainController', async function () {
-    await xChainController.connect(dao).resetVaultStagesTEST(vaultNumber);
-    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(true);
-
-    await expect(game.rebalanceBoth(vaultNumber, 100, { value: pE('0.2') })).to.be.revertedWith(
-      'Cannot call functions in the same block',
-    );
-    // chainIds = [10, 100, 1000];
-    await vault.upRebalancingPeriodTEST();
-    await game.pushAllocationsToController(vaultNumber, { value: ethers.utils.parseEther('0.1') });
-
-    // checking of allocations are correctly set in xChainController
-    expect(await xChainController.getCurrentTotalAllocationTEST(vaultNumber)).to.be.equal(900);
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[0])).to.be.equal(
-      200,
-    );
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[1])).to.be.equal(
-      200,
-    );
-    expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chainIds[2])).to.be.equal(
-      500,
-    );
-
-    // delta allocations for chain in game should be resetted
-    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[0])).to.be.equal(0);
-    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[1])).to.be.equal(0);
-    expect(await game.getDeltaAllocationChain(vaultNumber, chainIds[2])).to.be.equal(0);
-
-    // checking vaultStages
-    expect(await xChainController.getVaultReadyState(vaultNumber)).to.be.equal(false);
-    expect(await xChainController.getAllocationState(vaultNumber)).to.be.equal(true);
-
-    // should not be able to rebalance when game is xChainRebalancing
-    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
-      'Game: vault is xChainRebalancing',
-    );
-
-    // reset allocations and state for testing
-    for (let chain of chainIds) {
-      await game.setXChainRebalanceState(vaultNumber, chain, false);
-    }
-
-    await expect(game.connect(user).rebalanceBasket(basketId, [[0, 1]])).to.be.revertedWith(
-      'Game: not all rewards are settled',
-    );
-    await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 3);
-
-    await game.connect(user).rebalanceBasket(basketId, [
-      [0, 0, 0, -200, 0], // 200
-      [-100, 0, -100, 0, 0], // 200
-      [0, -100, 0, -100, -300], // 500
-    ]);
   });
 
   it('Calculate rewards during rebalance Basket', async function () {

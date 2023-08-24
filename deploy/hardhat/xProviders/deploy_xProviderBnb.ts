@@ -15,7 +15,6 @@ const func: DeployFunction = async function ({
   const { bnb } = deployConfig;
 
   const game = await deployments.get('GameMock');
-  const xChainController = await deployments.get('XChainControllerMock');
   const connext = await deployments.get('ConnextMock');
 
   await deploy('XProviderBnb', {
@@ -26,7 +25,6 @@ const func: DeployFunction = async function ({
       dao,
       guardian,
       game.address,
-      xChainController.address,
       bnb,
     ],
     log: true,
