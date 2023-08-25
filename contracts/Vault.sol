@@ -15,17 +15,11 @@ import "./libraries/Swap.sol";
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
-  // state 0 Rebalance done and ready for xController to rebalance again
-  // state 1 Underlying amount pushed to controller
-  // state 2 Sending the funds crosschain
-  // state 3 Waiting for the crosschain funds
-  // state 4 Vault can be rebalanced
-  // state 5 Rewards per locked token can be sent
+  // state 0 Rebalance done and ready to rebalance again
+  // state 1 Vault can be rebalanced
+  // state 2 Rewards per locked token can be sent
   enum State {
     Idle,
-    PushedUnderlying,
-    SendingFundsXChain,
-    WaitingForFunds,
     RebalanceVault,
     SendRewardsPerToken
   }
@@ -39,7 +33,6 @@ contract Vault is ReentrancyGuard {
   address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
-  address public xController;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc;

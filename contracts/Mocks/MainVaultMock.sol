@@ -151,9 +151,8 @@ contract MainVaultMock is MainVault {
 
   function setVaultState(uint256 _state) external {
     if (_state == 0) state = State.Idle;
-    if (_state == 1) state = State.SendingFundsXChain;
-    if (_state == 2) state = State.WaitingForFunds;
-    if (_state == 3) state = State.RebalanceVault;
+    if (_state == 1) state = State.RebalanceVault;
+    if (_state == 2) state = State.SendRewardsPerToken;
   }
 
   function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {

@@ -15,13 +15,12 @@ import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault } from './helpers';
 
-describe.skip('Testing full integration test', async () => {
+describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
     vaults: IVaults[],
     underlyingVaults: IUnderlyingVault[],
-    xChainController: XChainControllerMock,
     controller: Controller,
     game: GameMock,
     derbyToken: DerbyToken,
@@ -33,7 +32,6 @@ describe.skip('Testing full integration test', async () => {
   before(async function () {
     const setup = await setupIntegration();
     game = setup.game;
-    xChainController = setup.xChainController;
     controller = setup.controller;
     derbyToken = setup.derbyToken;
     guardian = setup.guardian;
@@ -225,164 +223,164 @@ describe.skip('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance Step 1: Game pushes allocations to controller', async function () {
-    it('Trigger should emit PushedAllocationsToController event', async function () {
-      // should be done for every new vaultNumber deployed
-      await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
+  // describe('Rebalance Step 1: Game pushes allocations to controller', async function () {
+  //   it('Trigger should emit PushedAllocationsToController event', async function () {
+  //     // should be done for every new vaultNumber deployed
+  //     await xChainController.connect(guardian).resetVaultStagesDao(vaultNumber);
 
-      await expect(game.pushAllocationsToController(vaultNumber))
-        .to.emit(game, 'PushedAllocationsToController')
-        .withArgs(vaultNumber, [
-          parseDRB(chains[0].totalAllocations),
-          parseDRB(chains[1].totalAllocations),
-        ]);
+  //     await expect(game.pushAllocationsToController(vaultNumber))
+  //       .to.emit(game, 'PushedAllocationsToController')
+  //       .withArgs(vaultNumber, [
+  //         parseDRB(chains[0].totalAllocations),
+  //         parseDRB(chains[1].totalAllocations),
+  //       ]);
 
-      // perform step 1.5 manually
-      await xChainController.sendFeedbackToVault(vaultNumber, chains[0].id);
-      await xChainController.sendFeedbackToVault(vaultNumber, chains[1].id);
-    });
+  //     // perform step 1.5 manually
+  //     await xChainController.sendFeedbackToVault(vaultNumber, chains[0].id);
+  //     await xChainController.sendFeedbackToVault(vaultNumber, chains[1].id);
+  //   });
 
-    it('Should have moved delta allocations from game to xChainController', async function () {
-      for (const chain of chains) {
-        expect(await game.getDeltaAllocationChain(vaultNumber, chain.id)).to.be.equal(0);
-        expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chain.id)).to.be.equal(
-          parseDRB(chain.totalAllocations),
-        );
-      }
-    });
-  });
+  //   it('Should have moved delta allocations from game to xChainController', async function () {
+  //     for (const chain of chains) {
+  //       expect(await game.getDeltaAllocationChain(vaultNumber, chain.id)).to.be.equal(0);
+  //       expect(await xChainController.getCurrentAllocationTEST(vaultNumber, chain.id)).to.be.equal(
+  //         parseDRB(chain.totalAllocations),
+  //       );
+  //     }
+  //   });
+  // });
 
-  describe('Rebalance Step 2: Trigger vaults to push totalUnderlyings', async function () {
-    it('Trigger should emit PushTotalUnderlying event', async function () {
-      for (const { vault, homeChain, underlying, totalSupply, totalWithdrawalRequests } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController())
-          .to.emit(vault, 'PushTotalUnderlying')
-          .withArgs(vaultNumber, homeChain, underlying, totalSupply, totalWithdrawalRequests);
-      }
-    });
+  // describe('Rebalance Step 2: Trigger vaults to push totalUnderlyings', async function () {
+  //   it('Trigger should emit PushTotalUnderlying event', async function () {
+  //     for (const { vault, homeChain, underlying, totalSupply, totalWithdrawalRequests } of vaults) {
+  //       await expect(vault.pushTotalUnderlyingToController())
+  //         .to.emit(vault, 'PushTotalUnderlying')
+  //         .withArgs(vaultNumber, homeChain, underlying, totalSupply, totalWithdrawalRequests);
+  //     }
+  //   });
 
-    it('Should set totalUnderlying correctly in xChainController', async function () {
-      for (const { homeChain, underlying } of vaults) {
-        expect(
-          await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, homeChain),
-        ).to.be.equal(underlying);
-      }
+  //   it('Should set totalUnderlying correctly in xChainController', async function () {
+  //     for (const { homeChain, underlying } of vaults) {
+  //       expect(
+  //         await xChainController.getTotalUnderlyingOnChainTEST(vaultNumber, homeChain),
+  //       ).to.be.equal(underlying);
+  //     }
 
-      expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(
-        parseUSDC(1_110_000), // 1m + 110k
-      );
-    });
-  });
+  //     expect(await xChainController.getTotalUnderlyingVaultTEST(vaultNumber)).to.be.equal(
+  //       parseUSDC(1_110_000), // 1m + 110k
+  //     );
+  //   });
+  // });
 
-  describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
-    const exchangeRate = 1e6;
+  // describe('Rebalance Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+  //   const exchangeRate = 1e6;
 
-    // setting expected amountToSend
-    before(function () {
-      vaults[0].amountToSend = parseUSDC(0); // will receive 260k
-      vaults[1].amountToSend = parseUSDC(1_000_000 - (6000 / 9000) * 1_110_000); // = 260k
-    });
+  //   // setting expected amountToSend
+  //   before(function () {
+  //     vaults[0].amountToSend = parseUSDC(0); // will receive 260k
+  //     vaults[1].amountToSend = parseUSDC(1_000_000 - (6000 / 9000) * 1_110_000); // = 260k
+  //   });
 
-    it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[0].vault.address,
-          chains[0].id,
-          vaults[0].amountToSend,
-          exchangeRate,
-          true,
-        );
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[1].vault.address,
-          chains[1].id,
-          vaults[1].amountToSend,
-          exchangeRate,
-          false,
-        );
-    });
+  //   it('Trigger should emit SendXChainAmount event', async function () {
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[0].vault.address,
+  //         chains[0].id,
+  //         vaults[0].amountToSend,
+  //         exchangeRate,
+  //         true,
+  //       );
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[1].vault.address,
+  //         chains[1].id,
+  //         vaults[1].amountToSend,
+  //         exchangeRate,
+  //         false,
+  //       );
+  //   });
 
-    it('Should set amount to deposit or withdraw in vault', async function () {
-      for (const { vault, amountToSend } of vaults) {
-        expect(await vault.amountToSendXChain()).to.be.equal(amountToSend);
-        expect(await vault.exchangeRate()).to.be.equal(exchangeRate);
-      }
-    });
+  //   it('Should set amount to deposit or withdraw in vault', async function () {
+  //     for (const { vault, amountToSend } of vaults) {
+  //       expect(await vault.amountToSendXChain()).to.be.equal(amountToSend);
+  //       expect(await vault.exchangeRate()).to.be.equal(exchangeRate);
+  //     }
+  //   });
 
-    it('Should correctly set states', async function () {
-      expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
-      expect(await vaults[1].vault.state()).to.be.equal(2);
-    });
-  });
+  //   it('Should correctly set states', async function () {
+  //     expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
+  //     expect(await vaults[1].vault.state()).to.be.equal(2);
+  //   });
+  // });
 
-  describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
-    const vaultCurrency = usdc;
-    const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
+  // describe('Rebalance Step 4: Vaults push funds to xChainController', async function () {
+  //   const vaultCurrency = usdc;
+  //   const balanceVault1 = parseUSDC(1_000_000 - 260_000); // expected => balance - amountToSend
 
-    it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
-    });
+  //   it('Vault 0 should revert because they will receive funds', async function () {
+  //     await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+  //   });
 
-    it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[1].vault.rebalanceXChain())
-        .to.emit(vaults[1].vault, 'RebalanceXChain')
-        .withArgs(vaultNumber, vaults[1].amountToSend, vaultCurrency);
-    });
+  //   it('Trigger should emit RebalanceXChain event', async function () {
+  //     await expect(vaults[1].vault.rebalanceXChain())
+  //       .to.emit(vaults[1].vault, 'RebalanceXChain')
+  //       .withArgs(vaultNumber, vaults[1].amountToSend, vaultCurrency);
+  //   });
 
-    it('xChainController should have received funds ', async function () {
-      expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(vaults[1].amountToSend);
-      expect(await IUSDc.balanceOf(vaults[0].vault.address)).to.be.equal(vaults[0].underlying); // 110k
-      expect(await IUSDc.balanceOf(vaults[1].vault.address)).to.be.equal(balanceVault1); // 200k - 68k
+  //   it('xChainController should have received funds ', async function () {
+  //     expect(await IUSDc.balanceOf(xChainController.address)).to.be.equal(vaults[1].amountToSend);
+  //     expect(await IUSDc.balanceOf(vaults[0].vault.address)).to.be.equal(vaults[0].underlying); // 110k
+  //     expect(await IUSDc.balanceOf(vaults[1].vault.address)).to.be.equal(balanceVault1); // 200k - 68k
 
-      // 2 vaults
-      expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(2);
-    });
+  //     // 2 vaults
+  //     expect(await xChainController.getFundsReceivedState(vaultNumber)).to.be.equal(2);
+  //   });
 
-    it('Should correctly set states', async function () {
-      expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
-      expect(await vaults[1].vault.state()).to.be.equal(4);
-    });
-  });
+  //   it('Should correctly set states', async function () {
+  //     expect(await vaults[0].vault.state()).to.be.equal(3); // dont have to send any funds
+  //     expect(await vaults[1].vault.state()).to.be.equal(4);
+  //   });
+  // });
 
-  describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
-    const underlying = usdc;
+  // describe('Rebalance Step 5: xChainController push funds to vaults', async function () {
+  //   const underlying = usdc;
 
-    // expected vault balances after rebalance
-    before(function () {
-      vaults[0].newUnderlying = (3000 / 9000) * 1_110_000 * 0.9945; // vault 0 = 370k
-      vaults[1].newUnderlying = (6000 / 9000) * 1_110_000; // vault 1 = 740k
-      vaults[1].amountToSend = Number(vaults[1].amountToSend) * 0.9945; // vault 1 = 740k
-    });
+  //   // expected vault balances after rebalance
+  //   before(function () {
+  //     vaults[0].newUnderlying = (3000 / 9000) * 1_110_000 * 0.9945; // vault 0 = 370k
+  //     vaults[1].newUnderlying = (6000 / 9000) * 1_110_000; // vault 1 = 740k
+  //     vaults[1].amountToSend = Number(vaults[1].amountToSend) * 0.9945; // vault 1 = 740k
+  //   });
 
-    it('Trigger should emit SentFundsToVault event', async function () {
-      // only vault 0 will receive funds
-      await expect(xChainController.sendFundsToVault(vaultNumber, chains[0].id))
-        .to.emit(xChainController, 'SentFundsToVault')
-        .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
-      // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
-    });
+  //   it('Trigger should emit SentFundsToVault event', async function () {
+  //     // only vault 0 will receive funds
+  //     await expect(xChainController.sendFundsToVault(vaultNumber, chains[0].id))
+  //       .to.emit(xChainController, 'SentFundsToVault')
+  //       .withArgs(vaults[0].vault.address, chains[0].id, vaults[1].amountToSend, underlying);
+  //     // we have to try for each chain id
+  //     await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
+  //   });
 
-    it('Vaults should have received all the funds', async function () {
-      for (const { vault, newUnderlying } of vaults) {
-        expect(await vault.getVaultBalance()).to.be.closeTo(
-          parseUSDC(newUnderlying!),
-          parseUSDC(3000),
-        );
-        expect(await vault.getVaultBalance()).to.be.closeTo(
-          parseUSDC(newUnderlying!),
-          parseUSDC(3000),
-        );
-      }
-    });
+  //   it('Vaults should have received all the funds', async function () {
+  //     for (const { vault, newUnderlying } of vaults) {
+  //       expect(await vault.getVaultBalance()).to.be.closeTo(
+  //         parseUSDC(newUnderlying!),
+  //         parseUSDC(3000),
+  //       );
+  //       expect(await vault.getVaultBalance()).to.be.closeTo(
+  //         parseUSDC(newUnderlying!),
+  //         parseUSDC(3000),
+  //       );
+  //     }
+  //   });
 
-    it('Should correctly set states', async function () {
-      expect(await vaults[0].vault.state()).to.be.equal(4);
-      expect(await vaults[1].vault.state()).to.be.equal(4);
-    });
-  });
+  //   it('Should correctly set states', async function () {
+  //     expect(await vaults[0].vault.state()).to.be.equal(4);
+  //     expect(await vaults[1].vault.state()).to.be.equal(4);
+  //   });
+  // });
 
   describe('Rebalance Step 6: Game pushes deltaAllocations to vaults', async function () {
     // total expected chain allocatioons
@@ -518,87 +516,87 @@ describe.skip('Testing full integration test', async () => {
       }
     });
 
-    it('Rebalance Step 1: 0 deltas', async function () {
-      await expect(game.pushAllocationsToController(vaultNumber))
-        .to.emit(game, 'PushedAllocationsToController')
-        .withArgs(vaultNumber, [0, 0]);
-    });
+    // it('Rebalance Step 1: 0 deltas', async function () {
+    //   await expect(game.pushAllocationsToController(vaultNumber))
+    //     .to.emit(game, 'PushedAllocationsToController')
+    //     .withArgs(vaultNumber, [0, 0]);
+    // });
   });
 
-  describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
-    before(function () {
-      // cause of the yearn mock vaults price increase
-      vaults[0].newUnderlying = 377284.358983; // old 370k
-      vaults[1].newUnderlying = 760430.475742; // old 740k
-    });
+  // describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
+  //   before(function () {
+  //     // cause of the yearn mock vaults price increase
+  //     vaults[0].newUnderlying = 377284.358983; // old 370k
+  //     vaults[1].newUnderlying = 760430.475742; // old 740k
+  //   });
 
-    it('Trigger should emit PushTotalUnderlying event', async function () {
-      for (const { vault, homeChain, newUnderlying, totalSupply } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController())
-          .to.emit(vault, 'PushTotalUnderlying')
-          .withArgs(vaultNumber, homeChain, parseUSDC(newUnderlying!), totalSupply, 0);
-      }
-    });
-  });
+  //   it('Trigger should emit PushTotalUnderlying event', async function () {
+  //     for (const { vault, homeChain, newUnderlying, totalSupply } of vaults) {
+  //       await expect(vault.pushTotalUnderlyingToController())
+  //         .to.emit(vault, 'PushTotalUnderlying')
+  //         .withArgs(vaultNumber, homeChain, parseUSDC(newUnderlying!), totalSupply, 0);
+  //     }
+  //   });
+  // });
 
-  describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
-    // expected exchangeRate
-    const exchangeRate = 1024968;
+  // describe('Rebalance 2 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+  //   // expected exchangeRate
+  //   const exchangeRate = 1024968;
 
-    // setting expected amountToSend
-    before(function () {
-      vaults[0].amountToSend = parseUSDC(0);
-      vaults[1].amountToSend = parseUSDC(1953.919259);
-    });
+  //   // setting expected amountToSend
+  //   before(function () {
+  //     vaults[0].amountToSend = parseUSDC(0);
+  //     vaults[1].amountToSend = parseUSDC(1953.919259);
+  //   });
 
-    it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[0].vault.address,
-          chains[0].id,
-          vaults[0].amountToSend,
-          exchangeRate,
-          true,
-        );
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[1].vault.address,
-          chains[1].id,
-          vaults[1].amountToSend,
-          exchangeRate,
-          false,
-        );
-    });
-  });
+  //   it('Trigger should emit SendXChainAmount event', async function () {
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[0].vault.address,
+  //         chains[0].id,
+  //         vaults[0].amountToSend,
+  //         exchangeRate,
+  //         true,
+  //       );
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[1].vault.address,
+  //         chains[1].id,
+  //         vaults[1].amountToSend,
+  //         exchangeRate,
+  //         false,
+  //       );
+  //   });
+  // });
 
-  describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
-    const vaultCurrency = usdc;
+  // describe('Rebalance 2 Step 4: Vaults push funds to xChainController', async function () {
+  //   const vaultCurrency = usdc;
 
-    it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
-      await vaults[1].vault.rebalanceXChain();
-    });
-  });
+  //   it('Vault 0 should revert because they will receive funds', async function () {
+  //     await expect(vaults[0].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+  //     await vaults[1].vault.rebalanceXChain();
+  //   });
+  // });
 
-  describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
-    const underlying = usdc;
-    const amountToReceiveVault1 = 0;
+  // describe('Rebalance 2 Step 5: xChainController push funds to vaults', async function () {
+  //   const underlying = usdc;
+  //   const amountToReceiveVault1 = 0;
 
-    before(function () {
-      vaults[0].chainAllocs = [0, 0, 0, 0, 0];
-      vaults[1].chainAllocs = [0, 0, 0, 0, 0];
-    });
+  //   before(function () {
+  //     vaults[0].chainAllocs = [0, 0, 0, 0, 0];
+  //     vaults[1].chainAllocs = [0, 0, 0, 0, 0];
+  //   });
 
-    it('Trigger should emit SentFundsToVault event', async function () {
-      // both vaults wont receive funds
-      await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
+  //   it('Trigger should emit SentFundsToVault event', async function () {
+  //     // both vaults wont receive funds
+  //     await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
 
-      // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
-    });
-  });
+  //     // we have to try for each chain id
+  //     await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
+  //   });
+  // });
 
   describe('Rebalance 2 Step 6: Game pushes deltaAllocations to vaults', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
@@ -745,115 +743,115 @@ describe.skip('Testing full integration test', async () => {
     });
   });
 
-  describe('Rebalance 3 Step 1: Increasing exchangeRates to simulate returns in vaults', async function () {
-    it('Rebalance Step 1: game user 0 left the game with -500 and -1000 allocations', async function () {
-      await expect(game.pushAllocationsToController(vaultNumber))
-        .to.emit(game, 'PushedAllocationsToController')
-        .withArgs(vaultNumber, [parseDRB(-500), parseDRB(-1000)]);
-    });
-  });
+  // describe('Rebalance 3 Step 1: Increasing exchangeRates to simulate returns in vaults', async function () {
+  //   it('Rebalance Step 1: game user 0 left the game with -500 and -1000 allocations', async function () {
+  //     await expect(game.pushAllocationsToController(vaultNumber))
+  //       .to.emit(game, 'PushedAllocationsToController')
+  //       .withArgs(vaultNumber, [parseDRB(-500), parseDRB(-1000)]);
+  //   });
+  // });
 
-  describe('Rebalance 3 Step 2: Vault underlyings should have increased', async function () {
-    before(function () {
-      vaults[0].newUnderlying = 379216.844235; //
-      vaults[0].totalSupply = parseUnits(110_000 - 10_000, 6); // 10k User withdraw
-      vaults[0].totalWithdrawalRequests =
-        Number(vaults[0].totalWithdrawalRequests) + 10_000 * exchangeRate; // 10k User withdraw
+  // describe('Rebalance 3 Step 2: Vault underlyings should have increased', async function () {
+  //   before(function () {
+  //     vaults[0].newUnderlying = 379216.844235; //
+  //     vaults[0].totalSupply = parseUnits(110_000 - 10_000, 6); // 10k User withdraw
+  //     vaults[0].totalWithdrawalRequests =
+  //       Number(vaults[0].totalWithdrawalRequests) + 10_000 * exchangeRate; // 10k User withdraw
 
-      vaults[1].newUnderlying = 758476.556482; //
-      vaults[1].totalSupply = parseUnits(1_000_000 - 500_000, 6); // 500k User withdraw
-      vaults[1].totalWithdrawalRequests = 500_000 * exchangeRate; // 500k User withdraw
-    });
+  //     vaults[1].newUnderlying = 758476.556482; //
+  //     vaults[1].totalSupply = parseUnits(1_000_000 - 500_000, 6); // 500k User withdraw
+  //     vaults[1].totalWithdrawalRequests = 500_000 * exchangeRate; // 500k User withdraw
+  //   });
 
-    it('Trigger should emit PushTotalUnderlying event', async function () {
-      for (const {
-        vault,
-        homeChain,
-        newUnderlying,
-        totalSupply,
-        totalWithdrawalRequests,
-      } of vaults) {
-        await expect(vault.pushTotalUnderlyingToController())
-          .to.emit(vault, 'PushTotalUnderlying')
-          .withArgs(
-            vaultNumber,
-            homeChain,
-            parseUSDC(newUnderlying!),
-            totalSupply,
-            totalWithdrawalRequests,
-          );
-      }
-    });
-  });
+  //   it('Trigger should emit PushTotalUnderlying event', async function () {
+  //     for (const {
+  //       vault,
+  //       homeChain,
+  //       newUnderlying,
+  //       totalSupply,
+  //       totalWithdrawalRequests,
+  //     } of vaults) {
+  //       await expect(vault.pushTotalUnderlyingToController())
+  //         .to.emit(vault, 'PushTotalUnderlying')
+  //         .withArgs(
+  //           vaultNumber,
+  //           homeChain,
+  //           parseUSDC(newUnderlying!),
+  //           totalSupply,
+  //           totalWithdrawalRequests,
+  //         );
+  //     }
+  //   });
+  // });
 
-  describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
-    before(function () {
-      exchangeRate = 1024060; // dropped slightly cause of the rewards
-      vaults[0].amountToSend = parseUSDC(163631.587398);
-      vaults[1].amountToSend = parseUSDC(0);
-    });
+  // describe('Rebalance 3 Step 3: xChainController pushes exchangeRate and amount to vaults', async function () {
+  //   before(function () {
+  //     exchangeRate = 1024060; // dropped slightly cause of the rewards
+  //     vaults[0].amountToSend = parseUSDC(163631.587398);
+  //     vaults[1].amountToSend = parseUSDC(0);
+  //   });
 
-    it('Trigger should emit SendXChainAmount event', async function () {
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[0].vault.address,
-          chains[0].id,
-          vaults[0].amountToSend,
-          exchangeRate,
-          false,
-        );
-      await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
-        .to.emit(xChainController, 'SendXChainAmount')
-        .withArgs(
-          vaults[1].vault.address,
-          chains[1].id,
-          vaults[1].amountToSend,
-          exchangeRate,
-          true,
-        );
-    });
-  });
+  //   it('Trigger should emit SendXChainAmount event', async function () {
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[0].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[0].vault.address,
+  //         chains[0].id,
+  //         vaults[0].amountToSend,
+  //         exchangeRate,
+  //         false,
+  //       );
+  //     await expect(xChainController.pushVaultAmounts(vaultNumber, chains[1].id))
+  //       .to.emit(xChainController, 'SendXChainAmount')
+  //       .withArgs(
+  //         vaults[1].vault.address,
+  //         chains[1].id,
+  //         vaults[1].amountToSend,
+  //         exchangeRate,
+  //         true,
+  //       );
+  //   });
+  // });
 
-  describe('Rebalance 3 Step 4: Vaults push funds to xChainController', async function () {
-    const vaultCurrency = usdc;
+  // describe('Rebalance 3 Step 4: Vaults push funds to xChainController', async function () {
+  //   const vaultCurrency = usdc;
 
-    before(function () {
-      vaults[0].amountToSend = parseUSDC(163631.587397);
-      vaults[1].amountToSend = parseUSDC(0);
-    });
+  //   before(function () {
+  //     vaults[0].amountToSend = parseUSDC(163631.587397);
+  //     vaults[1].amountToSend = parseUSDC(0);
+  //   });
 
-    it('Vault 0 should revert because they will receive funds', async function () {
-      await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
-    });
+  //   it('Vault 0 should revert because they will receive funds', async function () {
+  //     await expect(vaults[1].vault.rebalanceXChain()).to.be.revertedWith('Wrong state');
+  //   });
 
-    it('Trigger should emit RebalanceXChain event', async function () {
-      await expect(vaults[0].vault.rebalanceXChain())
-        .to.emit(vaults[0].vault, 'RebalanceXChain')
-        .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
-    });
-  });
+  //   it('Trigger should emit RebalanceXChain event', async function () {
+  //     await expect(vaults[0].vault.rebalanceXChain())
+  //       .to.emit(vaults[0].vault, 'RebalanceXChain')
+  //       .withArgs(vaultNumber, vaults[0].amountToSend, vaultCurrency);
+  //   });
+  // });
 
-  describe('Rebalance 3 Step 5: xChainController push funds to vaults', async function () {
-    const underlying = usdc;
+  // describe('Rebalance 3 Step 5: xChainController push funds to vaults', async function () {
+  //   const underlying = usdc;
 
-    before(function () {
-      vaults[0].amountToSend = parseUSDC(162731.613671);
-    });
+  //   before(function () {
+  //     vaults[0].amountToSend = parseUSDC(162731.613671);
+  //   });
 
-    it('Trigger should emit SentFundsToVault event', async function () {
-      // only vault 1 will receive funds
-      await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
+  //   it('Trigger should emit SentFundsToVault event', async function () {
+  //     // only vault 1 will receive funds
+  //     await xChainController.sendFundsToVault(vaultNumber, chains[1].id);
 
-      // we have to try for each chain id
-      await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
-      // await expect(xChainController.sendFundsToVault(vaultNumber))
-      //   .to.emit(xChainController, 'SentFundsToVault')
-      //   .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
+  //     // we have to try for each chain id
+  //     await xChainController.sendFundsToVault(vaultNumber, chains[0].id);
+  //     // await expect(xChainController.sendFundsToVault(vaultNumber))
+  //     //   .to.emit(xChainController, 'SentFundsToVault')
+  //     //   .withArgs(vaults[1].vault.address, chains[1].id, amountToReceiveVault1, underlying);
 
-      expect(await IUSDc.balanceOf(vaults[1].vault.address)).to.be.equal(vaults[0].amountToSend);
-    });
-  });
+  //     expect(await IUSDc.balanceOf(vaults[1].vault.address)).to.be.equal(vaults[0].amountToSend);
+  //   });
+  // });
 
   describe('Rebalance 3 Step 6: Game pushes deltaAllocations to vaults', async function () {
     before(function () {

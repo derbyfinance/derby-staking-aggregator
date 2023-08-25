@@ -268,21 +268,6 @@ contract MainVault is Vault, VaultToken {
     return _value;
   }
 
-  /// @notice Step 6 end; Push funds from xChainController to vaults
-  /// @notice Receiving feedback from xController when funds are received, so the vault can rebalance
-  function receiveFunds() external onlyXProvider {
-    if (state != State.WaitingForFunds) return;
-    settleReservedFunds();
-  }
-
-  /// @notice Helper to settle reserved funds when funds arrived and up to the next State
-  function settleReservedFunds() internal {
-    reservedFunds += totalWithdrawalRequests;
-    totalWithdrawalRequests = 0;
-    if (vaultOff) state = State.SendRewardsPerToken;
-    else state = State.RebalanceVault;
-  }
-
   /// @notice See receiveProtocolAllocations below
   function receiveProtocolAllocations(int256[] memory _deltas) external onlyXProvider {
     receiveProtocolAllocationsInt(_deltas);
@@ -366,11 +351,6 @@ contract MainVault is Vault, VaultToken {
   /*
   Only Guardian functions
   */
-
-  /// @notice Step 6: Guardian function
-  function receiveFundsGuard() external onlyGuardian {
-    settleReservedFunds();
-  }
 
   /// @notice Step 7: Guardian function
   function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
