@@ -53,10 +53,6 @@ contract MainVaultMock is MainVault {
     totalAllocatedTokens = _tokens;
   }
 
-  function setAmountToSendXChainTEST(uint256 _amount) external {
-    amountToSendXChain = _amount;
-  }
-
   function getLastPriceTEST(uint256 _protocolId) external view returns (uint256) {
     return lastPrices[_protocolId];
   }
@@ -147,12 +143,6 @@ contract MainVaultMock is MainVault {
     for (uint256 i = 0; i < _amountOfPlayers; i++) {
       players[i] = exchangeRate;
     }
-  }
-
-  function setVaultState(uint256 _state) external {
-    if (_state == 0) state = State.Idle;
-    if (_state == 1) state = State.RebalanceVault;
-    if (_state == 2) state = State.SendRewardsPerToken;
   }
 
   function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {

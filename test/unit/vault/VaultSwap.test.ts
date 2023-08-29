@@ -47,7 +47,6 @@ describe('Testing VaultSwap, unit test', async () => {
 
     // Deposit and rebalance with 100k in only Compound
     await vault.connect(user).deposit(amountToDeposit);
-    await vault.setVaultState(3);
     await vault.rebalance();
     // mine 100 blocks to gain COMP Tokens
     for (let i = 0; i <= 100; i++) await network.provider.send('evm_mine');

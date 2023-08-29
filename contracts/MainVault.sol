@@ -38,10 +38,10 @@ contract MainVault is Vault, VaultToken {
   uint256 internal totalDepositRequests;
   uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
   uint32 public homeChain;
-  uint256 public amountToSendXChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
   uint256 public minimumDeposit;
+  uint256 public lastRewardPeriod;
 
   string internal allowanceError = "!Allowance";
   string internal noFundsError = "No funds";
@@ -80,11 +80,6 @@ contract MainVault is Vault, VaultToken {
     _;
   }
 
-  modifier onlyWhenIdle() {
-    require(state == State.Idle, "Rebalancing");
-    _;
-  }
-
   modifier onlyGame() {
     require(msg.sender == game, "only game");
     _;
@@ -97,7 +92,7 @@ contract MainVault is Vault, VaultToken {
   /// transfers the deposited amount from the user to the Vault, and records the deposit request.
   /// If the training mode is active, the function checks if the user is whitelisted and the deposit doesn't exceed the max training deposit.
   /// @param _amount The amount that the user wants to deposit.
-  function deposit(uint256 _amount) external nonReentrant onlyWhenIdle {
+  function deposit(uint256 _amount) external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
 
     require(_amount >= minimumDeposit, "Minimum deposit");
@@ -123,7 +118,7 @@ contract MainVault is Vault, VaultToken {
   /// the period in which the deposit request was made.
   /// The function will mint new shares in exchange for the deposit and update the user's deposit request status.
   /// @return shares The number of shares minted in exchange for the deposit.
-  function redeemDeposit() external nonReentrant onlyWhenIdle returns (uint256 shares) {
+  function redeemDeposit() external nonReentrant returns (uint256 shares) {
     UserInfo storage user = userInfo[msg.sender];
     uint256 depositRequest = user.depositRequest;
 
@@ -136,7 +131,7 @@ contract MainVault is Vault, VaultToken {
   }
 
   /// @notice Cancel the deposit request for the caller.
-  function cancelDepositRequest() external nonReentrant onlyWhenIdle {
+  function cancelDepositRequest() external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
     uint256 depositRequest = user.depositRequest;
     deleteDepositRequest(user);
@@ -156,9 +151,7 @@ contract MainVault is Vault, VaultToken {
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
   /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
   /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
-  function withdrawalRequest(
-    uint256 _amount
-  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
+  function withdrawalRequest(uint256 _amount) external nonReentrant returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
@@ -174,7 +167,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
   /// @dev Will send the user funds and reset the allowance
   /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
-  function withdrawAllowance() external nonReentrant onlyWhenIdle returns (uint256 value) {
+  function withdrawAllowance() external nonReentrant returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.withdrawalAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.withdrawalRequestPeriod, noFundsError);
@@ -203,10 +196,7 @@ contract MainVault is Vault, VaultToken {
   /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
   /// @param _value Amount to set a request in vaultCurrency
   /// @param _user Address of the user
-  function redeemRewardsGame(
-    uint256 _value,
-    address _user
-  ) external onlyGame nonReentrant onlyWhenIdle {
+  function redeemRewardsGame(uint256 _value, address _user) external onlyGame nonReentrant {
     UserInfo storage user = userInfo[_user];
     require(user.rewardAllowance == 0, allowanceError);
 
@@ -222,7 +212,7 @@ contract MainVault is Vault, VaultToken {
   function withdrawRewards(
     uint256 _deadline,
     uint256 _minAmountOut
-  ) external nonReentrant onlyWhenIdle returns (uint256 value) {
+  ) external nonReentrant returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
@@ -288,12 +278,12 @@ contract MainVault is Vault, VaultToken {
 
   /// @notice Step 9 trigger; Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external payable {
-    require(state == State.SendRewardsPerToken, stateError);
+    require(lastRewardPeriod < rebalancingPeriod, "rewards already sent");
 
     int256[] memory rewards = rewardsToArray();
     IXProvider(xProvider).pushRewardsToGame{value: msg.value}(vaultNumber, homeChain, rewards);
 
-    state = State.Idle;
+    lastRewardPeriod = rebalancingPeriod;
 
     emit PushedRewardsToGame(vaultNumber, homeChain, rewards);
   }
@@ -355,11 +345,6 @@ contract MainVault is Vault, VaultToken {
   /// @notice Step 7: Guardian function
   function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
     receiveProtocolAllocationsInt(_deltas);
-  }
-
-  /// @notice Guardian function to set state when vault gets stuck for whatever reason
-  function setVaultStateGuard(State _state) external onlyGuardian {
-    state = _state;
   }
 
   /// @notice Setter for new homeChain Id

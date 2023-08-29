@@ -26,17 +26,6 @@ describe('Testing vault tasks', () => {
   /*************
   Only Guardian
   **************/
-
-  it('vault_set_state', async function () {
-    const { vault, contract } = await setupVault();
-
-    expect(await vault.state()).to.be.equal(0);
-    await run('vault_set_state', { contract, state: 2 });
-    expect(await vault.state()).to.be.equal(2);
-    await run('vault_set_state', { contract, state: 4 });
-    expect(await vault.state()).to.be.equal(4);
-  });
-
   it('vault_set_home_chain', async function () {
     const { vault, contract } = await setupVault();
     const chainid = random(10_000);

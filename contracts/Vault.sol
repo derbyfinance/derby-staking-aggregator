@@ -15,18 +15,8 @@ import "./libraries/Swap.sol";
 contract Vault is ReentrancyGuard {
   using SafeERC20 for IERC20;
 
-  // state 0 Rebalance done and ready to rebalance again
-  // state 1 Vault can be rebalanced
-  // state 2 Rewards per locked token can be sent
-  enum State {
-    Idle,
-    RebalanceVault,
-    SendRewardsPerToken
-  }
-
   IERC20 internal vaultCurrency;
   IController internal controller;
-  State public state;
 
   bool public deltaAllocationsReceived;
 
@@ -57,8 +47,6 @@ contract Vault is ReentrancyGuard {
   uint256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
-
-  string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => uint256) internal currentAllocations;
@@ -127,8 +115,9 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalance() external nonReentrant {
-    require(state == State.RebalanceVault, stateError);
+    require(rebalanceNeeded(), "No rebalance needed");
     require(deltaAllocationsReceived, "!Delta allocations");
+    rebalancingPeriod++;
     uint256 latestID = controller.latestProtocolId(vaultNumber);
 
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
@@ -140,7 +129,6 @@ contract Vault is ReentrancyGuard {
     executeDeposits(protocolToDeposit);
     setTotalUnderlying();
 
-    state = State.SendRewardsPerToken;
     deltaAllocationsReceived = false;
   }
 
