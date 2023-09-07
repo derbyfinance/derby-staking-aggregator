@@ -145,8 +145,8 @@ contract MainVaultMock is MainVault {
     }
   }
 
-  function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {
-    storePriceAndRewards(_totalUnderlying, _protocolId);
+  function storePriceAndRewardsTest(uint256 _protocolId) external {
+    storePriceAndRewards(_protocolId);
   }
 
   function depositInProtocolTest(uint256 _protocolNum, uint256 _amount) external {

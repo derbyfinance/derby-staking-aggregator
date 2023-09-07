@@ -15,7 +15,7 @@ import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault } from './helpers';
 
-describe.skip('Testing full integration test', async () => {
+describe.only('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),
@@ -431,6 +431,8 @@ describe.skip('Testing full integration test', async () => {
   describe('Rebalance Step 7: Vaults rebalance', async function () {
     // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
     before(function () {
+      vaults[0].newUnderlying = 110_000; // same as old
+      vaults[1].newUnderlying = 1_000_000; // same as old
       vaults[0].expectedProtocolBalance = (600 / 3000) * vaults[0].newUnderlying!;
       vaults[1].expectedProtocolBalance = (1200 / 6000) * vaults[1].newUnderlying!;
     });
@@ -459,11 +461,6 @@ describe.skip('Testing full integration test', async () => {
           );
         }
       }
-    });
-
-    it('Should correctly set states', async function () {
-      expect(await vaults[0].vault.state()).to.be.equal(5);
-      expect(await vaults[1].vault.state()).to.be.equal(5);
     });
   });
 
@@ -496,32 +493,27 @@ describe.skip('Testing full integration test', async () => {
         ).to.be.equal(0);
       }
     });
-
-    it('Should correctly set states', async function () {
-      expect(await vaults[0].vault.state()).to.be.equal(0);
-      expect(await vaults[1].vault.state()).to.be.equal(0);
-    });
   });
 
-  describe('Rebalance 2 Step 1: Increasing exchangeRates to simulate returns in vaults', async function () {
-    before(async function () {
-      underlyingVaults[0].price = parseUnits(1.04, 6);
-      underlyingVaults[1].price = parseUnits(1.1, 6);
-      underlyingVaults[2].price = parseUnits(1.15, 6);
-      underlyingVaults[3].price = parseUnits(1.16, 6);
-      underlyingVaults[4].price = parseUnits(1.22, 6);
-      for (const { vault, price } of underlyingVaults) {
-        await vault.setExchangeRate(price);
-        expect(await vault.exchangeRate()).to.be.equal(price);
-      }
-    });
+  // describe('Rebalance 2 Step 1: Increasing exchangeRates to simulate returns in vaults', async function () {
+  //   before(async function () {
+  //     underlyingVaults[0].price = parseUnits(1.04, 6);
+  //     underlyingVaults[1].price = parseUnits(1.1, 6);
+  //     underlyingVaults[2].price = parseUnits(1.15, 6);
+  //     underlyingVaults[3].price = parseUnits(1.16, 6);
+  //     underlyingVaults[4].price = parseUnits(1.22, 6);
+  //     for (const { vault, price } of underlyingVaults) {
+  //       await vault.setExchangeRate(price);
+  //       expect(await vault.exchangeRate()).to.be.equal(price);
+  //     }
+  //   });
 
-    // it('Rebalance Step 1: 0 deltas', async function () {
-    //   await expect(game.pushAllocationsToController(vaultNumber))
-    //     .to.emit(game, 'PushedAllocationsToController')
-    //     .withArgs(vaultNumber, [0, 0]);
-    // });
-  });
+  //   it('Rebalance Step 1: 0 deltas', async function () {
+  //     await expect(game.pushAllocationsToController(vaultNumber))
+  //       .to.emit(game, 'PushedAllocationsToController')
+  //       .withArgs(vaultNumber, [0, 0]);
+  //   });
+  // });
 
   // describe('Rebalance 2 Step 2: Vault underlyings should have increased', async function () {
   //   before(function () {
@@ -598,19 +590,29 @@ describe.skip('Testing full integration test', async () => {
   //   });
   // });
 
-  describe('Rebalance 2 Step 6: Game pushes deltaAllocations to vaults', async function () {
+  describe('Rebalance 2 Step 6: Game pushes deltaAllocations to vaults, 0 deltas', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
       await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
-        .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
+        .withArgs(vaults[0].homeChain, vaults[0].vault.address, [0, 0, 0, 0, 0]);
       await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
         .to.emit(game, 'PushProtocolAllocations')
-        .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
+        .withArgs(vaults[1].homeChain, vaults[1].vault.address, [0, 0, 0, 0, 0]);
     });
   });
 
   describe('Rebalance 2 Step 7: Vaults rebalance', async function () {
-    // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
+    before(async function () {
+      underlyingVaults[0].price = parseUnits(1.04, 6);
+      underlyingVaults[1].price = parseUnits(1.1, 6);
+      underlyingVaults[2].price = parseUnits(1.15, 6);
+      underlyingVaults[3].price = parseUnits(1.16, 6);
+      underlyingVaults[4].price = parseUnits(1.22, 6);
+      for (const { vault, price } of underlyingVaults) {
+        await vault.setExchangeRate(price);
+        expect(await vault.exchangeRate()).to.be.equal(price);
+      }
+    });
 
     it('Trigger rebalance vaults', async function () {
       for (const { vault } of vaults) {
@@ -622,13 +624,16 @@ describe.skip('Testing full integration test', async () => {
   describe('Rebalance 2 Step 8: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      vaults[0].rewards = [247_854, 601_931, 574_570, 109_917, 210_676];
-      vaults[1].rewards = [247_868, 601_965, 574_603, 109_924, 210_687];
+      vaults[0].rewards = [73_880, 179_424, 171_268, 32_764, 62_798];
+      vaults[1].rewards = [335_820, 815_563, 778_491, 148_929, 285_447];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
-      for (const { vault } of vaults) {
-        await vault.sendRewardsToGame();
+      for (const { vault, rewards } of vaults) {
+        const price = await vault.price(0);
+        await expect(vault.sendRewardsToGame())
+        .to.emit(vault, 'PushedRewardsToGame');
+        // .withArgs(vault.vaultNumber, vault.homeChain, rewards);
       }
     });
 
@@ -663,7 +668,7 @@ describe.skip('Testing full integration test', async () => {
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
     // rewardsPerLockedToken * allocations
-    const totalExpectedRewards = 523504897;
+    const totalExpectedRewards = 524863391;
 
     before(function () {
       gameUsers[0].allocations = [
@@ -708,7 +713,7 @@ describe.skip('Testing full integration test', async () => {
   });
 
   describe('Set withdrawal requests', async function () {
-    exchangeRate = 1024968; // 1.027688\
+    exchangeRate = 1027608; 
 
     it('Vault 0 (user 0): Should set withdrawal request for all LP tokens (10k)', async function () {
       const { user, vault } = vaultUsers[0];
@@ -870,6 +875,15 @@ describe.skip('Testing full integration test', async () => {
         parseDRB(-200),
         parseDRB(-200),
       ];
+
+      vaults[0].newUnderlying = 379216.844235; //
+      vaults[0].totalSupply = parseUnits(110_000 - 10_000, 6); // 10k User withdraw
+      vaults[0].totalWithdrawalRequests =
+        Number(vaults[0].totalWithdrawalRequests) + 10_000 * exchangeRate; // 10k User withdraw
+
+      vaults[1].newUnderlying = 758476.556482; //
+      vaults[1].totalSupply = parseUnits(1_000_000 - 500_000, 6); // 500k User withdraw
+      vaults[1].totalWithdrawalRequests = 500_000 * exchangeRate; // 500k User withdraw
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {

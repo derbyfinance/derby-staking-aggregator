@@ -88,12 +88,7 @@ contract Game is ERC721, ReentrancyGuard {
   // (vaultNumber => vaultInfo struct)
   mapping(uint256 => vaultInfo) internal vaults;
 
-  // (vaultNumber => chainid => bool): true when vault/ chainid is cross-chain rebalancing
-  mapping(uint256 => mapping(uint32 => bool)) public isXChainRebalancing;
-
   event PushProtocolAllocations(uint32 chain, address vault, int256[] deltas);
-
-  event PushedAllocationsToController(uint256 vaultNumber, int256[] deltas);
 
   event BasketId(address owner, uint256 basketId);
 
@@ -365,10 +360,6 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Checks if the basket is allowed to be rebalanced.
   /// @param _vaultNumber The vault number to be checked.
   function checkRebalanceAuthorization(uint256 _vaultNumber) internal view {
-    for (uint k = 0; k < chainIds.length; k++) {
-      require(!isXChainRebalancing[_vaultNumber][chainIds[k]], "Game: vault is xChainRebalancing");
-    }
-
     if (getRebalancingPeriod(_vaultNumber) != 0) {
       require(
         getNumberOfRewardsReceived(_vaultNumber) == chainIds.length,
@@ -488,17 +479,18 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _vaultNumber,
     uint32 _chain
   ) external payable notInSameBlock {
+    require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
     address vault = getVaultAddress(_vaultNumber, _chain);
     require(vault != address(0), "Game: not a valid vaultnumber");
-    require(isXChainRebalancing[_vaultNumber][_chain], "Vault is not rebalancing");
 
     int256[] memory deltas = protocolAllocationsToArray(_vaultNumber, _chain);
 
     IXProvider(xProvider).pushProtocolAllocationsToVault{value: msg.value}(_chain, vault, deltas);
 
-    emit PushProtocolAllocations(_chain, getVaultAddress(_vaultNumber, _chain), deltas);
+    lastTimeStamp[_vaultNumber] = block.timestamp;
+    vaults[_vaultNumber].numberOfRewardsReceived = 0;
 
-    isXChainRebalancing[_vaultNumber][_chain] = false;
+    emit PushProtocolAllocations(_chain, getVaultAddress(_vaultNumber, _chain), deltas);
   }
 
   /// @notice Creates array with delta allocations in protocols for given chainId
@@ -703,15 +695,6 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _chainIds array of all the used chainIds
   function setChainIds(uint32[] memory _chainIds) external onlyGuardian {
     chainIds = _chainIds;
-  }
-
-  /// @notice Guardian function to set state when vault gets stuck for whatever reason
-  function setRebalancingState(
-    uint256 _vaultNumber,
-    uint32 _chain,
-    bool _state
-  ) external onlyGuardian {
-    isXChainRebalancing[_vaultNumber][_chain] = _state;
   }
 
   /// @notice Step 8: Guardian function

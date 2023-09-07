@@ -6,7 +6,7 @@ import "./Vault.sol";
 
 import "./Interfaces/IXProvider.sol";
 
-contract MainVault is Vault, VaultToken {
+contract MainVault is Vault {
   using SafeERC20 for IERC20;
 
   struct UserInfo {
@@ -36,7 +36,6 @@ contract MainVault is Vault, VaultToken {
   // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
   uint256 internal totalWithdrawalRequests;
   uint256 internal totalDepositRequests;
-  uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
   uint32 public homeChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
@@ -64,10 +63,7 @@ contract MainVault is Vault, VaultToken {
     address _controller,
     address _vaultCurrency,
     address _nativeToken
-  )
-    VaultToken(_name, _symbol, _decimals)
-    Vault(_vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken)
-  {
+  ) Vault(_name, _symbol, _decimals, _vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken) {
     exchangeRate = 10 ** decimals();
     game = _game;
     governanceFee = 0;
