@@ -42,7 +42,8 @@ contract Vault is ReentrancyGuard, VaultToken {
   uint256 public savedTotalUnderlying;
 
   // total amount of funds the vault reserved for users that made a withdrawalRequest
-  uint256 internal reservedFunds;
+  uint256 internal totalWithdrawalRequests;
+  uint256 internal totalDepositRequests;
 
   // total number of allocated Derby tokens currently (in derbytoken.decimals())
   uint256 public totalAllocatedTokens;
@@ -118,10 +119,15 @@ contract Vault is ReentrancyGuard, VaultToken {
     exchangeRate = totalSupply() == 0
       ? 1
       : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
-    exchangeRate = exchangeRate - oldExchangeRate > 0
-      ? (exchangeRate * (exchangeRate - oldExchangeRate) * (100 - performanceFee)) /
-        (oldExchangeRate * 100)
-      : exchangeRate;
+
+    if (exchangeRate > oldExchangeRate) {
+      // if exchangeRate increases, performanceFee is added to the exchangeRate
+      uint256 nominator = (exchangeRate - oldExchangeRate) *
+        oldExchangeRate *
+        (100 - performanceFee);
+      uint256 denominator = 100 * oldExchangeRate;
+      exchangeRate = nominator / denominator + oldExchangeRate;
+    }
 
     lastTimeStamp = block.timestamp;
   }
@@ -131,7 +137,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   function calcUnderlyingIncBalance() internal view returns (uint256) {
     uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying +
       getVaultBalance() -
-      reservedFunds;
+      totalWithdrawalRequests;
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
   }

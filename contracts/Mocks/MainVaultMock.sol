@@ -69,16 +69,12 @@ contract MainVaultMock is MainVault {
     return totalWithdrawalRequests;
   }
 
-  function getReservedFundsTEST() external view returns (uint256) {
-    return reservedFunds;
+  function setTotalWithdrawalRequestsTEST(uint256 _requests) external {
+    totalWithdrawalRequests = _requests;
   }
 
   function setExchangeRateTEST(uint256 _exchangeRate) external {
     exchangeRate = _exchangeRate;
-  }
-
-  function setReservedFundsTEST(uint256 _amount) external {
-    reservedFunds = _amount;
   }
 
   function upRebalancingPeriodTEST() external {
@@ -162,6 +158,10 @@ contract MainVaultMock is MainVault {
 
   function getTotalDepositRequestsTest() external view returns (uint256) {
     return totalDepositRequests;
+  }
+
+  function setSavedTotalUnderlyingTest(uint256 _amount) external {
+    savedTotalUnderlying = _amount;
   }
 
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {

@@ -46,7 +46,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
 
     // mocking vault settings
     await vault.upRebalancingPeriodTEST();
-    await vault.setReservedFundsTEST(parseUSDC(10_000));
+    await vault.setTotalWithdrawalRequestsTEST(parseUSDC(10_000));
 
     // withdraw allowance should give 9k USDC
     await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
@@ -76,7 +76,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
 
       // mocking vault settings
       await vault.upRebalancingPeriodTEST();
-      await vault.setReservedFundsTEST(parseUSDC(20_000));
+      await vault.setTotalWithdrawalRequestsTEST(parseUSDC(20_000));
       const govFee = 20_000 * 0.005;
 
       // withdraw allowance should give 9k USDC

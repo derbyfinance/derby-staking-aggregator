@@ -204,8 +204,8 @@ describe('Testing Game', async () => {
     // Deposit so the vault has funds
     await vault.connect(user).deposit(parseUSDC('10000')); // 10k
 
-    await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(2_120_000)]);
-    expect(await vault.getReservedFundsTEST()).to.be.equal(2_120_000);
+    await Promise.all([vault.upRebalancingPeriodTEST(), vault.setTotalWithdrawalRequestsTEST(2_120_000)]);
+    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(2_120_000);
 
     // Uniswap token is about $8, so should receive atleast (2_120_000 / 1E6) / 8 = 0.3
     await vault.connect(user).withdrawRewards(getSwapDeadline(), 0);
@@ -218,7 +218,7 @@ describe('Testing Game', async () => {
     );
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
-    expect(await vault.getReservedFundsTEST()).to.be.equal(0);
+    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(0);
   });
 
   it('Mocking rewards again to test when swappingRewards is false', async function () {
@@ -239,15 +239,15 @@ describe('Testing Game', async () => {
     // Swaprewards to false
     await vault.connect(dao).setSwapRewards(false);
 
-    await Promise.all([vault.upRebalancingPeriodTEST(), vault.setReservedFundsTEST(4_240_000)]);
-    expect(await vault.getReservedFundsTEST()).to.be.equal(4_240_000);
+    await Promise.all([vault.upRebalancingPeriodTEST(), vault.setTotalWithdrawalRequestsTEST(4_240_000)]);
+    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(4_240_000);
 
     await expect(() =>
       vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
     ).to.changeTokenBalance(IUSDc, user, 4_240_000);
 
     expect(await vault.getRewardAllowanceTEST(userAddr)).to.be.equal(0);
-    expect(await vault.getReservedFundsTEST()).to.be.equal(0);
+    expect(await vault.getTotalWithdrawalRequestsTEST()).to.be.equal(0);
   });
 });
 

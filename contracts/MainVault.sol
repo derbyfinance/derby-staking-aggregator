@@ -32,10 +32,6 @@ contract MainVault is Vault {
   bool public swapRewards;
   bool public vaultOff;
 
-  // total amount of withdrawal requests for the vault to pull extra during a cross-chain rebalance, will be upped when a user makes a withdrawalRequest
-  // during a cross-chain rebalance the vault will pull extra funds by the amount of totalWithdrawalRequests and the totalWithdrawalRequests will turn into actual reservedFunds
-  uint256 internal totalWithdrawalRequests;
-  uint256 internal totalDepositRequests;
   uint32 public homeChain;
   uint256 public governanceFee; // Basis points
   uint256 public maxDivergenceWithdraws;
@@ -63,7 +59,9 @@ contract MainVault is Vault {
     address _controller,
     address _vaultCurrency,
     address _nativeToken
-  ) Vault(_name, _symbol, _decimals, _vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken) {
+  )
+    Vault(_name, _symbol, _decimals, _vaultNumber, _dao, _controller, _vaultCurrency, _nativeToken)
+  {
     exchangeRate = 10 ** decimals();
     game = _game;
     governanceFee = 0;
@@ -172,7 +170,7 @@ contract MainVault is Vault {
     value = IXProvider(xProvider).calculateEstimatedAmount(value);
     value = checkForBalance(value);
 
-    reservedFunds -= value;
+    totalWithdrawalRequests -= user.withdrawalAllowance;
     delete user.withdrawalAllowance;
     delete user.withdrawalRequestPeriod;
 
@@ -215,8 +213,8 @@ contract MainVault is Vault {
 
     value = user.rewardAllowance;
     value = checkForBalance(value);
+    totalWithdrawalRequests -= user.rewardAllowance;
 
-    reservedFunds -= value;
     delete user.rewardAllowance;
     delete user.rewardRequestPeriod;
 
