@@ -39,7 +39,7 @@ contract GameMock is Game {
         rebalancingPeriod - 1,
         i
       );
-      vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] =
+      vaults[_chainId][_vaultNumber].rewardPerLockedToken[rebalancingPeriod][i] =
         lastReward +
         _rewards[i];
     }
@@ -52,7 +52,7 @@ contract GameMock is Game {
     uint256 _protocolId,
     int256 _reward
   ) external {
-    vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId] = _reward;
+    vaults[_chainId][_vaultNumber].rewardPerLockedToken[_rebalancingPeriod][_protocolId] = _reward;
   }
 
   function getRewardsPerLockedTokenTEST(
@@ -80,6 +80,6 @@ contract GameMock is Game {
   }
 
   function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
-    this.pushAllocationsToVaults{value: msg.value / 2}(_vaultNumber, _chain);
+    this.pushAllocationsToVaults{value: msg.value / 2}(_chain, _vaultNumber);
   }
 }
