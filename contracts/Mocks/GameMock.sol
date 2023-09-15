@@ -34,8 +34,8 @@ contract GameMock is Game {
 
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
-        _vaultNumber,
         _chainId,
+        _vaultNumber,
         rebalancingPeriod - 1,
         i
       );
@@ -61,7 +61,7 @@ contract GameMock is Game {
     uint256 _rebalancingPeriod,
     uint256 _protocolId
   ) external view returns (int256) {
-    return getRewardsPerLockedToken(_vaultNumber, _chainId, _rebalancingPeriod, _protocolId);
+    return getRewardsPerLockedToken(_chainId, _vaultNumber, _rebalancingPeriod, _protocolId);
   }
 
   function getNegativeRewardFactor() external view returns (uint256) {

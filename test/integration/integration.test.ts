@@ -186,10 +186,10 @@ describe('Testing full integration test', async () => {
         [parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200)],
       ];
       for (let i = 0; i < expectedAllocations[0].length; i++) {
-        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[0].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationsProtocol(vaultNumber, chains[0].id, i)).to.be.equal(
           expectedAllocations[0][i],
         );
-        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[1].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationsProtocol(vaultNumber, chains[1].id, i)).to.be.equal(
           expectedAllocations[1][i],
         );
       }
