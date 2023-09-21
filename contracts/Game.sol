@@ -12,6 +12,8 @@ import "./DerbyToken.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -264,10 +266,15 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Mints a new NFT with a Basket of allocations.
   /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
+  /// @param _chainId Chain ID of the vault.
   /// @param _vaultNumber Number of the vault. Same as in Router.
   /// @return basketId The basket Id the user has minted.
-  function mintNewBasket(uint256 _vaultNumber) external nonReentrant returns (uint256) {
+  function mintNewBasket(
+    uint32 _chainId,
+    uint256 _vaultNumber
+  ) external nonReentrant returns (uint256) {
     // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
+    baskets[latestBasketId].chainId = _chainId;
     baskets[latestBasketId].vaultNumber = _vaultNumber;
     baskets[latestBasketId].lastRebalancingPeriod = getRebalancingPeriod(_vaultNumber) + 1;
     _safeMint(msg.sender, latestBasketId);
@@ -367,7 +374,6 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 _vaultNumber,
     int256[] memory _deltaAllocations
   ) internal returns (int256 totalDelta) {
-    int256 totalAllocations;
     uint32 chainId = baskets[_basketId].chainId;
     uint256 latestProtocol = vaults[chainId][_vaultNumber].latestProtocolId;
     require(_deltaAllocations.length == latestProtocol, "Invalid allocation length");
@@ -375,11 +381,11 @@ contract Game is ERC721, ReentrancyGuard {
     for (uint256 i = 0; i < latestProtocol; i++) {
       int256 allocation = _deltaAllocations[i];
       if (allocation == 0) continue;
-      totalAllocations += allocation;
+      totalDelta += allocation;
       addDeltaAllocationsProtocol(_chainId, _vaultNumber, i, allocation);
       setBasketAllocationInProtocol(_chainId, _vaultNumber, _basketId, i, allocation);
     }
-    addDeltaAllocationsVault(_chainId, _vaultNumber, totalAllocations);
+    addDeltaAllocationsVault(_chainId, _vaultNumber, totalDelta);
   }
 
   /// @notice rewards are calculated here.
@@ -391,7 +397,6 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 currentRebalancingPeriod = IVault(vaults[chainId][vaultNum].vaultAddress)
       .rebalancingPeriod(); //TODO: rebalancingPeriod should be communicated differently
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
-
     require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
 
     uint256 latestProtocol = vaults[chainId][vaultNum].latestProtocolId;
@@ -663,5 +668,17 @@ contract Game is ERC721, ReentrancyGuard {
     int256[] memory _rewards
   ) external onlyGuardian {
     settleRewardsInt(_chainId, _vaultNumber, _rewards);
+  }
+
+  /// @notice setter for rewardsReceived
+  /// @param _chainId Number of chain used
+  /// @param _vaultNumber Number of the vault
+  /// @param _rewardsReceived bool to set if rewards are received
+  function setRewardsReceived(
+    uint32 _chainId,
+    uint256 _vaultNumber,
+    bool _rewardsReceived
+  ) external onlyGuardian {
+    vaults[_chainId][_vaultNumber].rewardsReceived = _rewardsReceived;
   }
 }

@@ -55,13 +55,13 @@ export const setupIntegration = async () => {
   const vaults = [vault1, vault2];
   const users = [user, user1, user2];
   const gameUsers = [gameUser0, gameUser1];
-  const allXProviders = await getAndInitXProviders(hre, dao, { xController: 100, game: 10 });
+  const allXProviders = await getAndInitXProviders(hre, dao, { game: 10 });
   const [xProviderMain, xProviderArbi] = allXProviders;
 
   await Promise.all([
     run('controller_init'),
 
-    run('game_init', { provider: xProviderMain.address, homevault: vault1.address, chainids }),
+    run('game_init', { provider: xProviderMain.address, homevault: vault1.address }),
 
     run('vault_init', { contract: 'TestVault1' }),
     run('vault_init', { contract: 'TestVault2' }),

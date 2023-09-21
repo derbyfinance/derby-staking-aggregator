@@ -2,7 +2,6 @@ import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('xprovider_init', 'Set trusted provider on remote chains')
-  .addParam('chainid', 'chainId of the xController')
   .addParam('gamechain', 'chainId of the game')
   .setAction(async ({ chainid, gamechain }, hre) => {
     const xProvider = await getXProvider(hre);

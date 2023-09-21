@@ -62,21 +62,6 @@ describe('Testing game tasks', () => {
     expect(await game.latestProtocolId(chainid)).to.be.equal(latestprotocolid);
   });
 
-  it('game_set_chain_ids', async function () {
-    const { game } = await setupGame();
-    const chainids = [
-      random(1000),
-      random(1000),
-      random(1000),
-      random(1000),
-      random(1000),
-      random(1000),
-    ];
-
-    await run('game_set_chain_ids', { chainids });
-    expect(await game.getChainIds()).to.be.deep.equal(chainids);
-  });
-
   it('game_set_rebalancing_state', async function () {
     const { game } = await setupGame();
     const vaultnumber = random(100);

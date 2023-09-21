@@ -8,7 +8,6 @@ export async function getAndInitXProviders(
   hre: HardhatRuntimeEnvironment,
   dao: Signer,
   chains: {
-    xController: number;
     game: number;
   },
 ): Promise<XProvider[]> {
@@ -70,7 +69,7 @@ export async function setGameLatestProtocolIds(
   const vaults = await getTestVaultDeployments(deployments);
 
   for (let i = 0; i < chainids.length; i++) {
-    await run('game_latest_protocol_id', { chainid: chainids[i], latestprotocolid: latestId });
+    await run('game_latest_protocol_id', { chainid: chainids[i], vaultnumber: vaultNumber, latestprotocolid: latestId });
     await run('game_set_vault_address', {
       vaultnumber: vaultNumber,
       chainid: chainids[i],

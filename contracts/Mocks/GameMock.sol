@@ -55,6 +55,14 @@ contract GameMock is Game {
     vaults[_chainId][_vaultNumber].rewardPerLockedToken[_rebalancingPeriod][_protocolId] = _reward;
   }
 
+  function setRewardsReceivedTEST(
+    uint256 _vaultNumber,
+    uint32 _chainId,
+    bool _rewardsReceived
+  ) external {
+    vaults[_chainId][_vaultNumber].rewardsReceived = _rewardsReceived;
+  }
+
   function getRewardsPerLockedTokenTEST(
     uint256 _vaultNumber,
     uint32 _chainId,
