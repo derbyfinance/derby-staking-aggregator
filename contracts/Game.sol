@@ -457,19 +457,6 @@ contract Game is ERC721, ReentrancyGuard {
     }
   }
 
-  /// @notice Creates delta allocation array for chains matching IDs in chainIds array
-  /// @notice Resets deltaAllocation for chainIds
-  /// @return deltas Array with delta Allocations for all chainIds
-  function allocationsToArray(uint256 _vaultNumber) internal returns (int256[] memory deltas) {
-    deltas = new int[](chainIds.length);
-
-    for (uint256 i = 0; i < chainIds.length; i++) {
-      uint32 chain = chainIds[i];
-      deltas[i] = getDeltaAllocationChain(_vaultNumber, chain);
-      vaults[_vaultNumber].deltaAllocationChain[chain] = 0;
-    }
-  }
-
   /// @notice Step 7 trigger; Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
   /// @param _vaultNumber Number of vault

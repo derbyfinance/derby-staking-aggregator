@@ -237,13 +237,6 @@ contract XProvider is IXReceiver {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
-  /// @notice Receive feedback for the vault if the vault is set to on or off
-  /// @param _vault Address of the Derby Vault on given chainId
-  /// @param _state bool for chainId on or off
-  function receiveStateFeedbackToVault(address _vault, bool _state) external onlySelf {
-    return IVault(_vault).toggleVaultOnOff(_state);
-  }
-
   /// @notice Calculates the estimated amount after accounting for connextRouterFee and slippage.
   /// @dev This function computes the estimated amount by subtracting the percentage fees from the input amount.
   /// @param _amount The initial amount to be transferred, in vaultcurrency.decimals().

@@ -120,16 +120,27 @@ contract Vault is ReentrancyGuard, VaultToken {
       ? 1
       : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
 
-    if (exchangeRate > oldExchangeRate) {
-      // if exchangeRate increases, performanceFee is added to the exchangeRate
-      uint256 nominator = (exchangeRate - oldExchangeRate) *
-        oldExchangeRate *
-        (100 - performanceFee);
-      uint256 denominator = 100 * oldExchangeRate;
-      exchangeRate = nominator / denominator + oldExchangeRate;
-    }
+    if (exchangeRate > oldExchangeRate)
+      exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
 
     lastTimeStamp = block.timestamp;
+  }
+
+  /// @notice Function to include the performanceFee in the exchangeRate
+  /// @dev Calculated by first evaluating the performance by determining the increase in exchangeRate
+  /// @dev Next the performanceFee is calculated by multiplying the performance with the percentage after substracting the performanceFee
+  /// @param _exchangeRate The exchangeRate before the performanceFee is added
+  /// @param _oldExchangeRate The exchangeRate before the rebalance
+  /// @return uint256 The new exchangeRate including the performanceFee
+  function includePerformanceFee(
+    uint256 _exchangeRate,
+    uint256 _oldExchangeRate
+  ) internal view returns (uint256) {
+    uint256 nominator = (_exchangeRate - _oldExchangeRate) *
+      _oldExchangeRate *
+      (100 - performanceFee);
+    uint256 denominator = 100 * _oldExchangeRate;
+    return nominator / denominator + _oldExchangeRate;
   }
 
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
