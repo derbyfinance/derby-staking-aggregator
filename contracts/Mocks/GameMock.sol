@@ -87,6 +87,13 @@ contract GameMock is Game {
     return getVaultAddress(_vaultNumber, _chainId);
   }
 
+  function getVaultsLatestProtocolIdTEST(
+    uint32 _chainId,
+    uint256 _vaultNumber
+  ) external view returns (uint256) {
+    return vaults[_chainId][_vaultNumber].latestProtocolId;
+  }
+
   function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
     this.pushAllocationsToVaults{value: msg.value / 2}(_chain, _vaultNumber);
   }

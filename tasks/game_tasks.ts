@@ -76,15 +76,6 @@ task('game_latest_protocol_id', 'Setter for latest protocol Id for given chainId
     await game.connect(guardian).setLatestProtocolId(chainid, vaultnumber, latestprotocolid);
   });
 
-task('game_set_rebalancing_state', 'Guardian function to set state')
-  .addParam('vaultnumber', 'Number of the vault', null, types.int)
-  .addParam('state', 'bool', null, types.boolean)
-  .setAction(async ({ vaultnumber, state }, hre) => {
-    const game = await getGame(hre);
-    const guardian = await getGuardian(hre);
-    await game.connect(guardian).setRebalancingState(vaultnumber, state);
-  });
-
 task('game_settle_rewards_guard', 'Guardian function for step 8')
   .addParam('vaultnumber', 'Number of the vault', null, types.int)
   .addParam('chainid', 'Number of chain id set in chainIds array', null, types.int)

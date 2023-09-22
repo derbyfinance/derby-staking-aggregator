@@ -30,10 +30,11 @@ describe('Testing game tasks', () => {
 
   it('game_mint_basket', async function () {
     const { game } = await setupGame();
+    const chainid = 10;
     const vaultnumber = 10;
 
-    const basketId = await run('game_mint_basket', { vaultnumber });
-    const basketId1 = await run('game_mint_basket', { vaultnumber });
+    const basketId = await run('game_mint_basket', { chainid, vaultnumber });
+    const basketId1 = await run('game_mint_basket', { chainid, vaultnumber });
     expect(basketId).to.be.equal(0);
     expect(basketId1).to.be.equal(1);
     expect(await game.tokenPrice(10)).to.be.equal(200000);
@@ -56,22 +57,11 @@ describe('Testing game tasks', () => {
   it('game_latest_protocol_id', async function () {
     const { game } = await setupGame();
     const chainid = random(10_000);
+    const vaultnumber = random(100);
     const latestprotocolid = random(100);
 
-    await run('game_latest_protocol_id', { chainid, latestprotocolid });
-    expect(await game.latestProtocolId(chainid)).to.be.equal(latestprotocolid);
-  });
-
-  it('game_set_rebalancing_state', async function () {
-    const { game } = await setupGame();
-    const vaultnumber = random(100);
-    const state = true;
-    const chainIds = await game.getChainIds();
-    for (let chain of chainIds) {
-      expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(false);
-      await run('game_set_rebalancing_state', { vaultnumber, state });
-      expect(await game.isXChainRebalancing(vaultnumber, chain)).to.be.equal(state);
-    }
+    await run('game_latest_protocol_id', { chainid, vaultnumber, latestprotocolid });
+    expect(await game.getVaultsLatestProtocolIdTEST(chainid, vaultnumber)).to.be.equal(latestprotocolid);
   });
 
   it('game_settle_rewards_guard', async function () {
