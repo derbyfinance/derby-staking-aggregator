@@ -1,6 +1,6 @@
 import { deployments, run } from 'hardhat';
 import { parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { GameMock, MainVaultMock, DerbyToken, XChainControllerMock } from '@typechain';
+import type { GameMock, MainVaultMock, DerbyToken } from '@typechain';
 
 import {
   getAndInitXProviders,
@@ -11,7 +11,6 @@ import { getAllSigners, getContract } from '@testhelp/getContracts';
 
 export const setupGame = deployments.createFixture(async (hre) => {
   await deployments.fixture([
-    'XChainControllerMock',
     'TestVault1',
     'TestVault2',
     'TestVault3',
@@ -25,7 +24,6 @@ export const setupGame = deployments.createFixture(async (hre) => {
   const contract = 'TestVault1';
   const game = (await getContract('GameMock', hre)) as GameMock;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-  const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
   const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
 
   const [dao, user, guardian] = await getAllSigners(hre);
@@ -48,8 +46,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
     homevault: vault.address,
     chainids,
   });
-  await run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address });
-  await run('xcontroller_set_homexprovider', { address: xProviderArbi.address });
+
   await run('vault_init', { contract });
   await run('vault_set_liquidity_perc', { contract, percentage: 10 });
   await run('controller_init');
@@ -69,6 +66,5 @@ export const setupGame = deployments.createFixture(async (hre) => {
     userAddr,
     vaultNumber,
     basketId,
-    xChainController,
   };
 });

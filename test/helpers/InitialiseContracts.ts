@@ -1,4 +1,4 @@
-import { XChainController, XProvider, ConnextMock } from '@typechain';
+import { XProvider, ConnextMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { usdc } from './addresses';
@@ -30,7 +30,6 @@ export async function getAndInitXProviders(
 
   for (const xProvider of xProviders) {
     await Promise.all([
-      xProvider.connect(dao).setXControllerChainId(chains.xController),
       xProvider.connect(dao).setGameChainId(chains.game),
       xProvider.connect(dao).setTrustedRemoteConnext(10, main.address),
       xProvider.connect(dao).setTrustedRemoteConnext(100, arbitrum.address),
@@ -55,24 +54,6 @@ export async function setWhitelistVaults(
     xProviderArbi.connect(dao).toggleVaultWhitelist(vault2.address),
     xProviderOpti.connect(dao).toggleVaultWhitelist(vault3.address),
     xProviderBnb.connect(dao).toggleVaultWhitelist(vault4.address),
-  ]);
-}
-
-export async function addVaultsToXController(
-  { deployments }: HardhatRuntimeEnvironment,
-  xController: XChainController,
-  dao: Signer,
-  vaultNumber: number | BigNumberish,
-) {
-  const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
-
-  await Promise.all([
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10, vault1.address),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 100, vault2.address),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 1000, vault3.address),
-    xController.connect(dao).setVaultChainAddress(vaultNumber, 10000, vault4.address),
-    xController.connect(dao).setVaultUnderlying(vaultNumber, usdc),
-    xController.connect(dao).setVaultDecimals(vaultNumber, 6),
   ]);
 }
 

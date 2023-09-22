@@ -12,40 +12,24 @@ import "./Interfaces/IProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
-contract Vault is ReentrancyGuard {
+contract Vault is ReentrancyGuard, VaultToken {
   using SafeERC20 for IERC20;
-
-  // state 0 Rebalance done and ready for xController to rebalance again
-  // state 1 Underlying amount pushed to controller
-  // state 2 Sending the funds crosschain
-  // state 3 Waiting for the crosschain funds
-  // state 4 Vault can be rebalanced
-  // state 5 Rewards per locked token can be sent
-  enum State {
-    Idle,
-    PushedUnderlying,
-    SendingFundsXChain,
-    WaitingForFunds,
-    RebalanceVault,
-    SendRewardsPerToken
-  }
 
   IERC20 internal vaultCurrency;
   IController internal controller;
-  State public state;
 
   bool public deltaAllocationsReceived;
 
   address public immutable nativeToken; // WETH
   address private dao;
   address private guardian;
-  address public xController;
 
   uint256 public vaultNumber;
   uint256 public liquidityPerc;
   uint256 public performanceFee; // percentage
   uint256 public rebalancingPeriod;
   int256 public marginScale;
+  uint256 public exchangeRate; // always expressed in #decimals equal to the #decimals from the vaultCurrency
 
   // used in storePriceAndRewards, must be equal to DerbyToken.decimals()
   uint256 public BASE_SCALE = 1e18;
@@ -58,14 +42,13 @@ contract Vault is ReentrancyGuard {
   uint256 public savedTotalUnderlying;
 
   // total amount of funds the vault reserved for users that made a withdrawalRequest
-  uint256 internal reservedFunds;
+  uint256 internal totalWithdrawalRequests;
+  uint256 internal totalDepositRequests;
 
   // total number of allocated Derby tokens currently (in derbytoken.decimals())
   uint256 public totalAllocatedTokens;
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
-
-  string internal stateError = "Wrong state";
 
   // (protocolNumber => currentAllocation): current allocations over the protocols
   mapping(uint256 => uint256) internal currentAllocations;
@@ -91,12 +74,15 @@ contract Vault is ReentrancyGuard {
   }
 
   constructor(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals,
     uint256 _vaultNumber,
     address _dao,
     address _controller,
     address _vaultCurrency,
     address _nativeToken
-  ) {
+  ) VaultToken(_name, _symbol, _decimals) {
     controller = IController(_controller);
     vaultCurrency = IERC20(_vaultCurrency);
 
@@ -106,27 +92,6 @@ contract Vault is ReentrancyGuard {
     nativeToken = _nativeToken;
   }
 
-  /// @notice Withdraw from protocols on shortage in Vault
-  /// @dev Keeps on withdrawing until the Vault balance > _value
-  /// @param _value The total value of vaultCurrency an user is trying to withdraw.
-  /// @param _value The (value - current underlying value of this vault) is withdrawn from the underlying protocols.
-  function pullFunds(uint256 _value) internal {
-    uint256 latestID = controller.latestProtocolId(vaultNumber);
-    for (uint i = 0; i < latestID; i++) {
-      if (currentAllocations[i] == 0) continue;
-
-      uint256 shortage = _value - vaultCurrency.balanceOf(address(this));
-      uint256 balanceProtocol = balanceUnderlying(i);
-
-      uint256 amountToWithdraw = shortage > balanceProtocol ? balanceProtocol : shortage;
-
-      uint256 amountWithdrawn = withdrawFromProtocol(i, amountToWithdraw);
-      savedTotalUnderlying -= amountWithdrawn;
-
-      if (_value <= vaultCurrency.balanceOf(address(this))) break;
-    }
-  }
-
   /// @notice Step 8 trigger, end; Vaults rebalance
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
@@ -134,21 +99,48 @@ contract Vault is ReentrancyGuard {
   /// @dev if amountToDeposit < 0 => withdraw
   /// @dev Execute all withdrawals before deposits
   function rebalance() external nonReentrant {
-    require(state == State.RebalanceVault, stateError);
+    require(rebalanceNeeded(), "No rebalance needed");
     require(deltaAllocationsReceived, "!Delta allocations");
+    rebalancingPeriod++;
     uint256 latestID = controller.latestProtocolId(vaultNumber);
 
+    storePriceAndRewardsLoop(latestID); // based on allocations and underlying of last period and the price increases between last and current period
+
+    setTotalUnderlying();
     uint256 underlyingIncBalance = calcUnderlyingIncBalance();
-    storePriceAndRewardsLoop(latestID, underlyingIncBalance);
 
     settleDeltaAllocation();
     uint256[] memory protocolToDeposit = rebalanceCheckProtocols(latestID, underlyingIncBalance);
 
     executeDeposits(protocolToDeposit);
-    setTotalUnderlying();
 
-    state = State.SendRewardsPerToken;
-    deltaAllocationsReceived = false;
+    savedTotalUnderlying = underlyingIncBalance;
+    uint256 oldExchangeRate = exchangeRate;
+    exchangeRate = totalSupply() == 0
+      ? 1
+      : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
+
+    if (exchangeRate > oldExchangeRate)
+      exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
+
+    lastTimeStamp = block.timestamp;
+  }
+
+  /// @notice Function to include the performanceFee in the exchangeRate
+  /// @dev Calculated by first evaluating the performance by determining the increase in exchangeRate
+  /// @dev Next the performanceFee is calculated by multiplying the performance with the percentage after substracting the performanceFee
+  /// @param _exchangeRate The exchangeRate before the performanceFee is added
+  /// @param _oldExchangeRate The exchangeRate before the rebalance
+  /// @return uint256 The new exchangeRate including the performanceFee
+  function includePerformanceFee(
+    uint256 _exchangeRate,
+    uint256 _oldExchangeRate
+  ) internal view returns (uint256) {
+    uint256 nominator = (_exchangeRate - _oldExchangeRate) *
+      _oldExchangeRate *
+      (100 - performanceFee);
+    uint256 denominator = 100 * _oldExchangeRate;
+    return nominator / denominator + _oldExchangeRate;
   }
 
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
@@ -156,7 +148,7 @@ contract Vault is ReentrancyGuard {
   function calcUnderlyingIncBalance() internal view returns (uint256) {
     uint256 totalUnderlyingInclVaultBalance = savedTotalUnderlying +
       getVaultBalance() -
-      reservedFunds;
+      totalWithdrawalRequests;
     uint256 liquidityVault = (totalUnderlyingInclVaultBalance * liquidityPerc) / 100;
     return totalUnderlyingInclVaultBalance - liquidityVault;
   }
@@ -168,6 +160,7 @@ contract Vault is ReentrancyGuard {
 
     totalAllocatedTokens = uint(newTotalAllocatedTokens);
     deltaAllocatedTokens = 0;
+    deltaAllocationsReceived = false;
   }
 
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
@@ -194,9 +187,12 @@ contract Vault is ReentrancyGuard {
       int256 amountToDeposit = int(amountToProtocol) - int(currentBalance);
       uint256 amountToWithdraw = amountToDeposit < 0 ? currentBalance - amountToProtocol : 0;
 
-      if (amountToDeposit > marginScale) protocolToDeposit[i] = uint256(amountToDeposit);
-      if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0)
+      if (amountToDeposit > marginScale) {
+        protocolToDeposit[i] = uint256(amountToDeposit);
+      }
+      if (amountToWithdraw > uint(marginScale) || currentAllocations[i] == 0) {
         withdrawFromProtocol(i, amountToWithdraw);
+      }
     }
 
     return protocolToDeposit;
@@ -217,9 +213,9 @@ contract Vault is ReentrancyGuard {
 
   /// @notice Harvest extra tokens from underlying protocols
   /// @dev Loops over protocols in ETF and check if they are claimable in controller contract
-  function storePriceAndRewardsLoop(uint256 _latestId, uint256 _totalUnderlying) internal {
+  function storePriceAndRewardsLoop(uint256 _latestId) internal {
     for (uint i = 0; i < _latestId; i++) {
-      storePriceAndRewards(_totalUnderlying, i);
+      storePriceAndRewards(i);
     }
   }
 
@@ -227,12 +223,12 @@ contract Vault is ReentrancyGuard {
   /// @dev formula yield protocol i at time t: y(it) = (P(it) - P(it-1)) / P(it-1).
   /// @dev formula rewardPerLockedToken for protocol i at time t: r(it) = y(it) * TVL(t) * perfFee(t) / totalLockedTokens(t)
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t
-  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault (in vaultCurrency.decimals()).
   /// @param _protocolId Protocol id number.
-  function storePriceAndRewards(uint256 _totalUnderlying, uint256 _protocolId) internal {
+  function storePriceAndRewards(uint256 _protocolId) internal {
+    uint period = rebalancingPeriod;
     uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      rewardPerLockedToken[period][_protocolId] = -1;
       lastPrices[_protocolId] = currentPrice;
       return;
     }
@@ -243,14 +239,14 @@ contract Vault is ReentrancyGuard {
     }
 
     int256 priceDiff = int256(currentPrice) - int256(lastPrices[_protocolId]);
-    int256 nominator = (int256(_totalUnderlying * performanceFee * BASE_SCALE) * priceDiff);
+    int256 nominator = (int256(savedTotalUnderlying * performanceFee * BASE_SCALE) * priceDiff);
     int256 totalAllocatedTokensRounded = int256(totalAllocatedTokens) / int(BASE_SCALE);
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+      rewardPerLockedToken[period][_protocolId] = 0;
     } else {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      rewardPerLockedToken[period][_protocolId] = nominator / denominator;
     }
 
     lastPrices[_protocolId] = currentPrice;

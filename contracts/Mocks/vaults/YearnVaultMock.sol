@@ -30,7 +30,6 @@ contract YearnVaultMock is VaultToken {
 
     uint256 amount = balanceAfter - balanceBefore;
     shares = (amount * (10 ** decimals())) / exchangeRate;
-
     _mint(msg.sender, shares);
   }
 

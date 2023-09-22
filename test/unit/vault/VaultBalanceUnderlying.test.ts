@@ -24,7 +24,6 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     }
 
     await vault.connect(user).deposit(amountUSDC);
-    await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.rebalance();
 
@@ -63,7 +62,6 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
     }
 
     await vault.connect(user).deposit(amountUSDC);
-    await vault.setVaultState(3);
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.rebalance();
 

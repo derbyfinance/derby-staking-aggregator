@@ -4,7 +4,6 @@
   "keywords": [],
   "author": "derby-finance",
   "devDependencies": {
-    "@ethereum-waffle/mock-contract": "^3.4.4",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^1.0.1",

@@ -1,13 +1,12 @@
 import hre from 'hardhat';
 import { erc20, parseDRB, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { Controller, DerbyToken, GameMock, XChainControllerMock } from '@typechain';
+import type { Controller, DerbyToken, GameMock } from '@typechain';
 import { dai, usdc, usdt, yearn } from '@testhelp/addresses';
 import {
   getAndInitXProviders,
   AddAllVaultsToController as addVaultsToController,
   InitConnextMock,
   setGameLatestProtocolIds,
-  addVaultsToXController,
   setWhitelistVaults,
   AddAllVaultsToProviders,
 } from '@testhelp/InitialiseContracts';
@@ -23,7 +22,6 @@ export const setupIntegration = async () => {
   const providers = ['CompoundProvider', 'IdleProvider', 'TruefiProvider', 'YearnProvider'];
 
   await deployments.fixture([
-    'XChainControllerMock',
     ...providers,
     'TestVault1',
     'TestVault2',
@@ -49,7 +47,6 @@ export const setupIntegration = async () => {
   const game = (await getContract('GameMock', hre)) as GameMock;
   const controller = (await getContract('Controller', hre)) as Controller;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-  const xChainController = (await getContract('XChainControllerMock', hre)) as XChainControllerMock;
 
   const underlyingVaults = await deployYearnMockVaults(hre);
   const [yearn1, yearn2, yearn3, yearn4, yearn5] = underlyingVaults;
@@ -71,15 +68,12 @@ export const setupIntegration = async () => {
 
     run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address }),
     run('vault_set_homexprovider', { contract: 'TestVault2', address: xProviderArbi.address }),
-
-    run('xcontroller_init', { chainids, homexprovider: xProviderArbi.address }),
   ]);
 
   await Promise.all([
     setWhitelistVaults(hre, allXProviders, dao),
     InitConnextMock(hre, allXProviders),
     addVaultsToController(hre),
-    addVaultsToXController(hre, xChainController, dao, vaultNumber),
     setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids }),
     AddAllVaultsToProviders(dao, providers, [vault1.address, vault2.address], hre),
 
@@ -155,7 +149,6 @@ export const setupIntegration = async () => {
     underlyingVaults,
     controller,
     game,
-    xChainController,
     derbyToken,
     dao,
     users,

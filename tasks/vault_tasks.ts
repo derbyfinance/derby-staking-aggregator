@@ -102,15 +102,6 @@ task('vault_receive_protocol_allocations', 'Step 6: Guardian function')
     await vault.connect(guardian).receiveProtocolAllocationsGuard(deltas);
   });
 
-task('vault_set_state', 'Guardian function to set state when vault gets stuck')
-  .addParam('contract', 'Name of the contract')
-  .addParam('state', 'state of the vault', null, types.int)
-  .setAction(async ({ contract, state }, hre) => {
-    const vault = await getVault(hre, contract);
-    const guardian = await getGuardian(hre);
-    await vault.connect(guardian).setVaultStateGuard(state);
-  });
-
 task('vault_set_home_chain', 'Setter for new homeChain Id')
   .addParam('contract', 'Name of the contract')
   .addParam('chainid', 'new homeChain id', null, types.int)

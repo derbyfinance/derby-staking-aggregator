@@ -33,6 +33,7 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
     const vaultNumber = 10;
     const contract = 'TestVault1';
     const [dao, user, guardian] = await getAllSigners(hre);
+    const totalUnderlying = 100_000 * 1e6;
 
     const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
     const controller = (await getContract('Controller', hre)) as Controller;
@@ -49,6 +50,8 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
     for (const protocol of protocols.values()) {
       await protocol.addProtocolToController(controller, dao, vaultNumber, AllMockProviders);
     }
+
+    vault.setSavedTotalUnderlyingTest(totalUnderlying); 
 
     return { vault, controller, dao, user, guardian };
   });
@@ -74,11 +77,10 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
 
     await vault.setTotalAllocatedTokensTest(parseEther('10000')); // 10k
     const rebalancePeriod = await vault.rebalancingPeriod();
-    const totalUnderlying = 100_000 * 1e6;
 
     // first time it will only store the last price
     for (const { number, price } of protocols.values()) {
-      await vault.storePriceAndRewardsTest(totalUnderlying, number);
+      await vault.storePriceAndRewardsTest(number);
 
       expect(await vault.lastPrices(number)).to.be.equal(price);
       expect(await vault.rewardPerLockedToken(rebalancePeriod, number)).to.be.equal(0);
@@ -103,10 +105,9 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
 
     await vault.upRebalancingPeriodTEST();
     const rebalancePeriod = await vault.rebalancingPeriod();
-    const totalUnderlying = 100_000 * 1e6;
 
     for (const { number, price, expectedReward } of protocols.values()) {
-      await vault.storePriceAndRewardsTest(totalUnderlying, number);
+      await vault.storePriceAndRewardsTest(number);
 
       expect(await vault.lastPrices(number)).to.be.equal(price);
       // because -1 is not scaled, the rest is.

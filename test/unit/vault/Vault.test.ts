@@ -48,7 +48,6 @@ describe('Testing Vault, unit test', async () => {
     ]);
 
     await vault.connect(user).deposit(amountUSDC);
-    await vault.setVaultState(3);
     await vault.rebalance();
 
     // blacklist compound_usdc_01
@@ -102,7 +101,6 @@ describe('Testing Vault, unit test', async () => {
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
     await vault.connect(user).deposit(amountUSDC);
 
-    await vault.setVaultState(3);
     await vault.rebalance();
 
     let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
@@ -155,7 +153,6 @@ describe('Testing Vault, unit test', async () => {
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
     await vault.connect(user).deposit(amountUSDC);
-    await vault.setVaultState(3);
     await vault.rebalance();
   });
 });

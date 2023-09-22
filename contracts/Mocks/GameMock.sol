@@ -3,7 +3,6 @@
 pragma solidity ^0.8.11;
 
 import "../Game.sol";
-import "hardhat/console.sol";
 
 contract GameMock is Game {
   constructor(
@@ -24,10 +23,6 @@ contract GameMock is Game {
 
   function setDeltaAllocations(address _vault, uint256 _protocolNum, int256 _allocation) external {
     IVault(_vault).setDeltaAllocations(_protocolNum, _allocation);
-  }
-
-  function setXChainRebalanceState(uint256 _vaultNumber, uint32 _chain, bool _state) external {
-    isXChainRebalancing[_vaultNumber][_chain] = _state;
   }
 
   function triggerRedeemedRewardsVault(address _vault, address user, uint256 amount) external {
@@ -85,7 +80,6 @@ contract GameMock is Game {
   }
 
   function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
-    this.pushAllocationsToController{value: msg.value / 2}(_vaultNumber);
     this.pushAllocationsToVaults{value: msg.value / 2}(_vaultNumber, _chain);
   }
 }

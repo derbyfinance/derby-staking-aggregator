@@ -53,10 +53,6 @@ contract MainVaultMock is MainVault {
     totalAllocatedTokens = _tokens;
   }
 
-  function setAmountToSendXChainTEST(uint256 _amount) external {
-    amountToSendXChain = _amount;
-  }
-
   function getLastPriceTEST(uint256 _protocolId) external view returns (uint256) {
     return lastPrices[_protocolId];
   }
@@ -73,16 +69,12 @@ contract MainVaultMock is MainVault {
     return totalWithdrawalRequests;
   }
 
-  function getReservedFundsTEST() external view returns (uint256) {
-    return reservedFunds;
+  function setTotalWithdrawalRequestsTEST(uint256 _requests) external {
+    totalWithdrawalRequests = _requests;
   }
 
   function setExchangeRateTEST(uint256 _exchangeRate) external {
     exchangeRate = _exchangeRate;
-  }
-
-  function setReservedFundsTEST(uint256 _amount) external {
-    reservedFunds = _amount;
   }
 
   function upRebalancingPeriodTEST() external {
@@ -149,15 +141,8 @@ contract MainVaultMock is MainVault {
     }
   }
 
-  function setVaultState(uint256 _state) external {
-    if (_state == 0) state = State.Idle;
-    if (_state == 1) state = State.SendingFundsXChain;
-    if (_state == 2) state = State.WaitingForFunds;
-    if (_state == 3) state = State.RebalanceVault;
-  }
-
-  function storePriceAndRewardsTest(uint256 _totalUnderlying, uint256 _protocolId) external {
-    storePriceAndRewards(_totalUnderlying, _protocolId);
+  function storePriceAndRewardsTest(uint256 _protocolId) external {
+    storePriceAndRewards(_protocolId);
   }
 
   function depositInProtocolTest(uint256 _protocolNum, uint256 _amount) external {
@@ -173,6 +158,10 @@ contract MainVaultMock is MainVault {
 
   function getTotalDepositRequestsTest() external view returns (uint256) {
     return totalDepositRequests;
+  }
+
+  function setSavedTotalUnderlyingTest(uint256 _amount) external {
+    savedTotalUnderlying = _amount;
   }
 
   // function testFormulaWithNRoot(uint256 _g, uint256 _n) public view returns(int128) {
