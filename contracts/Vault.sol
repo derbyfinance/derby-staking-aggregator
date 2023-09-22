@@ -225,9 +225,10 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _protocolId) internal {
+    uint period = rebalancingPeriod;
     uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      rewardPerLockedToken[period][_protocolId] = -1;
       lastPrices[_protocolId] = currentPrice;
       return;
     }
@@ -243,9 +244,9 @@ contract Vault is ReentrancyGuard, VaultToken {
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+      rewardPerLockedToken[period][_protocolId] = 0;
     } else {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      rewardPerLockedToken[period][_protocolId] = nominator / denominator;
     }
 
     lastPrices[_protocolId] = currentPrice;
