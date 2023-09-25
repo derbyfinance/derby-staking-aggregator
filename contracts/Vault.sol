@@ -120,16 +120,27 @@ contract Vault is ReentrancyGuard, VaultToken {
       ? 1
       : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
 
-    if (exchangeRate > oldExchangeRate) {
-      // if exchangeRate increases, performanceFee is added to the exchangeRate
-      uint256 nominator = (exchangeRate - oldExchangeRate) *
-        oldExchangeRate *
-        (100 - performanceFee);
-      uint256 denominator = 100 * oldExchangeRate;
-      exchangeRate = nominator / denominator + oldExchangeRate;
-    }
+    if (exchangeRate > oldExchangeRate)
+      exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
 
     lastTimeStamp = block.timestamp;
+  }
+
+  /// @notice Function to include the performanceFee in the exchangeRate
+  /// @dev Calculated by first evaluating the performance by determining the increase in exchangeRate
+  /// @dev Next the performanceFee is calculated by multiplying the performance with the percentage after substracting the performanceFee
+  /// @param _exchangeRate The exchangeRate before the performanceFee is added
+  /// @param _oldExchangeRate The exchangeRate before the rebalance
+  /// @return uint256 The new exchangeRate including the performanceFee
+  function includePerformanceFee(
+    uint256 _exchangeRate,
+    uint256 _oldExchangeRate
+  ) internal view returns (uint256) {
+    uint256 nominator = (_exchangeRate - _oldExchangeRate) *
+      _oldExchangeRate *
+      (100 - performanceFee);
+    uint256 denominator = 100 * _oldExchangeRate;
+    return nominator / denominator + _oldExchangeRate;
   }
 
   /// @notice Helper to return underlying balance plus totalUnderlying - liquidty for the vault
@@ -214,9 +225,10 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @dev later, when the total rewards are calculated for a game player we multiply this (r(it)) by the locked tokens on protocol i at time t
   /// @param _protocolId Protocol id number.
   function storePriceAndRewards(uint256 _protocolId) internal {
+    uint period = rebalancingPeriod;
     uint256 currentPrice = price(_protocolId); // in protocol.LPToken.decimals()
     if (controller.getProtocolBlacklist(vaultNumber, _protocolId)) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = -1;
+      rewardPerLockedToken[period][_protocolId] = -1;
       lastPrices[_protocolId] = currentPrice;
       return;
     }
@@ -232,9 +244,9 @@ contract Vault is ReentrancyGuard, VaultToken {
     int256 denominator = totalAllocatedTokensRounded * int256(lastPrices[_protocolId]) * 100; // * 100 cause perfFee is in percentages
 
     if (totalAllocatedTokensRounded == 0) {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = 0;
+      rewardPerLockedToken[period][_protocolId] = 0;
     } else {
-      rewardPerLockedToken[rebalancingPeriod][_protocolId] = nominator / denominator;
+      rewardPerLockedToken[period][_protocolId] = nominator / denominator;
     }
 
     lastPrices[_protocolId] = currentPrice;
