@@ -4,7 +4,7 @@ import { GameMock } from '@typechain';
 import { getInitConfigGame } from '@testhelp/deployHelpers';
 import { deployMockContract } from '@ethereum-waffle/mock-contract';
 import { getAllSigners } from '@testhelp/getContracts';
-import { abi } from 'artifacts/contracts/MainVault.sol/MainVault.json';
+import { abi } from 'artifacts/contracts/Vault.sol/Vault.json';
 
 describe('Testing game tasks', () => {
   const setupGame = deployments.createFixture(async (hre) => {

@@ -3,7 +3,7 @@ import { Contract, Signer } from 'ethers';
 import { erc20, formatUSDC, formatUnits, parseUSDC, parseUnits } from '@testhelp/helpers';
 import { allProtocols as protocols } from '@testhelp/addresses';
 import { setupVault } from './setup';
-import { MainVaultMock } from '@typechain';
+import { VaultMock } from '@typechain';
 
 describe('Testing Vault, unit test', async () => {
   const compoundVault = protocols.get('compound_usdc_01')!;
@@ -25,7 +25,7 @@ describe('Testing Vault, unit test', async () => {
       const LPToken: Contract = erc20(protocol.protocolToken);
       const decimals = protocol.decimals;
 
-      let vault: MainVaultMock, user: Signer;
+      let vault: VaultMock, user: Signer;
 
       before(async () => {
         const setup = await setupVault();

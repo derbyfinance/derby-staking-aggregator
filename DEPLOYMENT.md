@@ -10,7 +10,7 @@ npx hardhat --network localhost deploy --reset
 
 ### deploy contracts excluding Providers
 
-npx hardhat --network localhost deploy --tags Controller,DerbyToken,Game,Swap,MainVault,XChainController,XProvider
+npx hardhat --network localhost deploy --tags Controller,DerbyToken,Game,Swap,Vault,XChainController,XProvider
 
 ## Goerli vault deployment flow example
 

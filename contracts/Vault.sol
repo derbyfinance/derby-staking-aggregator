@@ -66,19 +66,6 @@ contract Vault is ReentrancyGuard, VaultToken {
   // delta of the total number of Derby tokens allocated on next rebalancing
   int256 private deltaAllocatedTokens;
 
-  // (protocolNumber => currentAllocation): current allocations over the protocols
-  mapping(uint256 => uint256) internal currentAllocations;
-
-  // (protocolNumber => deltaAllocation): delta of the portfolio on next rebalancing
-  mapping(uint256 => int256) internal deltaAllocations;
-
-  // historical reward per protocol per token, formula: TVL * yield * perfFee / totalLockedTokens
-  // (rebalancingPeriod => protocolId => rewardPerLockedToken)
-  mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken; // in BASE_SCALE * vaultCurrency.decimals() nr of decimals
-
-  // (protocolNumber => lastPrice): last price of underlying protocol vault
-  mapping(uint256 => uint256) public lastPrices; // in protocol.LPToken.decimals()
-
   address public derbyToken;
   address public game;
   address public xProvider;
@@ -96,13 +83,26 @@ contract Vault is ReentrancyGuard, VaultToken {
   string internal allowanceError = "!Allowance";
   string internal noFundsError = "No funds";
 
-  // (userAddress => userInfo struct)
-  mapping(address => UserInfo) internal userInfo;
-
   // training
   bool private training;
   uint256 private maxTrainingDeposit;
   mapping(address => bool) private whitelist;
+
+  // (protocolNumber => currentAllocation): current allocations over the protocols
+  mapping(uint256 => uint256) internal currentAllocations;
+
+  // (protocolNumber => deltaAllocation): delta of the portfolio on next rebalancing
+  mapping(uint256 => int256) internal deltaAllocations;
+
+  // historical reward per protocol per token, formula: TVL * yield * perfFee / totalLockedTokens
+  // (rebalancingPeriod => protocolId => rewardPerLockedToken)
+  mapping(uint256 => mapping(uint256 => int256)) public rewardPerLockedToken; // in BASE_SCALE * vaultCurrency.decimals() nr of decimals
+
+  // (protocolNumber => lastPrice): last price of underlying protocol vault
+  mapping(uint256 => uint256) public lastPrices; // in protocol.LPToken.decimals()
+
+  // (userAddress => userInfo struct)
+  mapping(address => UserInfo) internal userInfo;
 
   modifier onlyDao() {
     require(msg.sender == dao, "Vault: only DAO");

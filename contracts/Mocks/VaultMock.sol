@@ -4,7 +4,7 @@ pragma solidity ^0.8.11;
 
 import "../Vault.sol";
 
-contract MainVaultMock is Vault {
+contract VaultMock is Vault {
   mapping(uint256 => uint256) private players;
 
   event MinAmountOut(uint256 minAmountOut);

@@ -1,4 +1,4 @@
-import { GameMock, MainVaultMock, YearnVaultMock } from '@typechain';
+import { GameMock, VaultMock, YearnVaultMock } from '@typechain';
 import { BigNumberish, Signer } from 'ethers';
 import { Result } from 'ethers/lib/utils';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -6,7 +6,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 export type IVaultUser = {
   user: Signer;
   chain: number;
-  vault: MainVaultMock;
+  vault: VaultMock;
   depositAmount: BigNumberish;
 };
 
@@ -31,7 +31,7 @@ export type IChainId = {
 };
 
 export type IVaults = {
-  vault: MainVaultMock;
+  vault: VaultMock;
   homeChain: number;
   underlying: BigNumberish;
   totalSupply: BigNumberish;
