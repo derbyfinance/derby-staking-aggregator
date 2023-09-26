@@ -12,8 +12,6 @@ import "./DerbyToken.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
-import "hardhat/console.sol";
-
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 

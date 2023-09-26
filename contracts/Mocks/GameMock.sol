@@ -63,6 +63,13 @@ contract GameMock is Game {
     vaults[_chainId][_vaultNumber].rewardsReceived = _rewardsReceived;
   }
 
+  function getRewardsReceivedTEST(
+    uint256 _vaultNumber,
+    uint32 _chainId
+  ) external view returns (bool) {
+    return vaults[_chainId][_vaultNumber].rewardsReceived;
+  }
+
   function getRewardsPerLockedTokenTEST(
     uint256 _vaultNumber,
     uint32 _chainId,
