@@ -512,17 +512,17 @@ contract Vault is ReentrancyGuard, VaultToken {
     vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
     uint256 balanceAfter = getVaultBalance();
     uint256 amount = balanceAfter - balanceBefore;
-    uint256 latestID = controller.latestProtocolId(vaultNumber);
 
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
     uint256 totalUnderlying = 0;
     for (uint i = 0; i < latestID; i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       if (isBlacklisted) continue;
 
-      uint256 amountToProtocol = calcAmountToProtocol(_amount, i);
-      depositInProtocol(i, amountToProtocol);
+      uint256 amountToProtocol = calcAmountToProtocol(amount, i);
       totalUnderlying += balanceUnderlying(i);
+      depositInProtocol(i, amountToProtocol);
     }
 
     exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
@@ -590,6 +590,39 @@ contract Vault is ReentrancyGuard, VaultToken {
     totalDepositRequests -= user.depositRequest;
     delete user.depositRequest;
     delete user.depositRequestPeriod;
+  }
+
+  /// @notice function that enables direct withdrawals from the vault
+  /// @dev this can only be done if the funds from the user will be withdrawed directly from the underlying protocols. Hence, this is very gas intensive
+  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
+  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
+  function withdraw(uint256 _amount) public returns (uint256 value) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    uint256 totalUnderlying = 0;
+    for (uint i = 0; i < latestID; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
+
+      if (isBlacklisted) continue;
+
+      totalUnderlying += balanceUnderlying(i);
+    }
+
+    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
+
+    value = (_amount * exchangeRate) / (10 ** decimals());
+
+    for (uint i = 0; i < latestID; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
+
+      if (isBlacklisted) continue;
+
+      uint256 amountFromProtocol = calcAmountToProtocol(value, i);
+      withdrawFromProtocol(i, amountFromProtocol);
+    }
+
+    _burn(msg.sender, _amount);
+    value = checkForBalance(value);
+    transferFunds(msg.sender, value);
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
