@@ -34,7 +34,7 @@ describe('Testing Vault, unit test', async () => {
       });
 
       it(`Deposit funds into the vault and protocol`, async function () {
-        await vault.connect(user).deposit(parseUSDC(amount));
+        await vault.connect(user).depositRequest(parseUSDC(amount));
 
         await vault.depositInProtocolTest(protocol.number, parseUSDC(10_000));
         const balanceUnderlying = formatUSDC(await vault.balanceUnderlying(protocol.number));

@@ -503,7 +503,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// transfers the deposited amount from the user to the Vault, and records the deposit request.
   /// If the training mode is active, the function checks if the user is whitelisted and the deposit doesn't exceed the max training deposit.
   /// @param _amount The amount that the user wants to deposit.
-  function deposit(uint256 _amount) external nonReentrant {
+  function depositRequest(uint256 _amount) external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
 
     require(_amount >= minimumDeposit, "Minimum deposit");

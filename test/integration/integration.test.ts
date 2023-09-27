@@ -203,7 +203,7 @@ describe('Testing full integration test', async () => {
   describe('Deposit funds in vaults', async function () {
     it('Deposit funds in vault 1 and 2 for all 3 vault users', async function () {
       for (const { user, vault, depositAmount } of vaultUsers) {
-        await vault.connect(user).deposit(depositAmount);
+        await vault.connect(user).depositRequest(depositAmount);
       }
 
       await vaults[0].vault.upRebalancingPeriodTEST();
