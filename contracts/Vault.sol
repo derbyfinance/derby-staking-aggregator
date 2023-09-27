@@ -594,35 +594,28 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   /// @notice function that enables direct withdrawals from the vault
   /// @dev this can only be done if the funds from the user will be withdrawed directly from the underlying protocols. Hence, this is very gas intensive
-  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
+  /// @param _amount Amount to withdraw in vaultCurrency
   /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
-  function withdraw(uint256 _amount) public returns (uint256 value) {
+  function withdraw(uint256 _amount) public returns (uint256) {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     uint256 totalUnderlying = 0;
+
     for (uint i = 0; i < latestID; i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       if (isBlacklisted) continue;
 
+      uint256 amountFromProtocol = calcAmountToProtocol(_amount, i);
       totalUnderlying += balanceUnderlying(i);
-    }
-
-    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
-
-    value = (_amount * exchangeRate) / (10 ** decimals());
-
-    for (uint i = 0; i < latestID; i++) {
-      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
-
-      if (isBlacklisted) continue;
-
-      uint256 amountFromProtocol = calcAmountToProtocol(value, i);
       withdrawFromProtocol(i, amountFromProtocol);
     }
+    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
 
-    _burn(msg.sender, _amount);
-    value = checkForBalance(value);
-    transferFunds(msg.sender, value);
+    uint256 shares = (_amount * (10 ** decimals())) / exchangeRate;
+
+    _burn(msg.sender, shares);
+    transferFunds(msg.sender, _amount);
+    return shares;
   }
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
@@ -652,7 +645,6 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     value = user.withdrawalAllowance;
     value = IXProvider(xProvider).calculateEstimatedAmount(value);
-    value = checkForBalance(value);
 
     totalWithdrawalRequests -= user.withdrawalAllowance;
     delete user.withdrawalAllowance;
@@ -696,7 +688,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
 
     value = user.rewardAllowance;
-    value = checkForBalance(value);
     totalWithdrawalRequests -= user.rewardAllowance;
 
     delete user.rewardAllowance;
@@ -719,21 +710,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
-  }
-
-  /// @notice Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
-  /// @notice This is to make sure the vault doesnt get stuck
-  /// @notice Value will be set to the vaultBalance
-  /// @notice When divergence is greater then maxDivergenceWithdraws it will revert
-  /// @param _value Value the user wants to withdraw
-  /// @return value Value - divergence
-  function checkForBalance(uint256 _value) internal view returns (uint256) {
-    if (_value > getVaultBalance()) {
-      uint256 oldValue = _value;
-      _value = getVaultBalance();
-      require(oldValue - _value <= maxDivergenceWithdraws, "Max divergence");
-    }
-    return _value;
   }
 
   /// @notice See receiveProtocolAllocations below
