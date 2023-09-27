@@ -4,7 +4,7 @@ import { VaultMock } from '@typechain';
 import { Contract, Signer } from 'ethers';
 import { parseUSDC } from '@testhelp/helpers';
 
-describe('Testing VaultDeposit, unit test', async () => {
+describe('Testing VaultDepositRequest, unit test', async () => {
   let vault: VaultMock, user: Signer, IUSDC: Contract;
   before(async () => {
     ({ vault, user, IUSDC } = await setupVault());

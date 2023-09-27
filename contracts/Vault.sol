@@ -259,16 +259,15 @@ contract Vault is ReentrancyGuard, VaultToken {
   }
 
   /// @notice Calculates the amount to deposit or withdraw to protocol during a vault rebalance
-  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _totalAmount TotalAmount = TotalAmountInProtocols - BalanceVault
   /// @param _protocol Protocol id number
   /// @return amountToProtocol amount to deposit or withdraw to protocol (in vaultCurency.decimals())
   function calcAmountToProtocol(
-    uint256 _totalUnderlying,
+    uint256 _totalAmount,
     uint256 _protocol
   ) internal view returns (uint256 amountToProtocol) {
     if (totalAllocatedTokens == 0) amountToProtocol = 0;
-    else
-      amountToProtocol = (_totalUnderlying * currentAllocations[_protocol]) / totalAllocatedTokens;
+    else amountToProtocol = (_totalAmount * currentAllocations[_protocol]) / totalAllocatedTokens;
   }
 
   /// @notice Harvest extra tokens from underlying protocols
@@ -496,6 +495,41 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice Getter for guardian address
   function getGuardian() public view returns (address) {
     return guardian;
+  }
+
+  /// @notice function that enables direct deposits into the vault
+  /// @dev this can only be done if the funds from the user will be deposited directly into the underlying protocols. Hence, this is very gas intensive
+  /// @param _amount Amount to deposit in vaultCurrency
+  /// @return shares Amount of shares minted
+  function deposit(uint256 _amount) public returns (uint256) {
+    require(_amount >= minimumDeposit, "Minimum deposit");
+
+    if (training) {
+      require(whitelist[msg.sender]);
+    }
+
+    uint256 balanceBefore = getVaultBalance();
+    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
+    uint256 balanceAfter = getVaultBalance();
+    uint256 amount = balanceAfter - balanceBefore;
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+
+    uint256 totalUnderlying = 0;
+    for (uint i = 0; i < latestID; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
+
+      if (isBlacklisted) continue;
+
+      uint256 amountToProtocol = calcAmountToProtocol(_amount, i);
+      depositInProtocol(i, amountToProtocol);
+      totalUnderlying += balanceUnderlying(i);
+    }
+
+    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
+
+    uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
+    _mint(msg.sender, shares);
+    return shares;
   }
 
   /// @notice Enables a user to make a deposit into the Vault.
