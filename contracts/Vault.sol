@@ -599,15 +599,19 @@ contract Vault is ReentrancyGuard, VaultToken {
   function withdraw(uint256 _amount) public returns (uint256) {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     uint256 totalUnderlying = 0;
-
+    uint256 vaultBalance = getVaultBalance();
+    uint256 amountFromProtocol;
     for (uint i = 0; i < latestID; i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
       if (isBlacklisted) continue;
 
-      uint256 amountFromProtocol = calcAmountToProtocol(_amount, i);
       totalUnderlying += balanceUnderlying(i);
-      withdrawFromProtocol(i, amountFromProtocol);
+
+      if (vaultBalance < _amount) {
+        amountFromProtocol = calcAmountToProtocol(_amount - vaultBalance, i);
+        withdrawFromProtocol(i, amountFromProtocol);
+      }
     }
     exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
 
