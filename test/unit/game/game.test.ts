@@ -7,7 +7,7 @@ import {
   parseEther as pE,
   parseUSDC,
 } from '@testhelp/helpers';
-import type { GameMock, MainVaultMock, DerbyToken } from '@typechain';
+import type { GameMock, VaultMock, DerbyToken } from '@typechain';
 import { usdc } from '@testhelp/addresses';
 import { setupGame } from './setup';
 import { getTokenConfig } from '@testhelp/deployHelpers';
@@ -16,9 +16,9 @@ import { ethers } from 'hardhat';
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
 describe('Testing Game', async () => {
-  let vault0: MainVaultMock,
-    vault1: MainVaultMock,
-    vault2: MainVaultMock,
+  let vault0: VaultMock,
+    vault1: VaultMock,
+    vault2: VaultMock,
     derbyToken: DerbyToken,
     dao: Signer,
     guardian: Signer,
@@ -297,8 +297,8 @@ describe('Testing Game', async () => {
 
 export async function mockRewards(
   game: GameMock,
-  vault0: MainVaultMock,
-  vault1: MainVaultMock,
+  vault0: VaultMock,
+  vault1: VaultMock,
   DerbyToken: DerbyToken,
   user: Signer,
   vaultNum: BigNumberish,

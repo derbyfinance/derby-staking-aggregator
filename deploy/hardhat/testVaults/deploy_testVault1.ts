@@ -23,7 +23,7 @@ const func: DeployFunction = async function ({
 
   await deploy(vaultName, {
     from: deployer,
-    contract: 'MainVaultMock',
+    contract: 'VaultMock',
     args: [
       name,
       symbol,

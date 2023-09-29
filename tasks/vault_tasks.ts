@@ -222,7 +222,7 @@ const getVault = async (
   { deployments, ethers, network }: HardhatRuntimeEnvironment,
   contract: string,
 ) => {
-  const vaultContract = network.name === 'hardhat' ? 'MainVaultMock' : 'MainVault';
+  const vaultContract = network.name === 'hardhat' ? 'VaultMock' : 'Vault';
   const { address } = await deployments.get(contract);
   const vault = await ethers.getContractAt(vaultContract, address);
   return vault;

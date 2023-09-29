@@ -1,6 +1,6 @@
 import { deployments, run } from 'hardhat';
 import { expect } from 'chai';
-import { MainVaultMock } from '@typechain';
+import { VaultMock } from '@typechain';
 import { random, transferAndApproveUSDC } from '@testhelp/helpers';
 import { getContract } from '@testhelp/getContracts';
 import { getInitConfigVault } from '@testhelp/deployHelpers';
@@ -14,7 +14,7 @@ describe('Testing vault tasks', () => {
 
     const accounts = await getNamedAccounts();
     const user = await ethers.getSigner(accounts.user);
-    const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
+    const vault = (await getContract(contract, hre, 'VaultMock')) as VaultMock;
 
     await run('vault_init', { contract });
     await transferAndApproveUSDC(vault.address, user, amount);

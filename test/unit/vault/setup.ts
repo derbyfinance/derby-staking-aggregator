@@ -1,6 +1,6 @@
 import { deployments, run } from 'hardhat';
 import { erc20, transferAndApproveUSDC } from '@testhelp/helpers';
-import { Controller, MainVaultMock, XProvider } from '@typechain';
+import { Controller, VaultMock, XProvider } from '@typechain';
 import { allProtocols, compoundUSDC, usdc } from '@testhelp/addresses';
 import allProviders from '@testhelp/classes/allProvidersClass';
 import { getAllSigners, getContract } from '@testhelp/getContracts';
@@ -15,7 +15,7 @@ export const setupVault = deployments.createFixture(async (hre) => {
   const IUSDC = erc20(usdc);
   const [dao, user, guardian] = await getAllSigners(hre);
 
-  const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
+  const vault = (await getContract(contract, hre, 'VaultMock')) as VaultMock;
   const controller = (await getContract('Controller', hre)) as Controller;
   const xProviderMain = (await getContract('XProviderMain', hre, 'XProvider')) as XProvider;
 

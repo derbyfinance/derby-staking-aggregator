@@ -1,6 +1,6 @@
 import { deployments, run } from 'hardhat';
 import { parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { GameMock, MainVaultMock, DerbyToken } from '@typechain';
+import type { GameMock, VaultMock, DerbyToken } from '@typechain';
 
 import {
   getAndInitXProviders,

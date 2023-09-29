@@ -1,4 +1,4 @@
-import { Controller, MainVaultMock } from '@typechain';
+import { Controller, VaultMock } from '@typechain';
 import { Contract } from 'ethers';
 import { Deployment, DeploymentsExtension } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
@@ -30,16 +30,16 @@ export async function getTestVaultDeployments(
   return vaults;
 }
 
-export async function getTestVaults(hre: HardhatRuntimeEnvironment): Promise<MainVaultMock[]> {
+export async function getTestVaults(hre: HardhatRuntimeEnvironment): Promise<VaultMock[]> {
   const { deployments, ethers } = hre;
 
   const [vault1, vault2, vault3, vault4] = await getTestVaultDeployments(deployments);
 
   const vaults = await Promise.all([
-    ethers.getContractAt('MainVaultMock', vault1.address),
-    ethers.getContractAt('MainVaultMock', vault2.address),
-    ethers.getContractAt('MainVaultMock', vault3.address),
-    ethers.getContractAt('MainVaultMock', vault4.address),
+    ethers.getContractAt('VaultMock', vault1.address),
+    ethers.getContractAt('VaultMock', vault2.address),
+    ethers.getContractAt('VaultMock', vault3.address),
+    ethers.getContractAt('VaultMock', vault4.address),
   ]);
 
   return vaults;

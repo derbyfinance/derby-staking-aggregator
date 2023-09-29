@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { parseEther, parseUnits, transferAndApproveUSDC } from '@testhelp/helpers';
-import type { Controller, MainVaultMock } from '@typechain';
+import type { Controller, VaultMock } from '@typechain';
 import {
   compound_dai_01,
   yearn_usdc_01,
@@ -16,7 +16,7 @@ import { getAllSigners, getContract } from '@testhelp/getContracts';
 import { Signer } from 'ethers';
 
 describe('Testing Vault Store Price and Rewards, unit test', async () => {
-  let vault: MainVaultMock, guardian: Signer;
+  let vault: VaultMock, guardian: Signer;
 
   const protocols = new Map<string, ProtocolVault>()
     .set('compound_usdc_01', compound_usdc_01)
@@ -35,7 +35,7 @@ describe('Testing Vault Store Price and Rewards, unit test', async () => {
     const [dao, user, guardian] = await getAllSigners(hre);
     const totalUnderlying = 100_000 * 1e6;
 
-    const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
+    const vault = (await getContract(contract, hre, 'VaultMock')) as VaultMock;
     const controller = (await getContract('Controller', hre)) as Controller;
 
     await AllMockProviders.deployAllMockProviders(dao);

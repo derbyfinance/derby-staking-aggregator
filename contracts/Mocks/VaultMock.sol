@@ -2,9 +2,9 @@
 // Derby Finance - 2022
 pragma solidity ^0.8.11;
 
-import "../MainVault.sol";
+import "../Vault.sol";
 
-contract MainVaultMock is MainVault {
+contract VaultMock is Vault {
   mapping(uint256 => uint256) private players;
 
   event MinAmountOut(uint256 minAmountOut);
@@ -20,7 +20,7 @@ contract MainVaultMock is MainVault {
     address _vaultCurrency,
     address _nativeToken
   )
-    MainVault(
+    Vault(
       _name,
       _symbol,
       _decimals,
