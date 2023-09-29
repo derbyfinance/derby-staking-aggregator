@@ -39,11 +39,11 @@ describe('Testing full integration test', async () => {
     chains = [
       {
         id: 10,
-        totalAllocations: 3000, // * 10^18 (DRB tokens)
+        totalAllocations: 500, // * 10^18 (DRB tokens)
       },
       {
         id: 100,
-        totalAllocations: 6000, // * 10^18 (DRB tokens)
+        totalAllocations: 2500, // * 10^18 (DRB tokens)
       },
     ];
 
@@ -91,20 +91,18 @@ describe('Testing full integration test', async () => {
       {
         user: setup.gameUsers[0],
         basketId: 0,
-        allocations: [
-          [parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100)],
-          [parseDRB(200), parseDRB(200), parseDRB(200), parseDRB(200), parseDRB(200)],
-        ],
-        totalAllocations: 1500, // * 10^18
+        vaultNumber: 10,
+        chainId: chains[0].id,
+        allocations: [parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100)],
+        totalAllocations: 500, // * 10^18
       },
       {
         user: setup.gameUsers[1],
         basketId: 1,
-        allocations: [
-          [parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500)],
-          [parseDRB(1_000), parseDRB(1_000), parseDRB(1_000), parseDRB(1_000), parseDRB(1_000)],
-        ],
-        totalAllocations: 7500, // * 10^18
+        vaultNumber: 10,
+        chainId: chains[1].id,
+        allocations: [parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500)],
+        totalAllocations: 2500, // * 10^18
       },
     ];
 
@@ -139,13 +137,13 @@ describe('Testing full integration test', async () => {
 
   describe('Create and rebalance basket for 2 game users', async function () {
     it('Rebalance basket allocation array for both game users', async function () {
-      for (const { basketId, user, totalAllocations, allocations } of gameUsers) {
-        await mintBasket(game, user, vaultNumber);
+      for (const { basketId, user, chainId, totalAllocations, allocations } of gameUsers) {
+        await mintBasket(game, user, chainId, vaultNumber);
 
         await derbyToken.connect(user).increaseAllowance(game.address, parseDRB(totalAllocations));
 
         // should still pass since rebalancing Period is 1
-        await game.connect(guardian).setNumberOfRewardsReceived(vaultNumber, 0);
+        await game.connect(guardian).setRewardsReceived(vaultNumber, chainId, false);
 
         await expect(() =>
           game.connect(user).rebalanceBasket(basketId, allocations),
@@ -160,20 +158,20 @@ describe('Testing full integration test', async () => {
     it('Should set protocol allocations correctly in baskets', async function () {
       // loops through allocations arrays from both baskets
       for (const { user, basketId, allocations } of gameUsers) {
-        for (let i = 0; i < allocations[0].length; i++) {
+        for (let i = 0; i < allocations.length; i++) {
           expect(
-            await game.connect(user).basketAllocationInProtocol(basketId, chains[0].id, i),
-          ).to.be.equal(allocations[0][i]);
+            await game.connect(user).basketAllocationInProtocol(basketId, i),
+          ).to.be.equal(allocations[i]);
           expect(
-            await game.connect(user).basketAllocationInProtocol(basketId, chains[1].id, i),
-          ).to.be.equal(allocations[1][i]);
+            await game.connect(user).basketAllocationInProtocol(basketId, i),
+          ).to.be.equal(allocations[i]);
         }
       }
     });
 
     it('Should set chain allocations correctly in game contract', async function () {
       for (const chain of chains) {
-        expect(await game.getDeltaAllocationChain(vaultNumber, chain.id)).to.be.equal(
+        expect(await game.getDeltaAllocationsVault(chain.id, vaultNumber)).to.be.equal(
           parseDRB(chain.totalAllocations),
         );
       }
@@ -182,14 +180,14 @@ describe('Testing full integration test', async () => {
     it('Should set protocol allocations correctly in game contract', async function () {
       // basket allocation arrays added together
       const expectedAllocations = [
-        [parseDRB(600), parseDRB(600), parseDRB(600), parseDRB(600), parseDRB(600)],
-        [parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200), parseDRB(1200)],
+        [parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100), parseDRB(100)],
+        [parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500), parseDRB(500)],
       ];
       for (let i = 0; i < expectedAllocations[0].length; i++) {
-        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[0].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationsProtocol(chains[0].id, vaultNumber, i)).to.be.equal(
           expectedAllocations[0][i],
         );
-        expect(await game.getDeltaAllocationProtocol(vaultNumber, chains[1].id, i)).to.be.equal(
+        expect(await game.getDeltaAllocationsProtocol(chains[1].id, vaultNumber, i)).to.be.equal(
           expectedAllocations[1][i],
         );
       }
@@ -227,26 +225,26 @@ describe('Testing full integration test', async () => {
     // total expected chain allocatioons
     before(function () {
       vaults[0].chainAllocs = [
-        parseDRB(600),
-        parseDRB(600),
-        parseDRB(600),
-        parseDRB(600),
-        parseDRB(600),
+        parseDRB(100),
+        parseDRB(100),
+        parseDRB(100),
+        parseDRB(100),
+        parseDRB(100),
       ];
       vaults[1].chainAllocs = [
-        parseDRB(1200),
-        parseDRB(1200),
-        parseDRB(1200),
-        parseDRB(1200),
-        parseDRB(1200),
+        parseDRB(500),
+        parseDRB(500),
+        parseDRB(500),
+        parseDRB(500),
+        parseDRB(500),
       ];
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -338,10 +336,10 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step: Game pushes deltaAllocations to vaults, 0 deltas', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, [0, 0, 0, 0, 0]);
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, [0, 0, 0, 0, 0]);
     });
@@ -370,8 +368,8 @@ describe('Testing full integration test', async () => {
   describe('Rebalance 2 Step: Vaults push rewardsPerLockedToken to game', async function () {
     before(function () {
       // set expectedRewards
-      vaults[0].rewards = [71_895, 174_603, 166_667, 31_884, 61_111];
-      vaults[1].rewards = [326_797, 793_651, 757_576, 144_928, 277_778];
+      vaults[0].rewards = [431_372, 1_047_619, 1_000_000, 191_304, 366_666];
+      vaults[1].rewards = [784_313, 1_904761, 1_818_181, 347_826, 666_666];
     });
 
     it('Trigger should emit PushedRewardsToGame event', async function () {
@@ -414,13 +412,11 @@ describe('Testing full integration test', async () => {
 
   describe('Game user 0 rebalance to all zero for rewards', async function () {
     // rewardsPerLockedToken * allocations
-    const totalExpectedRewards = 510761893;
+    const totalExpectedRewards = 303696261;
 
     before(function () {
-      gameUsers[0].allocations = [
-        [parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100)],
-        [parseDRB(-200), parseDRB(-200), parseDRB(-200), parseDRB(-200), parseDRB(-200)],
-      ];
+      gameUsers[0].allocations = [parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100), parseDRB(-100)];
+
       vaults[0].totalWithdrawalRequests = totalExpectedRewards;
     });
 
@@ -428,7 +424,8 @@ describe('Testing full integration test', async () => {
       const { user, basketId, allocations } = gameUsers[0];
 
       // 2 vaults
-      expect(await game.getNumberOfRewardsReceived(vaultNumber)).to.be.equal(2);
+      expect(await game.getRewardsReceivedTEST(vaultNumber, chains[0].id)).to.be.equal(true);
+      expect(await game.getRewardsReceivedTEST(vaultNumber, chains[1].id)).to.be.equal(true);
       await game.connect(user).rebalanceBasket(basketId, allocations);
       expect(await game.connect(user).basketUnredeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
@@ -505,11 +502,11 @@ describe('Testing full integration test', async () => {
         parseDRB(-100),
       ];
       vaults[1].chainAllocs = [
-        parseDRB(-200),
-        parseDRB(-200),
-        parseDRB(-200),
-        parseDRB(-200),
-        parseDRB(-200),
+        parseDRB(0),
+        parseDRB(0),
+        parseDRB(0),
+        parseDRB(0),
+        parseDRB(0),
       ];
 
       vaults[0].newUnderlying = 102277.722; // 100k (110k -10k) x exchangeRate before performance fee - rewards
@@ -523,10 +520,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[0].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(game.pushAllocationsToVaults(vaultNumber, vaults[1].homeChain))
+      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -536,8 +533,8 @@ describe('Testing full integration test', async () => {
     // totalUnderlying = oldUnderlying - withdrawalRequests
     // expectedProtocolBalance = (allocation / totalAllocations) * totalUnderlying
     before(function () {
-      vaults[0].expectedProtocolBalance = (500 / 2500) * vaults[0].newUnderlying!;
-      vaults[1].expectedProtocolBalance = (1000 / 5000) * vaults[1].newUnderlying!;
+      vaults[0].expectedProtocolBalance = 0;
+      vaults[1].expectedProtocolBalance = (1 / 5) * vaults[1].newUnderlying!;
     });
 
     it('Trigger rebalance vaults', async function () {
@@ -637,7 +634,7 @@ describe('Testing full integration test', async () => {
     });
 
     it('Should redeem rewards for game user 0', async function () {
-      const totalExpectedRewards = 510761893;
+      const totalExpectedRewards = 303696261;
 
       const { user, basketId } = gameUsers[0];
       const { vault } = vaults[0];

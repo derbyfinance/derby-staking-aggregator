@@ -53,10 +53,6 @@ type ITokenConfig = {
   totalSupply: number;
 };
 
-type IDeployXControllerConfig = {
-  homeChainId: number;
-};
-
 type IDeployGameConfig = {
   nftName: string;
   nftSymbol: string;

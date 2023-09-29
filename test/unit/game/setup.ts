@@ -7,7 +7,7 @@ import {
   InitConnextMock,
   setGameLatestProtocolIds,
 } from '@testhelp/InitialiseContracts';
-import { getAllSigners, getContract } from '@testhelp/getContracts';
+import { getAllSigners, getContract, getTestVaults } from '@testhelp/getContracts';
 
 export const setupGame = deployments.createFixture(async (hre) => {
   await deployments.fixture([
@@ -21,10 +21,9 @@ export const setupGame = deployments.createFixture(async (hre) => {
     'XProviderBnb',
   ]);
 
-  const contract = 'TestVault1';
   const game = (await getContract('GameMock', hre)) as GameMock;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-  const vault = (await getContract(contract, hre, 'MainVaultMock')) as MainVaultMock;
+  const [vault0, vault1, vault2] = await getTestVaults(hre);
 
   const [dao, user, guardian] = await getAllSigners(hre);
   const userAddr = await user.getAddress();
@@ -35,36 +34,47 @@ export const setupGame = deployments.createFixture(async (hre) => {
     hre,
     dao,
     {
-      xController: 100,
-      game: 10,
+      game: 10
     },
   );
   await InitConnextMock(hre, [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb]);
 
   await run('game_init', {
     provider: xProviderMain.address,
-    homevault: vault.address,
+    homevault: vault0.address,
     chainids,
   });
 
-  await run('vault_init', { contract });
-  await run('vault_set_liquidity_perc', { contract, percentage: 10 });
+  await run('vault_init', { contract: 'TestVault1' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault1', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault2' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault2', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault3' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault3', percentage: 10 });
   await run('controller_init');
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
-  await transferAndApproveUSDC(vault.address, user, 100_000_000 * 1e6);
+  await transferAndApproveUSDC(vault0.address, user, 100_000_000 * 1e6);
+  await transferAndApproveUSDC(vault1.address, user, 100_000_000 * 1e6);
+  await transferAndApproveUSDC(vault2.address, user, 100_000_000 * 1e6);
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
-  const basketId = await run('game_mint_basket', { vaultnumber: vaultNumber });
+  const basketId0 = await run('game_mint_basket', { chainid: chainids[0], vaultnumber: vaultNumber });
+  const basketId1 = await run('game_mint_basket', { chainid: chainids[1], vaultnumber: vaultNumber });
+  const basketId2 = await run('game_mint_basket', { chainid: chainids[2], vaultnumber: vaultNumber });
 
   return {
     game,
     derbyToken,
-    vault,
+    vault0,
+    vault1,
+    vault2,
     dao,
     guardian,
     user,
     userAddr,
     vaultNumber,
-    basketId,
+    basketId0,
+    basketId1,
+    basketId2
   };
 });

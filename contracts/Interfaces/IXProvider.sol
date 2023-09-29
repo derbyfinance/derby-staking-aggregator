@@ -28,8 +28,6 @@ interface IXProvider {
     address _asset
   ) external payable;
 
-  function receiveFeedbackToXController(uint256 _vaultNumber) external;
-
   function xTransferToVaults(
     address _vault,
     uint32 _chainId,

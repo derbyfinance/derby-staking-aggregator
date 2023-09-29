@@ -19,7 +19,9 @@ export type IUnderlyingVault = {
 export type IGameUser = {
   user: Signer;
   basketId: number;
-  allocations: BigNumberish[][];
+  vaultNumber: number;
+  chainId: number;
+  allocations: BigNumberish[];
   totalAllocations: number;
 };
 
@@ -41,8 +43,8 @@ export type IVaults = {
   rewards?: BigNumberish[];
 };
 
-export async function mintBasket(game: GameMock, user: Signer, vaultNumber: BigNumberish) {
-  const tx = await game.connect(user).mintNewBasket(vaultNumber);
+export async function mintBasket(game: GameMock, user: Signer, chainId: BigNumberish, vaultNumber: BigNumberish) {
+  const tx = await game.connect(user).mintNewBasket(chainId, vaultNumber);
   const receipt = await tx.wait();
   const { basketId } = receipt.events![1].args as Result;
   return Number(basketId);

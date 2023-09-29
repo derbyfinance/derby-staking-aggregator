@@ -26,23 +26,6 @@ task('vault_init', 'Initializes the vault')
 CrossChain
 **************/
 // not tested yet
-task(
-  'vault_push_total_underlying',
-  'Step 2: Vaults push totalUnderlying, totalSupply and totalWithdrawalRequests',
-)
-  .addParam('contract', 'Name of the contract')
-  .setAction(async ({ contract }, hre) => {
-    const vault = await getVault(hre, contract);
-    await vault.pushTotalUnderlyingToController();
-  });
-// not tested yet
-task('vault_rebalance_xchain', 'Step 4; Push funds from vaults to xChainController')
-  .addParam('contract', 'Name of the contract')
-  .setAction(async ({ contract }, hre) => {
-    const vault = await getVault(hre, contract);
-    await vault.rebalanceXChain();
-  });
-// not tested yet
 task('vault_send_rewards_game', 'Step 8; Vaults push rewardsPerLockedToken to game')
   .addParam('contract', 'Name of the contract')
   .setAction(async ({ contract }, hre) => {

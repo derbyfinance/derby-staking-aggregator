@@ -34,12 +34,12 @@ contract GameMock is Game {
 
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
-        _vaultNumber,
         _chainId,
+        _vaultNumber,
         rebalancingPeriod - 1,
         i
       );
-      vaults[_vaultNumber].rewardPerLockedToken[_chainId][rebalancingPeriod][i] =
+      vaults[_chainId][_vaultNumber].rewardPerLockedToken[rebalancingPeriod][i] =
         lastReward +
         _rewards[i];
     }
@@ -52,7 +52,22 @@ contract GameMock is Game {
     uint256 _protocolId,
     int256 _reward
   ) external {
-    vaults[_vaultNumber].rewardPerLockedToken[_chainId][_rebalancingPeriod][_protocolId] = _reward;
+    vaults[_chainId][_vaultNumber].rewardPerLockedToken[_rebalancingPeriod][_protocolId] = _reward;
+  }
+
+  function setRewardsReceivedTEST(
+    uint256 _vaultNumber,
+    uint32 _chainId,
+    bool _rewardsReceived
+  ) external {
+    vaults[_chainId][_vaultNumber].rewardsReceived = _rewardsReceived;
+  }
+
+  function getRewardsReceivedTEST(
+    uint256 _vaultNumber,
+    uint32 _chainId
+  ) external view returns (bool) {
+    return vaults[_chainId][_vaultNumber].rewardsReceived;
   }
 
   function getRewardsPerLockedTokenTEST(
@@ -61,7 +76,7 @@ contract GameMock is Game {
     uint256 _rebalancingPeriod,
     uint256 _protocolId
   ) external view returns (int256) {
-    return getRewardsPerLockedToken(_vaultNumber, _chainId, _rebalancingPeriod, _protocolId);
+    return getRewardsPerLockedToken(_chainId, _vaultNumber, _rebalancingPeriod, _protocolId);
   }
 
   function getNegativeRewardFactor() external view returns (uint256) {
@@ -79,7 +94,14 @@ contract GameMock is Game {
     return getVaultAddress(_vaultNumber, _chainId);
   }
 
+  function getVaultsLatestProtocolIdTEST(
+    uint32 _chainId,
+    uint256 _vaultNumber
+  ) external view returns (uint256) {
+    return vaults[_chainId][_vaultNumber].latestProtocolId;
+  }
+
   function rebalanceBoth(uint256 _vaultNumber, uint32 _chain) external payable {
-    this.pushAllocationsToVaults{value: msg.value / 2}(_vaultNumber, _chain);
+    this.pushAllocationsToVaults{value: msg.value / 2}(_chain, _vaultNumber);
   }
 }

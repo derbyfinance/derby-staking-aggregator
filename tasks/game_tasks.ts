@@ -6,8 +6,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 task('game_init', 'Initializes the game')
   .addParam('provider', 'Address of the provider')
   .addParam('homevault', 'Address of the home vault')
-  .addVariadicPositionalParam('chainids', 'array of chainids', [], types.int)
-  .setAction(async ({ provider, homevault, chainids }, { run, network }) => {
+  .setAction(async ({ provider, homevault }, { run, network }) => {
     const initConfig = await getInitConfigGame(network.name);
     if (!initConfig) throw 'Unknown contract name';
 
@@ -16,18 +15,18 @@ task('game_init', 'Initializes the game')
 
     await run('game_set_negative_reward_factor', { factor: negativeRewardFactor });
     await run('game_set_negative_reward_threshold', { threshold: negativeRewardThreshold });
-    await run('game_set_chain_ids', { chainids });
     await run('game_set_xprovider', { provider });
     await run('game_set_home_vault', { vaultnumber, vault: homevault });
     await run('game_set_vault_token_price', { vaultnumber, price: tokenPrice });
   });
 
 task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
+  .addParam('chainid', 'Chain Id of chain on which the vault is deployed', null, types.int)
   .addParam('vaultnumber', 'Number of the vault. Same as in Router', null, types.int)
-  .setAction(async ({ vaultnumber }, hre) => {
+  .setAction(async ({ chainid, vaultnumber }, hre) => {
     const game = await getGame(hre);
     const user = await getUser(hre);
-    const tx = await game.connect(user).mintNewBasket(vaultnumber);
+    const tx = await game.connect(user).mintNewBasket(chainid, vaultnumber);
     const receipt = await tx.wait();
     const { basketId } = receipt.events![1].args as Result;
     return Number(basketId);
@@ -36,13 +35,6 @@ task('game_mint_basket', 'Mints a new NFT with a Basket of allocations')
 /*************
 CrossChain
 **************/
-// not tested yet
-task('game_trigger_step_1', 'Game pushes totalDeltaAllocations to xChainController')
-  .addParam('vaultnumber', 'New dao address', null, types.int)
-  .setAction(async ({ vaultnumber }, hre) => {
-    const game = await getGame(hre);
-    await game.pushAllocationsToController(vaultnumber);
-  });
 // not tested yet
 task('game_trigger_step_6', 'Game pushes deltaAllocations to vaults')
   .addParam('vaultnumber', 'New dao address', null, types.int)
@@ -76,28 +68,12 @@ task('game_set_vault_address', 'Link a chainId to a vault address for cross chai
 
 task('game_latest_protocol_id', 'Setter for latest protocol Id for given chainId')
   .addParam('chainid', 'Number of chain id set in chainIds array', null, types.int)
-  .addParam('latestprotocolid', 'Number of supported protocol vaults', null, types.int)
-  .setAction(async ({ chainid, latestprotocolid }, hre) => {
-    const game = await getGame(hre);
-    const guardian = await getGuardian(hre);
-    await game.connect(guardian).setLatestProtocolId(chainid, latestprotocolid);
-  });
-
-task('game_set_chain_ids', 'Setter for chainId array')
-  .addVariadicPositionalParam('chainids', 'Number of chain id set in chainIds array', [], types.int)
-  .setAction(async ({ chainids }, hre) => {
-    const game = await getGame(hre);
-    const guardian = await getGuardian(hre);
-    await game.connect(guardian).setChainIds(chainids);
-  });
-
-task('game_set_rebalancing_state', 'Guardian function to set state')
   .addParam('vaultnumber', 'Number of the vault', null, types.int)
-  .addParam('state', 'bool', null, types.boolean)
-  .setAction(async ({ vaultnumber, state }, hre) => {
+  .addParam('latestprotocolid', 'Number of supported protocol vaults', null, types.int)
+  .setAction(async ({ chainid, vaultnumber, latestprotocolid }, hre) => {
     const game = await getGame(hre);
     const guardian = await getGuardian(hre);
-    await game.connect(guardian).setRebalancingState(vaultnumber, state);
+    await game.connect(guardian).setLatestProtocolId(chainid, vaultnumber, latestprotocolid);
   });
 
 task('game_settle_rewards_guard', 'Guardian function for step 8')
