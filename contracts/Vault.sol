@@ -2,7 +2,7 @@
 // Derby Finance - 2022
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -13,8 +13,10 @@ import "./Interfaces/IXProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
+import "hardhat/console.sol";
+
 contract Vault is ReentrancyGuard, VaultToken {
-  using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20Metadata;
 
   struct UserInfo {
     // amount in vaultCurrency the vault owes to the user
@@ -31,7 +33,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     uint256 depositRequestPeriod;
   }
 
-  IERC20 internal vaultCurrency;
+  IERC20Metadata internal vaultCurrency;
   IController internal controller;
 
   bool public deltaAllocationsReceived;
@@ -138,18 +140,18 @@ contract Vault is ReentrancyGuard, VaultToken {
     address _nativeToken
   ) VaultToken(_name, _symbol, _decimals) {
     controller = IController(_controller);
-    vaultCurrency = IERC20(_vaultCurrency);
+    vaultCurrency = IERC20Metadata(_vaultCurrency);
 
     vaultNumber = _vaultNumber;
     dao = _dao;
     lastTimeStamp = block.timestamp;
     nativeToken = _nativeToken;
 
-    exchangeRate = 10 ** decimals();
+    exchangeRate = 10 ** vaultCurrency.decimals();
     game = _game;
     governanceFee = 0;
     maxDivergenceWithdraws = 1_000_000;
-    minimumDeposit = 100 * 10 ** decimals();
+    minimumDeposit = 100 * 10 ** vaultCurrency.decimals();
   }
 
   /// @notice Step 8 trigger, end; Vaults rebalance
@@ -177,7 +179,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     savedTotalUnderlying = underlyingIncBalance;
     uint256 oldExchangeRate = exchangeRate;
     exchangeRate = totalSupply() == 0
-      ? 1
+      ? 10 ** vaultCurrency.decimals()
       : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
 
     if (exchangeRate > oldExchangeRate)
@@ -356,7 +358,14 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
+    IERC20Metadata(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
+    console.log(
+      "provider: %s, address: %s, lp token: %s",
+      _protocolNum,
+      protocol.provider,
+      protocol.LPToken
+    );
+    console.log("amount: %s", _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
@@ -381,7 +390,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     if (shares == 0) return 0;
     if (balance < shares) shares = balance;
 
-    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
+    IERC20Metadata(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     amountReceived = IProvider(protocol.provider).withdraw(
       shares,
       protocol.LPToken,
@@ -461,7 +470,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     bool claim = controller.claim(vaultNumber, _protocolNum);
     if (claim) {
       address govToken = controller.getGovToken(vaultNumber, _protocolNum);
-      uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+      uint256 tokenBalance = IERC20Metadata(govToken).balanceOf(address(this));
       Swap.swapTokensMulti(
         Swap.SwapInOut(
           tokenBalance,
@@ -524,10 +533,14 @@ contract Vault is ReentrancyGuard, VaultToken {
       totalUnderlying += balanceUnderlying(i);
       depositInProtocol(i, amountToProtocol);
     }
-
-    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
-
+    console.log("totalUnderlying: %s", totalUnderlying);
+    exchangeRate = totalSupply() == 0
+      ? 10 ** vaultCurrency.decimals()
+      : (totalUnderlying * (10 ** decimals())) / totalSupply();
+    console.log("exchangeRate: %s", exchangeRate);
     uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
+    console.log("shares: %s", shares);
+    console.log("decimals: %s", decimals());
     _mint(msg.sender, shares);
     return shares;
   }
@@ -613,7 +626,9 @@ contract Vault is ReentrancyGuard, VaultToken {
         withdrawFromProtocol(i, amountFromProtocol);
       }
     }
-    exchangeRate = totalSupply() == 0 ? 1 : (totalUnderlying * (10 ** decimals())) / totalSupply();
+    exchangeRate = totalSupply() == 0
+      ? 10 ** vaultCurrency.decimals()
+      : (totalUnderlying * (10 ** decimals())) / totalSupply();
 
     uint256 shares = (_amount * (10 ** decimals())) / exchangeRate;
 
@@ -630,7 +645,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     UserInfo storage user = userInfo[msg.sender];
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
-    value = (_amount * exchangeRate) / (10 ** decimals());
+    value = (_amount * exchangeRate) / (10 ** vaultCurrency.decimals());
 
     _burn(msg.sender, _amount);
 
@@ -710,7 +725,7 @@ contract Vault is ReentrancyGuard, VaultToken {
         controller.getUniswapParams(),
         true
       );
-      IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
+      IERC20Metadata(derbyToken).safeTransfer(msg.sender, tokensReceived);
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
