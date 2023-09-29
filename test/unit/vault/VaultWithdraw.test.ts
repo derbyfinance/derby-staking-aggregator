@@ -34,7 +34,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
 
     // withdrawal request for 10k LP tokens
     await expect(() =>
-      vault.connect(user).withdrawalRequest(parseUSDC(10_000)),
+      vault.connect(user).withdrawalRequest(parseUSDC(9_000)),
     ).to.changeTokenBalance(vault, user, -parseUSDC(10_000));
 
     // check withdrawalAllowance user and totalsupply

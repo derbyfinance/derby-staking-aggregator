@@ -359,13 +359,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
     IERC20Metadata(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
-    console.log(
-      "provider: %s, address: %s, lp token: %s",
-      _protocolNum,
-      protocol.provider,
-      protocol.LPToken
-    );
-    console.log("amount: %s", _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
@@ -509,7 +502,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice function that enables direct deposits into the vault
   /// @dev this can only be done if the funds from the user will be deposited directly into the underlying protocols. Hence, this is very gas intensive
   /// @param _amount Amount to deposit in vaultCurrency
-  /// @return shares Amount of shares minted
+  /// @return shares Amount of shares minted in LPtoken.decimals()
   function deposit(uint256 _amount) public returns (uint256) {
     require(_amount >= minimumDeposit, "Minimum deposit");
 
@@ -533,14 +526,11 @@ contract Vault is ReentrancyGuard, VaultToken {
       totalUnderlying += balanceUnderlying(i);
       depositInProtocol(i, amountToProtocol);
     }
-    console.log("totalUnderlying: %s", totalUnderlying);
+
     exchangeRate = totalSupply() == 0
       ? 10 ** vaultCurrency.decimals()
       : (totalUnderlying * (10 ** decimals())) / totalSupply();
-    console.log("exchangeRate: %s", exchangeRate);
     uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
-    console.log("shares: %s", shares);
-    console.log("decimals: %s", decimals());
     _mint(msg.sender, shares);
     return shares;
   }
@@ -549,7 +539,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @dev This function allows a user to deposit an amount greater than or equal to the minimum deposit,
   /// transfers the deposited amount from the user to the Vault, and records the deposit request.
   /// If the training mode is active, the function checks if the user is whitelisted and the deposit doesn't exceed the max training deposit.
-  /// @param _amount The amount that the user wants to deposit.
+  /// @param _amount The amount that the user wants to deposit in vaultCurrency.
   function depositRequest(uint256 _amount) external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
 
@@ -608,7 +598,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice function that enables direct withdrawals from the vault
   /// @dev this can only be done if the funds from the user will be withdrawed directly from the underlying protocols. Hence, this is very gas intensive
   /// @param _amount Amount to withdraw in vaultCurrency
-  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
+  /// @return shares Amount of shares the user needs to supply in LPtoken decimals()
   function withdraw(uint256 _amount) public returns (uint256) {
     uint256 latestID = controller.latestProtocolId(vaultNumber);
     uint256 totalUnderlying = 0;
@@ -639,19 +629,18 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
-  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
-  function withdrawalRequest(uint256 _amount) external nonReentrant returns (uint256 value) {
+  /// @param _amount Amount to withdraw in vaultCurrency
+  /// @return shares Amount of shares the user needs to supply in LPtoken decimals()
+  function withdrawalRequest(uint256 _amount) external nonReentrant returns (uint256 shares) {
     UserInfo storage user = userInfo[msg.sender];
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
-    value = (_amount * exchangeRate) / (10 ** vaultCurrency.decimals());
+    shares = (_amount * (10 ** decimals())) / exchangeRate;
+    _burn(msg.sender, shares);
 
-    _burn(msg.sender, _amount);
-
-    user.withdrawalAllowance = value;
+    user.withdrawalAllowance = _amount;
     user.withdrawalRequestPeriod = rebalancingPeriod;
-    totalWithdrawalRequests += value;
+    totalWithdrawalRequests += _amount;
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period

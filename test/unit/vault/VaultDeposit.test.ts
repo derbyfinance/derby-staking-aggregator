@@ -100,7 +100,7 @@ describe('Testing Vault Deposits, unit test', async () => {
     });
   });
 
-  describe.only('Testing vault direct deposits, unit test', async () => {
+  describe('Testing vault direct deposits, unit test', async () => {
     it('Set and check deposit', async function () {
     // set random allocations for all protocols
     const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
@@ -109,7 +109,7 @@ describe('Testing Vault Deposits, unit test', async () => {
     }
     await vault.setDeltaAllocationsReceivedTEST(true);
     await vault.rebalance();
-    
+
     await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
       IUSDC,
       user,
