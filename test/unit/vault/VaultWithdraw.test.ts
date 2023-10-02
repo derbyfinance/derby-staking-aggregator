@@ -28,8 +28,8 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await vault.upRebalancingPeriodTEST();
 
     // withdrawal request for more then LP token balance
-    await expect(vault.connect(user).withdrawalRequest(parseUSDC(10_001))).to.be.revertedWith(
-      'ERC20: burn amount exceeds balance',
+    await expect(vault.connect(user).withdrawalRequest(parseUSDC(9_001))).to.be.revertedWith(
+      'Max divergence',
     );
 
     // withdrawal request for 10k LP tokens

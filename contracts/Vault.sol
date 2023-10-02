@@ -78,7 +78,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   uint32 public homeChain;
   uint256 public governanceFee; // Basis points
-  uint256 public maxDivergenceWithdraws;
+  uint256 public maxDivergence; // before decimals!
   uint256 public minimumDeposit;
   uint256 public lastRewardPeriod;
 
@@ -150,7 +150,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     exchangeRate = 10 ** vaultCurrency.decimals();
     game = _game;
     governanceFee = 0;
-    maxDivergenceWithdraws = 1_000_000;
+    maxDivergence = 1;
     minimumDeposit = 100 * 10 ** vaultCurrency.decimals();
   }
 
@@ -604,6 +604,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     uint256 totalUnderlying = 0;
     uint256 vaultBalance = getVaultBalance();
     uint256 amountFromProtocol;
+    uint256 totalWithdrawal;
     for (uint i = 0; i < latestID; i++) {
       bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
 
@@ -613,17 +614,22 @@ contract Vault is ReentrancyGuard, VaultToken {
 
       if (vaultBalance < _amount) {
         amountFromProtocol = calcAmountToProtocol(_amount - vaultBalance, i);
-        withdrawFromProtocol(i, amountFromProtocol);
+        totalWithdrawal += withdrawFromProtocol(i, amountFromProtocol);
+      } else {
+        totalWithdrawal = _amount;
       }
     }
+
     exchangeRate = totalSupply() == 0
       ? 10 ** vaultCurrency.decimals()
       : (totalUnderlying * (10 ** decimals())) / totalSupply();
 
     uint256 shares = (_amount * (10 ** decimals())) / exchangeRate;
-
+    uint256 balance = balanceOf(msg.sender);
+    shares = checkForBalance(shares, balance, decimals());
     _burn(msg.sender, shares);
-    transferFunds(msg.sender, _amount);
+
+    transferFunds(msg.sender, totalWithdrawal);
     return shares;
   }
 
@@ -636,6 +642,8 @@ contract Vault is ReentrancyGuard, VaultToken {
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
     shares = (_amount * (10 ** decimals())) / exchangeRate;
+    uint256 balance = balanceOf(msg.sender);
+    shares = checkForBalance(shares, balance, decimals());
     _burn(msg.sender, shares);
 
     user.withdrawalAllowance = _amount;
@@ -718,6 +726,27 @@ contract Vault is ReentrancyGuard, VaultToken {
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
+  }
+
+  /// @notice Sometimes the balance of a coin is a fraction less then expected due to rounding errors
+  /// @notice This is to make sure the vault doesnt get stuck
+  /// @notice Value will be set to the balance
+  /// @notice When divergence is greater then maxDivergence it will revert
+  /// @param _value Value the user wants
+  /// @param _balance Balance of the coin
+  /// @param _decimals Decimals of the coin and balance
+  /// @return value Value - divergence
+  function checkForBalance(
+    uint256 _value,
+    uint256 _balance,
+    uint256 _decimals
+  ) internal view returns (uint256) {
+    if (_value > _balance) {
+      uint256 oldValue = _value;
+      _value = _balance;
+      require(oldValue - _value <= maxDivergence * (10 ** _decimals), "Max divergence");
+    }
+    return _value;
   }
 
   /// @notice See receiveProtocolAllocations below
@@ -822,7 +851,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice Setter for maximum divergence a user can get during a withdraw
   /// @param _maxDivergence New maximum divergence in vaultCurrency
   function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
-    maxDivergenceWithdraws = _maxDivergence;
+    maxDivergence = _maxDivergence;
   }
 
   /*

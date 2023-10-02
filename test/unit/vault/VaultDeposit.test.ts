@@ -7,11 +7,11 @@ import { allProtocols, usdc } from '@testhelp/addresses';
 
 describe('Testing Vault Deposits, unit test', async () => {
   let vault: VaultMock, user: Signer, IUSDC: Contract;
-  before(async () => {
-    ({ vault, user, IUSDC } = await setupVault());
-  });
 
   describe('Testing Vault Deposit Requests, unit test', async () => {
+    before(async () => {
+      ({ vault, user, IUSDC } = await setupVault());
+    });
     it('Set and check deposit request', async function () {
       await expect(() => vault.connect(user).depositRequest(10_000 * 1e6)).to.changeTokenBalance(
         IUSDC,
@@ -101,20 +101,48 @@ describe('Testing Vault Deposits, unit test', async () => {
   });
 
   describe('Testing vault direct deposits, unit test', async () => {
-    it('Set and check deposit', async function () {
-    // set random allocations for all protocols
-    const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
-    for (const protocol of allProtocols.values()) {
-      await protocol.setDeltaAllocation(vault, getRandomAllocation());
-    }
-    await vault.setDeltaAllocationsReceivedTEST(true);
-    await vault.rebalance();
+    before(async () => {
+      ({ vault, user, IUSDC } = await setupVault());
+    });
+    it('Set and check direct deposit and withdraw', async function () {
+      // set random allocations for all protocols
+      const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
+      let totalAllocation = 0;
+      for (const protocol of allProtocols.values()) {
+        await protocol.setDeltaAllocation(vault, getRandomAllocation());
+        totalAllocation += protocol.allocation;
+      }
+      await vault.setDeltaAllocationsReceivedTEST(true);
+      await vault.rebalance();
 
-    await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
-      IUSDC,
-      user,
-      -10_000 * 1e6,
-    );
+      await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+        IUSDC,
+        user,
+        -10_000 * 1e6,
+      );
+
+      expect(await vault.balanceOf(user.address)).to.be.equal(10_000 * 1e6);
+      
+      let totalUnderlying = 0;
+      for (const protocol of allProtocols.values()) {
+        const balanceUnderlying = await protocol.balanceUnderlying(vault);
+        totalUnderlying += Number(balanceUnderlying);
+      }
+      expect(totalUnderlying).to.be.closeTo(10_000 * 1e6, 10_000);
+
+      await expect(() => vault.connect(user).withdraw(10_000 * 1e6)).to.changeTokenBalance(
+        vault,
+        user,
+        -10_000 * 1e6,
+      );
+
+      totalUnderlying = 0;
+      for (const protocol of allProtocols.values()) {
+        const balanceUnderlying = await protocol.balanceUnderlying(vault);
+        expect(Number(balanceUnderlying)).to.be.closeTo(0, 10_000);
+        totalUnderlying += Number(balanceUnderlying);
+      }
+      expect(totalUnderlying).to.be.closeTo(0, 10_000);
     });
   });
 });
