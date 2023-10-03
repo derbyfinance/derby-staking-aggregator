@@ -441,7 +441,7 @@ contract Game is ERC721, ReentrancyGuard {
     }
   }
 
-  /// @notice Step 7 trigger; Game pushes deltaAllocations to vaults
+  /// @notice Game pushes deltaAllocations to vaults
   /// @notice Trigger to push delta allocations in protocols to cross chain vaults
   /// @param _chainId Chain id of the vault where the allocations need to be sent
   /// @param _vaultNumber Number of vault

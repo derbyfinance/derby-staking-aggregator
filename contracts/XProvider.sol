@@ -237,17 +237,6 @@ contract XProvider is IXReceiver {
     return IGame(game).settleRewards(_vaultNumber, _chainId, _rewards);
   }
 
-  /// @notice Calculates the estimated amount after accounting for connextRouterFee and slippage.
-  /// @dev This function computes the estimated amount by subtracting the percentage fees from the input amount.
-  /// @param _amount The initial amount to be transferred, in vaultcurrency.decimals().
-  /// @return estAmount The estimated amount after accounting for connextRouterFee and slippage.
-  function calculateEstimatedAmount(uint256 _amount) public view returns (uint256) {
-    uint256 estAmount = _amount -
-      ((_amount * connextRouterFee) / 10_000) -
-      ((_amount * slippage) / 10_000);
-    return estAmount;
-  }
-
   /// @notice Getter for dao address
   function getDao() public view returns (address) {
     return dao;
@@ -306,19 +295,6 @@ contract XProvider is IXReceiver {
   /*
   Only Guardian functions
   */
-
-  /// @notice Send funds back to vault when xCall fails or for residue left behind with xTransfers
-  /// @dev Guardian function
-  function sendFundsToVault(
-    uint256 _vaultNumber,
-    address _token,
-    uint256 _amount
-  ) external onlyGuardian {
-    address vault = vaults[_vaultNumber];
-    require(vault != address(0), "Zero address");
-
-    IERC20(_token).safeTransfer(vault, _amount);
-  }
 
   /// @notice Sets the connextRouterFee variable.
   /// @param _connextRouterFee The new value for the connextRouterFee.
