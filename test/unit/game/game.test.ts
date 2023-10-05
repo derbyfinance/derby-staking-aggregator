@@ -237,12 +237,7 @@ describe('Testing Game', async () => {
   });
 
   it('Should redeem and swap rewards to UNI tokens', async function () {
-    const IUniswap = erc20(uniswapToken);
-
-    await Promise.all([
-      vault0.connect(dao).setDaoToken(uniswapToken),
-      vault0.setExchangeRateTEST(parseUSDC('1')),
-    ]);
+    await vault0.setExchangeRateTEST(parseUSDC('1'));
 
     // Deposit so the vault has funds
     await vault0.connect(user).depositRequest(parseUSDC('10000')); // 10k
@@ -250,12 +245,10 @@ describe('Testing Game', async () => {
     await Promise.all([vault0.upRebalancingPeriodTEST(), vault0.setTotalWithdrawalRequestsTEST(840_000)]);
     expect(await vault0.getTotalWithdrawalRequestsTEST()).to.be.equal(840_000);
 
-    await vault0.connect(user).withdrawRewards(getSwapDeadline(), 0);
-    const balance = formatEther(await IUniswap.balanceOf(userAddr));
-    expect(Number(balance)).to.be.greaterThan(0.03); // max 0.3
+    await vault0.connect(user).withdrawRewards();
 
     // Trying to withdraw again, should revert
-    await expect(vault0.connect(user).withdrawRewards(getSwapDeadline(), 0)).to.be.revertedWith(
+    await expect(vault0.connect(user).withdrawRewards()).to.be.revertedWith(
       '!Allowance',
     );
 
@@ -280,14 +273,11 @@ describe('Testing Game', async () => {
   });
 
   it('Should redeem rewards and receive USDC instead of UNI tokens', async function () {
-    // Swaprewards to false
-    await vault0.connect(dao).setSwapRewards(false);
-
     await Promise.all([vault0.upRebalancingPeriodTEST(), vault0.setTotalWithdrawalRequestsTEST(1_680_000)]);
     expect(await vault0.getTotalWithdrawalRequestsTEST()).to.be.equal(1_680_000);
 
     await expect(() =>
-      vault0.connect(user).withdrawRewards(getSwapDeadline(), 0),
+      vault0.connect(user).withdrawRewards(),
     ).to.changeTokenBalance(IUSDc, user, 1_680_000);
 
     expect(await vault0.getRewardAllowanceTEST(userAddr)).to.be.equal(0);

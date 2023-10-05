@@ -18,7 +18,6 @@ task('vault_init', 'Initializes the vault')
     await run('vault_set_margin_scale', { contract, scale: marginScale });
     await run('vault_set_liquidity_perc', { contract, percentage: liquidityPercentage });
     await run('vault_set_performance_fee', { contract, percentage: performanceFee });
-    await run('vault_set_swap_rewards', { contract, state: true });
     await run('vault_set_home_chain', { contract, chainid: homeChain });
   });
 
@@ -171,15 +170,6 @@ task('vault_set_game', 'Setter for game address')
     const vault = await getVault(hre, contract);
     const dao = await getDao(hre);
     await vault.connect(dao).setGame(address);
-  });
-
-task('vault_set_swap_rewards', 'Setter for swapping rewards to derby tokens')
-  .addParam('contract', 'Name of the contract')
-  .addParam('state', 'True when rewards should be swapped to derby tokens', null, types.boolean)
-  .setAction(async ({ contract, state }, hre) => {
-    const vault = await getVault(hre, contract);
-    const dao = await getDao(hre);
-    await vault.connect(dao).setSwapRewards(state);
   });
 
 task('vault_set_dao', 'Setter for dao address')
