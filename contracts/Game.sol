@@ -446,7 +446,7 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _chainId Chain id of the vault where the allocations need to be sent
   /// @param _vaultNumber Number of vault
   /// @dev Sends over an array where the index is the protocolId
-  function pushAllocationsToVaults(
+  function pushAllocationsToVault(
     uint32 _chainId,
     uint256 _vaultNumber
   ) external payable notInSameBlock {
@@ -461,7 +461,7 @@ contract Game is ERC721, ReentrancyGuard {
     lastTimeStamp[_vaultNumber] = block.timestamp;
     vaults[_chainId][_vaultNumber].rewardsReceived = false;
 
-    emit PushProtocolAllocations(_chainId, getVaultAddress(_vaultNumber, _chainId), deltas);
+    emit PushProtocolAllocations(_chainId, vault, deltas);
   }
 
   /// @notice Creates array with delta allocations in protocols for given chainId
@@ -491,8 +491,8 @@ contract Game is ERC721, ReentrancyGuard {
     settleRewardsInt(_chainId, _vaultNumber, _rewards);
   }
 
-  // basket should not be able to rebalance before this step
-  /// @notice Step 9 end; Vaults push rewardsPerLockedToken to game
+  // basket should not be able to rebalance before this
+  /// @notice Vaults push rewardsPerLockedToken to game
   /// @notice Loops through the array and fills the rewardsPerLockedToken mapping with the values
   /// @param _chainId Number of chain used
   /// @param _vaultNumber Number of the vault
@@ -533,17 +533,20 @@ contract Game is ERC721, ReentrancyGuard {
   }
 
   /// @notice redeem funds from basket in the game.
-  /// @dev makes a call to the vault to make the actual transfer because the vault holds the funds.
+  /// @dev makes a (crosschain) call to the vault to make the actual transfer because the vault holds the funds.
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
   function redeemRewards(uint256 _basketId) external onlyBasketOwner(_basketId) {
-    int256 amount = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
-    require(amount > 0, "Nothing to claim");
+    int256 value = baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
+    require(value > 0, "Nothing to claim");
 
-    baskets[_basketId].totalRedeemedRewards += amount;
+    baskets[_basketId].totalRedeemedRewards += value;
     baskets[_basketId].totalUnRedeemedRewards = 0;
 
+    uint32 chainId = baskets[_basketId].chainId;
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
-    IVault(homeVault[vaultNumber]).redeemRewardsGame(uint256(amount), msg.sender);
+    address vault = getVaultAddress(vaultNumber, chainId);
+
+    IXProvider(xProvider).pushRewardsToVault(chainId, vault, msg.sender, uint256(value));
   }
 
   /// @notice Checks if a rebalance is needed based on the set interval
@@ -659,7 +662,7 @@ contract Game is ERC721, ReentrancyGuard {
     vaults[_chainId][_vaultNumber].latestProtocolId = _latestProtocolId;
   }
 
-  /// @notice Step 8: Guardian function
+  /// @notice Guardian function
   function settleRewardsGuard(
     uint256 _vaultNumber,
     uint32 _chainId,
