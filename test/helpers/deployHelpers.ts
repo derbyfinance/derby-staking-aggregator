@@ -80,6 +80,7 @@ type IDeployVaultConfig = {
   vaultNumber: number;
   vaultCurrency: string;
   nativeToken: string;
+  minScale: number;
 };
 
 type IInitVaultConfig = {

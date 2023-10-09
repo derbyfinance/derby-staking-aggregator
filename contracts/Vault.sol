@@ -78,7 +78,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   uint32 public homeChain;
   uint256 public governanceFee; // Basis points
-  uint256 public maxDivergence; // before decimals!
+  uint256 public minScale; // before decimals!
   uint256 public minimumDeposit;
   uint256 public lastRewardPeriod;
 
@@ -137,7 +137,8 @@ contract Vault is ReentrancyGuard, VaultToken {
     address _game,
     address _controller,
     address _vaultCurrency,
-    address _nativeToken
+    address _nativeToken,
+    uint256 _minScale
   ) VaultToken(_name, _symbol, _decimals) {
     controller = IController(_controller);
     vaultCurrency = IERC20Metadata(_vaultCurrency);
@@ -150,8 +151,8 @@ contract Vault is ReentrancyGuard, VaultToken {
     exchangeRate = 10 ** vaultCurrency.decimals();
     game = _game;
     governanceFee = 0;
-    maxDivergence = 1;
-    minimumDeposit = 100 * 10 ** vaultCurrency.decimals();
+    minScale = _minScale;
+    minimumDeposit = 100 * 10 ** (vaultCurrency.decimals() - minScale);
   }
 
   /// @notice Step 8 trigger, end; Vaults rebalance
@@ -735,7 +736,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice Sometimes the balance of a coin is a fraction less then expected due to rounding errors
   /// @notice This is to make sure the vault doesnt get stuck
   /// @notice Value will be set to the balance
-  /// @notice When divergence is greater then maxDivergence it will revert
+  /// @notice When divergence is greater then minScale it will revert
   /// @param _value Value the user wants
   /// @param _balance Balance of the coin
   /// @param _decimals Decimals of the coin and balance
@@ -748,7 +749,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     if (_value > _balance) {
       uint256 oldValue = _value;
       _value = _balance;
-      require(oldValue - _value <= maxDivergence * (10 ** _decimals), "Max divergence");
+      require(oldValue - _value <= (10 ** (_decimals - minScale)), "Max divergence");
     }
     return _value;
   }
@@ -853,9 +854,9 @@ contract Vault is ReentrancyGuard, VaultToken {
   }
 
   /// @notice Setter for maximum divergence a user can get during a withdraw
-  /// @param _maxDivergence New maximum divergence in vaultCurrency
-  function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
-    maxDivergence = _maxDivergence;
+  /// @param _minScale New maximum divergence in vaultCurrency
+  function setminScale(uint256 _minScale) external onlyDao {
+    minScale = _minScale;
   }
 
   /*

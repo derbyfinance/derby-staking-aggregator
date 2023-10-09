@@ -18,7 +18,8 @@ contract VaultMock is Vault {
     address _Game,
     address _controller,
     address _vaultCurrency,
-    address _nativeToken
+    address _nativeToken,
+    uint256 _minScale
   )
     Vault(
       _name,
@@ -29,7 +30,8 @@ contract VaultMock is Vault {
       _Game,
       _controller,
       _vaultCurrency,
-      _nativeToken
+      _nativeToken,
+      _minScale
     )
   {}
 
