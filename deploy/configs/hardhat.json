@@ -52,9 +52,9 @@
       "symbol": "dfUSDC",
       "decimals": 6,
       "vaultNumber": 10,
-      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "vaultCurrency": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
       "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      "minScale": 0
+      "minScale": 3
     },
     "init": {
       "rebalanceInterval": 1,
