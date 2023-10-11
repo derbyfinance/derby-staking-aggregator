@@ -15,7 +15,7 @@ import { ethers } from 'hardhat';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
-describe('Testing Game', async () => {
+describe.only('Testing Game', async () => {
   let vault0: VaultMock,
     vault1: VaultMock,
     vault2: VaultMock,
@@ -35,7 +35,7 @@ describe('Testing Game', async () => {
   before (async function () {
     const setup = await setupGame();
     game = setup.game;
-    vault0 = setup.vault0;
+    vault0 = setup.vault3;
     vault1 = setup.vault1;
     vault2 = setup.vault2;
     derbyToken = setup.derbyToken;

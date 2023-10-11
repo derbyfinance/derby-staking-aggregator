@@ -4,13 +4,14 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
-import { compoundUSDC, compToken, dai, usdc, yearn as yearnGov, yearnUSDC } from './addresses';
+import { compoundUSDC, compToken, dai, steth, usdc, yearn, steth as yearnGov, yearnUSDC } from './addresses';
 
 const provider = ethers.provider;
 
 const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
+const STETHWhale = '0xa980d4c0C2E48d305b582AA439a3575e3de06f0E';
 
 export async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
   const usdcSigner = await getUSDCSigner();
@@ -26,6 +27,22 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   await IUSDC.connect(user).approve(vault, amount);
 
   return { IUSDC };
+}
+
+export async function transferAndApproveSTETH(vault: string, user: Signer, amount: number) {
+  const stethSigner = await getSTETHigner();
+  const ISTETH = erc20(steth);
+
+  // resets balance for testing
+  const balance = await ISTETH.balanceOf(user.getAddress());
+  if (balance > 0) {
+    await ISTETH.connect(user).transfer(USDCWhale, balance);
+  }
+
+  await ISTETH.connect(stethSigner).transfer(user.getAddress(), amount);
+  await ISTETH.connect(user).approve(vault, amount);
+
+  return { ISTETH };
 }
 
 export async function transferAndApproveDAI(vault: string, user: Signer, amount: number) {
@@ -95,6 +112,14 @@ export const getUSDCSigner = async () => {
     params: [USDCWhale],
   });
   return ethers.provider.getSigner(USDCWhale);
+};
+
+export const getSTETHigner = async () => {
+  await network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [STETHWhale],
+  });
+  return ethers.provider.getSigner(STETHWhale);
 };
 
 export const getWhale = async (address: string) => {

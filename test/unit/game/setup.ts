@@ -1,5 +1,5 @@
 import { deployments, run } from 'hardhat';
-import { parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
+import { parseEther, transferAndApproveUSDC, transferAndApproveSTETH } from '@testhelp/helpers';
 import type { GameMock, VaultMock, DerbyToken } from '@typechain';
 
 import {
@@ -23,7 +23,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
 
   const game = (await getContract('GameMock', hre)) as GameMock;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-  const [vault0, vault1, vault2] = await getTestVaults(hre);
+  const [vault0, vault1, vault2, vault3] = await getTestVaults(hre);
 
   const [dao, user, guardian] = await getAllSigners(hre);
   const userAddr = await user.getAddress();
@@ -41,22 +41,22 @@ export const setupGame = deployments.createFixture(async (hre) => {
 
   await run('game_init', {
     provider: xProviderMain.address,
-    homevault: vault0.address,
+    homevault: vault3.address,
     chainids,
   });
 
-  await run('vault_init', { contract: 'TestVault1' });
-  await run('vault_set_liquidity_perc', { contract: 'TestVault1', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault4' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault4', percentage: 10 });
   await run('vault_init', { contract: 'TestVault2' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault2', percentage: 10 });
   await run('vault_init', { contract: 'TestVault3' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault3', percentage: 10 });
   await run('controller_init');
   
-  run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address });
+  run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderMain.address });
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
-  await transferAndApproveUSDC(vault0.address, user, 100_000_000 * 1e6);
+  await transferAndApproveSTETH(vault3.address, user, 1_000 * 1e18);
   await transferAndApproveUSDC(vault1.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault2.address, user, 100_000_000 * 1e6);
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
@@ -67,7 +67,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   return {
     game,
     derbyToken,
-    vault0,
+    vault3,
     vault1,
     vault2,
     dao,
