@@ -88,7 +88,6 @@ export const setupIntegration = async () => {
     transferAndApproveUSDC(vault2.address, user2, 10_000_000 * 1e6),
 
     allProvidersClass.setProviders(hre),
-    vault1.connect(dao).setSwapRewards(false),
 
     xProviderMain.connect(guardian).setMinimumConnextFee(0),
     xProviderArbi.connect(guardian).setMinimumConnextFee(0),

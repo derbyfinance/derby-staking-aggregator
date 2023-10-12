@@ -104,15 +104,6 @@ describe('Testing vault tasks', () => {
     expect(await vault.game()).to.be.equal(address);
   });
 
-  it('vault_set_swap_rewards', async function () {
-    const { vault, contract } = await setupVault();
-
-    // true cause of vault_init
-    expect(await vault.swapRewards()).to.be.equal(true);
-    await run('vault_set_swap_rewards', { contract, state: false });
-    expect(await vault.swapRewards()).to.be.equal(false);
-  });
-
   it('vault_set_performance_fee', async function () {
     const { vault, contract, initSettings } = await setupVault();
     const fee = random(100);

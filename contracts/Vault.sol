@@ -72,8 +72,6 @@ contract Vault is ReentrancyGuard, VaultToken {
   address public game;
   address public xProvider;
 
-  // True when rewards should be swapped to derby tokens
-  bool public swapRewards;
   bool public vaultOff;
 
   uint32 public homeChain;
@@ -154,7 +152,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     minimumDeposit = 100 * 10 ** vaultCurrency.decimals();
   }
 
-  /// @notice Step 8 trigger, end; Vaults rebalance
+  /// @notice Vaults rebalance
   /// @notice Rebalances i.e deposit or withdraw from all underlying protocols
   /// @dev amountToProtocol = totalAmount * currentAllocation / totalAllocatedTokens
   /// @dev amountToDeposit = amountToProtocol - currentBalanceProtocol
@@ -689,7 +687,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice Function for the game to set a withdrawalRequest for the rewards of the game user
   /// @param _value Amount to set a request in vaultCurrency
   /// @param _user Address of the user
-  function redeemRewardsGame(uint256 _value, address _user) external onlyGame nonReentrant {
+  function redeemRewardsGame(uint256 _value, address _user) external onlyXProvider nonReentrant {
     UserInfo storage user = userInfo[_user];
     require(user.rewardAllowance == 0, allowanceError);
 
@@ -700,12 +698,8 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   /// @notice Withdraw the reward allowance set by the game using the redeemRewardsGame function
   /// @dev Swaps vaultCurrency to Derby tokens, sends the funds to the user, and resets the allowance
-  /// @param _deadline Timestamp after which the transaction is considered invalid
   /// @return value The amount of reward withdrawn by the user
-  function withdrawRewards(
-    uint256 _deadline,
-    uint256 _minAmountOut
-  ) external nonReentrant returns (uint256 value) {
+  function withdrawRewards() external nonReentrant returns (uint256 value) {
     UserInfo storage user = userInfo[msg.sender];
     require(user.rewardAllowance > 0, allowanceError);
     require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
@@ -716,23 +710,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     delete user.rewardAllowance;
     delete user.rewardRequestPeriod;
 
-    if (swapRewards) {
-      uint256 tokensReceived = Swap.swapTokensMulti(
-        Swap.SwapInOut(
-          value,
-          _deadline,
-          _minAmountOut,
-          nativeToken,
-          address(vaultCurrency),
-          derbyToken
-        ),
-        controller.getUniswapParams(),
-        true
-      );
-      IERC20Metadata(derbyToken).safeTransfer(msg.sender, tokensReceived);
-    } else {
-      vaultCurrency.safeTransfer(msg.sender, value);
-    }
+    vaultCurrency.safeTransfer(msg.sender, value);
   }
 
   /// @notice Sometimes the balance of a coin is a fraction less then expected due to rounding errors
@@ -761,7 +739,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     receiveProtocolAllocationsInt(_deltas);
   }
 
-  /// @notice Step 7 end; Game pushes deltaAllocations to vaults
+  /// @notice Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game and settles the allocations
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function receiveProtocolAllocationsInt(int256[] memory _deltas) internal {
@@ -774,7 +752,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     deltaAllocationsReceived = true;
   }
 
-  /// @notice Step 9 trigger; Vaults push rewardsPerLockedToken to game
+  /// @notice Vaults push rewardsPerLockedToken to game
   function sendRewardsToGame() external payable {
     require(lastRewardPeriod < rebalancingPeriod, "rewards already sent");
 
@@ -849,12 +827,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     game = _game;
   }
 
-  /// @notice Setter for swapping rewards to derby tokens
-  /// @param _state True when rewards should be swapped to derby tokens
-  function setSwapRewards(bool _state) external onlyDao {
-    swapRewards = _state;
-  }
-
   /// @notice Setter for maximum divergence a user can get during a withdraw
   /// @param _maxDivergence New maximum divergence in vaultCurrency
   function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
@@ -920,7 +892,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     liquidityPerc = _liquidityPerc;
   }
 
-  /// @notice Step 7: Guardian function
+  /// @notice Guardian function
   function receiveProtocolAllocationsGuard(int256[] memory _deltas) external onlyGuardian {
     receiveProtocolAllocationsInt(_deltas);
   }

@@ -40,7 +40,7 @@ task('game_trigger_step_6', 'Game pushes deltaAllocations to vaults')
   .addParam('vaultnumber', 'New dao address', null, types.int)
   .setAction(async ({ vaultnumber }, hre) => {
     const game = await getGame(hre);
-    await game.pushAllocationsToVaults(vaultnumber);
+    await game.pushAllocationsToVault(vaultnumber);
   });
 
 /*************

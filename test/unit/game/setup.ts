@@ -52,6 +52,8 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await run('vault_init', { contract: 'TestVault3' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault3', percentage: 10 });
   await run('controller_init');
+  
+  run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address });
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
   await transferAndApproveUSDC(vault0.address, user, 100_000_000 * 1e6);

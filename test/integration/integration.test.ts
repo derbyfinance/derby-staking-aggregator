@@ -241,10 +241,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -336,10 +336,10 @@ describe('Testing full integration test', async () => {
 
   describe('Rebalance 2 Step: Game pushes deltaAllocations to vaults, 0 deltas', async function () {
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, [0, 0, 0, 0, 0]);
-      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, [0, 0, 0, 0, 0]);
     });
@@ -450,7 +450,7 @@ describe('Testing full integration test', async () => {
     it('Should not be able to withdraw rewards from vault before next rebalance', async function () {
       const { user } = gameUsers[0];
       await expect(
-        vaults[0].vault.connect(user).withdrawRewards(getSwapDeadline(), 0),
+        vaults[0].vault.connect(user).withdrawRewards(),
       ).to.be.revertedWith('No funds');
     });
   });
@@ -522,10 +522,10 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
-      await expect(game.pushAllocationsToVaults(vaults[0].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
-      await expect(game.pushAllocationsToVaults(vaults[1].homeChain, vaultNumber))
+      await expect(game.pushAllocationsToVault(vaults[1].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[1].homeChain, vaults[1].vault.address, vaults[1].chainAllocs);
     });
@@ -642,7 +642,7 @@ describe('Testing full integration test', async () => {
       const { vault } = vaults[0];
 
       const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
-      await vault.connect(user).withdrawRewards(getSwapDeadline(), 0);
+      await vault.connect(user).withdrawRewards();
       const balanceAfter = formatUSDC(await IUSDc.balanceOf(user.address));
 
       expect(balanceAfter - balanceBefore).to.be.closeTo(totalExpectedRewards / 1e6, 5);

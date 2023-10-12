@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./Interfaces/IVault.sol";
-import "./Interfaces/IXChainController.sol";
 import "./Interfaces/IGame.sol";
 import "./Interfaces/ExternalInterfaces/IConnext.sol";
 import "./Interfaces/ExternalInterfaces/IXReceiver.sol";
@@ -170,8 +169,9 @@ contract XProvider is IXReceiver {
     require(success, "xReceive: No success");
   }
 
-  /// @notice Step 7 push; Game pushes deltaAllocations to vaults
+  /// @notice Game pushes deltaAllocations to vaults
   /// @notice Push protocol allocation array from the game to all vaults/chains
+  /// @param _chainId Number of chain used
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
   function pushProtocolAllocationsToVault(
@@ -191,7 +191,7 @@ contract XProvider is IXReceiver {
     }
   }
 
-  /// @notice Step 7 receive; Game pushes deltaAllocations to vaults
+  /// @notice Game pushes deltaAllocations to vaults
   /// @notice Receives protocol allocation array from the game to all vaults/chains
   /// @param _vault Address of the vault on given chainId
   /// @param _deltas Array with delta allocations where the index matches the protocolId
@@ -200,6 +200,37 @@ contract XProvider is IXReceiver {
     int256[] memory _deltas
   ) external onlySelf {
     return IVault(_vault).receiveProtocolAllocations(_deltas);
+  }
+
+  /// @notice Game pushes user rewards to vaults
+  /// @param _chainId Number of chain used
+  /// @param _vault Address of the vault on given chainId
+  /// @param _user Address of the user who wants to redeem rewards
+  /// @param _value Rewards to be redeemed by the user, in
+  function pushRewardsToVault(
+    uint32 _chainId,
+    address _vault,
+    address _user,
+    uint256 _value
+  ) external payable onlyGame {
+    if (_chainId == homeChain) {
+      require(msg.value == 0, etherNotUsed);
+      return IVault(_vault).redeemRewardsGame(_value, _user);
+    } else {
+      require(msg.value >= minimumConnextFee, minValue);
+      bytes4 selector = bytes4(keccak256("receiveRewardsToVault(uint256,address,address)"));
+      bytes memory callData = abi.encodeWithSelector(selector, _value, _user, _vault);
+
+      xSend(_chainId, callData, address(0), 0);
+    }
+  }
+
+  /// @notice Game pushes rewards of a user to vault for the user to redeem them
+  /// @param _value Address of the vault on given chainId
+  /// @param _user Array with delta allocations where the index matches the protocolId
+  /// @param _vault Address of the vault on given chainId
+  function receiveRewardsToVault(uint256 _value, address _user, address _vault) external onlySelf {
+    return IVault(_vault).redeemRewardsGame(_value, _user);
   }
 
   /// @notice Step 9 push; Vaults push rewardsPerLockedToken to game
@@ -306,19 +337,6 @@ contract XProvider is IXReceiver {
   /*
   Only Guardian functions
   */
-
-  /// @notice Send funds back to vault when xCall fails or for residue left behind with xTransfers
-  /// @dev Guardian function
-  function sendFundsToVault(
-    uint256 _vaultNumber,
-    address _token,
-    uint256 _amount
-  ) external onlyGuardian {
-    address vault = vaults[_vaultNumber];
-    require(vault != address(0), "Zero address");
-
-    IERC20(_token).safeTransfer(vault, _amount);
-  }
 
   /// @notice Sets the connextRouterFee variable.
   /// @param _connextRouterFee The new value for the connextRouterFee.
