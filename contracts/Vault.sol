@@ -178,7 +178,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     savedTotalUnderlying = underlyingIncBalance;
     uint256 oldExchangeRate = exchangeRate;
 
-    calculateExchangeRate(savedTotalUnderlying);
+    exchangeRate = calculateExchangeRate(savedTotalUnderlying);
 
     if (exchangeRate > oldExchangeRate)
       exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
@@ -499,10 +499,13 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   /// @notice Function to calculate the exchangeRate
   /// @param totalUnderlying Total underlying in vaultCurrency
-  function calculateExchangeRate(uint256 totalUnderlying) public {
-    exchangeRate = totalSupply() == 0
+  /// @return price Exchange rate
+  function calculateExchangeRate(uint256 totalUnderlying) public view returns (uint256) {
+    uint256 price;
+    price = totalSupply() == 0
       ? 10 ** vaultCurrency.decimals()
       : (totalUnderlying * (10 ** decimals())) / totalSupply();
+    return price;
   }
 
   /// @notice function that enables direct deposits into the vault
@@ -533,7 +536,7 @@ contract Vault is ReentrancyGuard, VaultToken {
       depositInProtocol(i, amountToProtocol);
     }
 
-    calculateExchangeRate(totalUnderlying);
+    exchangeRate = calculateExchangeRate(totalUnderlying);
 
     uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
     _mint(msg.sender, shares);
@@ -625,7 +628,7 @@ contract Vault is ReentrancyGuard, VaultToken {
       }
     }
 
-    calculateExchangeRate(totalUnderlying);
+    exchangeRate = calculateExchangeRate(totalUnderlying);
 
     uint256 shares = (_amount * (10 ** decimals())) / exchangeRate;
     uint256 balance = balanceOf(msg.sender);
