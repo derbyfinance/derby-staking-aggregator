@@ -144,6 +144,33 @@ describe('Testing Vault Deposits, unit test', async () => {
       }
       expect(totalUnderlying).to.be.closeTo(0, 10_000);
     });
+
+    it('Test calculateExchangeRate function', async function () {
+      // set random allocations for all protocols
+      const getRandomAllocation = () => Math.floor(Math.random() * 100_000) + 100_00;
+      let totalAllocation = 0;
+      for (const protocol of allProtocols.values()) {
+        await protocol.setDeltaAllocation(vault, getRandomAllocation());
+        totalAllocation += protocol.allocation;
+      }
+      await vault.setDeltaAllocationsReceivedTEST(true);
+      await vault.rebalance();
+
+      await expect(() => vault.connect(user).deposit(10_000 * 1e6)).to.changeTokenBalance(
+        IUSDC,
+        user,
+        -10_000 * 1e6,
+      );
+
+      expect(await vault.balanceOf(user.address)).to.be.equal(10_000 * 1e6);
+
+      let exchangeRate = await vault.calculateExchangeRate(10_000 * 1e6);
+      expect(exchangeRate).to.be.equal(1e6);
+      exchangeRate = await vault.calculateExchangeRate(100_000 * 1e6);
+      expect(exchangeRate).to.be.equal(1e7);
+      exchangeRate = await vault.calculateExchangeRate(505_000 * 1e6);
+      expect(exchangeRate).to.be.equal(5.05 * 1e7);
+    });
   });
 });
 
