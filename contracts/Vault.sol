@@ -2,7 +2,7 @@
 // Derby Finance - 2022
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -13,8 +13,10 @@ import "./Interfaces/IXProvider.sol";
 import "./VaultToken.sol";
 import "./libraries/Swap.sol";
 
+import "hardhat/console.sol";
+
 contract Vault is ReentrancyGuard, VaultToken {
-  using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20Metadata;
 
   struct UserInfo {
     // amount in vaultCurrency the vault owes to the user
@@ -31,7 +33,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     uint256 depositRequestPeriod;
   }
 
-  IERC20 internal vaultCurrency;
+  IERC20Metadata internal vaultCurrency;
   IController internal controller;
 
   bool public deltaAllocationsReceived;
@@ -76,7 +78,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
   uint32 public homeChain;
   uint256 public governanceFee; // Basis points
-  uint256 public maxDivergenceWithdraws;
+  uint256 public maxDivergence; // before decimals!
   uint256 public minimumDeposit;
   uint256 public lastRewardPeriod;
 
@@ -138,18 +140,18 @@ contract Vault is ReentrancyGuard, VaultToken {
     address _nativeToken
   ) VaultToken(_name, _symbol, _decimals) {
     controller = IController(_controller);
-    vaultCurrency = IERC20(_vaultCurrency);
+    vaultCurrency = IERC20Metadata(_vaultCurrency);
 
     vaultNumber = _vaultNumber;
     dao = _dao;
     lastTimeStamp = block.timestamp;
     nativeToken = _nativeToken;
 
-    exchangeRate = 10 ** decimals();
+    exchangeRate = 10 ** vaultCurrency.decimals();
     game = _game;
     governanceFee = 0;
-    maxDivergenceWithdraws = 1_000_000;
-    minimumDeposit = 100 * 10 ** decimals();
+    maxDivergence = 1;
+    minimumDeposit = 100 * 10 ** vaultCurrency.decimals();
   }
 
   /// @notice Step 8 trigger, end; Vaults rebalance
@@ -176,9 +178,8 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     savedTotalUnderlying = underlyingIncBalance;
     uint256 oldExchangeRate = exchangeRate;
-    exchangeRate = totalSupply() == 0
-      ? 1
-      : (savedTotalUnderlying * (10 ** decimals())) / totalSupply();
+
+    exchangeRate = calculateExchangeRate(savedTotalUnderlying);
 
     if (exchangeRate > oldExchangeRate)
       exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
@@ -259,16 +260,15 @@ contract Vault is ReentrancyGuard, VaultToken {
   }
 
   /// @notice Calculates the amount to deposit or withdraw to protocol during a vault rebalance
-  /// @param _totalUnderlying Totalunderlying = TotalUnderlyingInProtocols - BalanceVault
+  /// @param _totalAmount TotalAmount = TotalAmountInProtocols - BalanceVault
   /// @param _protocol Protocol id number
   /// @return amountToProtocol amount to deposit or withdraw to protocol (in vaultCurency.decimals())
   function calcAmountToProtocol(
-    uint256 _totalUnderlying,
+    uint256 _totalAmount,
     uint256 _protocol
   ) internal view returns (uint256 amountToProtocol) {
     if (totalAllocatedTokens == 0) amountToProtocol = 0;
-    else
-      amountToProtocol = (_totalUnderlying * currentAllocations[_protocol]) / totalAllocatedTokens;
+    else amountToProtocol = (_totalAmount * currentAllocations[_protocol]) / totalAllocatedTokens;
   }
 
   /// @notice Harvest extra tokens from underlying protocols
@@ -357,7 +357,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     if (getVaultBalance() < _amount) _amount = getVaultBalance();
 
-    IERC20(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
+    IERC20Metadata(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
   }
 
@@ -382,7 +382,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     if (shares == 0) return 0;
     if (balance < shares) shares = balance;
 
-    IERC20(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
+    IERC20Metadata(protocol.LPToken).safeIncreaseAllowance(protocol.provider, shares);
     amountReceived = IProvider(protocol.provider).withdraw(
       shares,
       protocol.LPToken,
@@ -462,7 +462,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     bool claim = controller.claim(vaultNumber, _protocolNum);
     if (claim) {
       address govToken = controller.getGovToken(vaultNumber, _protocolNum);
-      uint256 tokenBalance = IERC20(govToken).balanceOf(address(this));
+      uint256 tokenBalance = IERC20Metadata(govToken).balanceOf(address(this));
       Swap.swapTokensMulti(
         Swap.SwapInOut(
           tokenBalance,
@@ -498,12 +498,58 @@ contract Vault is ReentrancyGuard, VaultToken {
     return guardian;
   }
 
+  /// @notice Function to calculate the exchangeRate
+  /// @param totalUnderlying Total underlying in vaultCurrency
+  /// @return price Exchange rate
+  function calculateExchangeRate(uint256 totalUnderlying) public view returns (uint256) {
+    uint256 price;
+    price = totalSupply() == 0
+      ? 10 ** vaultCurrency.decimals()
+      : (totalUnderlying * (10 ** decimals())) / totalSupply();
+    return price;
+  }
+
+  /// @notice function that enables direct deposits into the vault
+  /// @dev this can only be done if the funds from the user will be deposited directly into the underlying protocols. Hence, this is very gas intensive
+  /// @param _amount Amount to deposit in vaultCurrency
+  /// @return shares Amount of shares minted in LPtoken.decimals()
+  function deposit(uint256 _amount) public returns (uint256) {
+    require(_amount >= minimumDeposit, "Minimum deposit");
+
+    if (training) {
+      require(whitelist[msg.sender]);
+    }
+
+    uint256 balanceBefore = getVaultBalance();
+    vaultCurrency.safeTransferFrom(msg.sender, address(this), _amount);
+    uint256 balanceAfter = getVaultBalance();
+    uint256 amount = balanceAfter - balanceBefore;
+
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    uint256 totalUnderlying = 0;
+    for (uint i = 0; i < latestID; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
+
+      if (isBlacklisted) continue;
+
+      uint256 amountToProtocol = calcAmountToProtocol(amount, i);
+      totalUnderlying += balanceUnderlying(i);
+      depositInProtocol(i, amountToProtocol);
+    }
+
+    exchangeRate = calculateExchangeRate(totalUnderlying);
+
+    uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
+    _mint(msg.sender, shares);
+    return shares;
+  }
+
   /// @notice Enables a user to make a deposit into the Vault.
   /// @dev This function allows a user to deposit an amount greater than or equal to the minimum deposit,
   /// transfers the deposited amount from the user to the Vault, and records the deposit request.
   /// If the training mode is active, the function checks if the user is whitelisted and the deposit doesn't exceed the max training deposit.
-  /// @param _amount The amount that the user wants to deposit.
-  function deposit(uint256 _amount) external nonReentrant {
+  /// @param _amount The amount that the user wants to deposit in vaultCurrency.
+  function depositRequest(uint256 _amount) external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
 
     require(_amount >= minimumDeposit, "Minimum deposit");
@@ -558,21 +604,58 @@ contract Vault is ReentrancyGuard, VaultToken {
     delete user.depositRequestPeriod;
   }
 
+  /// @notice function that enables direct withdrawals from the vault
+  /// @dev this can only be done if the funds from the user will be withdrawed directly from the underlying protocols. Hence, this is very gas intensive
+  /// @param _amount Amount to withdraw in vaultCurrency
+  /// @return shares Amount of shares the user needs to supply in LPtoken decimals()
+  function withdraw(uint256 _amount) public returns (uint256) {
+    uint256 latestID = controller.latestProtocolId(vaultNumber);
+    uint256 totalUnderlying = 0;
+    uint256 vaultBalance = getVaultBalance();
+    uint256 amountFromProtocol;
+    uint256 totalWithdrawal;
+    for (uint i = 0; i < latestID; i++) {
+      bool isBlacklisted = controller.getProtocolBlacklist(vaultNumber, i);
+
+      if (isBlacklisted) continue;
+
+      totalUnderlying += balanceUnderlying(i);
+
+      if (vaultBalance < _amount) {
+        amountFromProtocol = calcAmountToProtocol(_amount - vaultBalance, i);
+        totalWithdrawal += withdrawFromProtocol(i, amountFromProtocol);
+      } else {
+        totalWithdrawal = _amount;
+      }
+    }
+
+    exchangeRate = calculateExchangeRate(totalUnderlying);
+
+    uint256 shares = (_amount * (10 ** decimals())) / exchangeRate;
+    uint256 balance = balanceOf(msg.sender);
+    shares = checkForBalance(shares, balance, decimals());
+    _burn(msg.sender, shares);
+
+    transferFunds(msg.sender, totalWithdrawal);
+    return shares;
+  }
+
   /// @notice Withdrawal request for when the vault doesnt have enough funds available
   /// @dev Will give the user allowance for his funds and pulls the extra funds at the next rebalance
-  /// @param _amount Amount to withdraw in LP token, in LPtoken.decimals()
-  /// @return value Amount received by seller in vaultCurrency, in vaultcurrency.decimals()
-  function withdrawalRequest(uint256 _amount) external nonReentrant returns (uint256 value) {
+  /// @param _amount Amount to withdraw in vaultCurrency
+  /// @return shares Amount of shares the user needs to supply in LPtoken decimals()
+  function withdrawalRequest(uint256 _amount) external nonReentrant returns (uint256 shares) {
     UserInfo storage user = userInfo[msg.sender];
     require(rebalancingPeriod != 0 && user.withdrawalRequestPeriod == 0, "Already a request");
 
-    value = (_amount * exchangeRate) / (10 ** decimals());
+    shares = (_amount * (10 ** decimals())) / exchangeRate;
+    uint256 balance = balanceOf(msg.sender);
+    shares = checkForBalance(shares, balance, decimals());
+    _burn(msg.sender, shares);
 
-    _burn(msg.sender, _amount);
-
-    user.withdrawalAllowance = value;
+    user.withdrawalAllowance = _amount;
     user.withdrawalRequestPeriod = rebalancingPeriod;
-    totalWithdrawalRequests += value;
+    totalWithdrawalRequests += _amount;
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
@@ -585,7 +668,6 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     value = user.withdrawalAllowance;
     value = IXProvider(xProvider).calculateEstimatedAmount(value);
-    value = checkForBalance(value);
 
     totalWithdrawalRequests -= user.withdrawalAllowance;
     delete user.withdrawalAllowance;
@@ -629,7 +711,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
 
     value = user.rewardAllowance;
-    value = checkForBalance(value);
     totalWithdrawalRequests -= user.rewardAllowance;
 
     delete user.rewardAllowance;
@@ -648,23 +729,29 @@ contract Vault is ReentrancyGuard, VaultToken {
         controller.getUniswapParams(),
         true
       );
-      IERC20(derbyToken).safeTransfer(msg.sender, tokensReceived);
+      IERC20Metadata(derbyToken).safeTransfer(msg.sender, tokensReceived);
     } else {
       vaultCurrency.safeTransfer(msg.sender, value);
     }
   }
 
-  /// @notice Sometimes when swapping stable coins the vault will get a fraction of a coin less then expected
+  /// @notice Sometimes the balance of a coin is a fraction less then expected due to rounding errors
   /// @notice This is to make sure the vault doesnt get stuck
-  /// @notice Value will be set to the vaultBalance
-  /// @notice When divergence is greater then maxDivergenceWithdraws it will revert
-  /// @param _value Value the user wants to withdraw
+  /// @notice Value will be set to the balance
+  /// @notice When divergence is greater then maxDivergence it will revert
+  /// @param _value Value the user wants
+  /// @param _balance Balance of the coin
+  /// @param _decimals Decimals of the coin and balance
   /// @return value Value - divergence
-  function checkForBalance(uint256 _value) internal view returns (uint256) {
-    if (_value > getVaultBalance()) {
+  function checkForBalance(
+    uint256 _value,
+    uint256 _balance,
+    uint256 _decimals
+  ) internal view returns (uint256) {
+    if (_value > _balance) {
       uint256 oldValue = _value;
-      _value = getVaultBalance();
-      require(oldValue - _value <= maxDivergenceWithdraws, "Max divergence");
+      _value = _balance;
+      require(oldValue - _value <= maxDivergence * (10 ** _decimals), "Max divergence");
     }
     return _value;
   }
@@ -771,7 +858,7 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @notice Setter for maximum divergence a user can get during a withdraw
   /// @param _maxDivergence New maximum divergence in vaultCurrency
   function setMaxDivergence(uint256 _maxDivergence) external onlyDao {
-    maxDivergenceWithdraws = _maxDivergence;
+    maxDivergence = _maxDivergence;
   }
 
   /*

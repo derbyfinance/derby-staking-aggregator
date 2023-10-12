@@ -203,7 +203,7 @@ describe('Testing full integration test', async () => {
   describe('Deposit funds in vaults', async function () {
     it('Deposit funds in vault 1 and 2 for all 3 vault users', async function () {
       for (const { user, vault, depositAmount } of vaultUsers) {
-        await vault.connect(user).deposit(depositAmount);
+        await vault.connect(user).depositRequest(depositAmount);
       }
 
       await vaults[0].vault.upRebalancingPeriodTEST();
@@ -464,12 +464,11 @@ describe('Testing full integration test', async () => {
       const expectedUserUSDCBalance = initialDeposit * exchangeRate;
 
       const userBalance = await vault.balanceOf(user.address);
-
       expect(userBalance).to.be.equal(parseUSDC(initialDeposit));
-      await expect(() => vault.connect(user).withdrawalRequest(userBalance)).to.changeTokenBalance(
+      await expect(() => vault.connect(user).withdrawalRequest(expectedUserUSDCBalance)).to.changeTokenBalance(
         vault,
         user,
-        parseUSDC(-initialDeposit),
+        parseUSDC(-expectedUserUSDCBalance / exchangeRate),
       );
       expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(
         expectedUserUSDCBalance,
@@ -482,8 +481,11 @@ describe('Testing full integration test', async () => {
       const expectedUserUSDCBalance = withdrawAmount * exchangeRate;
 
       await expect(() =>
-        vault.connect(user).withdrawalRequest(parseUSDC(withdrawAmount)),
-      ).to.changeTokenBalance(vault, user, parseUSDC(-withdrawAmount));
+        vault.connect(user).withdrawalRequest(expectedUserUSDCBalance)).to.changeTokenBalance(
+          vault,
+          user,
+          parseUSDC(-expectedUserUSDCBalance / exchangeRate),
+        );
 
       expect(await vault.connect(user).getWithdrawalAllowance()).to.be.equal(
         expectedUserUSDCBalance,

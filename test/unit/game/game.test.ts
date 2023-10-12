@@ -245,7 +245,7 @@ describe('Testing Game', async () => {
     ]);
 
     // Deposit so the vault has funds
-    await vault0.connect(user).deposit(parseUSDC('10000')); // 10k
+    await vault0.connect(user).depositRequest(parseUSDC('10000')); // 10k
 
     await Promise.all([vault0.upRebalancingPeriodTEST(), vault0.setTotalWithdrawalRequestsTEST(840_000)]);
     expect(await vault0.getTotalWithdrawalRequestsTEST()).to.be.equal(840_000);

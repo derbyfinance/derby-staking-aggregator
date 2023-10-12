@@ -10,7 +10,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
 
   it('Should set withdrawal request and withdraw the allowance later', async function () {
     const { vault, user } = await setupVault();
-    await vault.connect(user).deposit(parseUSDC(10_000)); // 10k
+    await vault.connect(user).depositRequest(parseUSDC(10_000)); // 10k
 
     // Rebalancing Period == 0, should not be able to withdraw
     await expect(vault.connect(user).withdrawalRequest(parseUSDC(100))).to.be.revertedWith(
@@ -28,13 +28,13 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await vault.upRebalancingPeriodTEST();
 
     // withdrawal request for more then LP token balance
-    await expect(vault.connect(user).withdrawalRequest(parseUSDC(10_001))).to.be.revertedWith(
-      'ERC20: burn amount exceeds balance',
+    await expect(vault.connect(user).withdrawalRequest(parseUSDC(9_001))).to.be.revertedWith(
+      'Max divergence',
     );
 
     // withdrawal request for 10k LP tokens
     await expect(() =>
-      vault.connect(user).withdrawalRequest(parseUSDC(10_000)),
+      vault.connect(user).withdrawalRequest(parseUSDC(9_000)),
     ).to.changeTokenBalance(vault, user, -parseUSDC(10_000));
 
     // check withdrawalAllowance user and totalsupply
@@ -65,7 +65,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
       await run('vault_set_governance_fee', { contract: contract, fee: 50 });
       await vault.upRebalancingPeriodTEST();
 
-      await vault.connect(user).deposit(parseUSDC(20_000));
+      await vault.connect(user).depositRequest(parseUSDC(20_000));
       await vault.upRebalancingPeriodTEST();
       await vault.connect(user).redeemDeposit();
 
