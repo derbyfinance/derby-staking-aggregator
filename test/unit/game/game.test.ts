@@ -15,7 +15,7 @@ import { ethers } from 'hardhat';
 
 const uniswapToken = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984';
 
-describe.only('Testing Game', async () => {
+describe('Testing Game', async () => {
   let vault0: VaultMock,
     vault1: VaultMock,
     vault2: VaultMock,
