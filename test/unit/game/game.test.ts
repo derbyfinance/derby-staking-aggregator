@@ -19,6 +19,7 @@ describe.only('Testing Game', async () => {
   let vault0: VaultMock,
     vault1: VaultMock,
     vault2: VaultMock,
+    vault3: VaultMock,
     derbyToken: DerbyToken,
     dao: Signer,
     guardian: Signer,
@@ -35,9 +36,10 @@ describe.only('Testing Game', async () => {
   before (async function () {
     const setup = await setupGame();
     game = setup.game;
-    vault0 = setup.vault3;
+    vault0 = setup.vault0;
     vault1 = setup.vault1;
     vault2 = setup.vault2;
+    vault3 = setup.vault3;
     derbyToken = setup.derbyToken;
     dao = setup.dao;
     guardian = setup.guardian;
@@ -148,6 +150,11 @@ describe.only('Testing Game', async () => {
       [100, 0, 100, 0, 0], // 200
       [0, 100, 0, 100, 300], // 500
     ];
+
+    console.log("vault0: ", vault0.address);
+    console.log("vault1: ", vault1.address);
+    console.log("vault2: ", vault2.address);
+    console.log("vault3: ", vault3.address);
 
     // blacklisting protocol, user should still be able to unlock the tokens
     await Promise.all([

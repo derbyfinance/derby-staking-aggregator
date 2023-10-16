@@ -56,7 +56,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
   run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderMain.address });
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
-  await transferAndApproveSTETH(vault3.address, user, 1_000 * 1e18);
+  await transferAndApproveSTETH(vault3.address, user, '1000000000000000000000');
   await transferAndApproveUSDC(vault1.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault2.address, user, 100_000_000 * 1e6);
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
@@ -67,9 +67,10 @@ export const setupGame = deployments.createFixture(async (hre) => {
   return {
     game,
     derbyToken,
-    vault3,
+    vault0,
     vault1,
     vault2,
+    vault3,
     dao,
     guardian,
     user,

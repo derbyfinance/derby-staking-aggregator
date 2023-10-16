@@ -12,6 +12,8 @@ import "./DerbyToken.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -395,6 +397,12 @@ contract Game is ERC721, ReentrancyGuard {
     uint256 currentRebalancingPeriod = IVault(vaults[chainId][vaultNum].vaultAddress)
       .rebalancingPeriod(); //TODO: rebalancingPeriod should be communicated differently
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
+    console.log("lastRebalancingPeriod", lastRebalancingPeriod);
+    console.log("currentRebalancingPeriod", currentRebalancingPeriod);
+    console.log("vault addr, current rebalancing period", vaults[chainId][vaultNum].vaultAddress);
+    console.log("vault addr, get rebalancing period", homeVault[vaultNum]);
+    uint256 rp = getRebalancingPeriod(vaultNum);
+    console.log("get rebalancing Period", rp);
     require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
 
     uint256 latestProtocol = vaults[chainId][vaultNum].latestProtocolId;

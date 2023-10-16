@@ -11,7 +11,7 @@ const provider = ethers.provider;
 const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
-const STETHWhale = '0xa980d4c0C2E48d305b582AA439a3575e3de06f0E';
+const STETHWhale = '0xE53FFF67f9f384d20Ebea36F43b93DC49Ed22753';
 
 export async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
   const usdcSigner = await getUSDCSigner();
@@ -29,7 +29,7 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   return { IUSDC };
 }
 
-export async function transferAndApproveSTETH(vault: string, user: Signer, amount: number) {
+export async function transferAndApproveSTETH(vault: string, user: Signer, amount: string) {
   const stethSigner = await getSTETHigner();
   const ISTETH = erc20(steth);
 
@@ -38,9 +38,12 @@ export async function transferAndApproveSTETH(vault: string, user: Signer, amoun
   if (balance > 0) {
     await ISTETH.connect(user).transfer(USDCWhale, balance);
   }
+  
+  const amountBN = BigNumber.from(amount);
 
-  await ISTETH.connect(stethSigner).transfer(user.getAddress(), amount);
-  await ISTETH.connect(user).approve(vault, amount);
+  const gasLimit = 100000; // set the gas limit to 100000 (adjust as needed)
+  await ISTETH.connect(stethSigner).transfer(user.getAddress(), amountBN, { gasLimit });
+  await ISTETH.connect(user).approve(vault, amountBN);
 
   return { ISTETH };
 }
