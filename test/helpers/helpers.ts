@@ -4,7 +4,7 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
-import { compoundUSDC, compToken, dai, steth, usdc, yearn, steth as yearnGov, yearnUSDC } from './addresses';
+import { compoundUSDC, compToken, dai, steth, usdc, yearn as yearnGov, yearnUSDC } from './addresses';
 
 const provider = ethers.provider;
 

@@ -41,24 +41,27 @@ export const setupGame = deployments.createFixture(async (hre) => {
 
   await run('game_init', {
     provider: xProviderMain.address,
-    homevault: vault3.address,
+    homevault: vault0.address,
     chainids,
   });
 
-  await run('vault_init', { contract: 'TestVault4' });
-  await run('vault_set_liquidity_perc', { contract: 'TestVault4', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault1' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault1', percentage: 10 });
   await run('vault_init', { contract: 'TestVault2' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault2', percentage: 10 });
   await run('vault_init', { contract: 'TestVault3' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault3', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault4' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault4', percentage: 10 });
   await run('controller_init');
   
-  run('vault_set_homexprovider', { contract: 'TestVault4', address: xProviderMain.address });
+  run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address });
 
   await derbyToken.transfer(userAddr, parseEther('2100'));
-  await transferAndApproveSTETH(vault3.address, user, '1000000000000000000000');
+  await transferAndApproveUSDC(vault0.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault1.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault2.address, user, 100_000_000 * 1e6);
+  await transferAndApproveSTETH(vault3.address, user, '1000000000000000000000');
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
   const basketId0 = await run('game_mint_basket', { chainid: chainids[0], vaultnumber: vaultNumber });
   const basketId1 = await run('game_mint_basket', { chainid: chainids[1], vaultnumber: vaultNumber });

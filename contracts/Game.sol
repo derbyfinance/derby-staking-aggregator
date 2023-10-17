@@ -485,7 +485,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     int256[] memory _rewards
   ) external onlyXProvider {
-    settleRewardsInt(_chainId, _vaultNumber, _rewards);
+    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 
   // basket should not be able to rebalance before this
@@ -495,12 +495,12 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of the vault
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function settleRewardsInt(
-    uint32 _chainId,
     uint256 _vaultNumber,
+    uint32 _chainId,
     int256[] memory _rewards
   ) internal {
-    uint256 rebalancingPeriod = vaults[_chainId][_vaultNumber].rebalancingPeriod;
     vaults[_chainId][_vaultNumber].rebalancingPeriod++;
+    uint256 rebalancingPeriod = vaults[_chainId][_vaultNumber].rebalancingPeriod;
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
         _chainId,
@@ -640,7 +640,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     int256[] memory _rewards
   ) external onlyGuardian {
-    settleRewardsInt(_chainId, _vaultNumber, _rewards);
+    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice setter for rewardsReceived

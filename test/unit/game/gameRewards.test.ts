@@ -7,7 +7,7 @@ describe('Testing Game Rewards', async () => {
   const chainIds: BigNumberish[] = [10, 100, 1000];
 
   it('Calculate rewards during rebalance Basket', async function () {
-    const { game, derbyToken, vault3, vault1, vault2, user, guardian, vaultNumber, basketId0, basketId1, basketId2 } = await setupGame();
+    const { game, derbyToken, vault0, vault1, vault2, vault3, user, guardian, vaultNumber, basketId0, basketId1, basketId2 } = await setupGame();
 
     let allocations = [
       [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
@@ -19,7 +19,7 @@ describe('Testing Game Rewards', async () => {
      Setup negative rewards
     */
     await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -39,7 +39,7 @@ describe('Testing Game Rewards', async () => {
 
     // This rebalance should be skipped for the basket
     await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -55,7 +55,7 @@ describe('Testing Game Rewards', async () => {
     ]);
 
     await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -71,7 +71,7 @@ describe('Testing Game Rewards', async () => {
     ]);
 
     await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -108,7 +108,7 @@ describe('Testing Game Rewards', async () => {
     ];
 
     await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -116,6 +116,12 @@ describe('Testing Game Rewards', async () => {
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[0], true),
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[1], true),
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[2], true),
+    ]);
+
+    await Promise.all([
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[0]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[1]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[2]),
     ]);
 
     // user should get allocation of 1k tokens back minus the negativeReward * 50%
@@ -129,12 +135,12 @@ describe('Testing Game Rewards', async () => {
     expect(rewards).to.be.equal(0);
 
     // Vault should receive the tokens off; negativeRewards * factor of 50%
-    const balance = await derbyToken.balanceOf(vault3.address);
+    const balance = await derbyToken.balanceOf(vault0.address);
     expect(balance).to.be.equal(expectedTokensToBurn);
   });
 
   it('Should settle negative rewards when negative reward are higher then unlocked tokens', async function () {
-    const { game, derbyToken, vault3, vault1, vault2, user, guardian, vaultNumber, basketId0, basketId1, basketId2 } = await setupGame();
+    const { game, derbyToken, vault0, vault1, vault2, user, guardian, vaultNumber, basketId0, basketId1, basketId2 } = await setupGame();
 
     let allocations = [
       [pE('200'), pE('0'), pE('0'), pE('200'), pE('0')], // 400
@@ -147,7 +153,7 @@ describe('Testing Game Rewards', async () => {
     */
 
      await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -166,7 +172,7 @@ describe('Testing Game Rewards', async () => {
 
     // This rebalance should be skipped for the basket
         await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -176,7 +182,7 @@ describe('Testing Game Rewards', async () => {
     ]);
 
         await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -186,7 +192,7 @@ describe('Testing Game Rewards', async () => {
     ]);
 
         await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
@@ -215,15 +221,21 @@ describe('Testing Game Rewards', async () => {
       [pE('-100'), 0, 0, 0, 0],
     ];
 
-        await Promise.all([
-      vault3.upRebalancingPeriodTEST(),
+    await Promise.all([
+      vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST()
     ]);
-        await Promise.all([
+    await Promise.all([
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[0], true),
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[1], true),
       game.connect(guardian).setRewardsReceivedTEST(vaultNumber, chainIds[2], true),
+    ]);
+
+    await Promise.all([
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[0]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[1]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[2]),
     ]);
     // user should 0 tokens back, cause they are all burned (higher negative rewards then unlockedTokens)
     await expect(() =>
@@ -237,7 +249,7 @@ describe('Testing Game Rewards', async () => {
     expect(rewards).to.be.equal(parseUSDC('-2000'));
 
     // Vault should receive all the unlocked tokens
-    const balance = await derbyToken.balanceOf(vault3.address);
+    const balance = await derbyToken.balanceOf(vault0.address);
     expect(balance).to.be.equal(pE('0'));
   });
 });

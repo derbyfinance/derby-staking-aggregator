@@ -151,11 +151,6 @@ describe('Testing Game', async () => {
       [0, 100, 0, 100, 300], // 500
     ];
 
-    console.log("vault0: ", vault0.address);
-    console.log("vault1: ", vault1.address);
-    console.log("vault2: ", vault2.address);
-    console.log("vault3: ", vault3.address);
-
     // blacklisting protocol, user should still be able to unlock the tokens
     await Promise.all([
       vault0.upRebalancingPeriodTEST(),
@@ -163,10 +158,18 @@ describe('Testing Game', async () => {
       vault2.upRebalancingPeriodTEST(),
     ]);
 
+
     for (let i = 0; i < chainIds.length; i++) {
       await game.connect(guardian).setRewardsReceived(chainIds[i], vaultNumber, true);
     }
     await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
+
+    await Promise.all([
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[0]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[1]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[2]),
+    ]);
+
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId0, allocationArray[0]),
     ).to.changeTokenBalance(derbyToken, user, 100);
