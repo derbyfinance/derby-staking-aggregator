@@ -501,6 +501,7 @@ contract Game is ERC721, ReentrancyGuard {
   ) internal {
     vaults[_chainId][_vaultNumber].rebalancingPeriod++;
     uint256 rebalancingPeriod = vaults[_chainId][_vaultNumber].rebalancingPeriod;
+
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
         _chainId,

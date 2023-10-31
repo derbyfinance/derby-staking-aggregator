@@ -48,18 +48,20 @@ export async function transferAndApproveSTETH(vault: string, user: Signer, amoun
   return { ISTETH };
 }
 
-export async function transferAndApproveDAI(vault: string, user: Signer, amount: number) {
+export async function transferAndApproveDAI(vault: string, user: Signer, amount: string) {
   const daiSigner = await getDAISigner();
   const IDAI = erc20(dai);
 
-  // resets balance for testing
   const balance = await IDAI.balanceOf(user.getAddress());
   if (balance > 0) {
     await IDAI.connect(user).transfer(DAIWhale, balance);
   }
 
-  await IDAI.connect(daiSigner).transfer(user.getAddress(), parseEther(amount));
-  await IDAI.connect(user).approve(vault, parseEther(amount));
+  const amountBN = BigNumber.from(amount);
+
+  const gasLimit = 100000; // set the gas limit to 100000 (adjust as needed)
+  await IDAI.connect(daiSigner).transfer(user.getAddress(), amountBN, { gasLimit });
+  await IDAI.connect(user).approve(vault, amountBN);
 
   return { IDAI };
 }

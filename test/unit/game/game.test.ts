@@ -30,8 +30,9 @@ describe('Testing Game', async () => {
     basketId0: BigNumberish,
     basketId1: BigNumberish,
     basketId2: BigNumberish,
+    basketId3: BigNumberish,
     vaultNumber: BigNumberish,
-    chainIds: BigNumberish[] = [10, 100, 1000];
+    chainIds: BigNumberish[] = [10, 100, 1000, 10000];
 
   before (async function () {
     const setup = await setupGame();
@@ -49,6 +50,7 @@ describe('Testing Game', async () => {
     basketId0 = setup.basketId0;
     basketId1 = setup.basketId1;
     basketId2 = setup.basketId2;
+    basketId3 = setup.basketId3;
   });
 
   it('DerbyToken should have name, symbol and totalSupply set', async function () {
@@ -70,8 +72,9 @@ describe('Testing Game', async () => {
       [100, 0, 0, 200, 0], // 300
       [100, 0, 200, 100, 200], // 600
       [0, 100, 200, 300, 400], // 1000
+      [0, 100, 200, 300, 400], // 1000
     ];
-    const totalAllocations = 1900;
+    const totalAllocations = 2900;
     await derbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
     await expect(game.connect(dao).rebalanceBasket(basketId0, allocationArray[0])).to.be.revertedWith(
       'Game: Not the owner of the basket',
@@ -96,6 +99,10 @@ describe('Testing Game', async () => {
       game.connect(user).rebalanceBasket(basketId2, allocationArray[2]),
     ).to.changeTokenBalance(derbyToken, user, -1000);
 
+    await  expect(() =>
+      game.connect(user).rebalanceBasket(basketId3, allocationArray[2]),
+    ).to.changeTokenBalance(derbyToken, user, -1000);
+
     expect(await game.connect(user).getDeltaAllocationsVault(chainIds[0], vaultNumber)).to.be.equal(
       300,
     );
@@ -103,6 +110,9 @@ describe('Testing Game', async () => {
       600,
     );
     expect(await game.connect(user).getDeltaAllocationsVault(chainIds[2], vaultNumber)).to.be.equal(
+      1000,
+    );
+    expect(await game.connect(user).getDeltaAllocationsVault(chainIds[3], vaultNumber)).to.be.equal(
       1000,
     );
     
@@ -113,6 +123,9 @@ describe('Testing Game', async () => {
       600,
     );
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId2)).to.be.equal(
+      1000,
+    );
+    expect(await game.connect(user).basketTotalAllocatedTokens(basketId3)).to.be.equal(
       1000,
     );
 
@@ -132,10 +145,16 @@ describe('Testing Game', async () => {
         return game.connect(user).basketAllocationInProtocol(basketId2, i);
       }),
     );
+    const chainId3 = await Promise.all(
+      allocationArray[3].map((reward, i) => {
+        return game.connect(user).basketAllocationInProtocol(basketId3, i);
+      }),
+    );
 
     expect(chainId0).to.deep.equal(allocationArray[0]);
     expect(chainId1).to.deep.equal(allocationArray[1]);
     expect(chainId2).to.deep.equal(allocationArray[2]);
+    expect(chainId3).to.deep.equal(allocationArray[3]);
   });
 
   it('Should Unlock tokens and read allocations in basket', async function () {
@@ -143,11 +162,13 @@ describe('Testing Game', async () => {
       [-100, 0, 0, 0, 0],
       [0, 0, -100, -100, -200],
       [0, 0, -200, -200, -100],
+      [0, 0, -200, -200, -100],
     ];
 
     const allocationTestArray = [
       [0, 0, 0, 200, 0], // 200
       [100, 0, 100, 0, 0], // 200
+      [0, 100, 0, 100, 300], // 500
       [0, 100, 0, 100, 300], // 500
     ];
 
@@ -156,6 +177,7 @@ describe('Testing Game', async () => {
       vault0.upRebalancingPeriodTEST(),
       vault1.upRebalancingPeriodTEST(),
       vault2.upRebalancingPeriodTEST(),
+      vault3.upRebalancingPeriodTEST(),
     ]);
 
 
@@ -164,10 +186,11 @@ describe('Testing Game', async () => {
     }
     await game.setRewardPerLockedTokenTEST(vaultNumber, chainIds[0], 0, 0, -1);
 
-    await Promise.all([
+    Promise.all([
       game.upRebalancingPeriodTEST(vaultNumber, chainIds[0]),
       game.upRebalancingPeriodTEST(vaultNumber, chainIds[1]),
       game.upRebalancingPeriodTEST(vaultNumber, chainIds[2]),
+      game.upRebalancingPeriodTEST(vaultNumber, chainIds[3]),
     ]);
 
     await expect(() =>
@@ -179,13 +202,18 @@ describe('Testing Game', async () => {
     await expect(() =>
       game.connect(user).rebalanceBasket(basketId2, allocationArray[2]),
     ).to.changeTokenBalance(derbyToken, user, 500);
+    await expect(() =>
+      game.connect(user).rebalanceBasket(basketId3, allocationArray[3]),
+    ).to.changeTokenBalance(derbyToken, user, 500);
 
     expect(await game.getDeltaAllocationsVault(chainIds[0], vaultNumber)).to.be.equal(200);
     expect(await game.getDeltaAllocationsVault(chainIds[1], vaultNumber)).to.be.equal(200);
     expect(await game.getDeltaAllocationsVault(chainIds[2], vaultNumber)).to.be.equal(500);
+    expect(await game.getDeltaAllocationsVault(chainIds[3], vaultNumber)).to.be.equal(500);
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId0)).to.be.equal(200);
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId1)).to.be.equal(200);
     expect(await game.connect(user).basketTotalAllocatedTokens(basketId2)).to.be.equal(500);
+    expect(await game.connect(user).basketTotalAllocatedTokens(basketId3)).to.be.equal(500);
 
     // looping through all of the allocationArray
     const chainId0 = await Promise.all(
@@ -203,14 +231,20 @@ describe('Testing Game', async () => {
         return game.connect(user).basketAllocationInProtocol(basketId2, i);
       }),
     );
+    const chainId3 = await Promise.all(
+      allocationArray[2].map((reward, i) => {
+        return game.connect(user).basketAllocationInProtocol(basketId3, i);
+      }),
+    );
 
     expect(chainId0).to.deep.equal(allocationTestArray[0]);
     expect(chainId1).to.deep.equal(allocationTestArray[1]);
     expect(chainId2).to.deep.equal(allocationTestArray[2]);
+    expect(chainId2).to.deep.equal(allocationTestArray[3]);
   });
 
   it('Calculate rewards during rebalance Basket', async function () {
-    await mockRewards(game, vault0, vault1, derbyToken, user, vaultNumber, basketId0, basketId1, chainIds);
+    await mockRewards(game, vault0, vault3, derbyToken, user, vaultNumber, basketId0, basketId3, chainIds);
 
     const newAllocations = [
       [0, 0, 0, 0, 0],
@@ -218,7 +252,7 @@ describe('Testing Game', async () => {
     ];
     await Promise.all([
       game.connect(user).rebalanceBasket(basketId0, newAllocations[0]),
-      game.connect(user).rebalanceBasket(basketId1, newAllocations[1]),
+      game.connect(user).rebalanceBasket(basketId3, newAllocations[1]),
     ]);
 
     // allocations in mockRewards function
@@ -233,9 +267,9 @@ describe('Testing Game', async () => {
     total = 2_120_000
     */
     const rewards0 = await game.connect(user).basketUnredeemedRewards(basketId0);
-    const rewards1 = await game.connect(user).basketUnredeemedRewards(basketId1);
+    const rewards3 = await game.connect(user).basketUnredeemedRewards(basketId3);
     expect(rewards0).to.be.equal(840_000); // rebalancing period not correct? CHECK
-    expect(rewards1).to.be.equal(1_280_000);
+    expect(rewards3).to.be.equal(1_280_000);
   });
 
   it('Should be able to redeem rewards / set rewardAllowance', async function () {
@@ -267,15 +301,14 @@ describe('Testing Game', async () => {
   });
 
   it('Mocking rewards again to test when swappingRewards is false', async function () {
-    await mockRewards(game, vault0, vault1, derbyToken, user, vaultNumber, basketId0, basketId1, chainIds);
-
+    await mockRewards(game, vault0, vault3, derbyToken, user, vaultNumber, basketId0, basketId3, chainIds);
     const newAllocations = [
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
     ];
     await game.connect(user).rebalanceBasket(basketId0, newAllocations[0]);
     await game.connect(user).redeemRewards(basketId0);
-    await game.connect(user).rebalanceBasket(basketId1, newAllocations[1]);
+    await game.connect(user).rebalanceBasket(basketId3, newAllocations[1]);
 
     // double the allocations
     expect(await vault0.getRewardAllowanceTEST(userAddr)).to.be.equal(1_680_000);
@@ -318,13 +351,13 @@ export async function mockRewards(
   ]);
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [1, 1, 1, 1, 1]),
-    game.mockRewards(vaultNum, chainIds[1], [1, 1, 1, 1, 1]),
+    game.mockRewards(vaultNum, chainIds[3], [1, 1, 1, 1, 1]),
   ]);
 
   await DerbyToken.connect(user).increaseAllowance(game.address, totalAllocations);
   await Promise.all([
-    await game.connect(user).rebalanceBasket(basketId0, allocations[0]),
-    await game.connect(user).rebalanceBasket(basketId1, allocations[1])
+    game.connect(user).rebalanceBasket(basketId0, allocations[0]),
+    game.connect(user).rebalanceBasket(basketId1, allocations[1])
   ]);
 
   // This rebalance should be skipped for the basket
@@ -335,7 +368,7 @@ export async function mockRewards(
   ]);
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
-    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
+    game.mockRewards(vaultNum, chainIds[3], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await Promise.all([
@@ -344,7 +377,7 @@ export async function mockRewards(
   ]);
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
-    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
+    game.mockRewards(vaultNum, chainIds[3], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 
   await Promise.all([
@@ -353,6 +386,6 @@ export async function mockRewards(
   ]);
   await Promise.all([
     game.mockRewards(vaultNum, chainIds[0], [pE(2_000), pE(1_000), pE(500), pE(100), 0]),
-    game.mockRewards(vaultNum, chainIds[1], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
+    game.mockRewards(vaultNum, chainIds[3], [pE(4_000), pE(2_000), pE(1_000), pE(200), pE(100)]),
   ]);
 }

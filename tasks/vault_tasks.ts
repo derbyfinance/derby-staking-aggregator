@@ -114,11 +114,11 @@ task('vault_blacklist_protocol', 'Blacklist a protolNumber')
 
 task('vault_set_margin_scale', 'Set the marginScale')
   .addParam('contract', 'Name of the contract')
-  .addParam('scale', 'New margin scale', null, types.int)
+  .addParam('scale', 'New margin scale', null, types.string)
   .setAction(async ({ contract, scale }, hre) => {
     const vault = await getVault(hre, contract);
     const guardian = await getGuardian(hre);
-    const scaleBN = BigNumber.from(scale.toString());
+    const scaleBN = BigNumber.from(scale);
     await vault.connect(guardian).setMarginScale(scaleBN);
   });
 

@@ -58,7 +58,7 @@
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10
@@ -76,7 +76,7 @@
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 100
@@ -94,7 +94,7 @@
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 1000
@@ -102,17 +102,17 @@
   },
   "TestVault4": {
     "deploy": {
-      "name": "DerbySTETH",
-      "symbol": "dfSTETH",
+      "name": "DerbyDAI",
+      "symbol": "dfDAI",
       "decimals": 6,
       "vaultNumber": 10,
-      "vaultCurrency": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+      "vaultCurrency": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      "minScale": 3
+      "minScale": 0
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e18,
+      "marginScale": "1000000000000000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10000

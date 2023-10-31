@@ -11,7 +11,7 @@
     "init": {
       "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 10,
       "performanceFee": 10,
       "chainIds": [
