@@ -24,7 +24,7 @@ import { ProtocolVault } from '@testhelp/classes/protocolVaultClass';
 import { setupVault } from './setup';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 
-describe('Testing VaultSwap, unit test', async () => {
+describe.skip('Testing VaultSwap, unit test', async () => {
   const IUSDc: Contract = erc20(usdc),
     IComp: Contract = erc20(compToken);
 

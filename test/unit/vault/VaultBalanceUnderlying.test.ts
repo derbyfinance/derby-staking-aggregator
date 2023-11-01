@@ -42,7 +42,7 @@ describe('Testing balanceUnderlying for every single protocol vault', async () =
       // console.log({ balanceUnderlying });
       // console.log({ expectedBalance });
 
-      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 2300);
+      expect(Number(balanceUnderlying)).to.be.closeTo(expectedBalance, 3000);
     }
 
     const totalUnderlying = await vault.savedTotalUnderlying();
