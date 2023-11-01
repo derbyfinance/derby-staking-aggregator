@@ -497,7 +497,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     return guardian;
   }
 
-  /// @notice Function to calculate the exchangeRate
+  /// @notice Function to calculate the exchangeRate (decimals = vaultCurrency decimals)
   /// @param totalUnderlying Total underlying in vaultCurrency
   /// @return price Exchange rate
   function calculateExchangeRate(uint256 totalUnderlying) public view returns (uint256) {
@@ -550,7 +550,6 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @param _amount The amount that the user wants to deposit in vaultCurrency.
   function depositRequest(uint256 _amount) external nonReentrant {
     UserInfo storage user = userInfo[msg.sender];
-
     require(_amount >= minimumDeposit, "Minimum deposit");
 
     if (training) {

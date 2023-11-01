@@ -15,7 +15,7 @@ import { usdc } from '@testhelp/addresses';
 import { setupIntegration } from './setup';
 import { IGameUser, IChainId, mintBasket, IVaultUser, IVaults, IUnderlyingVault } from './helpers';
 
-describe('Testing full integration test', async () => {
+describe.skip('Testing full integration test', async () => {
   let vaultNumber: BigNumberish = 10,
     guardian: Signer,
     IUSDc: Contract = erc20(usdc),

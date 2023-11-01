@@ -165,4 +165,4 @@ export const allDAIVaults = new Map<string, ProtocolVault>();
 
 allDAIVaults
   .set('compound_dai_01', compound_dai_01)
-  .set('yearn_dai_01', yearn_dai_01);
+  .set('yearn_dai_01', yearn_dai_01)

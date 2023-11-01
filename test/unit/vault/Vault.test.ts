@@ -7,14 +7,14 @@ import { setupVault } from './setup';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 
-describe.only('Testing Vault, unit test', async () => {
+describe('Testing Vault, unit test', async () => {
   const IDAI: Contract = erc20(dai),
     vaultNumber: number = 10;
 
   const compoundVault = protocols.get('compound_dai_01')!;
   const yearnVault = protocols.get('yearn_dai_01')!;
 
-  const amount = 100000;
+  const amount = 100_000;
   const amountDAI = parseEther(amount.toString());
 
   it('Should have a name and symbol', async function () {
