@@ -44,7 +44,7 @@ describe('Testing vault tasks', () => {
 
   it('vault_set_margin_scale', async function () {
     const { vault, contract, initSettings } = await setupVault();
-    const scale = random(100_000_000_000);
+    const scale = '100000000000';
 
     expect(await vault.marginScale()).to.be.equal(initSettings.marginScale);
     await run('vault_set_margin_scale', { contract, scale });

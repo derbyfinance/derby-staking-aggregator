@@ -11,12 +11,14 @@ export const testConnextChainIds = {
 export const usdc = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 export const dai = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 export const usdt = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+export const steth = '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84';
 
 /// Protocols
 // Yearn
 export const yearnUSDC = '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'; // 6
 export const yearnDAI = '0xdA816459F1AB5631232FE5e97a05BBBb94970c95'; // 18
 export const yearnUSDT = '0x3B27F92C0e212C671EA351827EDF93DB27cc0c65'; // 6
+
 // compound
 export const compoundUSDC = '0x39AA39c021dfbaE8faC545936693aC917d5E7563'; // 8
 export const compoundDAI = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'; // 8
@@ -28,6 +30,7 @@ export const truefiUSDT = '0x6002b1dcB26E7B1AA797A17551C6F487923299d7'; // 6
 export const idleUSDC = '0x5274891bEC421B39D23760c04A6755eCB444797C'; // 18
 export const idleDAI = '0x3fE7940616e5Bc47b0775a0dccf6237893353bB4'; // 18
 export const idleUSDT = '0xF34842d05A1c888Ca02769A633DF37177415C2f8'; // 18
+export const idleSTETH = '0x34dCd573C5dE4672C8248cd12A99f875Ca112Ad8'; // 18
 
 // Gov Tokens
 export const aave = '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9';
@@ -157,3 +160,9 @@ allProtocols
   .set('compound_usdc_01', compound_usdc_01)
   .set('truefi_usdc_01', truefi_usdc_01)
   .set('idle_usdc_01', idle_usdc_01);
+
+export const allDAIVaults = new Map<string, ProtocolVault>();
+
+allDAIVaults
+  .set('compound_dai_01', compound_dai_01)
+  .set('yearn_dai_01', yearn_dai_01)

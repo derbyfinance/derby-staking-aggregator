@@ -1,5 +1,5 @@
 import { deployments, run } from 'hardhat';
-import { parseEther, transferAndApproveUSDC } from '@testhelp/helpers';
+import { parseEther, transferAndApproveUSDC, transferAndApproveSTETH } from '@testhelp/helpers';
 import type { GameMock, VaultMock, DerbyToken } from '@typechain';
 
 import {
@@ -23,12 +23,12 @@ export const setupGame = deployments.createFixture(async (hre) => {
 
   const game = (await getContract('GameMock', hre)) as GameMock;
   const derbyToken = (await getContract('DerbyToken', hre)) as DerbyToken;
-  const [vault0, vault1, vault2] = await getTestVaults(hre);
+  const [vault0, vault1, vault2, vault3] = await getTestVaults(hre);
 
   const [dao, user, guardian] = await getAllSigners(hre);
   const userAddr = await user.getAddress();
   const vaultNumber = 10;
-  const chainids = [10, 100, 1000];
+  const chainids = [10, 100, 1000, 10000];
 
   const [xProviderMain, xProviderArbi, xProviderOpti, xProviderBnb] = await getAndInitXProviders(
     hre,
@@ -51,6 +51,8 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await run('vault_set_liquidity_perc', { contract: 'TestVault2', percentage: 10 });
   await run('vault_init', { contract: 'TestVault3' });
   await run('vault_set_liquidity_perc', { contract: 'TestVault3', percentage: 10 });
+  await run('vault_init', { contract: 'TestVault4' });
+  await run('vault_set_liquidity_perc', { contract: 'TestVault4', percentage: 10 });
   await run('controller_init');
   
   run('vault_set_homexprovider', { contract: 'TestVault1', address: xProviderMain.address });
@@ -59,10 +61,12 @@ export const setupGame = deployments.createFixture(async (hre) => {
   await transferAndApproveUSDC(vault0.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault1.address, user, 100_000_000 * 1e6);
   await transferAndApproveUSDC(vault2.address, user, 100_000_000 * 1e6);
+  await transferAndApproveSTETH(vault3.address, user, '1000000000000000000000'); // 1000 steth
   await setGameLatestProtocolIds(hre, { vaultNumber, latestId: 5, chainids: chainids });
   const basketId0 = await run('game_mint_basket', { chainid: chainids[0], vaultnumber: vaultNumber });
   const basketId1 = await run('game_mint_basket', { chainid: chainids[1], vaultnumber: vaultNumber });
   const basketId2 = await run('game_mint_basket', { chainid: chainids[2], vaultnumber: vaultNumber });
+  const basketId3 = await run('game_mint_basket', { chainid: chainids[3], vaultnumber: vaultNumber });
 
   return {
     game,
@@ -70,6 +74,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
     vault0,
     vault1,
     vault2,
+    vault3,
     dao,
     guardian,
     user,
@@ -77,6 +82,7 @@ export const setupGame = deployments.createFixture(async (hre) => {
     vaultNumber,
     basketId0,
     basketId1,
-    basketId2
+    basketId2,
+    basketId3,
   };
 });

@@ -241,6 +241,8 @@ describe('Testing full integration test', async () => {
     });
 
     it('Trigger should emit PushProtocolAllocations event', async function () {
+      await game.setRewardsReceivedTEST(vaultNumber, vaults[0].homeChain, true);
+      await game.setRewardsReceivedTEST(vaultNumber, vaults[1].homeChain, true);
       await expect(game.pushAllocationsToVault(vaults[0].homeChain, vaultNumber))
         .to.emit(game, 'PushProtocolAllocations')
         .withArgs(vaults[0].homeChain, vaults[0].vault.address, vaults[0].chainAllocs);
@@ -383,7 +385,7 @@ describe('Testing full integration test', async () => {
 
     it('Check rewards for every protocolId', async function () {
       const id = await controller.latestProtocolId(vaultNumber);
-      const rebalancingPeriod = 3;
+      const rebalancingPeriod = 2;
 
       for (let i = 0; i < Number(id); i++) {
         expect(

@@ -53,11 +53,12 @@
       "decimals": 6,
       "vaultNumber": 10,
       "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "minScale": 0
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10
@@ -70,11 +71,12 @@
       "decimals": 6,
       "vaultNumber": 10,
       "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "minScale": 0
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 100
@@ -87,11 +89,12 @@
       "decimals": 6,
       "vaultNumber": 10,
       "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "minScale": 0
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 1000
@@ -99,16 +102,17 @@
   },
   "TestVault4": {
     "deploy": {
-      "name": "DerbyUSDC",
-      "symbol": "dfUSDC",
+      "name": "DerbyDAI",
+      "symbol": "dfDAI",
       "decimals": 6,
       "vaultNumber": 10,
-      "vaultCurrency": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+      "vaultCurrency": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "nativeToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "minScale": 0
     },
     "init": {
       "rebalanceInterval": 1,
-      "marginScale": 1e9,
+      "marginScale": "1000000000000000000000",
       "liquidityPercentage": 0,
       "performanceFee": 10,
       "homeChain": 10000

@@ -1,6 +1,7 @@
 import { task, types } from 'hardhat/config';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { getInitConfigVault } from '@testhelp/deployHelpers';
+import { BigNumber } from 'ethers';
 
 task('vault_init', 'Initializes the vault')
   .addParam('contract', 'Name of the contract')
@@ -113,11 +114,12 @@ task('vault_blacklist_protocol', 'Blacklist a protolNumber')
 
 task('vault_set_margin_scale', 'Set the marginScale')
   .addParam('contract', 'Name of the contract')
-  .addParam('scale', 'New margin scale', null, types.int)
+  .addParam('scale', 'New margin scale', null, types.string)
   .setAction(async ({ contract, scale }, hre) => {
     const vault = await getVault(hre, contract);
     const guardian = await getGuardian(hre);
-    await vault.connect(guardian).setMarginScale(scale);
+    const scaleBN = BigNumber.from(scale);
+    await vault.connect(guardian).setMarginScale(scaleBN);
   });
 
 task(

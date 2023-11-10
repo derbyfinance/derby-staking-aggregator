@@ -101,23 +101,6 @@ describe('Testing game tasks', () => {
     expect(await game.xProvider()).to.be.equal(provider);
   });
 
-  it('game_set_home_vault', async function () {
-    const { game } = await setupGame();
-    const vaultnumber = 11;
-    const vault = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-
-    await run('game_set_home_vault', { vaultnumber, vault });
-    expect(await game.homeVault(vaultnumber)).to.be.equal(vault);
-  });
-
-  it('game_set_rebalance_interval', async function () {
-    const { game } = await setupGame();
-    const rebalanceInterval = random(100_000_000);
-
-    await run('game_set_rebalance_interval', { timestamp: rebalanceInterval });
-    expect(await game.rebalanceInterval()).to.be.equal(rebalanceInterval);
-  });
-
   it('game_set_dao', async function () {
     const { game } = await setupGame();
     const dao = '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7';

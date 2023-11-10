@@ -1,25 +1,25 @@
 import { expect } from 'chai';
 import { Contract } from 'ethers';
-import { erc20, formatUSDC, parseUSDC } from '@testhelp/helpers';
-import { usdc, starterProtocols as protocols } from '@testhelp/addresses';
+import { erc20, formatUSDC, parseUSDC, parseEther, formatEther } from '@testhelp/helpers';
+import { usdc, dai, allDAIVaults as protocols } from '@testhelp/addresses';
 import AllMockProviders from '@testhelp/classes/allMockProvidersClass';
 import { setupVault } from './setup';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 describe('Testing Vault, unit test', async () => {
-  const IUSDc: Contract = erc20(usdc),
+  const IDAI: Contract = erc20(dai),
     vaultNumber: number = 10;
 
-  const compoundVault = protocols.get('compound_usdc_01')!;
-  const yearnVault = protocols.get('yearn_usdc_01')!;
+  const compoundVault = protocols.get('compound_dai_01')!;
+  const yearnVault = protocols.get('yearn_dai_01')!;
 
   const amount = 100_000;
-  const amountUSDC = parseUSDC(amount.toString());
+  const amountDAI = parseEther(amount.toString());
 
   it('Should have a name and symbol', async function () {
     const { vault } = await setupVault();
-    const { name, symbol, decimals } = await getDeployConfigVault('TestVault1', 'hardhat');
+    const { name, symbol, decimals } = await getDeployConfigVault('TestVault4', 'hardhat');
     expect(await vault.name()).to.be.equal(name);
     expect(await vault.symbol()).to.be.equal(symbol);
     expect(await vault.decimals()).to.be.equal(decimals);
@@ -47,7 +47,7 @@ describe('Testing Vault, unit test', async () => {
       yearnVault.setExpectedBalance(30_000).setDeltaAllocation(vault, 20),
     ]);
 
-    await vault.connect(user).depositRequest(amountUSDC);
+    await vault.connect(user).depositRequest(amountDAI); 
     await vault.rebalance();
 
     // blacklist compound_usdc_01
@@ -57,13 +57,13 @@ describe('Testing Vault, unit test', async () => {
       .connect(guardian)
       .withdrawFromBlacklistedProtocol(compoundVault.number, 0, deadline);
 
-    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
+    let vaultBalance = formatEther(await IDAI.balanceOf(vault.address));
 
     let expectedVaultLiquidity = 70000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
-      expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1);
+      expect(formatEther(balance)).to.be.closeTo(protocol.expectedBalance, 1);
     }
 
     expect(await vault.getAllocationTEST(compoundVault.number)).to.be.equal(0);
@@ -99,17 +99,17 @@ describe('Testing Vault, unit test', async () => {
     ]);
 
     await vault.connect(guardian).blacklistProtocol(compoundVault.number);
-    await vault.connect(user).depositRequest(amountUSDC);
+    await vault.connect(user).depositRequest(amountDAI);
 
     await vault.rebalance();
 
-    let vaultBalance = formatUSDC(await IUSDc.balanceOf(vault.address));
+    let vaultBalance = formatEther(await IDAI.balanceOf(vault.address));
 
     let expectedVaultLiquidity = 70000;
 
     for (const protocol of protocols.values()) {
       const balance = await protocol.balanceUnderlying(vault);
-      expect(formatUSDC(balance)).to.be.closeTo(protocol.expectedBalance, 1);
+      expect(formatEther(balance)).to.be.closeTo(protocol.expectedBalance, 1);
     }
 
     expect(Number(vaultBalance)).to.be.closeTo(expectedVaultLiquidity, 1);
@@ -152,7 +152,7 @@ describe('Testing Vault, unit test', async () => {
       compoundVault.setDeltaAllocation(vault, 40),
       yearnVault.setDeltaAllocation(vault, 20),
     ]);
-    await vault.connect(user).depositRequest(amountUSDC);
+    await vault.connect(user).depositRequest(amountDAI);
     await vault.rebalance();
   });
 });

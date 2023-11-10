@@ -4,13 +4,14 @@ import erc20ABI from '../../abis/erc20.json';
 import cTokenABI from '../../abis/cToken.json';
 import { Controller } from '@typechain';
 import { Result } from 'ethers/lib/utils';
-import { compoundUSDC, compToken, dai, usdc, yearn as yearnGov, yearnUSDC } from './addresses';
+import { compoundUSDC, compToken, dai, steth, usdc, yearn as yearnGov, yearnUSDC } from './addresses';
 
 const provider = ethers.provider;
 
 const DAIWhale = '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8';
 const USDCWhale = '0x55FE002aefF02F77364de339a1292923A15844B8';
 const USDTWhale = '0x5754284f345afc66a98fbB0a0Afe71e0F007B949';
+const STETHWhale = '0xE53FFF67f9f384d20Ebea36F43b93DC49Ed22753';
 
 export async function transferAndApproveUSDC(vault: string, user: Signer, amount: number) {
   const usdcSigner = await getUSDCSigner();
@@ -28,18 +29,39 @@ export async function transferAndApproveUSDC(vault: string, user: Signer, amount
   return { IUSDC };
 }
 
-export async function transferAndApproveDAI(vault: string, user: Signer, amount: number) {
+export async function transferAndApproveSTETH(vault: string, user: Signer, amount: string) {
+  const stethSigner = await getSTETHigner();
+  const ISTETH = erc20(steth);
+
+  // resets balance for testing
+  const balance = await ISTETH.balanceOf(user.getAddress());
+  if (balance > 0) {
+    await ISTETH.connect(user).transfer(USDCWhale, balance);
+  }
+  
+  const amountBN = BigNumber.from(amount);
+
+  const gasLimit = 100000; // set the gas limit to 100000 (adjust as needed)
+  await ISTETH.connect(stethSigner).transfer(user.getAddress(), amountBN, { gasLimit });
+  await ISTETH.connect(user).approve(vault, amountBN);
+
+  return { ISTETH };
+}
+
+export async function transferAndApproveDAI(vault: string, user: Signer, amount: string) {
   const daiSigner = await getDAISigner();
   const IDAI = erc20(dai);
 
-  // resets balance for testing
   const balance = await IDAI.balanceOf(user.getAddress());
   if (balance > 0) {
     await IDAI.connect(user).transfer(DAIWhale, balance);
   }
 
-  await IDAI.connect(daiSigner).transfer(user.getAddress(), parseEther(amount));
-  await IDAI.connect(user).approve(vault, parseEther(amount));
+  const amountBN = BigNumber.from(amount);
+
+  const gasLimit = 100000; // set the gas limit to 100000 (adjust as needed)
+  await IDAI.connect(daiSigner).transfer(user.getAddress(), amountBN, { gasLimit });
+  await IDAI.connect(user).approve(vault, amountBN);
 
   return { IDAI };
 }
@@ -95,6 +117,14 @@ export const getUSDCSigner = async () => {
     params: [USDCWhale],
   });
   return ethers.provider.getSigner(USDCWhale);
+};
+
+export const getSTETHigner = async () => {
+  await network.provider.request({
+    method: 'hardhat_impersonateAccount',
+    params: [STETHWhale],
+  });
+  return ethers.provider.getSigner(STETHWhale);
 };
 
 export const getWhale = async (address: string) => {

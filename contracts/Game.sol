@@ -12,6 +12,8 @@ import "./DerbyToken.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IXProvider.sol";
 
+import "hardhat/console.sol";
+
 contract Game is ERC721, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
@@ -37,6 +39,7 @@ contract Game is ERC721, ReentrancyGuard {
     int256 deltaAllocationsVault;
     bool rewardsReceived;
     uint256 latestProtocolId;
+    uint256 rebalancingPeriod;
     // (protocolNumber => deltaAllocation)
     mapping(uint256 => int256) deltaAllocationProtocol;
     // (rebalancing period => protocol id => rewardPerLockedToken).
@@ -56,9 +59,6 @@ contract Game is ERC721, ReentrancyGuard {
   // latest basket id
   uint256 private latestBasketId;
 
-  // interval in Unix timeStamp
-  uint256 public rebalanceInterval; // SHOULD BE REPLACED FOR REALISTIC NUMBER
-
   // last rebalance timeStamp
   mapping(uint256 => uint256) public lastTimeStamp;
 
@@ -71,9 +71,6 @@ contract Game is ERC721, ReentrancyGuard {
 
   // used to scale rewards
   uint256 public BASE_SCALE = 1e18;
-
-  // vaultNumber => vaultAddress
-  mapping(uint256 => address) public homeVault;
 
   // baskets, maps tokenID from BasketToken NFT contract to the Basket struct in this contract.
   // (basketTokenId => basket struct):
@@ -214,7 +211,7 @@ contract Game is ERC721, ReentrancyGuard {
     int256 currentReward = getRewardsPerLockedToken(
       _chainId,
       _vaultNumber,
-      getRebalancingPeriod(_vaultNumber),
+      vaults[_chainId][_vaultNumber].rebalancingPeriod,
       _protocolId
     );
 
@@ -236,12 +233,10 @@ contract Game is ERC721, ReentrancyGuard {
 
   /// @notice Setter for rebalancing period of the basket, used to calculate the rewards
   /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract
-  /// @param _vaultNumber number of vault
-  function setBasketRebalancingPeriod(
-    uint256 _basketId,
-    uint256 _vaultNumber
-  ) internal onlyBasketOwner(_basketId) {
-    baskets[_basketId].lastRebalancingPeriod = getRebalancingPeriod(_vaultNumber) + 1;
+  function setBasketRebalancingPeriod(uint256 _basketId) internal onlyBasketOwner(_basketId) {
+    uint32 chainId = baskets[_basketId].chainId;
+    uint256 vaultNumber = baskets[_basketId].vaultNumber;
+    baskets[_basketId].lastRebalancingPeriod = vaults[chainId][vaultNumber].rebalancingPeriod + 1;
   }
 
   /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
@@ -274,7 +269,9 @@ contract Game is ERC721, ReentrancyGuard {
     // mint Basket with nrOfUnAllocatedTokens equal to _lockedTokenAmount
     baskets[latestBasketId].chainId = _chainId;
     baskets[latestBasketId].vaultNumber = _vaultNumber;
-    baskets[latestBasketId].lastRebalancingPeriod = getRebalancingPeriod(_vaultNumber) + 1;
+    baskets[latestBasketId].lastRebalancingPeriod =
+      vaults[_chainId][_vaultNumber].rebalancingPeriod +
+      1;
     _safeMint(msg.sender, latestBasketId);
     latestBasketId++;
 
@@ -320,6 +317,7 @@ contract Game is ERC721, ReentrancyGuard {
       return 0;
 
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
+    uint32 chainId = baskets[_basketId].chainId;
     uint256 unreedemedRewards = uint(-baskets[_basketId].totalUnRedeemedRewards);
     uint256 price = tokenPrice[vaultNumber];
 
@@ -330,7 +328,7 @@ contract Game is ERC721, ReentrancyGuard {
       (tokensToBurn * 100 * price) / negativeRewardFactor
     );
 
-    IERC20(derbyToken).safeTransfer(homeVault[vaultNumber], tokensToBurn);
+    IERC20(derbyToken).safeTransfer(vaults[chainId][vaultNumber].vaultAddress, tokensToBurn);
 
     return tokensToBurn;
   }
@@ -346,7 +344,7 @@ contract Game is ERC721, ReentrancyGuard {
   ) external onlyBasketOwner(_basketId) nonReentrant {
     uint32 chainId = baskets[_basketId].chainId;
     uint256 vaultNumber = baskets[_basketId].vaultNumber;
-    if (getRebalancingPeriod(vaultNumber) != 0) {
+    if (vaults[chainId][vaultNumber].rebalancingPeriod != 0) {
       require(vaults[chainId][vaultNumber].rewardsReceived, "Game: rewards not settled");
     }
 
@@ -355,7 +353,7 @@ contract Game is ERC721, ReentrancyGuard {
 
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
-    setBasketRebalancingPeriod(_basketId, vaultNumber);
+    setBasketRebalancingPeriod(_basketId);
   }
 
   /// @notice Internal helper to calculate and settle the delta allocations from baskets
@@ -392,8 +390,7 @@ contract Game is ERC721, ReentrancyGuard {
     if (baskets[_basketId].nrOfAllocatedTokens == 0) return;
     uint32 chainId = baskets[_basketId].chainId;
     uint256 vaultNum = baskets[_basketId].vaultNumber;
-    uint256 currentRebalancingPeriod = IVault(vaults[chainId][vaultNum].vaultAddress)
-      .rebalancingPeriod(); //TODO: rebalancingPeriod should be communicated differently
+    uint256 currentRebalancingPeriod = vaults[chainId][vaultNum].rebalancingPeriod;
     uint256 lastRebalancingPeriod = baskets[_basketId].lastRebalancingPeriod;
     require(currentRebalancingPeriod >= lastRebalancingPeriod, "Already rebalanced");
 
@@ -450,7 +447,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     uint256 _vaultNumber
   ) external payable notInSameBlock {
-    require(rebalanceNeeded(_vaultNumber), "No rebalance needed");
+    require(vaults[_chainId][_vaultNumber].rewardsReceived, "No rebalance needed");
     address vault = getVaultAddress(_vaultNumber, _chainId);
     require(vault != address(0), "Game: not a valid vaultnumber");
 
@@ -488,7 +485,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     int256[] memory _rewards
   ) external onlyXProvider {
-    settleRewardsInt(_chainId, _vaultNumber, _rewards);
+    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 
   // basket should not be able to rebalance before this
@@ -498,11 +495,13 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _vaultNumber Number of the vault
   /// @param _rewards Array with rewardsPerLockedToken of all protocols in vault => index matches protocolId
   function settleRewardsInt(
-    uint32 _chainId,
     uint256 _vaultNumber,
+    uint32 _chainId,
     int256[] memory _rewards
   ) internal {
-    uint256 rebalancingPeriod = getRebalancingPeriod(_vaultNumber);
+    vaults[_chainId][_vaultNumber].rebalancingPeriod++;
+    uint256 rebalancingPeriod = vaults[_chainId][_vaultNumber].rebalancingPeriod;
+
     for (uint256 i = 0; i < _rewards.length; i++) {
       int256 lastReward = getRewardsPerLockedToken(
         _chainId,
@@ -549,14 +548,6 @@ contract Game is ERC721, ReentrancyGuard {
     IXProvider(xProvider).pushRewardsToVault(chainId, vault, msg.sender, uint256(value));
   }
 
-  /// @notice Checks if a rebalance is needed based on the set interval
-  /// @param _vaultNumber The vault number to check for rebalancing
-  /// @return bool True if rebalance is needed, false if not
-  function rebalanceNeeded(uint256 _vaultNumber) public view returns (bool) {
-    return
-      (block.timestamp - lastTimeStamp[_vaultNumber]) > rebalanceInterval || msg.sender == guardian;
-  }
-
   /// @notice getter for vault address linked to a chainId
   function getVaultAddress(uint256 _vaultNumber, uint32 _chainId) internal view returns (address) {
     return vaults[_chainId][_vaultNumber].vaultAddress;
@@ -572,11 +563,6 @@ contract Game is ERC721, ReentrancyGuard {
     return guardian;
   }
 
-  /// @notice Getter for rebalancing period for a vault
-  function getRebalancingPeriod(uint256 _vaultNumber) public view returns (uint256) {
-    return IVault(homeVault[_vaultNumber]).rebalancingPeriod();
-  }
-
   /*
   Only Dao functions
   */
@@ -585,19 +571,6 @@ contract Game is ERC721, ReentrancyGuard {
   /// @param _xProvider new address of xProvider on this chain
   function setXProvider(address _xProvider) external onlyDao {
     xProvider = _xProvider;
-  }
-
-  /// @notice Setter for homeVault address
-  /// @param _vaultNumber The vault number to set the home vault for
-  /// @param _homeVault new address of homeVault on this chain
-  function setHomeVault(uint256 _vaultNumber, address _homeVault) external onlyDao {
-    homeVault[_vaultNumber] = _homeVault;
-  }
-
-  /// @notice Set minimum interval for the rebalance function
-  /// @param _timestampInternal UNIX timestamp
-  function setRebalanceInterval(uint256 _timestampInternal) external onlyDao {
-    rebalanceInterval = _timestampInternal;
   }
 
   /// @notice Setter for DAO address
@@ -668,7 +641,7 @@ contract Game is ERC721, ReentrancyGuard {
     uint32 _chainId,
     int256[] memory _rewards
   ) external onlyGuardian {
-    settleRewardsInt(_chainId, _vaultNumber, _rewards);
+    settleRewardsInt(_vaultNumber, _chainId, _rewards);
   }
 
   /// @notice setter for rewardsReceived

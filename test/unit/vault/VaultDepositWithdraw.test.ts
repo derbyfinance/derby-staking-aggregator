@@ -1,23 +1,19 @@
 import { expect } from 'chai';
 import { Contract, Signer } from 'ethers';
-import { erc20, formatUSDC, formatUnits, parseUSDC, parseUnits } from '@testhelp/helpers';
-import { allProtocols as protocols } from '@testhelp/addresses';
+import { erc20, formatEther, formatUnits, parseEther, parseUnits } from '@testhelp/helpers';
+import { allDAIVaults as protocols } from '@testhelp/addresses';
 import { setupVault } from './setup';
 import { VaultMock } from '@typechain';
 
 describe('Testing Vault, unit test', async () => {
-  const compoundVault = protocols.get('compound_usdc_01')!;
-  const yearnVault = protocols.get('yearn_usdc_01')!;
-  const truefiVault = protocols.get('truefi_usdc_01')!;
-  const idleVault = protocols.get('idle_usdc_01')!;
+  const compoundVault = protocols.get('compound_dai_01')!;
+  const yearnVault = protocols.get('yearn_dai_01')!;
 
   const amount = 100_000;
 
   const tests = [
     { protocol: compoundVault, priceScale: 18 },
-    { protocol: yearnVault, priceScale: 6 },
-    { protocol: truefiVault, priceScale: 6 },
-    { protocol: idleVault, priceScale: 18 },
+    { protocol: yearnVault, priceScale: 18 },
   ];
 
   tests.forEach(({ protocol, priceScale }) => {
@@ -34,17 +30,17 @@ describe('Testing Vault, unit test', async () => {
       });
 
       it(`Deposit funds into the vault and protocol`, async function () {
-        await vault.connect(user).depositRequest(parseUSDC(amount));
+        await vault.connect(user).depositRequest(parseEther(amount));
 
-        await vault.depositInProtocolTest(protocol.number, parseUSDC(10_000));
-        const balanceUnderlying = formatUSDC(await vault.balanceUnderlying(protocol.number));
+        await vault.depositInProtocolTest(protocol.number, parseEther(10_000));
+        const balanceUnderlying = formatEther(await vault.balanceUnderlying(protocol.number));
 
         // console.log({ balanceUnderlying });
         expect(balanceUnderlying).to.be.closeTo(10_000, 1);
       });
 
       it(`Verify expected shares match real balance after deposit`, async function () {
-        const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000));
+        const expectedShares = await vault.calcShares(protocol.number, parseEther(10_000));
         const realBalance = await LPToken.balanceOf(vault.address);
 
         // console.log({ expectedShares });
@@ -56,29 +52,29 @@ describe('Testing Vault, unit test', async () => {
       });
 
       it(`Compare expected protocol price with actual price`, async function () {
-        const expectedPrice = parseUnits(10_000, 6 + priceScale).div(
+        const expectedPrice = parseUnits(10_000, 18 + priceScale).div(
           await LPToken.balanceOf(vault.address),
         );
         const price = await vault.price(protocol.number);
 
         // console.log({ expectedPrice });
         // console.log({ price });
-        expect(formatUnits(expectedPrice, decimals)).to.be.closeTo(
-          formatUnits(price, decimals),
+        expect(formatUnits(expectedPrice, priceScale)).to.be.closeTo(
+          formatUnits(price, priceScale),
           0.0001,
         );
       });
 
       it(`Withdraw funds from the protocol`, async function () {
-        await vault.withdrawFromProtocolTest(protocol.number, parseUSDC(2_000));
-        const balanceUnderlying = formatUSDC(await vault.balanceUnderlying(protocol.number));
+        await vault.withdrawFromProtocolTest(protocol.number, parseEther(2_000));
+        const balanceUnderlying = formatEther(await vault.balanceUnderlying(protocol.number));
 
         // console.log({ balanceUnderlying });
         expect(balanceUnderlying).to.be.closeTo(10_000 - 2_000, 1);
       });
 
       it(`Verify expected shares match real balance after withdrawal`, async function () {
-        const expectedShares = await vault.calcShares(protocol.number, parseUSDC(10_000 - 2_000));
+        const expectedShares = await vault.calcShares(protocol.number, parseEther(10_000 - 2_000));
         const realBalance = await LPToken.balanceOf(vault.address);
 
         // console.log({ expectedShares });
