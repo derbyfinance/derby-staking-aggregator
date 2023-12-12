@@ -29,7 +29,15 @@ contract Controller is IController {
   // LPtoken => bool: already added protocols
   mapping(address => bool) private addedProtocols;
 
-  event SetProtocolNumber(uint256 protocolNumber, address protocol);
+  event AddProtocol(
+    string name,
+    uint256 vaultNumber,
+    address provider,
+    address protocolLPToken,
+    address underlying,
+    address govToken,
+    uint256 protocolNumber
+  );
 
   constructor(address _dao) {
     dao = _dao;
@@ -150,7 +158,15 @@ contract Controller is IController {
     );
 
     addedProtocols[_protocolLPToken] = true;
-    emit SetProtocolNumber(protocolNumber, _protocolLPToken);
+    emit AddProtocol(
+      _name,
+      _vaultNumber,
+      _provider,
+      _protocolLPToken,
+      _underlying,
+      _govToken,
+      protocolNumber
+    );
 
     latestProtocolId[_vaultNumber]++;
 

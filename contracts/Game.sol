@@ -81,7 +81,15 @@ contract Game is ERC721, ReentrancyGuard {
 
   event PushProtocolAllocations(uint32 chain, address vault, int256[] deltas);
 
-  event BasketId(address owner, uint256 basketId);
+  event BasketId(address owner, uint256 basketId, uint256 vaultNumber);
+
+  event RebalanceBasket(
+    uint256 basketId,
+    uint256 rebalancingPeriod,
+    int256 unredeemedRewards,
+    int256 redeemedRewards,
+    int256[] deltaAllocations
+  );
 
   modifier onlyDao() {
     require(msg.sender == dao, "Game: only DAO");
@@ -239,24 +247,6 @@ contract Game is ERC721, ReentrancyGuard {
     baskets[_basketId].lastRebalancingPeriod = vaults[chainId][vaultNumber].rebalancingPeriod + 1;
   }
 
-  /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
-  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-  /// @return int256 Total unredeemed rewards. (in vaultCurrency.decimals())
-  function basketUnredeemedRewards(
-    uint256 _basketId
-  ) external view onlyBasketOwner(_basketId) returns (int256) {
-    return baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
-  }
-
-  /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this.
-  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
-  /// @return int256 Total redeemed rewards.
-  function basketRedeemedRewards(
-    uint256 _basketId
-  ) external view onlyBasketOwner(_basketId) returns (int) {
-    return baskets[_basketId].totalRedeemedRewards;
-  }
-
   /// @notice Mints a new NFT with a Basket of allocations.
   /// @dev The basket NFT is minted for a specific vault, starts with a zero allocation and the tokens are not locked here.
   /// @param _chainId Chain ID of the vault.
@@ -275,7 +265,7 @@ contract Game is ERC721, ReentrancyGuard {
     _safeMint(msg.sender, latestBasketId);
     latestBasketId++;
 
-    emit BasketId(msg.sender, latestBasketId - 1);
+    emit BasketId(msg.sender, latestBasketId - 1, _vaultNumber);
     return latestBasketId - 1;
   }
 
@@ -354,6 +344,14 @@ contract Game is ERC721, ReentrancyGuard {
     lockOrUnlockTokens(_basketId, totalDelta);
     setBasketTotalAllocatedTokens(_basketId, totalDelta);
     setBasketRebalancingPeriod(_basketId);
+
+    emit RebalanceBasket(
+      _basketId,
+      getRebalancingPeriod(vaultNumber, chainId),
+      getBasketUnredeemedRewards(_basketId),
+      getBasketRedeemedRewards(_basketId),
+      _deltaAllocations
+    );
   }
 
   /// @notice Internal helper to calculate and settle the delta allocations from baskets
@@ -561,6 +559,31 @@ contract Game is ERC721, ReentrancyGuard {
   /// @notice Getter for guardian address
   function getGuardian() public view returns (address) {
     return guardian;
+  }
+
+  /// @notice Getter for the vault rebalancing period
+  /// @param _vaultNumber Number of the vault
+  /// @param _chainId Number of chain used
+  /// @return rebalancingPeriod Number of the rebalancing period
+  function getRebalancingPeriod(
+    uint256 _vaultNumber,
+    uint32 _chainId
+  ) public view returns (uint256) {
+    return vaults[_chainId][_vaultNumber].rebalancingPeriod;
+  }
+
+  /// @notice function to see the total unredeemed rewards the basket has built up. Only the owner of the basket can view this.
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+  /// @return int256 Total unredeemed rewards. (in vaultCurrency.decimals())
+  function getBasketUnredeemedRewards(uint256 _basketId) public view returns (int256) {
+    return baskets[_basketId].totalUnRedeemedRewards / int(BASE_SCALE);
+  }
+
+  /// @notice function to see the total reeemed rewards from the basket. Only the owner of the basket can view this.
+  /// @param _basketId Basket ID (tokenID) in the BasketToken (NFT) contract.
+  /// @return int256 Total redeemed rewards.
+  function getBasketRedeemedRewards(uint256 _basketId) public view returns (int) {
+    return baskets[_basketId].totalRedeemedRewards;
   }
 
   /*
