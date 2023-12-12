@@ -124,7 +124,13 @@ contract Vault is ReentrancyGuard, VaultToken {
     _;
   }
 
-  event PushedRewardsToGame(uint256 _vaultNumber, uint32 _chain, int256[] _rewards);
+  event DepositInProtocol(uint256 protocolNum, uint256 amount);
+  event WithdrawFromProtocol(uint256 protocolNum, uint256 amount);
+  event LastPrices(uint256 protocolNum, uint256 rebalancingPeriod, uint256 price);
+  event PushedRewardsToGame(uint256 vaultNumber, uint32 chain, int256[] rewards);
+  event Deposit(address user, uint256 amount, uint256 shares);
+  event Withdraw(address user, uint256 amount, uint256 value);
+  event Rebalance(uint256 vaultNumber, uint256 rebalancingPeriod);
 
   constructor(
     string memory _name,
@@ -184,6 +190,7 @@ contract Vault is ReentrancyGuard, VaultToken {
       exchangeRate = includePerformanceFee(exchangeRate, oldExchangeRate);
 
     lastTimeStamp = block.timestamp;
+    emit Rebalance(vaultNumber, rebalancingPeriod);
   }
 
   /// @notice Function to include the performanceFee in the exchangeRate
@@ -309,6 +316,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     }
 
     lastPrices[_protocolId] = currentPrice;
+    emit LastPrices(_protocolId, rebalancingPeriod, currentPrice);
   }
 
   /// @notice Creates array out of the rewardsPerLockedToken mapping to send to the game
@@ -358,6 +366,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     IERC20Metadata(protocol.underlying).safeIncreaseAllowance(protocol.provider, _amount);
     IProvider(protocol.provider).deposit(_amount, protocol.LPToken, protocol.underlying);
+    emit DepositInProtocol(_protocolNum, _amount);
   }
 
   /// @notice Withdraw amount from underlying protocol
@@ -387,6 +396,7 @@ contract Vault is ReentrancyGuard, VaultToken {
       protocol.LPToken,
       protocol.underlying
     );
+    emit WithdrawFromProtocol(_protocolNum, amountReceived);
   }
 
   /// @notice Set total balance in VaultCurrency in all underlying protocols
@@ -540,6 +550,7 @@ contract Vault is ReentrancyGuard, VaultToken {
 
     uint256 shares = (amount * (10 ** decimals())) / exchangeRate;
     _mint(msg.sender, shares);
+    emit Deposit(msg.sender, amount, shares);
     return shares;
   }
 
@@ -635,6 +646,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     _burn(msg.sender, shares);
 
     transferFunds(msg.sender, totalWithdrawal);
+    emit Withdraw(msg.sender, totalWithdrawal, shares);
     return shares;
   }
 
