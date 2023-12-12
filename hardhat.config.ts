@@ -29,15 +29,9 @@ const config: HardhatUserConfig = {
     },
   },
   namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-    dao: {
-      default: 1,
-    },
-    guardian: {
-      default: 2,
-    },
+    deployer: '0x1Ca7b496Ac4E609cf400793Db67916AC91773927',
+    dao: '0x1Ca7b496Ac4E609cf400793Db67916AC91773927',
+    guardian: '0x1Ca7b496Ac4E609cf400793Db67916AC91773927',
     user: {
       default: 3,
     },
@@ -64,20 +58,16 @@ const config: HardhatUserConfig = {
       saveDeployments: true,
       tags: ['local'],
     },
-    ropsten: {
-      url: process.env.ROPSTEN_URL ?? '',
-      accounts: pkeys,
-    },
-    rinkeby: {
-      url: process.env.RINKEBY_URL ?? '',
-      accounts: pkeys,
-    },
     goerli: {
       url: process.env.GOERLI_URL ?? '',
       accounts: pkeys,
     },
     bsc: {
       url: process.env.BSC_TESTNET_URL ?? '',
+      accounts: pkeys,
+    },
+    mumbai: {
+      url: process.env.MUMBAI_URL ?? '',
       accounts: pkeys,
     },
     hardhat: {

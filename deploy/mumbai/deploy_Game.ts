@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
-import { getDeployConfigXProvider } from '@testhelp/deployHelpers';
+import { getDeployConfigGame } from '@testhelp/deployHelpers';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
@@ -10,19 +10,20 @@ const func: DeployFunction = async function ({
   const { deploy } = deployments;
   const { deployer, dao, guardian } = await getNamedAccounts();
 
-  const deployConfig = await getDeployConfigXProvider(network.name);
+  const deployConfig = await getDeployConfigGame(network.name);
   if (!deployConfig) throw 'Unknown contract name';
-  const { connextHandler, mainnet } = deployConfig;
 
-  const game = await deployments.get('GameMock');
+  const { nftName, nftSymbol } = deployConfig;
 
-  await deploy('XProvider', {
+  const derbyToken = await deployments.get('DerbyToken');
+
+  await deploy('Game', {
     from: deployer,
-    args: [connextHandler, dao, guardian, game.address, mainnet],
+    args: [nftName, nftSymbol, derbyToken.address, dao, guardian],
     log: true,
     autoMine: true,
   });
 };
 export default func;
-func.tags = ['XProvider'];
-func.dependencies = ['GameMock'];
+func.tags = ['Game'];
+func.dependencies = ['DerbyToken'];

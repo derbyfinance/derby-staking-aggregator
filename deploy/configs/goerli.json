@@ -1,4 +1,9 @@
-{
+{  
+  "DerbyToken": {
+    "name": "Derby Finance",
+    "symbol": "DRB",
+    "totalSupply": 1000000
+  },
   "DerbyGoerliUSDC": {
     "deploy": {
       "name": "DerbyUSDC",

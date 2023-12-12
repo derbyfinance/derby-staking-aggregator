@@ -1,0 +1,30 @@
+{ 
+    "DerbyToken": {
+      "name": "Derby Finance",
+      "symbol": "DRB",
+      "totalSupply": 1000000
+    },
+    "Game": {
+        "deploy": {
+          "nftName": "DerbyNFT",
+          "nftSymbol": "DRBNFT"
+        },
+        "init": {
+          "negativeRewardFactor": 50,
+          "negativeRewardThreshold": -50000,
+          "tokenPrice": 200000
+        }
+    },
+    "XProvider": {
+        "deploy": {
+          "layerZeroEndpoint": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "connextHandler": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "mainnet": 10,
+          "arbitrum": 100,
+          "optimism": 1000,
+          "bnb": 10000
+        },
+        "init": {}
+      }
+
+}
