@@ -594,6 +594,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     deleteDepositRequest(user);
 
     _mint(msg.sender, shares);
+    emit Deposit(msg.sender, depositRequest, shares);
   }
 
   /// @notice Cancel the deposit request for the caller.
@@ -666,6 +667,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     user.withdrawalAllowance = _amount;
     user.withdrawalRequestPeriod = rebalancingPeriod;
     totalWithdrawalRequests += _amount;
+    emit Withdraw(msg.sender, _amount, shares);
   }
 
   /// @notice Withdraw the allowance the user requested on the last rebalancing period
