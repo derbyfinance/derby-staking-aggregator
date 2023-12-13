@@ -14,15 +14,14 @@ const func: DeployFunction = async function ({
   if (!deployConfig) throw 'Unknown contract name';
   const { connextHandler, mainnet } = deployConfig;
 
-  const game = await deployments.get('Game');
+  const game = "0x0000000000000000000000000000000000000000";
 
   await deploy('XProvider', {
     from: deployer,
-    args: [connextHandler, dao, guardian, game.address, mainnet],
+    args: [connextHandler, dao, guardian, game, mainnet],
     log: true,
     autoMine: true,
   });
 };
 export default func;
 func.tags = ['XProvider'];
-func.dependencies = ['Game'];
