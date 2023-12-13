@@ -119,11 +119,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     _;
   }
 
-  modifier onlyGame() {
-    require(msg.sender == game, "only game");
-    _;
-  }
-
   event DepositInProtocol(uint256 protocolNum, uint256 amount);
   event WithdrawFromProtocol(uint256 protocolNum, uint256 amount);
   event LastPrices(uint256 protocolNum, uint256 rebalancingPeriod, uint256 price);
@@ -138,7 +133,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     uint8 _decimals,
     uint256 _vaultNumber,
     address _dao,
-    address _game,
     address _controller,
     address _vaultCurrency,
     address _nativeToken,
@@ -153,7 +147,6 @@ contract Vault is ReentrancyGuard, VaultToken {
     nativeToken = _nativeToken;
 
     exchangeRate = 10 ** vaultCurrency.decimals();
-    game = _game;
     governanceFee = 0;
     minScale = _minScale;
     minimumDeposit = 100 * 10 ** (vaultCurrency.decimals() - minScale);
@@ -833,12 +826,6 @@ contract Vault is ReentrancyGuard, VaultToken {
   /// @param _token New address of the derby token
   function setDaoToken(address _token) external onlyDao {
     derbyToken = _token;
-  }
-
-  /// @notice Setter for new game address
-  /// @param _game New address of the game
-  function setGame(address _game) external onlyDao {
-    game = _game;
   }
 
   /// @notice Setter for maximum divergence a user can get during a withdraw

@@ -165,15 +165,6 @@ task('vault_set_dao_token', 'Setter for derby token address')
     await vault.connect(dao).setDaoToken(address);
   });
 
-task('vault_set_game', 'Setter for game address')
-  .addParam('contract', 'Name of the contract')
-  .addParam('address', 'New game address')
-  .setAction(async ({ contract, address }, hre) => {
-    const vault = await getVault(hre, contract);
-    const dao = await getDao(hre);
-    await vault.connect(dao).setGame(address);
-  });
-
 task('vault_set_dao', 'Setter for dao address')
   .addParam('contract', 'Name of the contract')
   .addParam('address', 'New dao address')
