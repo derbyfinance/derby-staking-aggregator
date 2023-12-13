@@ -5,8 +5,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 task('game_init', 'Initializes the game')
   .addParam('provider', 'Address of the provider')
-  .addParam('homevault', 'Address of the home vault')
-  .setAction(async ({ provider, homevault }, { run, network }) => {
+  .setAction(async ({ provider }, { run, network }) => {
     const initConfig = await getInitConfigGame(network.name);
     if (!initConfig) throw 'Unknown contract name';
 
