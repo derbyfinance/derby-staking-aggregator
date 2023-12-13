@@ -29,7 +29,22 @@ contract Controller is IController {
   // LPtoken => bool: already added protocols
   mapping(address => bool) private addedProtocols;
 
-  event SetProtocolNumber(uint256 protocolNumber, address protocol);
+  event AddVault(
+    uint256 vaultNumber,
+    string vaultName,
+    uint256 chainId,
+    string category,
+    string coin
+  );
+  event AddProtocol(
+    string name,
+    uint256 vaultNumber,
+    address provider,
+    address protocolLPToken,
+    address underlying,
+    address govToken,
+    uint256 protocolNumber
+  );
 
   constructor(address _dao) {
     dao = _dao;
@@ -150,11 +165,33 @@ contract Controller is IController {
     );
 
     addedProtocols[_protocolLPToken] = true;
-    emit SetProtocolNumber(protocolNumber, _protocolLPToken);
+    emit AddProtocol(
+      _name,
+      _vaultNumber,
+      _provider,
+      _protocolLPToken,
+      _underlying,
+      _govToken,
+      protocolNumber
+    );
 
     latestProtocolId[_vaultNumber]++;
 
     return protocolNumber;
+  }
+
+  /// @notice Add vault to Controller
+  /// @param _vault Vault address to whitelist
+  function addVault(
+    address _vault,
+    string memory name,
+    string memory category,
+    string memory coin
+  ) external onlyDao {
+    vaultWhitelist[_vault] = true;
+
+    // emit AddVault(IVault(_vault).vaultNumber(), IVault(_vault).name(), category);
+    emit AddVault(10, name, block.chainid, category, coin);
   }
 
   /// @notice Sets the protocol information for a specific vault and protocol number in case something goes wrong.

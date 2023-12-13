@@ -99,7 +99,7 @@ describe('Testing Game Rewards', async () => {
     await game.connect(user).rebalanceBasket(basketId3, emptyAllocations[0]);
 
     // simulating negative rewards
-    let rewards = await game.connect(user).basketUnredeemedRewards(basketId3);
+    let rewards = await game.connect(user).getBasketUnredeemedRewards(basketId3);
     // console.log({ rewards });
     expect(rewards).to.be.equal(-760_000);
 
@@ -139,7 +139,7 @@ describe('Testing Game Rewards', async () => {
     ).to.changeTokenBalance(derbyToken, user, pE('400').sub(expectedTokensToBurn));
 
     // unredeemedRewards should be 0
-    rewards = await game.connect(user).basketUnredeemedRewards(basketId3);
+    rewards = await game.connect(user).getBasketUnredeemedRewards(basketId3);
     expect(rewards).to.be.equal(0);
 
     // Vault should receive the tokens off; negativeRewards * factor of 50%
@@ -221,7 +221,7 @@ describe('Testing Game Rewards', async () => {
     await game.connect(user).rebalanceBasket(basketId3, emptyAllocations[0]);
 
     // simulating negative rewards
-    let rewards = await game.connect(user).basketUnredeemedRewards(basketId3);
+    let rewards = await game.connect(user).getBasketUnredeemedRewards(basketId3);
     // console.log({ rewards });
     expect(rewards).to.be.equal(parseUSDC('-2000'));
 
@@ -260,7 +260,7 @@ describe('Testing Game Rewards', async () => {
 
     // unredeemedRewards should be -3000 + (100 / 0,5 / 0.2)
     // 100 tokens unlocked / burned at factor of 0,5 with price of 0.2
-    rewards = await game.connect(user).basketUnredeemedRewards(basketId3);
+    rewards = await game.connect(user).getBasketUnredeemedRewards(basketId3);
     // console.log({ rewards });
     expect(rewards).to.be.equal(parseUSDC('-2000'));
 

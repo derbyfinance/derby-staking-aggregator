@@ -266,8 +266,8 @@ describe('Testing Game', async () => {
     200 * 200 = 40_000
     total = 2_120_000
     */
-    const rewards0 = await game.connect(user).basketUnredeemedRewards(basketId0);
-    const rewards3 = await game.connect(user).basketUnredeemedRewards(basketId3);
+    const rewards0 = await game.connect(user).getBasketUnredeemedRewards(basketId0);
+    const rewards3 = await game.connect(user).getBasketUnredeemedRewards(basketId3);
     expect(rewards0).to.be.equal(840_000); // rebalancing period not correct? CHECK
     expect(rewards3).to.be.equal(1_280_000);
   });

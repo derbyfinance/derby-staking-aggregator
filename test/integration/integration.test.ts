@@ -429,7 +429,7 @@ describe('Testing full integration test', async () => {
       expect(await game.getRewardsReceivedTEST(vaultNumber, chains[0].id)).to.be.equal(true);
       expect(await game.getRewardsReceivedTEST(vaultNumber, chains[1].id)).to.be.equal(true);
       await game.connect(user).rebalanceBasket(basketId, allocations);
-      expect(await game.connect(user).basketUnredeemedRewards(basketId)).to.be.equal(
+      expect(await game.connect(user).getBasketUnredeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
       );
     });
@@ -438,7 +438,7 @@ describe('Testing full integration test', async () => {
       const { user, basketId } = gameUsers[0];
       await game.connect(user).redeemRewards(basketId);
 
-      expect(await game.connect(user).basketRedeemedRewards(basketId)).to.be.equal(
+      expect(await game.connect(user).getBasketRedeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
       );
       expect(await vaults[0].vault.getRewardAllowanceTEST(user.address)).to.be.equal(
@@ -649,7 +649,7 @@ describe('Testing full integration test', async () => {
 
       expect(balanceAfter - balanceBefore).to.be.closeTo(totalExpectedRewards / 1e6, 5);
 
-      expect(await game.connect(user).basketRedeemedRewards(basketId)).to.be.equal(
+      expect(await game.connect(user).getBasketRedeemedRewards(basketId)).to.be.equal(
         totalExpectedRewards,
       );
       expect(await vault.getRewardAllowanceTEST(user.address)).to.be.equal(0);
