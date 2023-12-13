@@ -6,7 +6,7 @@ import "../VaultToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract Vault is VaultToken {
+contract FrontendVault is VaultToken {
   using SafeERC20 for IERC20;
 
   uint256 public savedTotalUnderlying;
@@ -53,13 +53,13 @@ contract Vault is VaultToken {
     uint256 balanceAfter = getVaultBalance();
 
     uint256 amount = balanceAfter - balanceBefore;
-    shares = (amount * (10**decimals())) / exchangeRate;
+    shares = (amount * (10 ** decimals())) / exchangeRate;
 
     _mint(msg.sender, shares);
   }
 
   function withdraw(uint256 _amount) external returns (uint256 value) {
-    value = (_amount * exchangeRate) / (10**decimals());
+    value = (_amount * exchangeRate) / (10 ** decimals());
 
     require(value > 0, "No value");
 
@@ -72,7 +72,7 @@ contract Vault is VaultToken {
   function withdrawalRequest(uint256 _amount) external returns (uint256 value) {
     require(withdrawalRequestPeriod[msg.sender] == 0, "Already a withdrawal request open");
 
-    value = (_amount * exchangeRate) / (10**decimals());
+    value = (_amount * exchangeRate) / (10 ** decimals());
 
     _burn(msg.sender, _amount);
 
