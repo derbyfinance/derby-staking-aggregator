@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { getDeployConfigVault } from '@testhelp/deployHelpers';
 
-const vaultName = 'TestVault1';
+const vaultName = 'DerbyGoerliUSDC';
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
@@ -18,12 +18,12 @@ const func: DeployFunction = async function ({
   const { name, symbol, decimals, vaultNumber, vaultCurrency, nativeToken, minScale } = deployConfig;
 
   const swapLibrary = await deployments.get('Swap');
-  const game = await deployments.get('GameMock');
+  const game = await deployments.get('Game');
   const controller = await deployments.get('Controller');
 
   await deploy(vaultName, {
     from: deployer,
-    contract: 'VaultMock',
+    contract: 'Vault',
     args: [
       name,
       symbol,
@@ -45,4 +45,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = [vaultName];
-func.dependencies = ['Swap', 'Controller', 'GameMock'];
+func.dependencies = ['Swap', 'Controller', 'Game'];

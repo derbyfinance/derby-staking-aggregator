@@ -11,17 +11,38 @@
       "decimals": 6,
       "vaultNumber": 1,
       "vaultCurrency": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
-      "uScale": 1e6
+      "nativeToken": "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6",
+      "minScale": 0
     },
     "init": {
-      "gasFeeLiq": 1e10,
       "rebalanceInterval": 1,
       "marginScale": "1000000000",
       "liquidityPercentage": 10,
       "performanceFee": 10,
-      "chainIds": [
-        10
-      ]
+      "homeChain": 1735353714
     }
-  }
+  },
+  "Controller": {
+    "init": {
+      "dai": "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
+      "usdc": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+      "usdt": "0x509Ee0d083DdF8AC028f2a56731412edD63223B9",
+      "daiCurveIndex": 0,
+      "usdcCurveIndex": 1,
+      "usdtCurveIndex": 2,
+      "curve3PoolFee": 15,
+      "curve3Pool": "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
+      "uniswapRouter": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+      "uniswapQouter": "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",
+      "uniswapPoolFee": 3000,
+      "chainlinkGasPriceOracle": "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"
+    }
+  },
+  "XProvider": {
+    "deploy": {
+      "connextHandler": "0xFCa08024A6D4bCc87275b1E4A1E22B71fAD7f649",
+      "mainnet": 1735353714
+    },
+    "init": {}
+  } 
 }
