@@ -18,7 +18,6 @@ const func: DeployFunction = async function ({
   const { name, symbol, decimals, vaultNumber, vaultCurrency, nativeToken, minScale } = deployConfig;
 
   const swapLibrary = await deployments.get('Swap');
-  const game = await deployments.get('GameMock');
   const controller = await deployments.get('Controller');
 
   await deploy(vaultName, {
@@ -30,7 +29,6 @@ const func: DeployFunction = async function ({
       decimals,
       vaultNumber,
       dao,
-      game.address,
       controller.address,
       vaultCurrency,
       nativeToken,
@@ -45,4 +43,4 @@ const func: DeployFunction = async function ({
 };
 export default func;
 func.tags = [vaultName];
-func.dependencies = ['Swap', 'Controller', 'GameMock'];
+func.dependencies = ['Swap', 'Controller'];

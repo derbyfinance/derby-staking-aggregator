@@ -96,14 +96,6 @@ describe('Testing vault tasks', () => {
     expect(await vault.derbyToken()).to.be.equal(address);
   });
 
-  it('vault_set_game', async function () {
-    const { vault, contract } = await setupVault();
-    const address = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
-
-    await run('vault_set_game', { contract, address });
-    expect(await vault.game()).to.be.equal(address);
-  });
-
   it('vault_set_performance_fee', async function () {
     const { vault, contract, initSettings } = await setupVault();
     const fee = random(100);
