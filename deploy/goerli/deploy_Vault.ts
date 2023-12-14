@@ -20,7 +20,7 @@ const func: DeployFunction = async function ({
   const swapLibrary = await deployments.get('Swap');
   const controller = await deployments.get('Controller');
 
-  await deploy(vaultName, {
+  const vaultDeployment = await deploy(vaultName, {
     from: deployer,
     contract: 'Vault',
     args: [
@@ -40,6 +40,23 @@ const func: DeployFunction = async function ({
     log: true,
     autoMine: true,
   });
+
+  // await new Promise(f => setTimeout(f, 60000));
+
+  // await run(`verify:verify`, {
+  //   address: vaultDeployment.address,
+  //   constructorArguments: [      
+  //     name,
+  //     symbol,
+  //     decimals,
+  //     vaultNumber,
+  //     dao,
+  //     controller.address,
+  //     vaultCurrency,
+  //     nativeToken,
+  //     minScale
+  //   ],
+  // });
 };
 export default func;
 func.tags = [vaultName];

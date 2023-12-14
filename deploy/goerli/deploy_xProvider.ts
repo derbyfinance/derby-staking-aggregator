@@ -16,12 +16,19 @@ const func: DeployFunction = async function ({
 
   const game = "0x0000000000000000000000000000000000000000";
 
-  await deploy('XProvider', {
+  const xproviderDeployment = await deploy('XProvider', {
     from: deployer,
     args: [connextHandler, dao, guardian, game, mainnet],
     log: true,
     autoMine: true,
   });
+
+  // await new Promise(f => setTimeout(f, 60000));
+
+  // await run(`verify:verify`, {
+  //   address: xproviderDeployment.address,
+  //   constructorArguments: [connextHandler, dao, guardian, game, mainnet],
+  // });
 };
 export default func;
 func.tags = ['XProviderGoerli'];

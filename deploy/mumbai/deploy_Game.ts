@@ -17,12 +17,19 @@ const func: DeployFunction = async function ({
 
   const derbyToken = await deployments.get('DerbyToken');
 
-  await deploy('Game', {
+  const gameDeployment = await deploy('Game', {
     from: deployer,
     args: [nftName, nftSymbol, derbyToken.address, dao, guardian],
     log: true,
     autoMine: true,
   });
+
+  // await new Promise(f => setTimeout(f, 60000));
+
+  // await run(`verify:verify`, {
+  //   address: gameDeployment.address,
+  //   constructorArguments: [nftName, nftSymbol, derbyToken.address, dao, guardian],
+  // });
 };
 export default func;
 func.tags = ['Game'];
