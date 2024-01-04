@@ -672,7 +672,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     require(rebalancingPeriod > user.withdrawalRequestPeriod, noFundsError);
 
     value = user.withdrawalAllowance;
-    value = IXProvider(xProvider).calculateEstimatedAmount(value);
+    value = checkForBalance(value, getVaultBalance(), vaultCurrency.decimals());
 
     totalWithdrawalRequests -= user.withdrawalAllowance;
     delete user.withdrawalAllowance;
@@ -712,6 +712,7 @@ contract Vault is ReentrancyGuard, VaultToken {
     require(rebalancingPeriod > user.rewardRequestPeriod, noFundsError);
 
     value = user.rewardAllowance;
+    value = checkForBalance(value, getVaultBalance(), vaultCurrency.decimals());
     totalWithdrawalRequests -= user.rewardAllowance;
 
     delete user.rewardAllowance;
