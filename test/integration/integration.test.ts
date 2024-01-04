@@ -612,7 +612,7 @@ describe('Testing full integration test', async () => {
     it('Vault 0 (user 0): Withdraw allowance', async function () {
       const { user, vault } = vaultUsers[0];
       const initialDeposit = 10_000;
-      const expectedUserUSDCBalance = initialDeposit * exchangeRate * 0.9945;
+      const expectedUserUSDCBalance = initialDeposit * exchangeRate;
 
       expect(await vault.connect(user).balanceOf(user.address)).to.be.equal(0);
       await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
@@ -626,7 +626,7 @@ describe('Testing full integration test', async () => {
     it('Vault 2 (user 2): Withdraw allowance', async function () {
       const { user, vault } = vaultUsers[2];
       const withdrawAmount = 500_000;
-      const expectedUserUSDCBalance = withdrawAmount * exchangeRate * 0.9945;
+      const expectedUserUSDCBalance = withdrawAmount * exchangeRate;
 
       const balanceBefore = formatUSDC(await IUSDc.balanceOf(user.address));
       await vault.connect(user).withdrawAllowance();

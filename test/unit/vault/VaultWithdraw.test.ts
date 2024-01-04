@@ -52,7 +52,7 @@ describe('Testing VaultWithdraw, unit test', async () => {
     await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
       IUSDc,
       user,
-      parseEther(9_000 * 0.9945),
+      parseEther(9_000),
     );
 
     // trying to withdraw allowance again
@@ -83,10 +83,10 @@ describe('Testing VaultWithdraw, unit test', async () => {
       await expect(() => vault.connect(user).withdrawAllowance()).to.changeTokenBalance(
         IUSDc,
         user,
-        parseEther((20_000 - govFee) * 0.9945),
+        parseEther((20_000 - govFee)),
       );
 
-      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseEther(govFee * 0.9945));
+      expect(await IUSDc.balanceOf(dao.address)).to.be.equal(parseEther(govFee));
     });
   });
 });

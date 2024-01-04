@@ -23,6 +23,4 @@ interface IXProvider {
     uint32 _chainId,
     int256[] memory _rewards
   ) external payable;
-
-  function calculateEstimatedAmount(uint256 _amount) external returns (uint256);
 }
